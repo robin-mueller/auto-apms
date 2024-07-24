@@ -1,4 +1,4 @@
-# PX4 Behavior-based control library
+# PX4 Behavior-based Control Library
 
 
 
