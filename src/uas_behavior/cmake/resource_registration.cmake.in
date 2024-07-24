@@ -1,0 +1,12 @@
+macro(uas_behavior_register_config_directory source_rel_node_config_dir)
+    install(
+        DIRECTORY ${source_rel_node_config_dir}/
+        DESTINATION share/@UAS_BEHAVIOR_SHARE_DIR_NAME@/@UAS_BEHAVIOR_SHARE_SUBDIR_NAME_CONFIG@)
+endmacro()
+
+macro(uas_behavior_register_trees_directory source_rel_trees_dir)
+    install(
+        DIRECTORY ${source_rel_trees_dir}/
+        DESTINATION share/@UAS_BEHAVIOR_SHARE_DIR_NAME@/@UAS_BEHAVIOR_SHARE_SUBDIR_NAME_TREES@)
+endmacro()
+

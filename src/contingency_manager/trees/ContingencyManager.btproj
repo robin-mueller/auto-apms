@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" project_name="ContingencyManager">
+    <include path="contingency_manager.xml"/>
+    <!-- Description of Node Models (used by Groot) -->
+    <TreeNodesModel>
+        <Action ID="Arm">
+            <input_port name="wait_until_ready_to_arm" default="true" type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Decorator ID="AsyncPrecondition">
+            <input_port name="check_while_running" default="false" type="bool">Check the condition in argument 'if' also while the child is RUNNING</input_port>
+            <input_port name="else" default="SKIPPED" type="BT::NodeStatus">Return status if condition is false</input_port>
+            <input_port name="if" type="std::string">If true, return RUNNING. Otherwise, return what's specified in argument 'else'</input_port>
+        </Decorator>
+        <Action ID="CreateAlternateLandingMission">
+            <output_port name="tree_id" default="{tree_id}" type="std::string">The ID of the tree that acts as the entry point for the mission</output_port>
+            <output_port name="xml_data" default="{xml_data}" type="std::string">String containing the XML data of the alternate landing mission tree</output_port>
+            <input_port name="pos_vec" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position (latitude [°], longitude [°], altitude AMSL [m])</input_port>
+        </Action>
+        <Action ID="Disarm">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="EnableHold">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Condition ID="GetContingencyEvent">
+            <input_port name="no_msg_thresh" default="3" type="int">Treshold of how many times it is tolerated to receive no message</input_port>
+            <output_port name="event_id" default="{event_id}" type="unsigned char">ID of the occured contingency event</output_port>
+            <output_port name="event_name" default="{event_name}" type="std::string">Name of the occured contingency event</output_port>
+            <input_port name="topic_name" default="__default__placeholder__" type="std::string">Topic name</input_port>
+        </Condition>
+        <Condition ID="GetGlobalPosition">
+            <output_port name="altitude" default="{altitude}" type="double">Current altitude in meter (AMSL)</output_port>
+            <output_port name="pos_vec" default="{pos_vec}" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position (latitude [°], longitude [°], altitude AMSL [m])</output_port>
+            <input_port name="topic_name" default="__default__placeholder__" type="std::string">Topic name</input_port>
+        </Condition>
+        <Action ID="GoTo">
+            <input_port name="lat" type="double">Target latitude</input_port>
+            <input_port name="lon" type="double">Target longitude</input_port>
+            <input_port name="alt" type="double">Target altitude in meter (AMSL)</input_port>
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="GoToVector">
+            <input_port name="vector" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Target position as a pointer to a vector</input_port>
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="HaltExecutor">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Control ID="HaltingReactiveFallback"/>
+        <Action ID="InspectLandingSite">
+            <input_port name="landing_site_id" type="int">ID of the landing site to inspect</input_port>
+            <output_port name="landing_site_status" default="{landing_site_status}" type="int">The landing status flag</output_port>
+            <input_port name="service_name" default="__default__placeholder__" type="std::string">Service name</input_port>
+        </Action>
+        <Action ID="Land">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="RTL">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="ResumeExecutor">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="Takeoff">
+            <input_port name="alt" type="double">Target takeoff altitude in meter (AMSL)</input_port>
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="ThrowException">
+            <input_port name="message" type="std::string">Error message. Can be empty</input_port>
+        </Action>
+        <Action ID="UploadBehaviorTree">
+            <input_port name="xml_data" type="std::string">XML string containing the data for the behavior trees to be registered</input_port>
+            <input_port name="tree_id" type="std::string">ID of the tree that should be created. Empty means to use the main_tree_to_execute attribute to determine which tree is to be executed</input_port>
+            <input_port name="service_name" default="__default__placeholder__" type="std::string">Service name</input_port>
+        </Action>
+    </TreeNodesModel>
+</root>

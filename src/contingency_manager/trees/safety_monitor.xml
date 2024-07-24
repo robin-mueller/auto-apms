@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="SafetyMonitor">
+  <BehaviorTree ID="CheckBattery">
+    <Sequence>
+      <GetSystemState battery_level="{battery_level}"
+                      topic_name="__default__placeholder__"/>
+      <ScriptCondition name="CheckBatteryOk"
+                       code="battery_level &gt; 20"
+                       _onFailure="@event_id := EVENT_BATTERY_CRITICAL"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="CheckLandingSite">
+    <Fallback>
+      <Inverter>
+        <IsApproachingLanding next_landing_site_id="{next_landing_site_id}"
+                              topic_name="__default__placeholder__"/>
+      </Inverter>
+      <IsLandingSiteClear landing_site_id="{next_landing_site_id}"
+                          landing_site_status="{landing_site_status}"
+                          topic_name="__default__placeholder__"/>
+      <ForceFailure>
+        <Fallback>
+          <ScriptCondition name="CheckLandingTempBlocked"
+                           code="landing_site_status == LANDING_SITE_TEMP_BLOCKED"
+                           _onSuccess="@event_id := EVENT_LANDING_TEMP_BLOCKED"/>
+          <ScriptCondition name="CheckLandingPermBlocked"
+                           code="landing_site_status == LANDING_SITE_PERM_BLOCKED"
+                           _onSuccess="@event_id := EVENT_LANDING_PERM_BLOCKED"/>
+        </Fallback>
+      </ForceFailure>
+    </Fallback>
+  </BehaviorTree>
+
+  <BehaviorTree ID="SafetyMonitor">
+    <Sequence name="PerformChecks">
+      <SubTree ID="CheckBattery"
+               _autoremap="false"/>
+      <SubTree ID="CheckLandingSite"
+               _autoremap="false"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Condition ID="GetSystemState">
+      <output_port name="battery_level"
+                   default="{battery_level}"
+                   type="float">Battery level in percent</output_port>
+      <input_port name="topic_name"
+                  default="__default__placeholder__"
+                  type="std::string">Topic name</input_port>
+    </Condition>
+    <Condition ID="IsApproachingLanding">
+      <output_port name="next_landing_site_id"
+                   default="{next_landing_site_id}"
+                   type="unsigned char">ID of the next landing site to be approached</output_port>
+      <input_port name="topic_name"
+                  default="__default__placeholder__"
+                  type="std::string">Topic name</input_port>
+    </Condition>
+    <Condition ID="IsLandingSiteClear">
+      <input_port name="landing_site_id"
+                  type="unsigned char">ID of the landing site to inspect</input_port>
+      <output_port name="landing_site_status"
+                   default="{landing_site_status}"
+                   type="unsigned char">The landing status flag</output_port>
+      <input_port name="topic_name"
+                  default="__default__placeholder__"
+                  type="std::string">Topic name</input_port>
+    </Condition>
+  </TreeNodesModel>
+
+</root>

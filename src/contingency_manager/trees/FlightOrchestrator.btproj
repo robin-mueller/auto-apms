@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" project_name="FlightOrchestrator">
+    <include path="flight_orchestrator.xml"/>
+    <!-- Description of Node Models (used by Groot) -->
+    <TreeNodesModel>
+        <Action ID="Arm">
+            <input_port name="wait_until_ready_to_arm" default="true" type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, goal will be rejected.</input_port>
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="Disarm">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="EnableHold">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="LaunchExecutor">
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="LoadBehaviorTrees">
+            <output_port name="xml_data" default="{xml_data}" type="std::string">XML string containing the data for the behavior trees</output_port>
+            <input_port name="filename" type="std::string">Name of the trees file (extension can be omitted)</input_port>
+            <input_port name="package_name" type="std::string">Name of the ROS2 package containing the trees file</input_port>
+        </Action>
+        <Action ID="Takeoff">
+            <input_port name="alt" type="double">Target takeoff altitude in meter (AMSL)</input_port>
+            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="UploadBehaviorTree">
+            <input_port name="xml_data" type="std::string">XML string containing the data for the behavior trees to be registered</input_port>
+            <input_port name="tree_id" type="std::string">ID of the tree that should be created. Empty means to use the main_tree_to_execute attribute to determine which tree is to be executed</input_port>
+            <input_port name="service_name" default="__default__placeholder__" type="std::string">Service name</input_port>
+        </Action>
+    </TreeNodesModel>
+</root>

@@ -1,0 +1,12 @@
+# Request
+float64 lat  # latitude [deg] (47.1234567°, not 471234567°)
+float64 lon  # longitude [deg]  (8.1234567°, not 81234567°)
+float64 alt  # altitude AMSL [m]
+bool head_towards_destination true  # Wether to always control the heading in direction of destination
+float32 heading_clockwise_from_north_rad 0  # Heading from north clockwise in local frame (NED). Only used if head_towards_destination is false
+---
+# Result
+---
+# Feedback
+geometry_msgs/Point remaining_distance_f_ned  # Remaining distance vector to destination in local frame (NED)
+float32 remaining_time_s  # Estimated remaining time until arrival

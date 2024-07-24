@@ -1,0 +1,8 @@
+uas_behavior:
+  load_bt_action:
+  arm_action: "arm_disarm"
+  disarm_action: "arm_disarm"
+  enable_hold_action: "enable_hold"
+  takeoff_action: "takeoff"
+  launch_executor_action: ""
+  upload_bt_srv: ""

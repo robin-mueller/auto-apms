@@ -1,0 +1,18 @@
+contingency_manager:
+  async_precondition:
+  create_alt_land_mission_action:
+
+uas_behavior:
+  throw_exception_action:
+  arm_action: "arm_disarm"
+  disarm_action: "arm_disarm"
+  enable_hold_action: "enable_hold"
+  goto_action: "go_to"
+  goto_vector_action: "go_to"
+  land_action: "land"
+  rtl_action: "rtl"
+  takeoff_action: "takeoff"
+  upload_bt_srv: "mission_manager/upload"
+  resume_executor_action: "mission_manager/command"
+  halt_executor_action: "mission_manager/command"
+  glob_pos_sub: "/fmu/out/vehicle_global_position"

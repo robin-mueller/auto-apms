@@ -1,0 +1,1 @@
+float32 battery_level_percent 100

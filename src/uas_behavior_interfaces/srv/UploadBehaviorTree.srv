@@ -1,0 +1,7 @@
+# Request
+string xml_data
+string tree_id
+---
+# Response
+bool success
+string error_message

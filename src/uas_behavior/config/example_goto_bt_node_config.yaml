@@ -1,0 +1,22 @@
+# A node config file may have multiple root nodes specifying a ROS2 package to load plugins from.
+# The child of each root node is a list of plugin target names to load.
+# The plugin target name node must also have a child. This child is either the default port name
+# of the node (in case of a ROS2 node plugin) or empty (in case of a standard behavior tree node plugin).
+#
+# package_name1:
+#   standard_plugin_target_name:
+#   ros2_plugin_target_name: "node_default_port_name"
+# package_name2:
+#   ros2_plugin_target_name: "node_default_port_name"
+#
+# NOTE:
+# The ROS2 namespacing concept (https://design.ros2.org/articles/topic_and_service_names.html) 
+# applies to node_default_port_name. That is, you can specify both relative and absolute names.
+#
+
+uas_behavior:
+  arm_action: "arm_disarm"
+  disarm_action: "arm_disarm"
+  goto_action: "go_to"
+  land_action: "land"
+  takeoff_action: "takeoff"

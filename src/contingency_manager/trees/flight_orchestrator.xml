@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="FlightOrchestrator">
+  <BehaviorTree ID="FlightOrchestrator">
+    <Sequence>
+      <SubTree ID="UploadTrees"/>
+      <EnableHold action_name="__default__placeholder__"/>
+      <Arm wait_until_ready_to_arm="true"
+           action_name="__default__placeholder__"/>
+      <Takeoff name="InitialClimb"
+               alt="190"
+               action_name="__default__placeholder__"/>
+      <Parallel name="MainRoutine"
+                failure_count="1"
+                success_count="1">
+        <LaunchExecutor name="SafetyMonitor"
+                        action_name="safety_monitor/run"/>
+        <LaunchExecutor name="ContingencyManager"
+                        action_name="contingency_manager/run"/>
+        <LaunchExecutor name="MissionManager"
+                        action_name="mission_manager/run"/>
+      </Parallel>
+      <Disarm action_name="__default__placeholder__"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="UploadTrees">
+    <Sequence>
+      <LoadBehaviorTrees name="LoadSafetyMonitor"
+                         xml_data="{xml_data}"
+                         filename="safety_monitor"
+                         package_name="contingency_manager"/>
+      <UploadBehaviorTree name="UploadSafetyMonitor"
+                          xml_data="{xml_data}"
+                          tree_id=""
+                          service_name="safety_monitor/upload"/>
+      <LoadBehaviorTrees name="LoadContingencyManager"
+                         xml_data="{xml_data}"
+                         filename="contingency_manager"
+                         package_name="contingency_manager"/>
+      <UploadBehaviorTree name="UploadContingencyManager"
+                          xml_data="{xml_data}"
+                          tree_id=""
+                          service_name="contingency_manager/upload"/>
+      <LoadBehaviorTrees name="LoadNominalMission"
+                         xml_data="{xml_data}"
+                         filename="nominal_mission"
+                         package_name="contingency_manager"/>
+      <UploadBehaviorTree name="UploadNominalMission"
+                          xml_data="{xml_data}"
+                          tree_id=""
+                          service_name="mission_manager/upload"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="Arm">
+      <input_port name="wait_until_ready_to_arm"
+                  default="true"
+                  type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, goal will be rejected.</input_port>
+      <input_port name="action_name"
+                  default="__default__placeholder__"
+                  type="std::string">Action server name</input_port>
+    </Action>
+    <Action ID="Disarm">
+      <input_port name="action_name"
+                  default="__default__placeholder__"
+                  type="std::string">Action server name</input_port>
+    </Action>
+    <Action ID="EnableHold">
+      <input_port name="action_name"
+                  default="__default__placeholder__"
+                  type="std::string">Action server name</input_port>
+    </Action>
+    <Action ID="LaunchExecutor">
+      <input_port name="action_name"
+                  default="__default__placeholder__"
+                  type="std::string">Action server name</input_port>
+    </Action>
+    <Action ID="LoadBehaviorTrees">
+      <output_port name="xml_data"
+                   default="{xml_data}"
+                   type="std::string">XML string containing the data for the behavior trees</output_port>
+      <input_port name="filename"
+                  type="std::string">Name of the trees file (extension can be omitted)</input_port>
+      <input_port name="package_name"
+                  type="std::string">Name of the ROS2 package containing the trees file</input_port>
+    </Action>
+    <Action ID="Takeoff">
+      <input_port name="alt"
+                  type="double">Target takeoff altitude in meter (AMSL)</input_port>
+      <input_port name="action_name"
+                  default="__default__placeholder__"
+                  type="std::string">Action server name</input_port>
+    </Action>
+    <Action ID="UploadBehaviorTree">
+      <input_port name="xml_data"
+                  type="std::string">XML string containing the data for the behavior trees to be registered</input_port>
+      <input_port name="tree_id"
+                  type="std::string">ID of the tree that should be created. Empty means to use the main_tree_to_execute attribute to determine which tree is to be executed</input_port>
+      <input_port name="service_name"
+                  default="__default__placeholder__"
+                  type="std::string">Service name</input_port>
+    </Action>
+  </TreeNodesModel>
+
+</root>

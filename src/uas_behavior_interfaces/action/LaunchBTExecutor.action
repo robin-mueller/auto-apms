@@ -1,0 +1,17 @@
+# Request
+
+---
+# Result
+uint8 TREE_RESULT_NOT_SET=0
+uint8 TREE_RESULT_SUCCESS=1
+uint8 TREE_RESULT_FAILURE=2
+
+string terminated_tree_id
+uint8 tree_result 0
+string termination_message
+---
+# Feedback
+string execution_state_str
+string root_tree_id
+string running_action_name
+float64 running_action_timestamp
