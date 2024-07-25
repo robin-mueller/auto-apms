@@ -4,48 +4,48 @@ px4_behavior_add_bt_plugin(throw_exception_action
 px4_behavior_add_bt_plugin(arm_action 
     action/arm.cpp)
 ament_target_dependencies(arm_action
-    commander_interfaces)
+    px4_behavior_interfaces)
 
 px4_behavior_add_bt_plugin(disarm_action 
     action/disarm.cpp)
 ament_target_dependencies(disarm_action
-    commander_interfaces)
+    px4_behavior_interfaces)
 
 px4_behavior_add_bt_plugin(enable_hold_action 
     action/enable_hold.cpp)
 ament_target_dependencies(enable_hold_action
-    commander_interfaces)
+    px4_behavior_interfaces)
 
 px4_behavior_add_bt_plugin(goto_action 
     action/goto.cpp)
 ament_target_dependencies(goto_action
-    commander_interfaces)
+    px4_behavior_interfaces)
 
 px4_behavior_add_bt_plugin(goto_vector_action 
     action/goto_vec.cpp)
 ament_target_dependencies(goto_vector_action
-    commander_interfaces 
+    px4_behavior_interfaces 
     Eigen3)
 
 px4_behavior_add_bt_plugin(land_action 
     action/land.cpp)
 ament_target_dependencies(land_action
-    commander_interfaces)
+    px4_behavior_interfaces)
 
 px4_behavior_add_bt_plugin(rtl_action 
     action/rtl.cpp)
 ament_target_dependencies(rtl_action
-    commander_interfaces)
+    px4_behavior_interfaces)
 
 px4_behavior_add_bt_plugin(takeoff_action 
     action/takeoff.cpp)
 ament_target_dependencies(takeoff_action
-    commander_interfaces)
+    px4_behavior_interfaces)
 
 px4_behavior_add_bt_plugin(mission_action 
     action/mission.cpp)
 ament_target_dependencies(mission_action
-    commander_interfaces)
+    px4_behavior_interfaces)
 
 px4_behavior_add_bt_plugin(launch_executor_action 
     action/launch_executor.cpp)

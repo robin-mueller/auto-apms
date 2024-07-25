@@ -16,7 +16,9 @@ set(ACTION_SOURCES
     action/Land.action
     action/RTL.action
     action/Takeoff.action
-    action/Mission.action)
+    action/Mission.action
+    action/LaunchBTExecutor.action
+    action/BTExecutorCommand.action)
 set(MESSAGE_SOURCES
     msg/ForceContingency.msg
     msg/LandingApproach.msg

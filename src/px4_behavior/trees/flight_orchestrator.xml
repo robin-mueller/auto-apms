@@ -4,12 +4,10 @@
   <BehaviorTree ID="FlightOrchestrator">
     <Sequence>
       <SubTree ID="UploadTrees"/>
-      <EnableHold action_name="__default__placeholder__"/>
-      <Arm wait_until_ready_to_arm="true"
-           action_name="__default__placeholder__"/>
+      <EnableHold/>
+      <Arm wait_until_ready_to_arm="true"/>
       <Takeoff name="InitialClimb"
-               alt="190"
-               action_name="__default__placeholder__"/>
+               alt="190"/>
       <Parallel name="MainRoutine"
                 failure_count="1"
                 success_count="1">
@@ -20,7 +18,7 @@
         <LaunchExecutor name="MissionManager"
                         action_name="mission_manager/run"/>
       </Parallel>
-      <Disarm action_name="__default__placeholder__"/>
+      <Disarm/>
     </Sequence>
   </BehaviorTree>
 
@@ -29,7 +27,7 @@
       <LoadBehaviorTrees name="LoadSafetyMonitor"
                          xml_data="{xml_data}"
                          filename="safety_monitor"
-                         package_name="contingency_manager"/>
+                         package_name="px4_behavior"/>
       <UploadBehaviorTree name="UploadSafetyMonitor"
                           xml_data="{xml_data}"
                           tree_id=""
@@ -37,7 +35,7 @@
       <LoadBehaviorTrees name="LoadContingencyManager"
                          xml_data="{xml_data}"
                          filename="contingency_manager"
-                         package_name="contingency_manager"/>
+                         package_name="px4_behavior"/>
       <UploadBehaviorTree name="UploadContingencyManager"
                           xml_data="{xml_data}"
                           tree_id=""
@@ -45,7 +43,7 @@
       <LoadBehaviorTrees name="LoadNominalMission"
                          xml_data="{xml_data}"
                          filename="nominal_mission"
-                         package_name="contingency_manager"/>
+                         package_name="px4_behavior"/>
       <UploadBehaviorTree name="UploadNominalMission"
                           xml_data="{xml_data}"
                           tree_id=""

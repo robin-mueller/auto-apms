@@ -1,4 +1,4 @@
-#include <commander_interfaces/action/arm_disarm.hpp>
+#include <px4_behavior_interfaces/action/arm_disarm.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "Disarm"
@@ -7,7 +7,7 @@ using namespace BT;
 
 namespace px4_behavior {
 
-class DisarmAction : public RosActionNode<commander_interfaces::action::ArmDisarm>
+class DisarmAction : public RosActionNode<px4_behavior_interfaces::action::ArmDisarm>
 {
    public:
     using RosActionNode::RosActionNode;

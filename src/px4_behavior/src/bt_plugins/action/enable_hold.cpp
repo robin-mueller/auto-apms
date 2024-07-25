@@ -1,4 +1,4 @@
-#include <commander_interfaces/action/enable_hold.hpp>
+#include <px4_behavior_interfaces/action/enable_hold.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "EnableHold"
@@ -7,7 +7,7 @@ using namespace BT;
 
 namespace px4_behavior {
 
-class EnableHoldAction : public RosActionNode<commander_interfaces::action::EnableHold>
+class EnableHoldAction : public RosActionNode<px4_behavior_interfaces::action::EnableHold>
 {
    public:
     using RosActionNode::RosActionNode;

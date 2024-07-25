@@ -1,5 +1,5 @@
 #include <Eigen/Geometry>
-#include <commander_interfaces/action/go_to.hpp>
+#include <px4_behavior_interfaces/action/go_to.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "GoToVector"
@@ -9,7 +9,7 @@ using namespace BT;
 
 namespace px4_behavior {
 
-class GoToVectorAction : public RosActionNode<commander_interfaces::action::GoTo>
+class GoToVectorAction : public RosActionNode<px4_behavior_interfaces::action::GoTo>
 {
    public:
     using RosActionNode::RosActionNode;

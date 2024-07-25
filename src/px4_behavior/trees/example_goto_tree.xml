@@ -4,15 +4,15 @@
   <BehaviorTree ID="Main">
     <Sequence>
       <Arm wait_until_ready_to_arm="true"
-           action_name="__default__placeholder__"/>
+           action_name=""/>
       <Takeoff alt="190"
-               action_name="__default__placeholder__"/>
+               action_name=""/>
       <GoTo lat="49.860150"
             lon="8.675836"
             alt="190"
-            action_name="__default__placeholder__"/>
-      <Land action_name="__default__placeholder__"/>
-      <Disarm action_name="__default__placeholder__"/>
+            action_name=""/>
+      <Land action_name=""/>
+      <Disarm action_name=""/>
     </Sequence>
   </BehaviorTree>
 
@@ -23,12 +23,10 @@
                   default="true"
                   type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, goal will be rejected.</input_port>
       <input_port name="action_name"
-                  default="__default__placeholder__"
                   type="std::string">Action server name</input_port>
     </Action>
     <Action ID="Disarm">
       <input_port name="action_name"
-                  default="__default__placeholder__"
                   type="std::string">Action server name</input_port>
     </Action>
     <Action ID="GoTo">
@@ -39,19 +37,16 @@
       <input_port name="alt"
                   type="double">Target altitude in meter (AMSL)</input_port>
       <input_port name="action_name"
-                  default="__default__placeholder__"
                   type="std::string">Action server name</input_port>
     </Action>
     <Action ID="Land">
       <input_port name="action_name"
-                  default="__default__placeholder__"
                   type="std::string">Action server name</input_port>
     </Action>
     <Action ID="Takeoff">
       <input_port name="alt"
-                  type="float">Target takeoff altitude in meter (AMSL)</input_port>
+                  type="double">Target takeoff altitude in meter (AMSL)</input_port>
       <input_port name="action_name"
-                  default="__default__placeholder__"
                   type="std::string">Action server name</input_port>
     </Action>
   </TreeNodesModel>

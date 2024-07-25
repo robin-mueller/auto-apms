@@ -77,14 +77,13 @@ rclcpp_components_register_nodes(px4_behavior "px4_behavior::LandManeuver")
 rclcpp_components_register_nodes(px4_behavior "px4_behavior::TakeoffManeuver")
 rclcpp_components_register_nodes(px4_behavior "px4_behavior::RTLManeuver")
 rclcpp_components_register_nodes(px4_behavior "px4_behavior::MissionManeuver")
-rclcpp_components_register_nodes(contingency_manager "contingency_manager::FlightOrchestratorExecutor")
-rclcpp_components_register_nodes(contingency_manager "contingency_manager::SafetyMonitorExecutor")
-rclcpp_components_register_nodes(contingency_manager "contingency_manager::ContingencyManagerExecutor")
-rclcpp_components_register_nodes(contingency_manager "contingency_manager::MissionManagerExecutor")
+rclcpp_components_register_nodes(px4_behavior "px4_behavior::FlightOrchestratorExecutor")
+rclcpp_components_register_nodes(px4_behavior "px4_behavior::SafetyMonitorExecutor")
+rclcpp_components_register_nodes(px4_behavior "px4_behavior::ContingencyManagerExecutor")
+rclcpp_components_register_nodes(px4_behavior "px4_behavior::MissionManagerExecutor")
 
-rclcpp_components_register_node(contingency_manager PLUGIN "contingency_manager::FlightRecorderNode" EXECUTABLE flight_recorder)
-
-# rclcpp_components_register_node(contingency_manager PLUGIN "contingency_manager::MissionManagerExecutor" EXECUTABLE node_debug_exe)
+rclcpp_components_register_node(px4_behavior PLUGIN "px4_behavior::FlightRecorderNode" EXECUTABLE flight_recorder)
+# rclcpp_components_register_node(px4_behavior PLUGIN "px4_behavior::MissionManagerExecutor" EXECUTABLE debug_node)
 
 
 install(
@@ -98,8 +97,7 @@ install(
     EXPORT export_px4_behavior
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-)
+    RUNTIME DESTINATION bin)
 
 # Make library available to other packages
 ament_export_targets(export_px4_behavior HAS_LIBRARY_TARGET)

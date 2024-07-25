@@ -1,4 +1,4 @@
-#include <commander_interfaces/action/rtl.hpp>
+#include <px4_behavior_interfaces/action/rtl.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "RTL"
@@ -7,7 +7,7 @@ using namespace BT;
 
 namespace px4_behavior {
 
-class RTLAction : public RosActionNode<commander_interfaces::action::RTL>
+class RTLAction : public RosActionNode<px4_behavior_interfaces::action::RTL>
 {
    public:
     using RosActionNode::RosActionNode;

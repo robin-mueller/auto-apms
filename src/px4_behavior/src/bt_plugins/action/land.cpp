@@ -1,4 +1,4 @@
-#include <commander_interfaces/action/land.hpp>
+#include <px4_behavior_interfaces/action/land.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "Land"
@@ -7,7 +7,7 @@ using namespace BT;
 
 namespace px4_behavior {
 
-class LandAction : public RosActionNode<commander_interfaces::action::Land>
+class LandAction : public RosActionNode<px4_behavior_interfaces::action::Land>
 {
    public:
     using RosActionNode::RosActionNode;

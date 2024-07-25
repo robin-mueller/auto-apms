@@ -1,4 +1,4 @@
-#include <commander_interfaces/action/mission.hpp>
+#include <px4_behavior_interfaces/action/mission.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "Mission"
@@ -8,7 +8,7 @@ using namespace BT;
 
 namespace px4_behavior {
 
-class MissionAction : public RosActionNode<commander_interfaces::action::Mission>
+class MissionAction : public RosActionNode<px4_behavior_interfaces::action::Mission>
 {
    public:
     using RosActionNode::RosActionNode;

@@ -1,7 +1,7 @@
-#include <commander/vehicle_command_client.hpp>
+#include <px4_behavior/vehicle_command_client.hpp>
 #include <functional>
 
-namespace commander {
+namespace px4_behavior {
 
 std::string to_string(VehicleCommandClient::SendCommandResult result)
 {
@@ -149,4 +149,4 @@ bool VehicleCommandClient::SyncActivateFlightMode(const px4_ros2::ModeBase* cons
     return SyncActivateFlightMode(mode_ptr->id());
 }
 
-}  // namespace commander
+}  // namespace px4_behavior

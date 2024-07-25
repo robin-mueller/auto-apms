@@ -23,7 +23,7 @@ def upload_tree_action(executor_name: str, package_name: str, filename: str):
         cmd=[
             [
                 FindExecutable(name="ros2"),
-                f" run uas_behavior upload_tree '{NAMESPACE}' '{executor_name}' '{package_name}' '{filename}'",
+                f" run px4_behavior upload_tree '{NAMESPACE}' '{executor_name}' '{package_name}' '{filename}'",
             ]
         ],
         name=process_name,
@@ -48,7 +48,7 @@ def generate_launch_description():
         launch_description_source=PythonLaunchDescriptionSource(
             [
                 os.path.join(
-                    get_package_share_directory("commander"),
+                    get_package_share_directory("px4_behavior"),
                     "launch",
                     "maneuver_launch.py",
                 ),

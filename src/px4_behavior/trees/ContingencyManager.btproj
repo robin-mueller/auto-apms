@@ -5,7 +5,7 @@
     <TreeNodesModel>
         <Action ID="Arm">
             <input_port name="wait_until_ready_to_arm" default="true" type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Decorator ID="AsyncPrecondition">
             <input_port name="check_while_running" default="false" type="bool">Check the condition in argument 'if' also while the child is RUNNING</input_port>
@@ -18,10 +18,10 @@
             <input_port name="pos_vec" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position (latitude [°], longitude [°], altitude AMSL [m])</input_port>
         </Action>
         <Action ID="Disarm">
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="EnableHold">
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Condition ID="GetContingencyEvent">
             <input_port name="no_msg_thresh" default="3" type="int">Treshold of how many times it is tolerated to receive no message</input_port>
@@ -38,14 +38,14 @@
             <input_port name="lat" type="double">Target latitude</input_port>
             <input_port name="lon" type="double">Target longitude</input_port>
             <input_port name="alt" type="double">Target altitude in meter (AMSL)</input_port>
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="GoToVector">
             <input_port name="vector" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Target position as a pointer to a vector</input_port>
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="HaltExecutor">
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Control ID="HaltingReactiveFallback"/>
         <Action ID="InspectLandingSite">
@@ -54,17 +54,17 @@
             <input_port name="service_name" default="__default__placeholder__" type="std::string">Service name</input_port>
         </Action>
         <Action ID="Land">
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="RTL">
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="ResumeExecutor">
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="Takeoff">
             <input_port name="alt" type="double">Target takeoff altitude in meter (AMSL)</input_port>
-            <input_port name="action_name" default="__default__placeholder__" type="std::string">Action server name</input_port>
+            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="ThrowException">
             <input_port name="message" type="std::string">Error message. Can be empty</input_port>
@@ -72,7 +72,7 @@
         <Action ID="UploadBehaviorTree">
             <input_port name="xml_data" type="std::string">XML string containing the data for the behavior trees to be registered</input_port>
             <input_port name="tree_id" type="std::string">ID of the tree that should be created. Empty means to use the main_tree_to_execute attribute to determine which tree is to be executed</input_port>
-            <input_port name="service_name" default="__default__placeholder__" type="std::string">Service name</input_port>
+            <input_port name="service_name" type="std::string">Service name</input_port>
         </Action>
     </TreeNodesModel>
 </root>

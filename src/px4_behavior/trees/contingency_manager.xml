@@ -4,21 +4,17 @@
   <BehaviorTree ID="BatteryCriticalHandler">
     <Sequence>
       <GetGlobalPosition altitude="{before_alt}"
-                         pos_vec="{before_pos_vec}"
-                         topic_name="__default__placeholder__"/>
+                         pos_vec="{before_pos_vec}"/>
       <GoTo name="Recharge"
             lat="49.86073630890625"
             lon="8.676407728678667"
-            alt="190"
-            action_name="__default__placeholder__"/>
-      <Land name="Recharge"
-            action_name="__default__placeholder__"/>
-      <EnableHold action_name="__default__placeholder__"/>
-      <Disarm action_name="__default__placeholder__"/>
+            alt="190"/>
+      <Land name="Recharge"/>
+      <EnableHold/>
+      <Disarm/>
       <SubTree ID="WaitForEventClear"
                event_id="EVENT_BATTERY_CRITICAL"/>
-      <Arm wait_until_ready_to_arm="true"
-           action_name="__default__placeholder__"/>
+      <Arm wait_until_ready_to_arm="true"/>
       <SubTree ID="ReturnToPosition"
                before_pos_vec="{before_pos_vec}"
                before_alt="{before_alt}"/>
@@ -27,7 +23,7 @@
 
   <BehaviorTree ID="ContingencyManager">
     <Sequence name="HandleContingency">
-      <HaltExecutor action_name="__default__placeholder__"/>
+      <HaltExecutor/>
       <ReactiveSequence>
         <AsyncPrecondition check_while_running="false"
                            else="SUCCESS"
@@ -47,28 +43,26 @@
           <SubTree ID="LandingTempBlockedHandler"/>
         </AsyncPrecondition>
       </ReactiveSequence>
-      <ResumeExecutor action_name="__default__placeholder__"/>
+      <ResumeExecutor/>
     </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="LandingPermBlockedHandler">
     <Sequence>
       <GetGlobalPosition altitude="{altitude}"
-                         pos_vec="{pos_vec}"
-                         topic_name="__default__placeholder__"/>
+                         pos_vec="{pos_vec}"/>
       <CreateAlternateLandingMission tree_id="{new_mission_tree_id}"
                                      xml_data="{alternate_landing_tree}"
                                      pos_vec="{pos_vec}"/>
       <UploadBehaviorTree name="UploadAlternateLandingMission"
                           xml_data="{alternate_landing_tree}"
-                          tree_id="{new_mission_tree_id}"
-                          service_name="__default__placeholder__"/>
+                          tree_id="{new_mission_tree_id}"/>
     </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="LandingTempBlockedHandler">
     <Sequence>
-      <EnableHold action_name="__default__placeholder__"/>
+      <EnableHold/>
       <SubTree ID="WaitForEventClear"
                event_id="EVENT_LANDING_TEMP_BLOCKED"/>
     </Sequence>
@@ -77,14 +71,11 @@
   <BehaviorTree ID="ReturnToPosition">
     <Sequence>
       <GetGlobalPosition altitude="{altitude}"
-                         pos_vec="{pos_vec}"
-                         topic_name="__default__placeholder__"/>
+                         pos_vec="{pos_vec}"/>
       <Takeoff name="ClimbBackToMissionAltitude"
                alt="{before_alt}"
-               action_name="__default__placeholder__"
                _skipIf="(before_alt - altitude) &lt; 1"/>
-      <GoToVector vector="{before_pos_vec}"
-                  action_name="__default__placeholder__"/>
+      <GoToVector vector="{before_pos_vec}"/>
     </Sequence>
   </BehaviorTree>
 

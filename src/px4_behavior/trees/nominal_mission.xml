@@ -6,39 +6,31 @@
       <GoTo name="Waypoint1"
             lat="49.8605441"
             lon="8.6763816"
-            alt="{@altitude_amsl_m}"
-            action_name="__default__placeholder__"/>
+            alt="{@altitude_amsl_m}"/>
       <GoTo name="Waypoint2"
             lat="49.8606396"
             lon="8.6765291"
             alt="{@altitude_amsl_m}"
-            action_name="__default__placeholder__"
             _onSuccess="@is_approaching_landing = true"/>
       <Land name="LandAtStopover"
-            action_name="__default__placeholder__"
             _onSuccess="@next_landing_site_id = 1;&#10;@is_approaching_landing = false"/>
-      <EnableHold action_name="__default__placeholder__"/>
-      <Disarm action_name="__default__placeholder__"/>
+      <EnableHold/>
+      <Disarm/>
       <Sleep name="Stopover"
              msec="3000"/>
-      <Arm wait_until_ready_to_arm="true"
-           action_name="__default__placeholder__"/>
+      <Arm wait_until_ready_to_arm="true"/>
       <Takeoff name="LeaveStopover"
-               alt="{@altitude_amsl_m}"
-               action_name="__default__placeholder__"/>
+               alt="{@altitude_amsl_m}"/>
       <GoTo name="Waypoint3"
             lat="49.860685"
             lon="8.676366"
             alt="{@altitude_amsl_m}"
-            action_name="__default__placeholder__"
             _onSuccess="@is_approaching_landing = true"/>
       <GoTo name="Waypoint4"
             lat="49.8606393"
             lon="8.6761878"
-            alt="{@altitude_amsl_m}"
-            action_name="__default__placeholder__"/>
+            alt="{@altitude_amsl_m}"/>
       <Land name="ArriveAtDestination"
-            action_name="__default__placeholder__"
             _onSuccess="@next_landing_site_id = 2;&#10;@is_approaching_landing = false"/>
     </SequenceWithMemory>
   </BehaviorTree>

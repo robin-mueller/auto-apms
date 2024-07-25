@@ -1,7 +1,7 @@
 #pragma once
 
 #include <chrono>
-#include <px4_behavior/default_names.hpp>
+#include <px4_behavior/definitions.hpp>
 #include <px4_behavior/maneuver/action_context.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>

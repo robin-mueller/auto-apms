@@ -1,6 +1,6 @@
 #pragma once
 
-#include <contingency_manager_interfaces/msg/contingency_event.hpp>
+#include <px4_behavior_interfaces/msg/contingency_event.hpp>
 #include <px4_behavior/factory.hpp>
 
 using ContingencyEventMsg = px4_behavior_interfaces::msg::ContingencyEvent;

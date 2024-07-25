@@ -3,8 +3,7 @@
       main_tree_to_execute="SafetyMonitor">
   <BehaviorTree ID="CheckBattery">
     <Sequence>
-      <GetSystemState battery_level="{battery_level}"
-                      topic_name="__default__placeholder__"/>
+      <GetSystemState battery_level="{battery_level}"/>
       <ScriptCondition name="CheckBatteryOk"
                        code="battery_level &gt; 20"
                        _onFailure="@event_id := EVENT_BATTERY_CRITICAL"/>
@@ -14,12 +13,10 @@
   <BehaviorTree ID="CheckLandingSite">
     <Fallback>
       <Inverter>
-        <IsApproachingLanding next_landing_site_id="{next_landing_site_id}"
-                              topic_name="__default__placeholder__"/>
+        <IsApproachingLanding next_landing_site_id="{next_landing_site_id}"/>
       </Inverter>
       <IsLandingSiteClear landing_site_id="{next_landing_site_id}"
-                          landing_site_status="{landing_site_status}"
-                          topic_name="__default__placeholder__"/>
+                          landing_site_status="{landing_site_status}"/>
       <ForceFailure>
         <Fallback>
           <ScriptCondition name="CheckLandingTempBlocked"

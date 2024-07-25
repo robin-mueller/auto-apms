@@ -26,7 +26,7 @@ class ContingencyManagerExecutor : public px4_behavior::BTExecutor
 };
 
 ContingencyManagerExecutor::ContingencyManagerExecutor(const rclcpp::NodeOptions& options)
-    : BTExecutor{"px4_behavior", options, 5555}
+    : BTExecutor{"contingency_manager", options, 5555}
 {
     sub_contingency_event_ptr_ = node()->create_subscription<ContingencyEventMsg>(
         CONTINGENCY_EVENT_TOPIC_NAME,

@@ -7,18 +7,18 @@ namespace px4_behavior {
 std::filesystem::path get_shared_resource_directory(const std::string& package_name)
 {
     return std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "share" /
-           std::string(UAS_BEHAVIOR_SHARE_DIR_NAME);
+           std::string(PX4_BEHAVIOR_SHARE_DIR_NAME);
 }
 
 std::filesystem::path get_bt_plugin_directory(const std::string& package_name)
 {
     return std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "lib" /
-           std::string(UAS_BEHAVIOR_SHARE_DIR_NAME);
+           std::string(PX4_BEHAVIOR_SHARE_DIR_NAME);
 }
 
 std::filesystem::path get_config_filepath(const std::string& package_name, const std::string& config_filename)
 {
-    auto filepath = get_shared_resource_directory(package_name) / std::string(UAS_BEHAVIOR_SHARE_SUBDIR_NAME_CONFIG) /
+    auto filepath = get_shared_resource_directory(package_name) / std::string(PX4_BEHAVIOR_SHARE_SUBDIR_NAME_CONFIG) /
                     config_filename;
 
     if (!filepath.has_extension()) { filepath.replace_extension(".yaml"); }
@@ -35,7 +35,7 @@ std::filesystem::path get_config_filepath(const std::string& package_name, const
 std::filesystem::path get_trees_filepath(const std::string& package_name, const std::string& tree_filename)
 {
     auto filepath =
-        get_shared_resource_directory(package_name) / std::string(UAS_BEHAVIOR_SHARE_SUBDIR_NAME_TREES) / tree_filename;
+        get_shared_resource_directory(package_name) / std::string(PX4_BEHAVIOR_SHARE_SUBDIR_NAME_TREES) / tree_filename;
 
     if (!filepath.has_extension()) { filepath.replace_extension(".xml"); }
     if (filepath.extension().compare(".xml") != 0) {
