@@ -19,7 +19,9 @@ find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(tf2_eigen REQUIRED)
 
-# ------------ PX4 Behavior Library --------------
+#
+# ------------ PX4 Behavior Library | Core --------------
+#
 
 option(PX4_BEHAVIOR_DEBUG_LOGGING "Enable debug logging severity" OFF)
 
@@ -28,23 +30,19 @@ set(PX4_BEHAVIOR_SHARE_SUBDIR_NAME_CONFIG "config")
 set(PX4_BEHAVIOR_SHARE_SUBDIR_NAME_TREES "trees")
 
 add_library(px4_behavior SHARED
-    src/vehicle_command_client.cpp
-    src/maneuver/arm_disarm.cpp
-    src/maneuver/enable_hold.cpp
-    src/maneuver/goto.cpp
-    src/maneuver/land.cpp
-    src/maneuver/takeoff.cpp
-    src/maneuver/rtl.cpp
-    src/maneuver/mission.cpp
+    src/commander/vehicle_command_client.cpp
+    src/commander/arm_disarm.cpp
+    src/commander/enable_hold.cpp
+    src/commander/goto.cpp
+    src/commander/land.cpp
+    src/commander/takeoff.cpp
+    src/commander/rtl.cpp
+    src/commander/mission.cpp
     src/factory.cpp
     src/get_resource.cpp
     src/bt_executor.cpp
     src/bt_executor_client.cpp
     src/ros2_bt_observer.cpp
-    src/flight_orchestrator.cpp
-    src/safety_monitor.cpp
-    src/contingency_manager.cpp
-    src/mission_manager.cpp
     src/flight_recorder.cpp)
 target_include_directories(px4_behavior PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -77,10 +75,6 @@ rclcpp_components_register_nodes(px4_behavior "px4_behavior::LandManeuver")
 rclcpp_components_register_nodes(px4_behavior "px4_behavior::TakeoffManeuver")
 rclcpp_components_register_nodes(px4_behavior "px4_behavior::RTLManeuver")
 rclcpp_components_register_nodes(px4_behavior "px4_behavior::MissionManeuver")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::FlightOrchestratorExecutor")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::SafetyMonitorExecutor")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::ContingencyManagerExecutor")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::MissionManagerExecutor")
 
 rclcpp_components_register_node(px4_behavior PLUGIN "px4_behavior::FlightRecorderNode" EXECUTABLE flight_recorder)
 # rclcpp_components_register_node(px4_behavior PLUGIN "px4_behavior::MissionManagerExecutor" EXECUTABLE debug_node)
@@ -116,69 +110,93 @@ foreach(cmake_file ${cmake_files})
     include(${cmake_file})
 endforeach()
 
-# ------------ Executables --------------
+#
+# ------------ PX4 Behavior Library | Executables --------------
+#
 
 # Command line tool to create a file that specifies all model definitions of the plugins used
-add_executable(create_bt_node_model src/create_bt_node_model.cpp)
+add_executable(create_bt_node_model src/cli/create_bt_node_model.cpp)
 target_link_libraries(create_bt_node_model px4_behavior)
 install(
     TARGETS create_bt_node_model
     DESTINATION lib/${PROJECT_NAME})
 
 # Command line tool to register a behavior tree with an executor
-add_executable(upload_tree src/upload_tree.cpp)
+add_executable(upload_tree src/cli/upload_tree.cpp)
 target_link_libraries(upload_tree px4_behavior)
 install(
     TARGETS upload_tree
     DESTINATION lib/${PROJECT_NAME})
 
 # Command line tool to run the executor of a behavior tree
-add_executable(run_executor src/run_executor.cpp)
+add_executable(run_executor src/cli/run_executor.cpp)
 target_link_libraries(run_executor px4_behavior)
 install(
     TARGETS run_executor
     DESTINATION lib/${PROJECT_NAME})
 
-# ------------ Standard Behavior Tree Functionality --------------
+#
+# ------------ PX4 Behavior Library | Standard Behavior Tree Functionality --------------
+#
 
 # Preconfigured behavior tree plugins
 add_subdirectory(src/bt_plugins)
 
-# ------------- Examples -----------------
+#
+# ------------- PX4 Behavior Library | Examples -----------------
+#
+
+# Add example sources
+add_library(px4_behavior_examples SHARED
+    examples/contingency_management/src/flight_orchestrator.cpp
+    examples/contingency_management/src/safety_monitor.cpp
+    examples/contingency_management/src/contingency_manager.cpp
+    examples/contingency_management/src/mission_manager.cpp)
+target_link_libraries(px4_behavior_examples px4_behavior)
+install(
+    TARGETS px4_behavior_examples
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin)
+
+rclcpp_components_register_nodes(px4_behavior_examples "FlightOrchestratorExecutor")
+rclcpp_components_register_nodes(px4_behavior_examples "SafetyMonitorExecutor")
+rclcpp_components_register_nodes(px4_behavior_examples "ContingencyManagerExecutor")
+rclcpp_components_register_nodes(px4_behavior_examples "MissionManagerExecutor")
+
+set(EXAMPLE_TARGET_NAME example_goto)
+add_executable(${EXAMPLE_TARGET_NAME} examples/goto/src/goto.cpp)
+target_link_libraries(${EXAMPLE_TARGET_NAME} px4_behavior)
+target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="${EXAMPLE_TARGET_NAME}")
+install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
+
+set(EXAMPLE_TARGET_NAME example_contingency)
+add_executable(${EXAMPLE_TARGET_NAME} examples/commander/contingency.cpp)
+target_link_libraries(${EXAMPLE_TARGET_NAME} px4_behavior)
+target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="${EXAMPLE_TARGET_NAME}")
+install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
 
 # Emulate cmake configuration as if px4_behavior was imported
 add_library(px4_behavior::px4_behavior ALIAS px4_behavior) # ROS2 creates namespaced targets for exported libraries
 set(PX4_BEHAVIOR_CREATE_BT_NODE_MODEL_EXE_PATH create_bt_node_model) # Use the target of this CMakeLists.txt to create the bt node model since the install is not available yet
 
 # Register behavior tree resources
-px4_behavior_register_config_directory(config)
-px4_behavior_register_trees_directory(trees)
+px4_behavior_register_config_directory(examples/contingency_management/config)
+px4_behavior_register_trees_directory(examples/contingency_management/trees)
 
 # Make sure to provide the binary path of the shared library object files as an argument
 # when generating the model definition in the same package.
 # The install dir is not yet available (it is generated after the build step).
 set(BT_PLUGINS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/bt_plugins)
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/config/mission_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
+    "${CMAKE_CURRENT_SOURCE_DIR}/examples/contingency_management/config/mission_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/config/contingency_manager_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
+    "${CMAKE_CURRENT_SOURCE_DIR}/examples/contingency_management/config/contingency_manager_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/config/orchestrator_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
+    "${CMAKE_CURRENT_SOURCE_DIR}/examples/contingency_management/config/orchestrator_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/config/safety_monitor_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
+    "${CMAKE_CURRENT_SOURCE_DIR}/examples/contingency_management/config/safety_monitor_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/config/example_goto_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
-
-set(EXAMPLE_TARGET_NAME example_goto)
-add_executable(${EXAMPLE_TARGET_NAME} examples/goto.cpp)
-target_link_libraries(${EXAMPLE_TARGET_NAME} px4_behavior)
-target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="${EXAMPLE_TARGET_NAME}")
-install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
-
-set(EXAMPLE_TARGET_NAME example_contingency)
-add_executable(${EXAMPLE_TARGET_NAME} examples/contingency.cpp)
-target_link_libraries(${EXAMPLE_TARGET_NAME} px4_behavior)
-target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="${EXAMPLE_TARGET_NAME}")
-install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
+    "${CMAKE_CURRENT_SOURCE_DIR}/examples/goto/config/example_goto_bt_node_config.yaml" "${BT_PLUGINS_BINARY_DIR}")
 
 ament_package(CONFIG_EXTRAS ${cmake_files})

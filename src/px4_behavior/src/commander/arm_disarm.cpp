@@ -1,11 +1,11 @@
-#include <px4_behavior/maneuver/maneuver.hpp>
-#include <px4_behavior/vehicle_command_client.hpp>
+#include <px4_behavior/commander/task.hpp>
+#include <px4_behavior/commander/vehicle_command_client.hpp>
 #include <px4_behavior_interfaces/action/arm_disarm.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
 
 namespace px4_behavior {
 
-class ArmDisarmManeuver : public Maneuver<px4_behavior_interfaces::action::ArmDisarm>
+class ArmDisarmManeuver : public TaskBase<px4_behavior_interfaces::action::ArmDisarm>
 {
     enum State { WAIT_FOR_READY_TO_ARM, SEND_COMMAND, WAIT_FOR_ARMING_STATE_REACHED };
 
@@ -19,7 +19,7 @@ class ArmDisarmManeuver : public Maneuver<px4_behavior_interfaces::action::ArmDi
 
    public:
     explicit ArmDisarmManeuver(const rclcpp::NodeOptions& options)
-        : Maneuver{px4_behavior::ARM_DISARM_MANEUVER_NAME, options}, vehicle_command_client_{*this->node_ptr_}
+        : TaskBase{px4_behavior::ARM_DISARM_MANEUVER_NAME, options}, vehicle_command_client_{*this->node_ptr_}
     {
         vehicle_status_sub_ptr_ = this->node_ptr_->create_subscription<px4_msgs::msg::VehicleStatus>(
             "/fmu/out/vehicle_status",
@@ -63,7 +63,7 @@ class ArmDisarmManeuver : public Maneuver<px4_behavior_interfaces::action::ArmDi
         return true;
     }
 
-    ManeuverExecutionState ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
+    TaskStatus ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
                                        std::shared_ptr<Feedback> feedback_ptr,
                                        std::shared_ptr<Result> result_ptr) final
     {
@@ -79,18 +79,18 @@ class ArmDisarmManeuver : public Maneuver<px4_behavior_interfaces::action::ArmDi
                 else {
                     RCLCPP_ERROR(this->node_ptr_->get_logger(), "Couldn't send arm/disarm command. Aborting...");
                     result_ptr->state_changed = false;
-                    return ManeuverExecutionState::FAILURE;
+                    return TaskStatus::FAILURE;
                 }
                 break;
             case WAIT_FOR_ARMING_STATE_REACHED:
                 if (is_arming_state_reached_check__()) {
                     result_ptr->state_changed = true;
-                    return ManeuverExecutionState::SUCCESS;
+                    return TaskStatus::SUCCESS;
                 }
                 break;
         }
 
-        return ManeuverExecutionState::RUNNING;
+        return TaskStatus::RUNNING;
     }
 };
 

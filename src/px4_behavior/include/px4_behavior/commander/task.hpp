@@ -2,7 +2,7 @@
 
 #include <chrono>
 #include <px4_behavior/definitions.hpp>
-#include <px4_behavior/maneuver/action_context.hpp>
+#include <px4_behavior/commander/action_context.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 
@@ -11,10 +11,10 @@ namespace px4_behavior {
 static constexpr std::chrono::milliseconds DEFAULT_VALUE_EXECUTION_INTERVAL{10};
 static constexpr std::chrono::milliseconds DEFAULT_VALUE_FEEDBACK_INTERVAL{200};
 
-enum class ManeuverExecutionState : uint8_t { RUNNING, SUCCESS, FAILURE };
+enum class TaskStatus : uint8_t { RUNNING, SUCCESS, FAILURE };
 
 template <class ActionT>
-class Maneuver
+class TaskBase
 {
    public:
     static constexpr char PARAM_NAME_FEEDBACK_INTERVAL[] = "feedback_interval_ms";
@@ -25,29 +25,29 @@ class Maneuver
     using Result = typename ActionContext<ActionT>::Result;
     using GoalHandle = typename ActionContext<ActionT>::GoalHandle;
 
-    explicit Maneuver(const std::string& maneuver_name,
+    explicit TaskBase(const std::string& name,
                       rclcpp::Node::SharedPtr node_ptr,
                       std::shared_ptr<ActionContext<ActionT>> action_context_ptr,
                       std::chrono::milliseconds execution_interval = DEFAULT_VALUE_EXECUTION_INTERVAL,
                       std::chrono::milliseconds feedback_interval = DEFAULT_VALUE_FEEDBACK_INTERVAL);
-    explicit Maneuver(const std::string& maneuver_name,
+    explicit TaskBase(const std::string& name,
                       rclcpp::Node::SharedPtr node_ptr,
                       std::chrono::milliseconds execution_interval = DEFAULT_VALUE_EXECUTION_INTERVAL,
                       std::chrono::milliseconds feedback_interval = DEFAULT_VALUE_FEEDBACK_INTERVAL);
-    explicit Maneuver(const std::string& maneuver_name,
+    explicit TaskBase(const std::string& name,
                       const rclcpp::NodeOptions& options,
                       std::chrono::milliseconds execution_interval = DEFAULT_VALUE_EXECUTION_INTERVAL,
                       std::chrono::milliseconds feedback_interval = DEFAULT_VALUE_FEEDBACK_INTERVAL);
 
    private:
     /**
-     *  Maneuver specific callbacks
+     *  TaskBase specific callbacks
      */
     virtual bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr);
     virtual void SetDefaultResult(std::shared_ptr<Result> result_ptr);
     virtual bool OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
-    virtual ManeuverExecutionState CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
-    virtual ManeuverExecutionState ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
+    virtual TaskStatus CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
+    virtual TaskStatus ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
                                                std::shared_ptr<Feedback> feedback_ptr,
                                                std::shared_ptr<Result> result_ptr) = 0;
 
@@ -76,7 +76,7 @@ class Maneuver
 };
 
 template <class ActionT>
-Maneuver<ActionT>::Maneuver(const std::string& maneuver_name,
+TaskBase<ActionT>::TaskBase(const std::string& name,
                             rclcpp::Node::SharedPtr node_ptr,
                             std::shared_ptr<ActionContext<ActionT>> action_context_ptr,
                             std::chrono::milliseconds execution_interval,
@@ -98,16 +98,16 @@ Maneuver<ActionT>::Maneuver(const std::string& maneuver_name,
     using namespace std::placeholders;
     action_server_ptr_ =
         rclcpp_action::create_server<ActionT>(node_ptr_,
-                                              maneuver_name,
-                                              std::bind(&Maneuver<ActionT>::handle_goal_, this, _1, _2),
-                                              std::bind(&Maneuver<ActionT>::handle_cancel_, this, _1),
-                                              std::bind(&Maneuver<ActionT>::handle_accepted_, this, _1));
+                                              name,
+                                              std::bind(&TaskBase<ActionT>::handle_goal_, this, _1, _2),
+                                              std::bind(&TaskBase<ActionT>::handle_cancel_, this, _1),
+                                              std::bind(&TaskBase<ActionT>::handle_accepted_, this, _1));
 
     /**
      * Parameters
      */
     rcl_interfaces::msg::ParameterDescriptor param_desc;
-    param_desc.description = "Rate at which this maneuver publishes feedback.";
+    param_desc.description = "Rate at which this task publishes feedback.";
     node_ptr_->declare_parameter(
         PARAM_NAME_FEEDBACK_INTERVAL,
         std::chrono::duration_cast<std::chrono::milliseconds>(DEFAULT_VALUE_FEEDBACK_INTERVAL).count(),
@@ -115,11 +115,11 @@ Maneuver<ActionT>::Maneuver(const std::string& maneuver_name,
 }
 
 template <class ActionT>
-Maneuver<ActionT>::Maneuver(const std::string& maneuver_name,
+TaskBase<ActionT>::TaskBase(const std::string& name,
                             rclcpp::Node::SharedPtr node_ptr,
                             std::chrono::milliseconds execution_interval,
                             std::chrono::milliseconds feedback_interval)
-    : Maneuver{maneuver_name,
+    : TaskBase{name,
                node_ptr,
                std::make_shared<ActionContext<ActionT>>(node_ptr->get_logger()),
                execution_interval,
@@ -127,24 +127,24 @@ Maneuver<ActionT>::Maneuver(const std::string& maneuver_name,
 {}
 
 template <class ActionT>
-Maneuver<ActionT>::Maneuver(const std::string& maneuver_name,
+TaskBase<ActionT>::TaskBase(const std::string& name,
                             const rclcpp::NodeOptions& options,
                             std::chrono::milliseconds execution_interval,
                             std::chrono::milliseconds feedback_interval)
-    : Maneuver{maneuver_name,
-               std::make_shared<rclcpp::Node>("maneuver_" + maneuver_name + "_node", options),
+    : TaskBase{name,
+               std::make_shared<rclcpp::Node>("task_" + name + "_node", options),
                execution_interval,
                feedback_interval}
 {}
 
 template <class ActionT>
-rclcpp::node_interfaces::NodeBaseInterface::SharedPtr Maneuver<ActionT>::get_node_base_interface() const
+rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TaskBase<ActionT>::get_node_base_interface() const
 {
     return node_ptr_->get_node_base_interface();
 }
 
 template <class ActionT>
-bool Maneuver<ActionT>::OnGoalRequest(std::shared_ptr<const Goal> goal_ptr)
+bool TaskBase<ActionT>::OnGoalRequest(std::shared_ptr<const Goal> goal_ptr)
 {
     (void)goal_ptr;
     // Always accept goal by default
@@ -152,14 +152,14 @@ bool Maneuver<ActionT>::OnGoalRequest(std::shared_ptr<const Goal> goal_ptr)
 }
 
 template <class ActionT>
-void Maneuver<ActionT>::SetDefaultResult(std::shared_ptr<Result> result_ptr)
+void TaskBase<ActionT>::SetDefaultResult(std::shared_ptr<Result> result_ptr)
 {
     // By default, the result is initialized using the default values specified in the action message definition.
     (void)result_ptr;
 }
 
 template <class ActionT>
-bool Maneuver<ActionT>::OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
+bool TaskBase<ActionT>::OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
 {
     (void)goal_ptr;
     (void)result_ptr;
@@ -168,17 +168,17 @@ bool Maneuver<ActionT>::OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, st
 }
 
 template <class ActionT>
-ManeuverExecutionState Maneuver<ActionT>::CancelGoal(std::shared_ptr<const Goal> goal_ptr,
+TaskStatus TaskBase<ActionT>::CancelGoal(std::shared_ptr<const Goal> goal_ptr,
                                                      std::shared_ptr<Result> result_ptr)
 {
     (void)goal_ptr;
     (void)result_ptr;
     // Do nothing by default
-    return ManeuverExecutionState::SUCCESS;
+    return TaskStatus::SUCCESS;
 }
 
 template <class ActionT>
-rclcpp_action::GoalResponse Maneuver<ActionT>::handle_goal_(const rclcpp_action::GoalUUID& uuid,
+rclcpp_action::GoalResponse TaskBase<ActionT>::handle_goal_(const rclcpp_action::GoalUUID& uuid,
                                                             std::shared_ptr<const Goal> goal_ptr)
 {
     if (action_context_ptr_->is_valid() && action_context_ptr_->goal_handle()->is_active()) {
@@ -198,7 +198,7 @@ rclcpp_action::GoalResponse Maneuver<ActionT>::handle_goal_(const rclcpp_action:
 }
 
 template <class ActionT>
-rclcpp_action::CancelResponse Maneuver<ActionT>::handle_cancel_(std::shared_ptr<GoalHandle> goal_handle_ptr)
+rclcpp_action::CancelResponse TaskBase<ActionT>::handle_cancel_(std::shared_ptr<GoalHandle> goal_handle_ptr)
 {
     (void)goal_handle_ptr;
 
@@ -208,7 +208,7 @@ rclcpp_action::CancelResponse Maneuver<ActionT>::handle_cancel_(std::shared_ptr<
 }
 
 template <class ActionT>
-void Maneuver<ActionT>::handle_accepted_(std::shared_ptr<GoalHandle> goal_handle_ptr)
+void TaskBase<ActionT>::handle_accepted_(std::shared_ptr<GoalHandle> goal_handle_ptr)
 {
     action_context_ptr_->SetUp(goal_handle_ptr);
     SetDefaultResult(action_context_ptr_->result());
@@ -226,7 +226,7 @@ void Maneuver<ActionT>::handle_accepted_(std::shared_ptr<GoalHandle> goal_handle
 }
 
 template <class ActionT>
-void Maneuver<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> goal_ptr)
+void TaskBase<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> goal_ptr)
 {
     // Cancel timer when goal has terminated
     if (!action_context_ptr_->goal_handle()->is_active()) {
@@ -237,24 +237,24 @@ void Maneuver<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> go
     // Check if canceling
     if (action_context_ptr_->goal_handle()->is_canceling()) {
         switch (CancelGoal(goal_ptr, action_context_ptr_->result())) {
-            case ManeuverExecutionState::RUNNING:
+            case TaskStatus::RUNNING:
                 return;
-            case ManeuverExecutionState::SUCCESS:
+            case TaskStatus::SUCCESS:
                 action_context_ptr_->Cancel();
                 return;
-            case ManeuverExecutionState::FAILURE:
+            case TaskStatus::FAILURE:
                 action_context_ptr_->Abort();
                 return;
         }
     }
     else {
         switch (ExecuteGoal(goal_ptr, action_context_ptr_->feedback(), action_context_ptr_->result())) {
-            case ManeuverExecutionState::RUNNING:
+            case TaskStatus::RUNNING:
                 break;
-            case ManeuverExecutionState::SUCCESS:
+            case TaskStatus::SUCCESS:
                 action_context_ptr_->Succeed();
                 return;
-            case ManeuverExecutionState::FAILURE:
+            case TaskStatus::FAILURE:
                 action_context_ptr_->Abort();
                 return;
         }

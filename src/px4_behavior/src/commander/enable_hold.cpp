@@ -1,13 +1,13 @@
-#include <px4_behavior/maneuver/flight_mode_executor.hpp>
+#include <px4_behavior/commander/mode_executor.hpp>
 #include <px4_behavior_interfaces/action/enable_hold.hpp>
 
 namespace px4_behavior {
 
-class EnableHoldManeuver : public FlightModeExecutor<px4_behavior_interfaces::action::EnableHold>
+class EnableHoldManeuver : public ModeExecutor<px4_behavior_interfaces::action::EnableHold>
 {
    public:
     explicit EnableHoldManeuver(const rclcpp::NodeOptions& options)
-        : FlightModeExecutor{
+        : ModeExecutor{
               px4_behavior::ENABLE_HOLD_MANEUVER_NAME, options, FlightMode::Hold, false}
     {}
 

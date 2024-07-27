@@ -1,5 +1,5 @@
 #include <Eigen/Core>
-#include <px4_behavior/maneuver/flight_mode_executor.hpp>
+#include <px4_behavior/commander/mode_executor.hpp>
 #include <px4_behavior_interfaces/action/go_to.hpp>
 #include <px4_ros2/control/setpoint_types/goto.hpp>
 #include <px4_ros2/utils/geodesic.hpp>
@@ -79,11 +79,11 @@ class GoToMode : public PositionAwareMode<GoToActionType>
     }
 };
 
-class GoToManeuver : public ExternalFlightModeExecutor<GoToActionType, GoToMode>
+class GoToManeuver : public ModeExecutorFactory<GoToActionType, GoToMode>
 {
    public:
     explicit GoToManeuver(const rclcpp::NodeOptions& options)
-        : ExternalFlightModeExecutor{px4_behavior::GO_TO_MANEUVER_NAME, options}
+        : ModeExecutorFactory{px4_behavior::GO_TO_MANEUVER_NAME, options}
     {}
 };
 

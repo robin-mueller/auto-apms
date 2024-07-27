@@ -8,14 +8,13 @@
 
 #define KEY_EVENT_ID "event_id"
 
+using namespace px4_behavior;
 using ForceContingencyMsg = px4_behavior_interfaces::msg::ForceContingency;
 using SystemStateMsg = px4_behavior_interfaces::msg::SystemState;
 using LandingSiteStatusMsg = px4_behavior_interfaces::msg::LandingSiteStatus;
 using ContingencyEventMsg = px4_behavior_interfaces::msg::ContingencyEvent;
 
-namespace px4_behavior {
-
-class SafetyMonitorExecutor : public px4_behavior::BTExecutor
+class SafetyMonitorExecutor : public BTExecutor
 {
    public:
     SafetyMonitorExecutor(const rclcpp::NodeOptions& options);
@@ -108,7 +107,5 @@ SafetyMonitorExecutor::ClosureConduct SafetyMonitorExecutor::OnResult(bool succe
     return ClosureConduct::RESTART;
 }
 
-}  // namespace px4_behavior
-
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::SafetyMonitorExecutor);
+RCLCPP_COMPONENTS_REGISTER_NODE(SafetyMonitorExecutor);

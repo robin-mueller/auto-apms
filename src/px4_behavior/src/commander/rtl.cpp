@@ -1,13 +1,13 @@
-#include <px4_behavior/maneuver/flight_mode_executor.hpp>
+#include <px4_behavior/commander/mode_executor.hpp>
 #include <px4_behavior_interfaces/action/rtl.hpp>
 
 namespace px4_behavior {
 
-class RTLManeuver : public FlightModeExecutor<px4_behavior_interfaces::action::RTL>
+class RTLManeuver : public ModeExecutor<px4_behavior_interfaces::action::RTL>
 {
    public:
     explicit RTLManeuver(const rclcpp::NodeOptions& options)
-        : FlightModeExecutor{px4_behavior::RTL_MANEUVER_NAME, options, FlightMode::RTL}
+        : ModeExecutor{px4_behavior::RTL_MANEUVER_NAME, options, FlightMode::RTL}
     {}
 
    private:
@@ -15,7 +15,7 @@ class RTLManeuver : public FlightModeExecutor<px4_behavior_interfaces::action::R
     // PX4 seems to not always give a completed signal for RTL, so check for disarmed as a fallback completed state
     bool IsCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status)
     {
-        return FlightModeExecutor::IsCompleted(goal_ptr, vehicle_status) ||
+        return ModeExecutor::IsCompleted(goal_ptr, vehicle_status) ||
                vehicle_status.arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_DISARMED;
     }
 };

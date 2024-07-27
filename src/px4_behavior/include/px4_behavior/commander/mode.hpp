@@ -1,6 +1,6 @@
 #pragma once
 
-#include <px4_behavior/maneuver/action_context.hpp>
+#include <px4_behavior/commander/action_context.hpp>
 #include <px4_ros2/components/mode.hpp>
 #include <px4_ros2/odometry/attitude.hpp>
 #include <px4_ros2/odometry/global_position.hpp>
@@ -11,10 +11,10 @@
 namespace px4_behavior {
 
 /**
- * \brief Class to model a external maneuver mode.
+ * \brief Class to model the mode referring to an external task.
  */
 template <class ActionT>
-class ManeuverMode : public px4_ros2::ModeBase
+class ModeBase : public px4_ros2::ModeBase
 {
    protected:
     using Goal = typename ActionContext<ActionT>::Goal;
@@ -22,11 +22,11 @@ class ManeuverMode : public px4_ros2::ModeBase
     using Feedback = typename ActionContext<ActionT>::Feedback;
     using ActionContextType = ActionContext<ActionT>;
 
-    ManeuverMode(rclcpp::Node& node,
+    ModeBase(rclcpp::Node& node,
                  const Settings& settings,
                  const std::string& topic_namespace_prefix,
                  std::shared_ptr<ActionContextType> action_context_ptr)
-        : ModeBase{node, settings, topic_namespace_prefix}, action_context_ptr_{action_context_ptr}
+        : px4_ros2::ModeBase{node, settings, topic_namespace_prefix}, action_context_ptr_{action_context_ptr}
     {}
 
    private:
@@ -44,19 +44,19 @@ class ManeuverMode : public px4_ros2::ModeBase
 };
 
 template <class ActionT>
-void ManeuverMode<ActionT>::OnActivateWithGoal(std::shared_ptr<const Goal> goal_ptr)
+void ModeBase<ActionT>::OnActivateWithGoal(std::shared_ptr<const Goal> goal_ptr)
 {
     (void)goal_ptr;
 }
 
 template <class ActionT>
-void ManeuverMode<ActionT>::onActivate()
+void ModeBase<ActionT>::onActivate()
 {
     OnActivateWithGoal(action_context_ptr_->goal_handle()->get_goal());
 }
 
 template <class ActionT>
-void ManeuverMode<ActionT>::updateSetpoint(float dt_s)
+void ModeBase<ActionT>::updateSetpoint(float dt_s)
 {
     UpdateSetpointWithGoal(dt_s,
                            action_context_ptr_->goal_handle()->get_goal(),
@@ -65,7 +65,7 @@ void ManeuverMode<ActionT>::updateSetpoint(float dt_s)
 }
 
 template <class ActionT>
-class PositionAwareMode : public ManeuverMode<ActionT>
+class PositionAwareMode : public ModeBase<ActionT>
 {
    protected:
     using ActionContextType = ActionContext<ActionT>;
@@ -74,7 +74,7 @@ class PositionAwareMode : public ManeuverMode<ActionT>
                       const px4_ros2::ModeBase::Settings& settings,
                       const std::string& topic_namespace_prefix,
                       std::shared_ptr<ActionContextType> action_context_ptr)
-        : ManeuverMode<ActionT>{node, settings, topic_namespace_prefix, action_context_ptr}
+        : ModeBase<ActionT>{node, settings, topic_namespace_prefix, action_context_ptr}
     {
         vehicle_global_position_ptr_ = std::make_shared<px4_ros2::OdometryGlobalPosition>(*this);
         vehicle_local_position_ptr_ = std::make_shared<px4_ros2::OdometryLocalPosition>(*this);

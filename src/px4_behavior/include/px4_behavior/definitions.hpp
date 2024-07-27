@@ -1,13 +1,13 @@
 #pragma once
 
-#include <px4_behavior_interfaces/msg/contingency_event.hpp>
 #include <px4_behavior/factory.hpp>
+#include <px4_behavior_interfaces/msg/contingency_event.hpp>
 
 using ContingencyEventMsg = px4_behavior_interfaces::msg::ContingencyEvent;
 
 namespace px4_behavior {
 
-// Maneuver (ROS 2 actions)
+// Task names (ROS 2 actions)
 const char ARM_DISARM_MANEUVER_NAME[] = "arm_disarm";
 const char ENABLE_HOLD_MANEUVER_NAME[] = "enable_hold";
 const char GO_TO_MANEUVER_NAME[] = "go_to";

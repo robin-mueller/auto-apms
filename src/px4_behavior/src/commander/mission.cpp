@@ -1,13 +1,13 @@
-#include <px4_behavior/maneuver/flight_mode_executor.hpp>
+#include <px4_behavior/commander/mode_executor.hpp>
 #include <px4_behavior_interfaces/action/mission.hpp>
 
 namespace px4_behavior {
 
-class MissionManeuver : public FlightModeExecutor<px4_behavior_interfaces::action::Mission>
+class MissionManeuver : public ModeExecutor<px4_behavior_interfaces::action::Mission>
 {
    public:
     explicit MissionManeuver(const rclcpp::NodeOptions& options)
-        : FlightModeExecutor{px4_behavior::MISSION_MANEUVER_NAME, options, FlightMode::Mission}
+        : ModeExecutor{px4_behavior::MISSION_MANEUVER_NAME, options, FlightMode::Mission}
     {}
 
    private:

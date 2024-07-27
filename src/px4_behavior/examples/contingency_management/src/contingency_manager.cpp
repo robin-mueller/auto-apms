@@ -6,11 +6,10 @@
 #define KEY_EVENT_ID "event_id"
 #define KEY_EVENT_NAME "event_name"
 
+using namespace px4_behavior;
 using ContingencyEventMsg = px4_behavior_interfaces::msg::ContingencyEvent;
 
-namespace px4_behavior {
-
-class ContingencyManagerExecutor : public px4_behavior::BTExecutor
+class ContingencyManagerExecutor : public BTExecutor
 {
    public:
     ContingencyManagerExecutor(const rclcpp::NodeOptions& options);
@@ -82,7 +81,5 @@ ContingencyManagerExecutor::ClosureConduct ContingencyManagerExecutor::OnResult(
     return ClosureConduct::ABORT;
 }
 
-}  // namespace px4_behavior
-
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ContingencyManagerExecutor);
+RCLCPP_COMPONENTS_REGISTER_NODE(ContingencyManagerExecutor);

@@ -1,13 +1,13 @@
-#include <px4_behavior/maneuver/flight_mode_executor.hpp>
+#include <px4_behavior/commander/mode_executor.hpp>
 #include <px4_behavior_interfaces/action/takeoff.hpp>
 
 namespace px4_behavior {
 
-class TakeoffManeuver : public FlightModeExecutor<px4_behavior_interfaces::action::Takeoff>
+class TakeoffManeuver : public ModeExecutor<px4_behavior_interfaces::action::Takeoff>
 {
    public:
     explicit TakeoffManeuver(const rclcpp::NodeOptions& options)
-        : FlightModeExecutor{px4_behavior::TAKEOFF_MANEUVER_NAME, options, FlightMode::Takeoff}
+        : ModeExecutor{px4_behavior::TAKEOFF_MANEUVER_NAME, options, FlightMode::Takeoff}
     {}
 
    private:

@@ -1,13 +1,13 @@
-#include <px4_behavior/maneuver/flight_mode_executor.hpp>
+#include <px4_behavior/commander/mode_executor.hpp>
 #include <px4_behavior_interfaces/action/land.hpp>
 
 namespace px4_behavior {
 
-class LandManeuver : public FlightModeExecutor<px4_behavior_interfaces::action::Land>
+class LandManeuver : public ModeExecutor<px4_behavior_interfaces::action::Land>
 {
    public:
     explicit LandManeuver(const rclcpp::NodeOptions& options)
-        : FlightModeExecutor{px4_behavior::LAND_MANEUVER_NAME, options, FlightMode::Land}
+        : ModeExecutor{px4_behavior::LAND_MANEUVER_NAME, options, FlightMode::Land}
     {}
 
    private:

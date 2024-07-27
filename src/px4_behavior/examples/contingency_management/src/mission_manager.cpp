@@ -7,11 +7,10 @@
 #define KEY_NEXT_LANDING_SITE_ID "next_landing_site_id"
 #define KEY_IS_APPROACHING_LANDING "is_approaching_landing"
 
+using namespace px4_behavior;
 using LandingApproachMsg = px4_behavior_interfaces::msg::LandingApproach;
 
-namespace px4_behavior {
-
-class MissionManagerExecutor : public px4_behavior::BTExecutor
+class MissionManagerExecutor : public BTExecutor
 {
    public:
     MissionManagerExecutor(const rclcpp::NodeOptions& options);
@@ -56,7 +55,5 @@ void MissionManagerExecutor::OnTreeCreated(BT::Blackboard& global_blackboard)
     initial_bb_->cloneInto(global_blackboard);  // Reset the global blackboard
 }
 
-}  // namespace px4_behavior
-
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::MissionManagerExecutor);
+RCLCPP_COMPONENTS_REGISTER_NODE(MissionManagerExecutor);

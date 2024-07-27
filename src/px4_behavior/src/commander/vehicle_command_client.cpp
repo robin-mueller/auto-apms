@@ -1,4 +1,4 @@
-#include <px4_behavior/vehicle_command_client.hpp>
+#include <px4_behavior/commander/vehicle_command_client.hpp>
 #include <functional>
 
 namespace px4_behavior {

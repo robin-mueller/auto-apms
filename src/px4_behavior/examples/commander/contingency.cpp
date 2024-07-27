@@ -1,7 +1,7 @@
 #include <chrono>
-#include <px4_behavior/vehicle_command_client.hpp>
-#include <px4_behavior_interfaces/action/rtl.hpp>
 #include <future>
+#include <px4_behavior/commander/vehicle_command_client.hpp>
+#include <px4_behavior_interfaces/action/rtl.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -94,7 +94,8 @@ int main(int argc, char* argv[])
             spinner.join();
             return 3;
         }
-    } while (status == rclcpp_action::GoalStatus::STATUS_EXECUTING);
+    }
+    while (status == rclcpp_action::GoalStatus::STATUS_EXECUTING);
 
     // Make sure to cleanly deactivate the mode executor on completion
     vehicle_command_client.SyncActivateFlightMode(px4_behavior::VehicleCommandClient::FlightMode::Hold);
