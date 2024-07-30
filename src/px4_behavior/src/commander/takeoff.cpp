@@ -3,11 +3,11 @@
 
 namespace px4_behavior {
 
-class TakeoffManeuver : public ModeExecutor<px4_behavior_interfaces::action::Takeoff>
+class TakeoffTask : public ModeExecutor<px4_behavior_interfaces::action::Takeoff>
 {
    public:
-    explicit TakeoffManeuver(const rclcpp::NodeOptions& options)
-        : ModeExecutor{px4_behavior::TAKEOFF_MANEUVER_NAME, options, FlightMode::Takeoff}
+    explicit TakeoffTask(const rclcpp::NodeOptions& options)
+        : ModeExecutor{px4_behavior::TAKEOFF_TASK_NAME, options, FlightMode::Takeoff}
     {}
 
    private:
@@ -21,4 +21,4 @@ class TakeoffManeuver : public ModeExecutor<px4_behavior_interfaces::action::Tak
 
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::TakeoffManeuver)
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::TakeoffTask)

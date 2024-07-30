@@ -1,10 +1,10 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <chrono>
-#include <px4_behavior/definitions.hpp>
-#include <px4_behavior_interfaces/msg/contingency_event.hpp>
+#include <definitions.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <px4_behavior_examples/msg/contingency_event.hpp>
 #include <px4_msgs/msg/vehicle_global_position.hpp>
 #include <rclcpp/rclcpp.hpp>
 
@@ -12,7 +12,7 @@
 #define PARAM_NAME_SAMPLE_INTERVAL "sample_interval_ms"
 
 using VehiclePositionMsg = px4_msgs::msg::VehicleGlobalPosition;
-using ContingencyEventMsg = px4_behavior_interfaces::msg::ContingencyEvent;
+using ContingencyEventMsg = px4_behavior_examples::msg::ContingencyEvent;
 
 namespace px4_behavior {
 
@@ -56,8 +56,8 @@ FlightRecorderNode::FlightRecorderNode(const rclcpp::NodeOptions& options) : Nod
     std::string datetime_str{std::ctime(&now)};
     datetime_str.erase(std::remove(datetime_str.begin(), datetime_str.end(), '\n'), datetime_str.cend());
     std::replace(datetime_str.begin(), datetime_str.end(), ' ', '_');
-    save_path_ = std::filesystem::path(ament_index_cpp::get_package_share_directory("px4_behavior")) /
-                 NODE_NAME / (datetime_str + ".csv");
+    save_path_ = std::filesystem::path(ament_index_cpp::get_package_share_directory("px4_behavior")) / NODE_NAME /
+                 (datetime_str + ".csv");
 
     // Record data subscribers
     position_sub_ptr_ = this->create_subscription<VehiclePositionMsg>(

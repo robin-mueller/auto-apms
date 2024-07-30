@@ -1,11 +1,11 @@
-#include <px4_behavior_interfaces/msg/system_state.hpp>
+#include <px4_behavior_examples/msg/system_state.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "GetSystemState"
 #define OUTPUT_KEY_BATTERY "battery_level"
 
 using namespace BT;
-using SystemStateMsg = px4_behavior_interfaces::msg::SystemState;
+using SystemStateMsg = px4_behavior_examples::msg::SystemState;
 
 namespace px4_behavior {
 

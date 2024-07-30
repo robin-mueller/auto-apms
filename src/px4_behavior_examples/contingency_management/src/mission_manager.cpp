@@ -1,14 +1,14 @@
-#include <px4_behavior/definitions.hpp>
-#include <px4_behavior_interfaces/msg/landing_approach.hpp>
+#include <definitions.hpp>
 #include <px4_behavior/bt_executor.hpp>
 #include <px4_behavior/factory.hpp>
+#include <px4_behavior_examples/msg/landing_approach.hpp>
 
 #define KEY_ALTITUDE "altitude_amsl_m"
 #define KEY_NEXT_LANDING_SITE_ID "next_landing_site_id"
 #define KEY_IS_APPROACHING_LANDING "is_approaching_landing"
 
 using namespace px4_behavior;
-using LandingApproachMsg = px4_behavior_interfaces::msg::LandingApproach;
+using LandingApproachMsg = px4_behavior_examples::msg::LandingApproach;
 
 class MissionManagerExecutor : public BTExecutor
 {
@@ -44,10 +44,9 @@ MissionManagerExecutor::MissionManagerExecutor(const rclcpp::NodeOptions& option
 void MissionManagerExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr,
                                                       BT::BehaviorTreeFactory& factory)
 {
-    px4_behavior::RegisterNodePlugins(
-        factory,
-        node_ptr,
-        px4_behavior::get_config_filepath("px4_behavior", "mission_bt_node_config"));
+    px4_behavior::RegisterNodePlugins(factory,
+                                      node_ptr,
+                                      px4_behavior::get_config_filepath("px4_behavior", "mission_bt_node_config"));
 }
 
 void MissionManagerExecutor::OnTreeCreated(BT::Blackboard& global_blackboard)

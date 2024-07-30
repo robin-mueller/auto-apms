@@ -20,11 +20,7 @@ set(ACTION_SOURCES
     action/LaunchBTExecutor.action
     action/BTExecutorCommand.action)
 set(MESSAGE_SOURCES
-    msg/ForceContingency.msg
-    msg/LandingApproach.msg
-    msg/LandingSiteStatus.msg
-    msg/ContingencyEvent.msg
-    msg/SystemState.msg)
+    )
 set(SERVICE_SOURCES
     srv/UploadBehaviorTree.srv)
 

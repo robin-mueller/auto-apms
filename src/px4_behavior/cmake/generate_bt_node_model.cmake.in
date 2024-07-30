@@ -1,8 +1,18 @@
 set(PX4_BEHAVIOR_CREATE_BT_NODE_MODEL_EXE_PATH @CMAKE_INSTALL_PREFIX@/lib/@PROJECT_NAME@/create_bt_node_model)
 
 # Automatically generate the model of the configured node plugins and install the model file after building.
-# Only plugins registered with px4_behavior_add_plugin in this build are considered.
-macro(px4_behavior_generate_bt_node_model config_yaml_source_path plugin_dir)
+# Only plugins registered with px4_behavior_add_plugin in this build/install are considered.
+macro(px4_behavior_generate_bt_node_model config_yaml_source_path)
+    set(options "")
+    set(oneValueArgs EXTRA_PLUGIN_DIR)
+    set(multiValueArgs "")
+    cmake_parse_arguments(GENERATE_BT_NODE_MODEL "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+    if(GENERATE_BT_NODE_MODEL_EXTRA_PLUGIN_DIR)
+        set(extra_plugin_dir "${GENERATE_BT_NODE_MODEL_EXTRA_PLUGIN_DIR}")
+    else()
+        set(extra_plugin_dir "")
+    endif()
 
     # Get all plugin targets of this build
     px4_behavior_get_all_bt_plugin_targets(_all_bt_plugin_targets)
@@ -16,7 +26,7 @@ macro(px4_behavior_generate_bt_node_model config_yaml_source_path plugin_dir)
         COMMAND "${PX4_BEHAVIOR_CREATE_BT_NODE_MODEL_EXE_PATH}"  # variable was defined in create_model_definition.cmake
             "${config_yaml_source_path}" # Absolute path of the config source file
             "${_model_build_path}" # Absolute directory to write the model definition file to
-            "${plugin_dir}" # Absolute directory where the plugin libraries are stored.
+            "${extra_plugin_dir}" # Absolute directory where the extra plugin libraries are stored.
         DEPENDS "${config_yaml_source_path}" ${_all_bt_plugin_targets}
         COMMENT "Executing command to create model definition: ${PX4_BEHAVIOR_CREATE_BT_NODE_MODEL_EXE_PATH}")
     add_custom_target(_target_generate_${_config_yaml_source_stem}_model ALL  # _config_yaml_source_stem must not contain whitespaces!!!

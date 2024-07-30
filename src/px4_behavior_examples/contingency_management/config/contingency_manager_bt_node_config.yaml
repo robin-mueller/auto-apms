@@ -1,6 +1,8 @@
-px4_behavior:
+px4_behavior_examples:
   async_precondition:
   create_alt_land_mission_action:
+
+px4_behavior:
   throw_exception_action:
   arm_action: "arm_disarm"
   disarm_action: "arm_disarm"

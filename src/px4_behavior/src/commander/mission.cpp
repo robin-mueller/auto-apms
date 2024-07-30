@@ -3,11 +3,11 @@
 
 namespace px4_behavior {
 
-class MissionManeuver : public ModeExecutor<px4_behavior_interfaces::action::Mission>
+class MissionTask : public ModeExecutor<px4_behavior_interfaces::action::Mission>
 {
    public:
-    explicit MissionManeuver(const rclcpp::NodeOptions& options)
-        : ModeExecutor{px4_behavior::MISSION_MANEUVER_NAME, options, FlightMode::Mission}
+    explicit MissionTask(const rclcpp::NodeOptions& options)
+        : ModeExecutor{px4_behavior::MISSION_TASK_NAME, options, FlightMode::Mission}
     {}
 
    private:
@@ -21,4 +21,4 @@ class MissionManeuver : public ModeExecutor<px4_behavior_interfaces::action::Mis
 }  // namespace px4_behavior
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::MissionManeuver)
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::MissionTask)

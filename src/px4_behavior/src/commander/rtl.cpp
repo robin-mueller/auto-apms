@@ -3,11 +3,11 @@
 
 namespace px4_behavior {
 
-class RTLManeuver : public ModeExecutor<px4_behavior_interfaces::action::RTL>
+class RTLTask : public ModeExecutor<px4_behavior_interfaces::action::RTL>
 {
    public:
-    explicit RTLManeuver(const rclcpp::NodeOptions& options)
-        : ModeExecutor{px4_behavior::RTL_MANEUVER_NAME, options, FlightMode::RTL}
+    explicit RTLTask(const rclcpp::NodeOptions& options)
+        : ModeExecutor{px4_behavior::RTL_TASK_NAME, options, FlightMode::RTL}
     {}
 
    private:
@@ -23,4 +23,4 @@ class RTLManeuver : public ModeExecutor<px4_behavior_interfaces::action::RTL>
 }  // namespace px4_behavior
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::RTLManeuver)
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::RTLTask)

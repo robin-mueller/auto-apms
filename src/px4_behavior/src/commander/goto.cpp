@@ -79,15 +79,15 @@ class GoToMode : public PositionAwareMode<GoToActionType>
     }
 };
 
-class GoToManeuver : public ModeExecutorFactory<GoToActionType, GoToMode>
+class GoToTask : public ModeExecutorFactory<GoToActionType, GoToMode>
 {
    public:
-    explicit GoToManeuver(const rclcpp::NodeOptions& options)
-        : ModeExecutorFactory{px4_behavior::GO_TO_MANEUVER_NAME, options}
+    explicit GoToTask(const rclcpp::NodeOptions& options)
+        : ModeExecutorFactory{px4_behavior::GO_TO_TASK_NAME, options}
     {}
 };
 
 }  // namespace px4_behavior
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::GoToManeuver)
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::GoToTask)

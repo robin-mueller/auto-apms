@@ -1,11 +1,11 @@
-#include <px4_behavior_interfaces/msg/landing_approach.hpp>
+#include <px4_behavior_examples/msg/landing_approach.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "IsApproachingLanding"
 #define OUTPUT_KEY_SITE_ID "next_landing_site_id"
 
 using namespace BT;
-using LandingApproachMsg = px4_behavior_interfaces::msg::LandingApproach;
+using LandingApproachMsg = px4_behavior_examples::msg::LandingApproach;
 
 namespace px4_behavior {
 

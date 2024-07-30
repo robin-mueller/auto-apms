@@ -5,7 +5,7 @@
 
 namespace px4_behavior {
 
-class ArmDisarmManeuver : public TaskBase<px4_behavior_interfaces::action::ArmDisarm>
+class ArmDisarmTask : public TaskBase<px4_behavior_interfaces::action::ArmDisarm>
 {
     enum State { WAIT_FOR_READY_TO_ARM, SEND_COMMAND, WAIT_FOR_ARMING_STATE_REACHED };
 
@@ -18,8 +18,8 @@ class ArmDisarmManeuver : public TaskBase<px4_behavior_interfaces::action::ArmDi
     const VehicleCommandClient vehicle_command_client_;
 
    public:
-    explicit ArmDisarmManeuver(const rclcpp::NodeOptions& options)
-        : TaskBase{px4_behavior::ARM_DISARM_MANEUVER_NAME, options}, vehicle_command_client_{*this->node_ptr_}
+    explicit ArmDisarmTask(const rclcpp::NodeOptions& options)
+        : TaskBase{px4_behavior::ARM_DISARM_TASK_NAME, options}, vehicle_command_client_{*this->node_ptr_}
     {
         vehicle_status_sub_ptr_ = this->node_ptr_->create_subscription<px4_msgs::msg::VehicleStatus>(
             "/fmu/out/vehicle_status",
@@ -97,4 +97,4 @@ class ArmDisarmManeuver : public TaskBase<px4_behavior_interfaces::action::ArmDi
 }  // namespace px4_behavior
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ArmDisarmManeuver)
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ArmDisarmTask)

@@ -1,13 +1,13 @@
-#include <px4_behavior/definitions.hpp>
-#include <px4_behavior_interfaces/msg/contingency_event.hpp>
+#include <definitions.hpp>
 #include <px4_behavior/bt_executor.hpp>
 #include <px4_behavior/factory.hpp>
+#include <px4_behavior_examples/msg/contingency_event.hpp>
 
 #define KEY_EVENT_ID "event_id"
 #define KEY_EVENT_NAME "event_name"
 
 using namespace px4_behavior;
-using ContingencyEventMsg = px4_behavior_interfaces::msg::ContingencyEvent;
+using ContingencyEventMsg = px4_behavior_examples::msg::ContingencyEvent;
 
 class ContingencyManagerExecutor : public BTExecutor
 {
@@ -49,10 +49,9 @@ ContingencyManagerExecutor::ContingencyManagerExecutor(const rclcpp::NodeOptions
 void ContingencyManagerExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr,
                                                           BT::BehaviorTreeFactory& factory)
 {
-    px4_behavior::RegisterNodePlugins(
-        factory,
-        node_ptr,
-        px4_behavior::get_config_filepath("px4_behavior", "px4_behavior_bt_node_config"));
+    px4_behavior::RegisterNodePlugins(factory,
+                                      node_ptr,
+                                      px4_behavior::get_config_filepath("px4_behavior", "px4_behavior_bt_node_config"));
 
     // Enums (don't rely on magic enums for error safety)
     RegisterContingencyEventEnum(factory);

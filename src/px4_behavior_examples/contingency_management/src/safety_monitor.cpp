@@ -1,18 +1,18 @@
-#include <px4_behavior/definitions.hpp>
-#include <px4_behavior_interfaces/msg/contingency_event.hpp>
-#include <px4_behavior_interfaces/msg/force_contingency.hpp>
-#include <px4_behavior_interfaces/msg/landing_site_status.hpp>
-#include <px4_behavior_interfaces/msg/system_state.hpp>
+#include <definitions.hpp>
 #include <px4_behavior/bt_executor.hpp>
 #include <px4_behavior/factory.hpp>
+#include <px4_behavior_examples/msg/contingency_event.hpp>
+#include <px4_behavior_examples/msg/force_contingency.hpp>
+#include <px4_behavior_examples/msg/landing_site_status.hpp>
+#include <px4_behavior_examples/msg/system_state.hpp>
 
 #define KEY_EVENT_ID "event_id"
 
 using namespace px4_behavior;
-using ForceContingencyMsg = px4_behavior_interfaces::msg::ForceContingency;
-using SystemStateMsg = px4_behavior_interfaces::msg::SystemState;
-using LandingSiteStatusMsg = px4_behavior_interfaces::msg::LandingSiteStatus;
-using ContingencyEventMsg = px4_behavior_interfaces::msg::ContingencyEvent;
+using ForceContingencyMsg = px4_behavior_examples::msg::ForceContingency;
+using SystemStateMsg = px4_behavior_examples::msg::SystemState;
+using LandingSiteStatusMsg = px4_behavior_examples::msg::LandingSiteStatus;
+using ContingencyEventMsg = px4_behavior_examples::msg::ContingencyEvent;
 
 class SafetyMonitorExecutor : public BTExecutor
 {

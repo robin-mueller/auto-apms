@@ -3,12 +3,12 @@
 
 namespace px4_behavior {
 
-class EnableHoldManeuver : public ModeExecutor<px4_behavior_interfaces::action::EnableHold>
+class EnableHoldTask : public ModeExecutor<px4_behavior_interfaces::action::EnableHold>
 {
    public:
-    explicit EnableHoldManeuver(const rclcpp::NodeOptions& options)
+    explicit EnableHoldTask(const rclcpp::NodeOptions& options)
         : ModeExecutor{
-              px4_behavior::ENABLE_HOLD_MANEUVER_NAME, options, FlightMode::Hold, false}
+              px4_behavior::ENABLE_HOLD_TASK_NAME, options, FlightMode::Hold, false}
     {}
 
    private:
@@ -24,4 +24,4 @@ class EnableHoldManeuver : public ModeExecutor<px4_behavior_interfaces::action::
 }  // namespace px4_behavior
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::EnableHoldManeuver)
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::EnableHoldTask)

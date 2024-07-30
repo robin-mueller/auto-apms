@@ -3,11 +3,11 @@
 
 namespace px4_behavior {
 
-class LandManeuver : public ModeExecutor<px4_behavior_interfaces::action::Land>
+class LandTask : public ModeExecutor<px4_behavior_interfaces::action::Land>
 {
    public:
-    explicit LandManeuver(const rclcpp::NodeOptions& options)
-        : ModeExecutor{px4_behavior::LAND_MANEUVER_NAME, options, FlightMode::Land}
+    explicit LandTask(const rclcpp::NodeOptions& options)
+        : ModeExecutor{px4_behavior::LAND_TASK_NAME, options, FlightMode::Land}
     {}
 
    private:
@@ -21,4 +21,4 @@ class LandManeuver : public ModeExecutor<px4_behavior_interfaces::action::Land>
 }  // namespace px4_behavior
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::LandManeuver)
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::LandTask)

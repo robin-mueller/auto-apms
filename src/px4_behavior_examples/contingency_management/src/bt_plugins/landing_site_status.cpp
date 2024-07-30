@@ -1,4 +1,4 @@
-#include <px4_behavior_interfaces/msg/landing_site_status.hpp>
+#include <px4_behavior_examples/msg/landing_site_status.hpp>
 #include <px4_behavior/bt_plugins.hpp>
 
 #define NODE_NAME "IsLandingSiteClear"
@@ -6,7 +6,7 @@
 #define OUTPUT_KEY_SITE_STATUS "landing_site_status"
 
 using namespace BT;
-using LandingSiteStatusMsg = px4_behavior_interfaces::msg::LandingSiteStatus;
+using LandingSiteStatusMsg = px4_behavior_examples::msg::LandingSiteStatus;
 
 namespace px4_behavior {
 

@@ -1,5 +1,0 @@
-px4_behavior:
-  system_state_sub: "system_state"
-  landing_approach_sub: "landing_approach"
-  landing_site_status_sub: "landing_site_status"
-  contingency_event_pub: "contingency_event"
