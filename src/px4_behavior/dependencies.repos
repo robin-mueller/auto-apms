@@ -1,0 +1,11 @@
+repositories:
+
+  # BehaviorTree.CPP and .ROS2
+  dep/behaviortree/behaviortree_cpp:
+    type: git
+    url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+    version: 4.6.2
+  dep/behaviortree/behaviortree_ros2:
+    type: git
+    url: https://github.com/BehaviorTree/BehaviorTree.ROS2.git
+    version: d9629581c905262d7734dbe96be91b19bd99925b
