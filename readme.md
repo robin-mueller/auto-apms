@@ -1,6 +1,6 @@
 # PX4 Behavior-based Control Library
 
-A human-friendly mission control framework that allows to create arbitrary flight behaviors.**
+**A human-friendly mission control framework that allows to create arbitrary flight behaviors.**
 
 *Currently work in progress*
 
