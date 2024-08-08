@@ -7,9 +7,9 @@
 With this ROS 2 package, the goal is to offer a control interface similar to [Nav2 Behavior Trees](https://docs.nav2.org/behavior_trees/index.html) but with greater focus on PX4 applications and more flexibility and user-friendliness. The package is also supposed to facilitate the model-based development process of flight tasks by introducing effective tools and methods for creating highly modular systems.
 
 This repository provides PX4 developers with
-- Generic interface for implementing tasks within the ROS 2 middleware
+- A generic approach for implementing tasks within the ROS 2 middleware
 - Various predefined tasks commonly performed by UASs
-- Model-based flight behavior engine incororating behavior trees
+- A model-based flight behavior engine incorporating behavior trees
 - CMake macros for registering behavior tree resources
 - Useful command line tools for orchestrating the system
 
