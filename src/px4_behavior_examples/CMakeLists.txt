@@ -51,11 +51,11 @@ ament_target_dependencies(${EXAMPLE_TARGET_NAME}
 target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="example_${EXAMPLE_TARGET_NAME}")
 install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
 
-px4_behavior_register_config_directory(goto/config)
-px4_behavior_register_trees_directory(goto/trees)
+px4_behavior_register_plugin_config("goto/example_goto_plugins.yaml")
+px4_behavior_register_behavior_tree("goto/example_goto_tree.xml")
 
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/goto/config/example_goto_bt_node_config.yaml")
+    "goto/example_goto_plugins.yaml")
 
 #
 # ------------ PX4 Behavior Examples | Contingency Management --------------
@@ -86,8 +86,8 @@ rclcpp_components_register_nodes(contingency_management "ContingencyManagerExecu
 rclcpp_components_register_nodes(contingency_management "MissionManagerExecutor")
 
 # Behavior tree resources
-px4_behavior_register_config_directory(contingency_management/config)
-px4_behavior_register_trees_directory(contingency_management/trees)
+px4_behavior_register_plugin_config(DIRECTORY "contingency_management/config")
+px4_behavior_register_behavior_tree(DIRECTORY "contingency_management/trees")
 
 # Custom behavior tree plugins (It is important to do this before generating the model)
 add_subdirectory(contingency_management/src/bt_plugins)
@@ -97,13 +97,13 @@ add_subdirectory(contingency_management/src/bt_plugins)
 # The install dir is not yet available (it is generated after the build step).
 set(EXTRA_PLUGINS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/contingency_management/src/bt_plugins)
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/config/mission_bt_node_config.yaml")
+    "contingency_management/config/mission_manager_plugins.yaml")
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/config/contingency_manager_bt_node_config.yaml" EXTRA_PLUGIN_DIR "${EXTRA_PLUGINS_BINARY_DIR}")
+    "contingency_management/config/contingency_manager_plugins.yaml" EXTRA_PLUGIN_DIR "${EXTRA_PLUGINS_BINARY_DIR}")
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/config/orchestrator_bt_node_config.yaml")
+    "contingency_management/config/orchestrator_plugins.yaml")
 px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/config/safety_monitor_bt_node_config.yaml" EXTRA_PLUGIN_DIR "${EXTRA_PLUGINS_BINARY_DIR}")
+    "contingency_management/config/safety_monitor_plugins.yaml" EXTRA_PLUGIN_DIR "${EXTRA_PLUGINS_BINARY_DIR}")
 
 
 

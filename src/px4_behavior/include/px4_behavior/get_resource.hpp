@@ -6,10 +6,10 @@
 namespace px4_behavior {
     
 /**
- * \brief Get the behavior tree resource subdirectory located in the share directory of an installed package.
+ * \brief Get the px4_behavior resource subdirectory located in the share directory of an installed package.
  *
  * \param package_name Name of the package
- * \return Absolute path to the behavior tree resource subdirectory.
+ * \return Absolute path to the px4_behavior resource subdirectory.
  */
 std::filesystem::path get_shared_resource_directory(const std::string& package_name);
 
@@ -18,7 +18,7 @@ std::filesystem::path get_shared_resource_directory(const std::string& package_n
  *
  * The plugin directory is installed under `lib` in the package install directory which has the following structure:
  * ```
- *      -- \ref package_name
+ *      -- package_name
  *         |-- include
  *         |-- lib
  *         |    -- px4_behavior
@@ -36,7 +36,7 @@ std::filesystem::path get_bt_plugin_directory(const std::string& package_name);
 /**
  * \brief Get the filepath of a config file in the share directory of a installed package.
  *
- * The referenced package is expected to have registered behavior tree resources via CMake.
+ * The referenced package is expected to have registered px4_behavior resources via CMake.
  *
  * \param package_name Name of the package
  * \param config_filename Name of the node configuration file (extension can be omitted)
@@ -48,7 +48,7 @@ std::filesystem::path get_config_filepath(const std::string& package_name, const
 /**
  * \brief Get the filepath of a trees file in the share directory of an installed package.
  *
- * The referenced package is expected to have registered behavior tree resources via CMake.
+ * The referenced package is expected to have registered px4_behavior resources via CMake.
  *
  * \param package_name Name of the package
  * \param trees_filename Name of the trees file (extension can be omitted)

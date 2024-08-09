@@ -25,9 +25,9 @@ find_package(tf2_eigen REQUIRED)
 
 option(PX4_BEHAVIOR_DEBUG_LOGGING "Enable debug logging severity" OFF)
 
-set(PX4_BEHAVIOR_SHARE_DIR_NAME ${PROJECT_NAME})
-set(PX4_BEHAVIOR_SHARE_SUBDIR_NAME_CONFIG "config")
-set(PX4_BEHAVIOR_SHARE_SUBDIR_NAME_TREES "trees")
+set(_PX4_BEHAVIOR_RESOURCES_DIR_NAME "${PROJECT_NAME}_resources")
+set(_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME "config")
+set(_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME "trees")
 
 add_library(px4_behavior SHARED
     src/commander/vehicle_command_client.cpp
@@ -60,9 +60,9 @@ ament_target_dependencies(px4_behavior
     yaml-cpp)
 target_link_libraries(px4_behavior ${YAML_CPP_LIBRARIES})
 target_compile_definitions(px4_behavior PRIVATE
-    PX4_BEHAVIOR_SHARE_DIR_NAME="${PX4_BEHAVIOR_SHARE_DIR_NAME}"
-    PX4_BEHAVIOR_SHARE_SUBDIR_NAME_CONFIG="${PX4_BEHAVIOR_SHARE_SUBDIR_NAME_CONFIG}"
-    PX4_BEHAVIOR_SHARE_SUBDIR_NAME_TREES="${PX4_BEHAVIOR_SHARE_SUBDIR_NAME_TREES}")
+    _PX4_BEHAVIOR_RESOURCES_DIR_NAME="${_PX4_BEHAVIOR_RESOURCES_DIR_NAME}"
+    _PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME="${_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME}"
+    _PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME="${_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME}")
 if(PX4_BEHAVIOR_DEBUG_LOGGING)
     target_compile_definitions(px4_behavior PRIVATE DEBUG_LOGGING)
 endif()
@@ -78,13 +78,37 @@ rclcpp_components_register_nodes(px4_behavior "px4_behavior::MissionTask")
 rclcpp_components_register_node(px4_behavior PLUGIN "px4_behavior::FlightRecorderNode" EXECUTABLE flight_recorder)
 # rclcpp_components_register_node(px4_behavior PLUGIN "px4_behavior::MissionManagerExecutor" EXECUTABLE debug_node)
 
+#
+# ------------ PX4 Behavior Library | Executables --------------
+#
 
-install(
-    DIRECTORY include/${PROJECT_NAME}
-    DESTINATION include)
-install(
-    DIRECTORY launch 
-    DESTINATION share/${PROJECT_NAME})
+# Command line tool to create a file that specifies all model definitions of the plugins used
+add_executable(generate_bt_node_model src/cli/generate_bt_node_model.cpp)
+target_link_libraries(generate_bt_node_model px4_behavior)
+
+# Command line tool to register a behavior tree with an executor
+add_executable(upload_tree src/cli/upload_tree.cpp)
+target_link_libraries(upload_tree px4_behavior)
+
+# Command line tool to run the executor of a behavior tree
+add_executable(run_executor src/cli/run_executor.cpp)
+target_link_libraries(run_executor px4_behavior)
+
+#
+# ------------ PX4 Behavior Library | Standard Behavior Tree Functionality --------------
+#
+
+# Emulate cmake configuration as if px4_behavior was imported
+add_library(px4_behavior::px4_behavior ALIAS px4_behavior) # ROS2 creates namespaced targets for exported libraries
+include(cmake/add_bt_plugin.cmake)
+
+# Preconfigured behavior tree plugins
+add_subdirectory(src/bt_plugins)
+
+#
+# ------------ PX4 Behavior Library | Packaging --------------
+#
+
 install(
     TARGETS px4_behavior
     EXPORT export_${PROJECT_NAME}
@@ -92,8 +116,27 @@ install(
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin)
 
-# Make library available to other packages
+set(_PX4_BEHAVIOR_EXECUTABLES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}")
+install(
+    TARGETS generate_bt_node_model upload_tree run_executor
+    DESTINATION ${_PX4_EXECUTABLES_INSTALL_DIR})
+
+install(
+    DIRECTORY include/${PROJECT_NAME}
+    DESTINATION include)
+
+install(
+    DIRECTORY launch 
+    DESTINATION share/${PROJECT_NAME})
+
+install(
+    DIRECTORY cmake
+    DESTINATION share/${PROJECT_NAME})
+
+# Export library
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+# Dependencies
 ament_export_dependencies(
     rclcpp 
     rclcpp_action
@@ -104,53 +147,5 @@ ament_export_dependencies(
     px4_ros2_cpp
     tf2_eigen)
 
-configure_file(cmake/add_bt_plugin.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/cmake/add_bt_plugin.cmake @ONLY)
-configure_file(cmake/generate_bt_node_model.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/cmake/generate_bt_node_model.cmake @ONLY)
-configure_file(cmake/resource_registration.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/cmake/resource_registration.cmake @ONLY)
-set(cmake_files
-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/add_bt_plugin.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/generate_bt_node_model.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/resource_registration.cmake)
-
-# Include those files in this CMakeLists for later use
-foreach(cmake_file ${cmake_files})
-    include(${cmake_file})
-endforeach()
-
-#
-# ------------ PX4 Behavior Library | Executables --------------
-#
-
-# Command line tool to create a file that specifies all model definitions of the plugins used
-add_executable(create_bt_node_model src/cli/create_bt_node_model.cpp)
-target_link_libraries(create_bt_node_model px4_behavior)
-install(
-    TARGETS create_bt_node_model
-    DESTINATION lib/${PROJECT_NAME})
-
-# Command line tool to register a behavior tree with an executor
-add_executable(upload_tree src/cli/upload_tree.cpp)
-target_link_libraries(upload_tree px4_behavior)
-install(
-    TARGETS upload_tree
-    DESTINATION lib/${PROJECT_NAME})
-
-# Command line tool to run the executor of a behavior tree
-add_executable(run_executor src/cli/run_executor.cpp)
-target_link_libraries(run_executor px4_behavior)
-install(
-    TARGETS run_executor
-    DESTINATION lib/${PROJECT_NAME})
-
-#
-# ------------ PX4 Behavior Library | Standard Behavior Tree Functionality --------------
-#
-
-# Emulate cmake configuration as if px4_behavior was imported
-add_library(px4_behavior::px4_behavior ALIAS px4_behavior) # ROS2 creates namespaced targets for exported libraries
-
-# Preconfigured behavior tree plugins
-add_subdirectory(src/bt_plugins)
-
-
-ament_package(CONFIG_EXTRAS ${cmake_files})
+set(_PX4_BEHAVIOR_GENERATE_BT_NODE_MODEL_PROGRAM )
+ament_package(CONFIG_EXTRAS px4_behavior-extras.cmake.in)
