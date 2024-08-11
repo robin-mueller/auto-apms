@@ -54,8 +54,7 @@ install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
 px4_behavior_register_plugin_config("goto/example_goto_plugins.yaml")
 px4_behavior_register_behavior_tree("goto/example_goto_tree.xml")
 
-px4_behavior_generate_bt_node_model(
-    "goto/example_goto_plugins.yaml")
+px4_behavior_generate_bt_node_model("goto/example_goto_plugins.yaml")
 
 #
 # ------------ PX4 Behavior Examples | Contingency Management --------------

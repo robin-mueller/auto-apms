@@ -25,7 +25,7 @@ find_package(tf2_eigen REQUIRED)
 
 option(PX4_BEHAVIOR_DEBUG_LOGGING "Enable debug logging severity" OFF)
 
-set(_PX4_BEHAVIOR_RESOURCES_DIR_NAME "${PROJECT_NAME}_resources")
+set(_PX4_BEHAVIOR_RESOURCES_DIR_NAME "${PROJECT_NAME}")
 set(_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME "config")
 set(_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME "trees")
 
@@ -119,7 +119,7 @@ install(
 set(_PX4_BEHAVIOR_EXECUTABLES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}")
 install(
     TARGETS generate_bt_node_model upload_tree run_executor
-    DESTINATION ${_PX4_EXECUTABLES_INSTALL_DIR})
+    DESTINATION ${_PX4_BEHAVIOR_EXECUTABLES_INSTALL_DIR})
 
 install(
     DIRECTORY include/${PROJECT_NAME}
@@ -147,5 +147,4 @@ ament_export_dependencies(
     px4_ros2_cpp
     tf2_eigen)
 
-set(_PX4_BEHAVIOR_GENERATE_BT_NODE_MODEL_PROGRAM )
 ament_package(CONFIG_EXTRAS px4_behavior-extras.cmake.in)

@@ -3,7 +3,7 @@ macro(px4_behavior_register_plugin_config)
     set(oneValueArgs DIRECTORY)
     set(multiValueArgs "")
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    if(NOT ${ARGS_UNPARSED_ARGUMENTS})
+    if(DEFINED ARGS_UNPARSED_ARGUMENTS)
         install(
             FILES ${ARGS_UNPARSED_ARGUMENTS}
             DESTINATION "share/${_PX4_BEHAVIOR_RESOURCES_DIR_NAME}/${_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME}")
