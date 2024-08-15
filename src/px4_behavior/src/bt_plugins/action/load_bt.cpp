@@ -31,7 +31,7 @@ class LoadBehaviorTreesAction : public SyncActionNode
         auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
         std::string xml_data;
         try {
-            xml_data = px4_behavior::read_trees_filepath(px4_behavior::get_trees_filepath(package_name, filename));
+            xml_data = px4_behavior::read_behavior_tree_filepath(px4_behavior::get_behavior_tree_filepath(package_name, filename));
         } catch (const std::runtime_error& e) {
             return NodeStatus::FAILURE;
         }

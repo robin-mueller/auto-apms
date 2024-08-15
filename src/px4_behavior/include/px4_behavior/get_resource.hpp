@@ -4,68 +4,55 @@
 #include <string>
 
 namespace px4_behavior {
-    
+
 /**
  * \brief Get the px4_behavior resource subdirectory located in the share directory of an installed package.
  *
  * \param package_name Name of the package
  * \return Absolute path to the px4_behavior resource subdirectory.
  */
-std::filesystem::path get_shared_resource_directory(const std::string& package_name);
+std::filesystem::path get_resource_directory(const std::string& package_name);
 
 /**
- * \brief Get the directory where the implemented behavior tree plugins are located.
- *
- * The plugin directory is installed under `lib` in the package install directory which has the following structure:
- * ```
- *      -- package_name
- *         |-- include
- *         |-- lib
- *         |    -- px4_behavior
- *         |        -- lib<plugin_target_name>.so
- *         |        -- ... # More plugins named like above
- *         |    -- ... # Other libraries
- *         |-- share
- * ```
+ * \brief Get the filepath of the behavior tree node plugin with name \p node_plugin_name installed by a certain
+ * package.
  *
  * \param package_name Name of the package
- * \return Absolute path to the plugin directory.
+ * \param node_plugin_name Name of the behavior tree node plugin
+ * \return Absolute path to the plugin.
+ * \throw std::runtime_error if plugin file cannot be found.
  */
-std::filesystem::path get_bt_plugin_directory(const std::string& package_name);
+std::filesystem::path get_node_plugin_filepath(const std::string& package_name, const std::string& node_plugin_name);
 
 /**
  * \brief Get the filepath of a config file in the share directory of a installed package.
- *
- * The referenced package is expected to have registered px4_behavior resources via CMake.
  *
  * \param package_name Name of the package
  * \param config_filename Name of the node configuration file (extension can be omitted)
  * \return Absolute path to the configuration file.
  * \throw std::runtime_error if config file cannot be found.
  */
-std::filesystem::path get_config_filepath(const std::string& package_name, const std::string& config_filename);
+std::filesystem::path get_plugin_config_filepath(const std::string& package_name, const std::string& config_filename);
 
 /**
- * \brief Get the filepath of a trees file in the share directory of an installed package.
- *
- * The referenced package is expected to have registered px4_behavior resources via CMake.
+ * \brief Get the filepath of a behavior tree file in the share directory of an installed package.
  *
  * \param package_name Name of the package
- * \param trees_filename Name of the trees file (extension can be omitted)
- * \return Absolute path to the trees file.
- * \throw std::runtime_error if trees file cannot be found.
+ * \param tree_filename Name of the behavior tree file (extension can be omitted)
+ * \return Absolute path to the behavior tree file.
+ * \throw std::runtime_error if behavior tree file cannot be found.
  */
-std::filesystem::path get_trees_filepath(const std::string& package_name, const std::string& trees_filename);
+std::filesystem::path get_behavior_tree_filepath(const std::string& package_name, const std::string& tree_filename);
 
 /**
  * \brief Read a trees file.
- * 
+ *
  * Read the data of the file \p trees_filepath and return the raw string.
- * 
- * \param trees_filepath Path to the file containing data of trees
- * \return XML string of the trees.
+ *
+ * \param trees_filepath Path to the file containing the behavior tree's definition
+ * \return XML string of the behavior tree file.
  * \throw std::runtime_error if failed to read file.
-*/
-std::string read_trees_filepath(const std::filesystem::path trees_filepath);
+ */
+std::string read_behavior_tree_filepath(const std::filesystem::path& trees_filepath);
 
 }  // namespace px4_behavior

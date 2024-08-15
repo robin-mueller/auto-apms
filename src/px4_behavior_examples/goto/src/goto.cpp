@@ -15,8 +15,8 @@ using namespace std::chrono_literals;
 int main(int argc, char** argv)
 {
     const auto config_filepath =
-        px4_behavior::get_config_filepath("px4_behavior", std::string(EXAMPLE_NAME) + "_bt_node_config");
-    const auto tree_filepath = px4_behavior::get_trees_filepath("px4_behavior", std::string(EXAMPLE_NAME) + "_tree");
+        px4_behavior::get_plugin_config_filepath("px4_behavior", std::string(EXAMPLE_NAME) + "_bt_node_config");
+    const auto tree_filepath = px4_behavior::get_behavior_tree_filepath("px4_behavior", std::string(EXAMPLE_NAME) + "_tree");
 
     // Ensure that rclcpp is not shut down before the tree has been halted (on destruction) and all pending actions have
     // been successfully canceled

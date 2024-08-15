@@ -75,8 +75,8 @@ class CreateAlternateLandingMissionActionNode : public SyncActionNode
         };
 
         // Read tree template and replace placeholders
-        auto tree = px4_behavior::read_trees_filepath(
-            px4_behavior::get_trees_filepath("px4_behavior", "alternate_landing_mission"));
+        auto tree = px4_behavior::read_behavior_tree_filepath(
+            px4_behavior::get_behavior_tree_filepath("px4_behavior", "alternate_landing_mission"));
 
         // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -
         std::regex placeholder("\\$\\{([A-Za-z0-9_-]+)\\}");

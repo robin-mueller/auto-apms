@@ -23,7 +23,7 @@ bool BTExecutorClient::UploadBehaviorTree(const std::string& package_name,
 {
     std::string content;
     try {
-        content = px4_behavior::read_trees_filepath(px4_behavior::get_trees_filepath(package_name, trees_filename));
+        content = px4_behavior::read_behavior_tree_filepath(px4_behavior::get_behavior_tree_filepath(package_name, trees_filename));
     } catch (const std::runtime_error& e) {
         RCLCPP_ERROR(logger_, "UploadBehaviorTree: %s", e.what());
         return false;

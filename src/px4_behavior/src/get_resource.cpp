@@ -1,23 +1,30 @@
 #include <ament_index_cpp/get_package_prefix.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <fstream>
 #include <px4_behavior/get_resource.hpp>
 
 namespace px4_behavior {
 
-std::filesystem::path get_shared_resource_directory(const std::string& package_name)
+std::filesystem::path get_resource_directory(const std::string& package_name)
 {
-    return std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "share" / "px4_behavior";
+    return std::filesystem::path{ament_index_cpp::get_package_share_directory(package_name)} / "px4_behavior";
 }
 
-std::filesystem::path get_bt_plugin_directory(const std::string& package_name)
+std::filesystem::path get_node_plugin_filepath(const std::string& package_name, const std::string& node_plugin_name)
 {
-    return std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "lib";
+    auto filepath = std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "lib" /
+                    ("lib" + node_plugin_name + ".so");
+
+    if (!std::filesystem::exists(filepath)) {
+        throw std::runtime_error("File '" + filepath.string() + "' doesn't exist");
+    }
+    return filepath;
 }
 
-std::filesystem::path get_config_filepath(const std::string& package_name, const std::string& config_filename)
+std::filesystem::path get_plugin_config_filepath(const std::string& package_name, const std::string& config_filename)
 {
-    auto filepath = get_shared_resource_directory(package_name) /
-                    std::string(_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME) / config_filename;
+    auto filepath = get_resource_directory(package_name) / std::string(_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME) /
+                    config_filename;
 
     if (!filepath.has_extension()) { filepath.replace_extension(".yaml"); }
     if (filepath.extension().compare(".yaml") != 0) {
@@ -30,10 +37,10 @@ std::filesystem::path get_config_filepath(const std::string& package_name, const
     return filepath;
 }
 
-std::filesystem::path get_trees_filepath(const std::string& package_name, const std::string& tree_filename)
+std::filesystem::path get_behavior_tree_filepath(const std::string& package_name, const std::string& tree_filename)
 {
-    auto filepath = get_shared_resource_directory(package_name) /
-                    std::string(_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME) / tree_filename;
+    auto filepath = get_resource_directory(package_name) / std::string(_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME) /
+                    tree_filename;
 
     if (!filepath.has_extension()) { filepath.replace_extension(".xml"); }
     if (filepath.extension().compare(".xml") != 0) {
@@ -46,11 +53,11 @@ std::filesystem::path get_trees_filepath(const std::string& package_name, const 
     return filepath;
 }
 
-std::string read_trees_filepath(const std::filesystem::path trees_filepath)
+std::string read_behavior_tree_filepath(const std::filesystem::path& tree_filepath)
 {
     // Note that we have to use binary mode as we want to return a string matching the bytes of the file
-    std::ifstream file(trees_filepath, std::ios::binary);
-    if (!file.is_open()) { throw std::runtime_error("Couldn't open file '" + trees_filepath.string() + "'"); }
+    std::ifstream file(tree_filepath, std::ios::binary);
+    if (!file.is_open()) { throw std::runtime_error("Couldn't open file '" + tree_filepath.string() + "'"); }
 
     // Read contents
     return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};

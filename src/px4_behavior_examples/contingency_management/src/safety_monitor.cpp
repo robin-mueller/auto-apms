@@ -83,7 +83,7 @@ void SafetyMonitorExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr nod
     px4_behavior::RegisterNodePlugins(
         factory,
         node_ptr,
-        px4_behavior::get_config_filepath("px4_behavior", "safety_monitor_bt_node_config"));
+        px4_behavior::get_plugin_config_filepath("px4_behavior", "safety_monitor_bt_node_config"));
 
     // Enums (don't rely on magic enums for error safety)
     RegisterContingencyEventEnum(factory);
