@@ -4,16 +4,16 @@
 #include <behaviortree_ros2/ros_node_params.hpp>
 #include <chrono>
 #include <optional>
-#include <rclcpp/rclcpp.hpp>
 #include <px4_behavior/factory.hpp>
 #include <px4_behavior/get_resource.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 namespace px4_behavior {
 
 RegistrationStatus RegisterNodePlugins(BT::BehaviorTreeFactory& factory,
                                        const rclcpp::Node::SharedPtr& node,
                                        const std::filesystem::path& config_yaml,
-                                       const std::optional<std::filesystem::path>& extra_plugin_directory)
+                                       const std::vector<std::filesystem::path>& extra_plugin_paths)
 {
     auto create_node_params = [node](const std::string& default_port_value = "") {
         BT::RosNodeParams params;
@@ -37,41 +37,47 @@ RegistrationStatus RegisterNodePlugins(BT::BehaviorTreeFactory& factory,
 
     for (YAML::const_iterator it = root.begin(); it != root.end(); ++it) {
         const auto package_name = it->first.as<std::string>();
-        const auto plugins = root[package_name];
-        for (YAML::const_iterator it = plugins.begin(); it != plugins.end(); ++it) {
-            const auto plugin_target_name = it->first.as<std::string>();
-            const auto lib_file_name = "lib" + plugin_target_name + ".so";
-            std::vector<std::filesystem::path> lib_dirs_priority_vec;
+        const auto plugins_node = root[package_name];
+        for (YAML::const_iterator it = plugins_node.begin(); it != plugins_node.end(); ++it) {
+            const std::string plugin_target_name = it->first.as<std::string>();
+            const std::string lib_file_name = "lib" + plugin_target_name + ".so";
 
-            // Check if the install already exists
-            std::string install_plugin_dir;
-            try {
-                install_plugin_dir = get_bt_plugin_directory(package_name).string();
-            } catch (const std::exception& e) {
-                // Do nothing
-            }
-
-            // Use the install filepath unless the lib file is found in the extra plugin directory
-            if (!install_plugin_dir.empty()) { lib_dirs_priority_vec.push_back(install_plugin_dir); }
-            if (extra_plugin_directory.has_value()) { lib_dirs_priority_vec.push_back(extra_plugin_directory.value()); }
+            // Check extra_plugin_paths first before falling back to searching in the installation
             std::string lib_filepath;
-            for (const auto& dir : lib_dirs_priority_vec) {
-                const auto check_path = dir / lib_file_name;
-                if (std::filesystem::exists(check_path)) {
-                    lib_filepath = check_path.string();
-                    break;
+            for (const auto &plugin_path : extra_plugin_paths) {
+                if (plugin_path.filename().string() == lib_file_name) {
+                    lib_filepath = plugin_path.string();
+                    break;  // After a matching plugin path has been found, break immediately
                 }
             }
-
-            // Check if library file exists
             if (lib_filepath.empty()) {
-                RCLCPP_ERROR(node->get_logger(),
-                             "RegisterNodePlugins: Cannot load library '%s' because it exists neither in install '%s' "
-                             "nor in extra '%s'",
-                             lib_file_name.c_str(),
-                             install_plugin_dir.c_str(),
-                             extra_plugin_directory.value_or("").c_str());
-                return RegistrationStatus::MISSING_PLUGIN_LIB;
+                // Check if the install share dir exists
+                std::filesystem::path install_plugin_dir;
+                try {
+                    install_plugin_dir = get_bt_plugin_directory(package_name).string();
+                } catch (const std::exception& e) {
+                    RCLCPP_ERROR(node->get_logger(),
+                                 "RegisterNodePlugins: Cannot load library '%s' because no matching plugin path was "
+                                 "provided and package '%s' hasn't been installed yet",
+                                 lib_file_name.c_str(),
+                                 package_name.c_str());
+                    return RegistrationStatus::MISSING_PLUGIN_LIB;
+                }
+
+                // Check if library file exists in share dir
+                if (const auto p = install_plugin_dir / lib_file_name; std::filesystem::exists(p)) {
+                    lib_filepath = p.string();
+                }
+                else {
+                    RCLCPP_ERROR(
+                        node->get_logger(),
+                        "RegisterNodePlugins: Cannot load library '%s' because no matching plugin path was "
+                                 "provided and it cannot be found in the share directory of package '%s': '%s'",
+                        lib_file_name.c_str(),
+                        package_name.c_str(),
+                        install_plugin_dir.c_str());
+                    return RegistrationStatus::MISSING_PLUGIN_LIB;
+                }
             }
 
             try {

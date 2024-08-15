@@ -7,14 +7,14 @@ macro(px4_behavior_get_all_bt_plugin_targets output)
 endmacro()
 
 # Macro that registers a library target for a behaviortree plugin
-macro(px4_behavior_add_bt_plugin target_name sources)
-    add_library(${target_name} SHARED ${sources})
+macro(px4_behavior_register_node_plugin target_name source)
+    add_library(${target_name} SHARED ${source})
     target_link_libraries(${target_name} px4_behavior::px4_behavior)
     target_compile_definitions(${target_name} PRIVATE BT_PLUGIN_EXPORT)
 
     install(
-        TARGETS ${target_name} 
-        LIBRARY DESTINATION "lib/${_PX4_BEHAVIOR_RESOURCES_DIR_NAME}")
+        TARGETS ${target_name}
+        LIBRARY DESTINATION lib)
 
     px4_behavior_get_all_bt_plugin_targets(_tmp)
     list(APPEND _tmp ${target_name})

@@ -18,6 +18,6 @@ RegistrationStatus RegisterNodePlugins(
     BT::BehaviorTreeFactory& factory,
     const rclcpp::Node::SharedPtr& node,
     const std::filesystem::path& config_yaml,
-    const std::optional<std::filesystem::path>& extra_plugin_directory = std::nullopt);
+    const std::vector<std::filesystem::path>& extra_plugin_paths = {});
 
 }  // namespace px4_behavior

@@ -6,20 +6,18 @@ namespace px4_behavior {
 
 std::filesystem::path get_shared_resource_directory(const std::string& package_name)
 {
-    return std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "share" /
-           std::string(_PX4_BEHAVIOR_RESOURCES_DIR_NAME);
+    return std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "share" / "px4_behavior";
 }
 
 std::filesystem::path get_bt_plugin_directory(const std::string& package_name)
 {
-    return std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "lib" /
-           std::string(_PX4_BEHAVIOR_RESOURCES_DIR_NAME);
+    return std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "lib";
 }
 
 std::filesystem::path get_config_filepath(const std::string& package_name, const std::string& config_filename)
 {
-    auto filepath = get_shared_resource_directory(package_name) / std::string(_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME) /
-                    config_filename;
+    auto filepath = get_shared_resource_directory(package_name) /
+                    std::string(_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME) / config_filename;
 
     if (!filepath.has_extension()) { filepath.replace_extension(".yaml"); }
     if (filepath.extension().compare(".yaml") != 0) {
@@ -34,8 +32,8 @@ std::filesystem::path get_config_filepath(const std::string& package_name, const
 
 std::filesystem::path get_trees_filepath(const std::string& package_name, const std::string& tree_filename)
 {
-    auto filepath =
-        get_shared_resource_directory(package_name) / std::string(_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME) / tree_filename;
+    auto filepath = get_shared_resource_directory(package_name) /
+                    std::string(_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME) / tree_filename;
 
     if (!filepath.has_extension()) { filepath.replace_extension(".xml"); }
     if (filepath.extension().compare(".xml") != 0) {

@@ -25,9 +25,10 @@ find_package(tf2_eigen REQUIRED)
 
 option(PX4_BEHAVIOR_DEBUG_LOGGING "Enable debug logging severity" OFF)
 
+set(_PX4_BEHAVIOR_EXECUTABLES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}")
 set(_PX4_BEHAVIOR_RESOURCES_DIR_NAME "${PROJECT_NAME}")
-set(_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME "config")
-set(_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME "trees")
+set(_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME "plugin_config")
+set(_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME "behavior_tree")
 
 add_library(px4_behavior SHARED
     src/commander/vehicle_command_client.cpp
@@ -60,20 +61,20 @@ ament_target_dependencies(px4_behavior
     yaml-cpp)
 target_link_libraries(px4_behavior ${YAML_CPP_LIBRARIES})
 target_compile_definitions(px4_behavior PRIVATE
-    _PX4_BEHAVIOR_RESOURCES_DIR_NAME="${_PX4_BEHAVIOR_RESOURCES_DIR_NAME}"
     _PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME="${_PX4_BEHAVIOR_RESOURCES_PLUGIN_CONFIG_DIR_NAME}"
     _PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME="${_PX4_BEHAVIOR_RESOURCES_BEHAVIOR_TREE_DIR_NAME}")
 if(PX4_BEHAVIOR_DEBUG_LOGGING)
     target_compile_definitions(px4_behavior PRIVATE DEBUG_LOGGING)
 endif()
 
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::ArmDisarmTask")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::EnableHoldTask")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::GoToTask")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::LandTask")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::TakeoffTask")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::RTLTask")
-rclcpp_components_register_nodes(px4_behavior "px4_behavior::MissionTask")
+rclcpp_components_register_nodes(px4_behavior 
+    "px4_behavior::ArmDisarmTask"
+    "px4_behavior::EnableHoldTask"
+    "px4_behavior::GoToTask"
+    "px4_behavior::LandTask"
+    "px4_behavior::TakeoffTask"
+    "px4_behavior::RTLTask"
+    "px4_behavior::MissionTask")
 
 rclcpp_components_register_node(px4_behavior PLUGIN "px4_behavior::FlightRecorderNode" EXECUTABLE flight_recorder)
 # rclcpp_components_register_node(px4_behavior PLUGIN "px4_behavior::MissionManagerExecutor" EXECUTABLE debug_node)
@@ -100,7 +101,7 @@ target_link_libraries(run_executor px4_behavior)
 
 # Emulate cmake configuration as if px4_behavior was imported
 add_library(px4_behavior::px4_behavior ALIAS px4_behavior) # ROS2 creates namespaced targets for exported libraries
-include(cmake/add_bt_plugin.cmake)
+include(cmake/register_node_plugin.cmake)
 
 # Preconfigured behavior tree plugins
 add_subdirectory(src/bt_plugins)
@@ -116,7 +117,6 @@ install(
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin)
 
-set(_PX4_BEHAVIOR_EXECUTABLES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}")
 install(
     TARGETS generate_bt_node_model upload_tree run_executor
     DESTINATION ${_PX4_BEHAVIOR_EXECUTABLES_INSTALL_DIR})
