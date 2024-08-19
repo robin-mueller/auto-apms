@@ -1,6 +1,6 @@
 #include <definitions.hpp>
 #include <px4_behavior/bt_executor.hpp>
-#include <px4_behavior/factory.hpp>
+#include <px4_behavior/bt_factory.hpp>
 #include <px4_behavior_examples/msg/contingency_event.hpp>
 #include <px4_behavior_examples/msg/force_contingency.hpp>
 #include <px4_behavior_examples/msg/landing_site_status.hpp>
@@ -13,6 +13,8 @@ using ForceContingencyMsg = px4_behavior_examples::msg::ForceContingency;
 using SystemStateMsg = px4_behavior_examples::msg::SystemState;
 using LandingSiteStatusMsg = px4_behavior_examples::msg::LandingSiteStatus;
 using ContingencyEventMsg = px4_behavior_examples::msg::ContingencyEvent;
+
+namespace px4_behavior::ops_engine {
 
 class SafetyMonitorExecutor : public BTExecutor
 {
@@ -80,7 +82,7 @@ SafetyMonitorExecutor::SafetyMonitorExecutor(const rclcpp::NodeOptions& options)
 
 void SafetyMonitorExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory& factory)
 {
-    px4_behavior::RegisterNodePlugins(
+    px4_behavior::RegisterBTNodePlugins(
         factory,
         node_ptr,
         px4_behavior::get_plugin_config_filepath("px4_behavior", "safety_monitor_bt_node_config"));
@@ -107,5 +109,7 @@ SafetyMonitorExecutor::ClosureConduct SafetyMonitorExecutor::OnResult(bool succe
     return ClosureConduct::RESTART;
 }
 
+}  // namespace px4_behavior::ops_engine
+
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(SafetyMonitorExecutor);
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ops_engine::SafetyMonitorExecutor);

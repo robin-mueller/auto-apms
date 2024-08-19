@@ -1,6 +1,6 @@
 #include <definitions.hpp>
 #include <px4_behavior/bt_executor.hpp>
-#include <px4_behavior/factory.hpp>
+#include <px4_behavior/bt_factory.hpp>
 #include <px4_behavior_examples/msg/landing_approach.hpp>
 
 #define KEY_ALTITUDE "altitude_amsl_m"
@@ -9,6 +9,8 @@
 
 using namespace px4_behavior;
 using LandingApproachMsg = px4_behavior_examples::msg::LandingApproach;
+
+namespace px4_behavior::ops_engine {
 
 class MissionManagerExecutor : public BTExecutor
 {
@@ -44,9 +46,10 @@ MissionManagerExecutor::MissionManagerExecutor(const rclcpp::NodeOptions& option
 void MissionManagerExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr,
                                                       BT::BehaviorTreeFactory& factory)
 {
-    px4_behavior::RegisterNodePlugins(factory,
-                                      node_ptr,
-                                      px4_behavior::get_plugin_config_filepath("px4_behavior", "mission_bt_node_config"));
+    px4_behavior::RegisterBTNodePlugins(
+        factory,
+        node_ptr,
+        px4_behavior::get_plugin_config_filepath("px4_behavior", "mission_bt_node_config"));
 }
 
 void MissionManagerExecutor::OnTreeCreated(BT::Blackboard& global_blackboard)
@@ -54,5 +57,7 @@ void MissionManagerExecutor::OnTreeCreated(BT::Blackboard& global_blackboard)
     initial_bb_->cloneInto(global_blackboard);  // Reset the global blackboard
 }
 
+}  // namespace px4_behavior::ops_engine
+
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(MissionManagerExecutor);
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ops_engine::MissionManagerExecutor);

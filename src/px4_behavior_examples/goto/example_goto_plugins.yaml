@@ -15,8 +15,8 @@
 #
 
 px4_behavior:
-  arm_action: "arm_disarm"
-  disarm_action: "arm_disarm"
-  goto_action: "go_to"
-  land_action: "land"
-  takeoff_action: "takeoff"
+  ArmAction: "arm_disarm"
+  DisarmAction: "arm_disarm"
+  GoToAction: "go_to"
+  LandAction: "land"
+  TakeoffAction: "takeoff"

@@ -1,24 +1,39 @@
-#include <ament_index_cpp/get_package_prefix.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include "px4_behavior/get_resource.hpp"
+
 #include <fstream>
-#include <px4_behavior/get_resource.hpp>
+
+#include "ament_index_cpp/get_package_prefix.hpp"
+#include "ament_index_cpp/get_package_share_directory.hpp"
+#include "ament_index_cpp/get_resource.hpp"
+#include "rcpputils/split.hpp"
 
 namespace px4_behavior {
+
+std::vector<BTNodePluginResource> GetBTNodePluginResources(const std::string& package_name)
+{
+    std::string content;
+    std::string base_path;
+    std::vector<BTNodePluginResource> resources{};
+    if (ament_index_cpp::get_resource(_PX4_BEHAVIOR_BT_NODE_PLUGINS_RESOURCE_TYPE_NAME,
+                                      package_name,
+                                      content,
+                                      &base_path)) {
+        std::vector<std::string> lines = rcpputils::split(content, '\n', true);
+        for (const auto& line : lines) {
+            std::vector<std::string> parts = rcpputils::split(line, ';');
+            if (parts.size() != 2) { throw std::runtime_error("Invalid resource entry"); }
+
+            std::string library_path = parts[1];
+            if (!std::filesystem::path(library_path).is_absolute()) { library_path = base_path + "/" + library_path; }
+            resources.push_back({parts[0], library_path});
+        }
+    }
+    return resources;
+}
 
 std::filesystem::path get_resource_directory(const std::string& package_name)
 {
     return std::filesystem::path{ament_index_cpp::get_package_share_directory(package_name)} / "px4_behavior";
-}
-
-std::filesystem::path get_node_plugin_filepath(const std::string& package_name, const std::string& node_plugin_name)
-{
-    auto filepath = std::filesystem::path{ament_index_cpp::get_package_prefix(package_name)} / "lib" /
-                    ("lib" + node_plugin_name + ".so");
-
-    if (!std::filesystem::exists(filepath)) {
-        throw std::runtime_error("File '" + filepath.string() + "' doesn't exist");
-    }
-    return filepath;
 }
 
 std::filesystem::path get_plugin_config_filepath(const std::string& package_name, const std::string& config_filename)

@@ -2,8 +2,17 @@
 
 #include <filesystem>
 #include <string>
+#include <vector>
+#include <utility>
 
 namespace px4_behavior {
+
+struct BTNodePluginResource {
+    std::string classname;
+    std::string library_path;
+};
+
+std::vector<BTNodePluginResource> GetBTNodePluginResources(const std::string& package_name);
 
 /**
  * \brief Get the px4_behavior resource subdirectory located in the share directory of an installed package.
@@ -12,17 +21,6 @@ namespace px4_behavior {
  * \return Absolute path to the px4_behavior resource subdirectory.
  */
 std::filesystem::path get_resource_directory(const std::string& package_name);
-
-/**
- * \brief Get the filepath of the behavior tree node plugin with name \p node_plugin_name installed by a certain
- * package.
- *
- * \param package_name Name of the package
- * \param node_plugin_name Name of the behavior tree node plugin
- * \return Absolute path to the plugin.
- * \throw std::runtime_error if plugin file cannot be found.
- */
-std::filesystem::path get_node_plugin_filepath(const std::string& package_name, const std::string& node_plugin_name);
 
 /**
  * \brief Get the filepath of a config file in the share directory of a installed package.

@@ -5,7 +5,7 @@
 #include <chrono>
 #include <filesystem>
 #include <rclcpp/rclcpp.hpp>
-#include <px4_behavior/factory.hpp>
+#include <px4_behavior/bt_factory.hpp>
 #include <px4_behavior/get_resource.hpp>
 
 sig_atomic_t volatile shutdown_requested = 0;
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 
     {
         BT::BehaviorTreeFactory factory;
-        px4_behavior::RegisterNodePlugins(factory, node, config_filepath);
+        px4_behavior::RegisterBTNodePlugins(factory, node, config_filepath);
         auto tree = factory.createTreeFromFile(tree_filepath);
 
         BT::Groot2Publisher publisher(tree);

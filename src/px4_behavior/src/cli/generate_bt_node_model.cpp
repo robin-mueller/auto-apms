@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <px4_behavior/factory.hpp>
+#include <px4_behavior/bt_factory.hpp>
 
 int main(int argc, char** argv)
 {
@@ -17,26 +17,19 @@ int main(int argc, char** argv)
     if (argc < 3) {
         std::cerr
             << "generate_bt_node_model: Missing inputs! The program requires: \n\t1.) the yaml configuration file to "
-               "pass to px4_behavior::RegisterNodePlugins\n\t2.) the xml file to store the model\n\t3.) Optional: "
-               "additional plugins that cannot be found under the package share directories\n";
-        std::cerr << "Usage: generate_bt_node_model <input_file> <output_file> [<extra_plugins>...]\n";
+               "pass to px4_behavior::RegisterBTNodePlugins\n\t2.) the xml file to store the model\n\t3.) Optional: "
+               "additional build information for plugins of the same package that issues the model generation\n";
+        std::cerr << "Usage: generate_bt_node_model <input_file> <output_file> [<build_info>...]\n";
         return EXIT_FAILURE;
     }
     std::filesystem::path config_file{argv[1]};
     std::filesystem::path output_file{argv[2]};
-    std::vector<std::filesystem::path> extra_plugins = {};
-    for (int i = 3; i < argc; ++i) { extra_plugins.push_back(std::filesystem::path{argv[i]}); }
+    std::vector<std::string> build_infos = {};
+    for (int i = 3; i < argc; ++i) { build_infos.push_back(argv[i]); }
 
     // Check if config exists
     if (!std::filesystem::exists(config_file)) {
         throw std::runtime_error("Config file '" + config_file.string() + "' doesn't exist");
-    }
-
-    // Check if plugin dir exists
-    for (const auto& plugin_path : extra_plugins) {
-        if (!std::filesystem::exists(plugin_path)) {
-            throw std::runtime_error("Extra plugin '" + plugin_path.string() + "' doesn't exist");
-        }
     }
 
     // Ensure correct extensions
@@ -53,10 +46,21 @@ int main(int argc, char** argv)
 
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("_generate_bt_node_model_temp_node");
+
+#ifdef DEBUG_LOGGING
+    // Set logging severity
+    auto ret = rcutils_logging_set_logger_level(node->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
+    if (ret != RCUTILS_RET_OK) {
+        RCLCPP_ERROR(node->get_logger(), "Error setting severity: %s", rcutils_get_error_string().str);
+        rcutils_reset_error();
+    }
+#endif
+
     BT::BehaviorTreeFactory factory;
 
-    if (RegisterNodePlugins(factory, node, config_file, extra_plugins) != RegistrationStatus::SUCCESS) {
-        std::cerr << "generate_bt_node_model: Error registering node plugins\n";
+    if (RegisterBTNodePlugins(factory, node, config_file, build_infos) != RegistrationStatus::SUCCESS) {
+        std::cerr << "generate_bt_node_model: Error registering node plugins with config "
+                  << std::filesystem::absolute(config_file) << "\n";
         return EXIT_FAILURE;
     }
 
