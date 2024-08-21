@@ -1,0 +1,18 @@
+px4_behavior_examples:
+  px4_behavior::ops_engine::AsyncPrecondition:
+  CreateAlternateLandingMission:
+
+px4_behavior:
+  ThrowException:
+  ArmAction: "arm_disarm"
+  DisarmAction: "arm_disarm"
+  EnableHoldAction: "enable_hold"
+  GoToAction: "go_to"
+  GoToVectorAction: "go_to"
+  LandAction: "land"
+  RTLAction: "rtl"
+  TakeoffAction: "takeoff"
+  UploadBehaviorTreeAction: "mission_manager/upload"
+  ResumeExecutorAction: "mission_manager/command"
+  HaltExecutorAction: "mission_manager/command"
+  ReadGlobalPosition: "/fmu/out/vehicle_global_position"

@@ -14,7 +14,7 @@
 using VehiclePositionMsg = px4_msgs::msg::VehicleGlobalPosition;
 using ContingencyEventMsg = px4_behavior_examples::msg::ContingencyEvent;
 
-namespace px4_behavior {
+namespace px4_behavior::ops_engine {
 
 struct RecordSample
 {
@@ -125,7 +125,7 @@ FlightRecorderNode::~FlightRecorderNode()
     out_file.close();
 }
 
-}  // namespace px4_behavior
+}  // namespace px4_behavior::ops_engine
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::FlightRecorderNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ops_engine::FlightRecorderNode)

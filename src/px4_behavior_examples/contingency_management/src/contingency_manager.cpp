@@ -1,6 +1,6 @@
 #include <definitions.hpp>
 #include <px4_behavior/bt_executor.hpp>
-#include <px4_behavior/factory.hpp>
+#include <px4_behavior/bt_factory.hpp>
 #include <px4_behavior_examples/msg/contingency_event.hpp>
 
 #define KEY_EVENT_ID "event_id"
@@ -8,6 +8,8 @@
 
 using namespace px4_behavior;
 using ContingencyEventMsg = px4_behavior_examples::msg::ContingencyEvent;
+
+namespace px4_behavior::ops_engine {
 
 class ContingencyManagerExecutor : public BTExecutor
 {
@@ -49,10 +51,6 @@ ContingencyManagerExecutor::ContingencyManagerExecutor(const rclcpp::NodeOptions
 void ContingencyManagerExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr,
                                                           BT::BehaviorTreeFactory& factory)
 {
-    px4_behavior::RegisterNodePlugins(factory,
-                                      node_ptr,
-                                      px4_behavior::get_config_filepath("px4_behavior", "px4_behavior_bt_node_config"));
-
     // Enums (don't rely on magic enums for error safety)
     RegisterContingencyEventEnum(factory);
 }
@@ -80,5 +78,7 @@ ContingencyManagerExecutor::ClosureConduct ContingencyManagerExecutor::OnResult(
     return ClosureConduct::ABORT;
 }
 
+}  // namespace px4_behavior::ops_engine
+
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(ContingencyManagerExecutor);
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ops_engine::ContingencyManagerExecutor);

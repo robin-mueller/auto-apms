@@ -1,0 +1,4 @@
+px4_behavior_examples:
+  GetSystemState: "system_state"
+  IsApproachingLanding: "landing_approach"
+  IsLandingSiteClear: "landing_site_status"

@@ -51,11 +51,12 @@ ament_target_dependencies(${EXAMPLE_TARGET_NAME}
 target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="example_${EXAMPLE_TARGET_NAME}")
 install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
 
-px4_behavior_register_config_directory(goto/config)
-px4_behavior_register_trees_directory(goto/trees)
-
-px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/goto/config/example_goto_bt_node_config.yaml")
+# Behavior tree resources
+px4_behavior_register_behavior_tree_file("goto/example_${EXAMPLE_TARGET_NAME}.xml" 
+    PLUGIN_CONFIGS 
+    "goto/example_${EXAMPLE_TARGET_NAME}_plugins.yaml"
+    TREE_IDS 
+    "MainTree")
 
 #
 # ------------ PX4 Behavior Examples | Contingency Management --------------
@@ -80,30 +81,51 @@ install(
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin)
 
-rclcpp_components_register_nodes(contingency_management "FlightOrchestratorExecutor")
-rclcpp_components_register_nodes(contingency_management "SafetyMonitorExecutor")
-rclcpp_components_register_nodes(contingency_management "ContingencyManagerExecutor")
-rclcpp_components_register_nodes(contingency_management "MissionManagerExecutor")
+rclcpp_components_register_nodes(contingency_management 
+    "px4_behavior::ops_engine::FlightOrchestratorExecutor"
+    "px4_behavior::ops_engine::SafetyMonitorExecutor"
+    "px4_behavior::ops_engine::ContingencyManagerExecutor"
+    "px4_behavior::ops_engine::MissionManagerExecutor")
+
+rclcpp_components_register_node(contingency_management PLUGIN "px4_behavior::ops_engine::FlightRecorderNode" EXECUTABLE flight_recorder)
+# rclcpp_components_register_node(contingency_management PLUGIN "px4_behavior::ops_engine::MissionManagerExecutor" EXECUTABLE debug_node)
+
+add_library(behavior_tree_nodes SHARED
+    contingency_management/src/behavior_tree_nodes/async_precondition.cpp
+    contingency_management/src/behavior_tree_nodes/create_alternate_landing_mission.cpp
+    contingency_management/src/behavior_tree_nodes/landing_approach.cpp
+    contingency_management/src/behavior_tree_nodes/landing_site_status.cpp
+    contingency_management/src/behavior_tree_nodes/system_state.cpp)
+target_link_libraries(behavior_tree_nodes "${cpp_typesupport_target}")
+ament_target_dependencies(behavior_tree_nodes px4_behavior)
 
 # Behavior tree resources
-px4_behavior_register_config_directory(contingency_management/config)
-px4_behavior_register_trees_directory(contingency_management/trees)
+px4_behavior_register_plugins(behavior_tree_nodes
+    "px4_behavior::ops_engine::AsyncPrecondition"
+    "px4_behavior::ops_engine::CreateAlternateLandingMission"
+    "px4_behavior::ops_engine::IsApproachingLanding"
+    "px4_behavior::ops_engine::IsLandingSiteClear"
+    "px4_behavior::ops_engine::GetSystemState")
 
-# Custom behavior tree plugins (It is important to do this before generating the model)
-add_subdirectory(contingency_management/src/bt_plugins)
+px4_behavior_register_behavior_tree_file("contingency_management/trees/contingency_manager.xml" 
+    PLUGIN_CONFIGS 
+    "contingency_management/config/contingency_manager_plugins.yaml")
+px4_behavior_register_behavior_tree_file("contingency_management/trees/flight_orchestrator.xml" 
+    PLUGIN_CONFIGS 
+    "contingency_management/config/orchestrator_plugins.yaml")
+px4_behavior_register_behavior_tree_file("contingency_management/trees/nominal_mission.xml" 
+    PLUGIN_CONFIGS 
+    "contingency_management/config/mission_manager_plugins.yaml")
+px4_behavior_register_behavior_tree_file("contingency_management/trees/safety_monitor.xml" 
+    PLUGIN_CONFIGS 
+    "contingency_management/config/safety_monitor_plugins.yaml")
+px4_behavior_register_behavior_tree_file("contingency_management/trees/alternate_landing_mission.xml" 
+    TREE_IDS
+    "AlternateLandingMission")
 
-# Make sure to provide the binary path of the shared library object files as an argument
-# when generating the model definition in the same package.
-# The install dir is not yet available (it is generated after the build step).
-set(EXTRA_PLUGINS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/contingency_management/src/bt_plugins)
-px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/config/mission_bt_node_config.yaml")
-px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/config/contingency_manager_bt_node_config.yaml" EXTRA_PLUGIN_DIR "${EXTRA_PLUGINS_BINARY_DIR}")
-px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/config/orchestrator_bt_node_config.yaml")
-px4_behavior_generate_bt_node_model(
-    "${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/config/safety_monitor_bt_node_config.yaml" EXTRA_PLUGIN_DIR "${EXTRA_PLUGINS_BINARY_DIR}")
+install(
+    DIRECTORY contingency_management/launch 
+    DESTINATION share/${PROJECT_NAME})
 
 
 

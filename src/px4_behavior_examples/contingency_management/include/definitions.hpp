@@ -1,9 +1,11 @@
 #pragma once
 
-#include <px4_behavior/factory.hpp>
-#include <px4_behavior_examples/msg/contingency_event.hpp>
+#include "px4_behavior/bt_factory.hpp"
+#include "px4_behavior_examples/msg/contingency_event.hpp"
 
 using ContingencyEventMsg = px4_behavior_examples::msg::ContingencyEvent;
+
+namespace px4_behavior::ops_engine {
 
 const char CONTINGENCY_EVENT_TOPIC_NAME[] = "contingency_event";
 const char FORCE_CONTINGENCY_TOPIC_NAME[] = "force_contingency";
@@ -40,3 +42,5 @@ inline void RegisterContingencyEventEnum(BT::BehaviorTreeFactory& factory)
         }
     }
 }
+
+}  // namespace px4_behavior::ops_engine

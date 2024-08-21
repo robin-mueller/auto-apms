@@ -1,4 +1,0 @@
-px4_behavior_examples:
-  system_state_sub: "system_state"
-  landing_approach_sub: "landing_approach"
-  landing_site_status_sub: "landing_site_status"

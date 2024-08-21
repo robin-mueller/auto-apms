@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<root BTCPP_format="4"
-      main_tree_to_execute="AlternateLandingMission">
+<root BTCPP_format="4">
   <BehaviorTree ID="AlternateLandingMission">
     <SequenceWithMemory>
       <GoTo lat="${WAYPOINT0_LAT}"
