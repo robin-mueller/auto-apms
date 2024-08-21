@@ -51,11 +51,6 @@ ContingencyManagerExecutor::ContingencyManagerExecutor(const rclcpp::NodeOptions
 void ContingencyManagerExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr,
                                                           BT::BehaviorTreeFactory& factory)
 {
-    px4_behavior::RegisterBTNodePlugins(
-        factory,
-        node_ptr,
-        px4_behavior::get_plugin_config_filepath("px4_behavior", "contingency_manager_bt_node_config"));
-
     // Enums (don't rely on magic enums for error safety)
     RegisterContingencyEventEnum(factory);
 }

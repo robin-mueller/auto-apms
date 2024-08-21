@@ -3,12 +3,13 @@
  * \brief Command line tool to generate a model of specific behavior tree node plugins
  */
 
-#include <behaviortree_cpp/xml_parsing.h>
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <px4_behavior/bt_factory.hpp>
+
+#include "behaviortree_cpp/xml_parsing.h"
+#include "px4_behavior/bt_factory.hpp"
+#include "rcpputils/split.hpp"
 
 int main(int argc, char** argv)
 {
@@ -16,33 +17,26 @@ int main(int argc, char** argv)
 
     if (argc < 3) {
         std::cerr
-            << "generate_bt_node_model: Missing inputs! The program requires: \n\t1.) the yaml configuration file to "
-               "pass to px4_behavior::RegisterBTNodePlugins\n\t2.) the xml file to store the model\n\t3.) Optional: "
-               "additional build information for plugins of the same package that issues the model generation\n";
-        std::cerr << "Usage: generate_bt_node_model <input_file> <output_file> [<build_info>...]\n";
+            << "generate_bt_node_model: Missing inputs! The program requires: \n\t1.) the yaml configuration files to "
+               "pass to px4_behavior::RegisterBTNodePlugins (separated by ';')\n\t2.) the xml file to store the "
+               "model\n\t3.) Optional: additional paths for plugin libraries being built by the same package that "
+               "issues the model generation (separated by ';')\n";
+        std::cerr << "Usage: generate_bt_node_model <config_files> <output_file> [<build_infos>]\n";
         return EXIT_FAILURE;
     }
-    std::filesystem::path config_file{argv[1]};
-    std::filesystem::path output_file{argv[2]};
-    std::vector<std::string> build_infos = {};
-    for (int i = 3; i < argc; ++i) { build_infos.push_back(argv[i]); }
+    std::vector<std::string> config_files = rcpputils::split(argv[1], ';');
+    std::filesystem::path output_file{std::filesystem::absolute(argv[2])};
+    std::vector<std::string> build_infos;
+    if (argc > 3) build_infos = rcpputils::split(argv[3], ';');
 
-    // Check if config exists
-    if (!std::filesystem::exists(config_file)) {
-        throw std::runtime_error("Config file '" + config_file.string() + "' doesn't exist");
-    }
+    // Ensure that arguments are not empty
+    if (config_files.empty()) { throw std::runtime_error("Argument config_files must not be empty"); }
+    if (output_file.empty()) { throw std::runtime_error("Argument output_file must not be empty"); }
 
     // Ensure correct extensions
-    if (config_file.extension().compare(".yaml") != 0) {
-        throw std::runtime_error("Config file '" + config_file.string() + "' has wrong extension. Must be '.yaml'");
-    }
     if (output_file.extension().compare(".xml") != 0) {
         throw std::runtime_error("Output file '" + output_file.string() + "' has wrong extension. Must be '.xml'");
     }
-
-    std::cout << "generate_bt_node_model: \n\tInput is " + std::filesystem::absolute(config_file).string() +
-                     "\n\tOutput will be " + std::filesystem::absolute(output_file).string()
-              << std::endl;
 
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("_generate_bt_node_model_temp_node");
@@ -57,10 +51,9 @@ int main(int argc, char** argv)
 #endif
 
     BT::BehaviorTreeFactory factory;
-
-    if (RegisterBTNodePlugins(factory, node, config_file, build_infos) != RegistrationStatus::SUCCESS) {
-        std::cerr << "generate_bt_node_model: Error registering node plugins with config "
-                  << std::filesystem::absolute(config_file) << "\n";
+    std::set<std::string> config_paths_set{config_files.begin(), config_files.end()};
+    if (!RegisterBTNodePlugins(node, factory, config_paths_set, build_infos)) {
+        std::cerr << "generate_bt_node_model: Error registering node plugins\n";
         return EXIT_FAILURE;
     }
 

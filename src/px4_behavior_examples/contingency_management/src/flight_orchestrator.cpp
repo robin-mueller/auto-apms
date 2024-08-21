@@ -11,12 +11,7 @@ class FlightOrchestratorExecutor : public BTExecutor
     FlightOrchestratorExecutor(const rclcpp::NodeOptions& options) : BTExecutor{"flight_orchestrator", options, 7777} {}
 
    private:
-    void SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory& factory) final
-    {
-        RegisterBTNodePlugins(factory,
-                            node_ptr,
-                            get_plugin_config_filepath("px4_behavior", "orchestrator_bt_node_config"));
-    }
+    void SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory& factory) final {}
 };
 
 }  // namespace px4_behavior::ops_engine

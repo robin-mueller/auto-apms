@@ -17,15 +17,22 @@ BTExecutorClient::BTExecutorClient(rclcpp::Node& node, const std::string& execut
     launch_client_ptr_ = rclcpp_action::create_client<LaunchExecutorAction>(&node, launch_executor_action_name_);
 }
 
-bool BTExecutorClient::UploadBehaviorTree(const std::string& package_name,
-                                          const std::string& trees_filename,
-                                          const std::string& tree_id)
+bool BTExecutorClient::UploadBehaviorTreeFromResource(const BehaviorTreeResource& resource,
+                                                      const std::string& main_tree_id)
 {
+    if (!main_tree_id.empty() && resource.tree_ids.find(main_tree_id) == resource.tree_ids.end()) {
+        RCLCPP_ERROR(logger_,
+                     "UploadBehaviorTree: Cannot find tree with ID '%s' in resource '%s'",
+                     main_tree_id.c_str(),
+                     resource.tree_file_name.c_str());
+        return false;
+    }
+
     std::string content;
     try {
-        content = px4_behavior::read_behavior_tree_filepath(px4_behavior::get_behavior_tree_filepath(package_name, trees_filename));
+        content = px4_behavior::ReadBehaviorTreeFile(resource.tree_path);
     } catch (const std::runtime_error& e) {
-        RCLCPP_ERROR(logger_, "UploadBehaviorTree: %s", e.what());
+        RCLCPP_ERROR(logger_, "UploadBehaviorTree: Error reading tree file path %s: %s", resource.tree_path.c_str(), e.what());
         return false;
     }
 
@@ -34,10 +41,10 @@ bool BTExecutorClient::UploadBehaviorTree(const std::string& package_name,
         std::unique(content.begin(), content.end(), [](char a, char b) { return std::isspace(a) && std::isspace(b); });
     content.erase(new_end, content.end());
 
-    return UploadBehaviorTreeFromText(content, tree_id);
+    return UploadBehaviorTreeFromText(content, main_tree_id);
 }
 
-bool BTExecutorClient::UploadBehaviorTreeFromText(const std::string& xml_data, const std::string& tree_id)
+bool BTExecutorClient::UploadBehaviorTreeFromText(const std::string& xml_data, const std::string& main_tree_id)
 {
     if (!upload_client_ptr_->wait_for_service(WAIT_FOR_SERVER_TIMEOUT)) {
         RCLCPP_ERROR(logger_,
@@ -49,7 +56,7 @@ bool BTExecutorClient::UploadBehaviorTreeFromText(const std::string& xml_data, c
     // Send request
     auto request = std::make_shared<UploadService::Request>();
     request->xml_data = xml_data;
-    request->tree_id = tree_id;
+    request->tree_id = main_tree_id;
     auto future = upload_client_ptr_->async_send_request(request);
 
     // Wait for the response
@@ -110,9 +117,9 @@ std::shared_future<ExecutionResultSharedPtr> BTExecutorClient::RequestLaunch()
                     break;
                 case rclcpp_action::ResultCode::ABORTED:
                     RCLCPP_WARN(logger_,
-                                 "Behavior tree '%s' was aborted: %s",
-                                 root_tree_id_.c_str(),
-                                 wr.result->termination_message.c_str());
+                                "Behavior tree '%s' was aborted: %s",
+                                root_tree_id_.c_str(),
+                                wr.result->termination_message.c_str());
                     break;
                 case rclcpp_action::ResultCode::CANCELED:
                     RCLCPP_INFO(logger_, "Behavior tree '%s' was canceled", root_tree_id_.c_str());

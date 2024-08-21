@@ -1,5 +1,5 @@
-#include <px4_behavior/bt_ros2_node.hpp>
-#include <px4_behavior/get_resource.hpp>
+#include "px4_behavior/bt_ros2_node.hpp"
+#include "px4_behavior/get_resource.hpp"
 
 #define INPUT_KEY_PACKAGE "package_name"
 #define INPUT_KEY_FILENAME "filename"
@@ -27,10 +27,14 @@ class LoadBehaviorTreeAction : public SyncActionNode
     {
         auto package_name = getInput<std::string>(INPUT_KEY_PACKAGE).value();
         auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
+
+        auto resource =
+            FetchBehaviorTreeResource(std::filesystem::path{filename}.filename(), std::nullopt, package_name);
+        if (!resource.has_value()) return NodeStatus::FAILURE;
+
         std::string xml_data;
         try {
-            xml_data = px4_behavior::read_behavior_tree_filepath(
-                px4_behavior::get_behavior_tree_filepath(package_name, filename));
+            xml_data = px4_behavior::ReadBehaviorTreeFile(resource.value().tree_path);
         } catch (const std::runtime_error& e) {
             return NodeStatus::FAILURE;
         }

@@ -474,8 +474,8 @@ void BTExecutor::CreateTree(const std::string& tree_id)
     // Throw if bt factory hasn't been set up yet
     if (!bt_factory_ptr_) { throw std::runtime_error("Tree factory hasn't been set up yet"); }
 
-    auto new_tree = std::make_unique<BT::Tree>();
-    *new_tree = bt_factory_ptr_->createTree(tree_id, BT::Blackboard::create(global_blackboard_ptr_));
+    auto new_tree = std::make_unique<BT::Tree>(
+        bt_factory_ptr_->createTree(tree_id, BT::Blackboard::create(global_blackboard_ptr_)));
 
     // If creating tree didn't throw, assign member
     behavior_tree_ptr_ = std::move(new_tree);

@@ -45,12 +45,7 @@ MissionManagerExecutor::MissionManagerExecutor(const rclcpp::NodeOptions& option
 
 void MissionManagerExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr,
                                                       BT::BehaviorTreeFactory& factory)
-{
-    px4_behavior::RegisterBTNodePlugins(
-        factory,
-        node_ptr,
-        px4_behavior::get_plugin_config_filepath("px4_behavior", "mission_bt_node_config"));
-}
+{}
 
 void MissionManagerExecutor::OnTreeCreated(BT::Blackboard& global_blackboard)
 {

@@ -30,8 +30,11 @@ macro(px4_behavior_register_plugins plugin_lib_target)
         else()
             set(_path "lib")
         endif()
-        list(APPEND _PX4_BEHAVIOR_BT_NODE_PLUGINS_BUILD_INFO "${_arg}@$<TARGET_FILE:${plugin_lib_target}>")
-        set(_PX4_BEHAVIOR_BT_NODE_PLUGINS_RESOURCE_FILE "${_PX4_BEHAVIOR_BT_NODE_PLUGINS_RESOURCE_FILE}${_arg};${_path}/$<TARGET_FILE_NAME:${plugin_lib_target}>\n")
+
+        # Fill meta info
+        list(APPEND _PX4_BEHAVIOR_BT_NODE_PLUGINS__TARGETS ${plugin_lib_target})
+        list(APPEND _PX4_BEHAVIOR_BT_NODE_PLUGINS__BUILD_INFO "${_arg}|$<TARGET_FILE:${plugin_lib_target}>")
+        set(_PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_FILE "${_PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_FILE}${_arg}|${_path}/$<TARGET_FILE_NAME:${plugin_lib_target}>\n")
     endforeach()
 
 endmacro()

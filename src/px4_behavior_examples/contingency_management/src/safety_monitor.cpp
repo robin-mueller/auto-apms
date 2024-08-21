@@ -82,11 +82,6 @@ SafetyMonitorExecutor::SafetyMonitorExecutor(const rclcpp::NodeOptions& options)
 
 void SafetyMonitorExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory& factory)
 {
-    px4_behavior::RegisterBTNodePlugins(
-        factory,
-        node_ptr,
-        px4_behavior::get_plugin_config_filepath("px4_behavior", "safety_monitor_bt_node_config"));
-
     // Enums (don't rely on magic enums for error safety)
     RegisterContingencyEventEnum(factory);
     factory.registerScriptingEnum("LANDING_SITE_TEMP_BLOCKED", LandingSiteStatusMsg::STATUS_TEMPORARILY_BLOCKED);

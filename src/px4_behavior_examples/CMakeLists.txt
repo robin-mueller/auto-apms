@@ -51,8 +51,12 @@ ament_target_dependencies(${EXAMPLE_TARGET_NAME}
 target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="example_${EXAMPLE_TARGET_NAME}")
 install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
 
-px4_behavior_register_plugin_config("goto/example_goto_plugins.yaml")
-px4_behavior_register_behavior_tree("goto/example_goto_tree.xml")
+# Behavior tree resources
+px4_behavior_register_behavior_tree_file("goto/example_${EXAMPLE_TARGET_NAME}.xml" 
+    PLUGIN_CONFIGS 
+    "goto/example_${EXAMPLE_TARGET_NAME}_plugins.yaml"
+    TREE_IDS 
+    "MainTree")
 
 #
 # ------------ PX4 Behavior Examples | Contingency Management --------------
@@ -95,6 +99,7 @@ add_library(behavior_tree_nodes SHARED
 target_link_libraries(behavior_tree_nodes "${cpp_typesupport_target}")
 ament_target_dependencies(behavior_tree_nodes px4_behavior)
 
+# Behavior tree resources
 px4_behavior_register_plugins(behavior_tree_nodes
     "px4_behavior::ops_engine::AsyncPrecondition"
     "px4_behavior::ops_engine::CreateAlternateLandingMission"
@@ -102,13 +107,21 @@ px4_behavior_register_plugins(behavior_tree_nodes
     "px4_behavior::ops_engine::IsLandingSiteClear"
     "px4_behavior::ops_engine::GetSystemState")
 
-# Behavior tree resources
-px4_behavior_register_plugin_config(
-    contingency_management/config/contingency_manager_plugins.yaml
-    contingency_management/config/mission_manager_plugins.yaml
-    contingency_management/config/orchestrator_plugins.yaml
-    contingency_management/config/safety_monitor_plugins.yaml)
-px4_behavior_register_behavior_tree(DIRECTORY contingency_management/trees)
+px4_behavior_register_behavior_tree_file("contingency_management/trees/contingency_manager.xml" 
+    PLUGIN_CONFIGS 
+    "contingency_management/config/contingency_manager_plugins.yaml")
+px4_behavior_register_behavior_tree_file("contingency_management/trees/flight_orchestrator.xml" 
+    PLUGIN_CONFIGS 
+    "contingency_management/config/orchestrator_plugins.yaml")
+px4_behavior_register_behavior_tree_file("contingency_management/trees/nominal_mission.xml" 
+    PLUGIN_CONFIGS 
+    "contingency_management/config/mission_manager_plugins.yaml")
+px4_behavior_register_behavior_tree_file("contingency_management/trees/safety_monitor.xml" 
+    PLUGIN_CONFIGS 
+    "contingency_management/config/safety_monitor_plugins.yaml")
+px4_behavior_register_behavior_tree_file("contingency_management/trees/alternate_landing_mission.xml" 
+    TREE_IDS
+    "AlternateLandingMission")
 
 install(
     DIRECTORY contingency_management/launch 

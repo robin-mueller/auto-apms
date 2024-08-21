@@ -2,10 +2,12 @@
 
 #include <chrono>
 #include <future>
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
-#include <px4_behavior_interfaces/action/launch_bt_executor.hpp>
-#include <px4_behavior_interfaces/srv/upload_behavior_tree.hpp>
+
+#include "px4_behavior/get_resource.hpp"
+#include "px4_behavior_interfaces/action/launch_bt_executor.hpp"
+#include "px4_behavior_interfaces/srv/upload_behavior_tree.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace px4_behavior {
 
@@ -24,17 +26,16 @@ class BTExecutorClient
     BTExecutorClient(rclcpp::Node& node, const std::string& executor_name);
 
     /**
-     * \brief Upload a behavior tree to an executor.
+     * @brief Upload behavior tree to an executor.
      *
      * This method is synchronous, meaning that it blocks until upload result is received.
      *
-     * \param package_name Name of the package where the trees file is to be found
-     * \param trees_filename Name of the trees file (Extension may be omitted)
-     * \return True on successful upload, false otherwise.
+     * @param resource Behavior tree resource
+     * @param main_tree_id ID of the tree to be created on upload. Empty if main_tree_to_execute XML attribute should be
+     * used to determine which tree is to be created
+     * @return True on successful upload, false otherwise
      */
-    bool UploadBehaviorTree(const std::string& package_name,
-                            const std::string& trees_filename,
-                            const std::string& tree_id = "");
+    bool UploadBehaviorTreeFromResource(const BehaviorTreeResource& resource, const std::string& main_tree_id = "");
 
     /**
      * \brief Upload behavior tree to an executor.
@@ -42,11 +43,11 @@ class BTExecutorClient
      * This method is synchronous, meaning that it blocks until upload result is received.
      *
      * \param xml_data The XML string containing the trees to register
-     * \param tree_id ID of the tree to be created on upload. Empty if main_tree_to_execute XML attribute should be used
-     * to determine which tree is to be created
-     *  \return True on successful upload, false otherwise.
+     * \param main_tree_id ID of the tree to be created on upload. Empty if main_tree_to_execute XML attribute should be
+     * used to determine which tree is to be created
+     * \return True on successful upload, false otherwise
      */
-    bool UploadBehaviorTreeFromText(const std::string& xml_data, const std::string& tree_id = "");
+    bool UploadBehaviorTreeFromText(const std::string& xml_data, const std::string& main_tree_id = "");
 
     /**
      * \brief Request to launch a behavoir tree executor.
@@ -61,7 +62,7 @@ class BTExecutorClient
      *
      * This method is synchronous, meaning that it blocks until the cancelation result is received.
      *
-     * \return True if execution was cancelled successfully, false otherwise.
+     * \return True if execution was cancelled successfully, false otherwise
      */
     bool RequestCancelation();
 

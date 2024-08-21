@@ -1,8 +1,9 @@
-#include <Eigen/Geometry>
-#include <px4_ros2/utils/geodesic.hpp>
 #include <regex>
-#include <px4_behavior/bt_ros2_node.hpp>
-#include <px4_behavior/get_resource.hpp>
+
+#include "Eigen/Geometry"
+#include "px4_behavior/bt_ros2_node.hpp"
+#include "px4_behavior/get_resource.hpp"
+#include "px4_ros2/utils/geodesic.hpp"
 
 #define INPUT_KEY_POS "pos_vec"
 #define OUTPUT_KEY_DATA "xml_data"
@@ -74,8 +75,10 @@ class CreateAlternateLandingMission : public SyncActionNode
         };
 
         // Read tree template and replace placeholders
-        auto tree = px4_behavior::read_behavior_tree_filepath(
-            px4_behavior::get_behavior_tree_filepath("px4_behavior", "alternate_landing_mission"));
+        const std::string main_tree_id = "AlternateLandingMission";
+        auto resource = FetchBehaviorTreeResource(std::nullopt, main_tree_id, "px4_behavior_examples");
+        if (!resource.has_value()) return NodeStatus::FAILURE;
+        auto tree = px4_behavior::ReadBehaviorTreeFile(resource.value().tree_path);
 
         // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -
         std::regex placeholder("\\$\\{([A-Za-z0-9_-]+)\\}");
@@ -92,12 +95,12 @@ class CreateAlternateLandingMission : public SyncActionNode
         setOutput(OUTPUT_KEY_DATA, tree);
 
         // Currently there is no easy way to read the tree id from the xml without creating it
-        setOutput<std::string>(OUTPUT_KEY_ID, "AlternateLandingMission");
+        setOutput<std::string>(OUTPUT_KEY_ID, main_tree_id);
         return NodeStatus::SUCCESS;
     }
 };
 
-}  // namespace px4_behavior
+}  // namespace px4_behavior::ops_engine
 
 #include <px4_behavior/register_behavior_tree_node_macro.hpp>
 PX4_BEHAVIOR_REGISTER_BEHAVIOR_TREE_NODE(px4_behavior::ops_engine::CreateAlternateLandingMission)
