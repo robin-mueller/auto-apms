@@ -15,10 +15,13 @@ This repository provides PX4 developers with
 
 ## ToDo
 
-- Redesign CMake resource management to integrate better with ament_index
+- ~Redesign CMake resource management to integrate better with ament_index~
+- Update behavior executor class and integrate with cmake redesign
+- Make contingency_management example more abstract to represent a general operations engine for UAS (ops_engine)
+- Create comprehensive documentation of member functions and intended use cases
 - Implement more detailed examples and automate their execution
 - Implement unit tests
-- Create comprehensive documentation of member functions and intended use cases
+
 
 ## Known Issues
 
