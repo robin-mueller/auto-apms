@@ -4,15 +4,31 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - "*"
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: DenverCoder1/doxygen-github-pages-action@v2.0.0
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install doxygen
+        run: sudo apt update && sudo apt-get install doxygen graphviz -y
+
+      - name: Run doxygen
+        run: doxygen doc/Doxyfile
+
+      - name: Deploy
+        if: github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages
-          folder: doc/html
-          config_file: doc/Doxyfile
-          doxygen_version: 1.9.1
+          publish_dir: doc/html
