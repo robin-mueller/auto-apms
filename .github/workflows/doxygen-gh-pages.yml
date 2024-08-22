@@ -24,7 +24,7 @@ jobs:
         run: sudo apt update && sudo apt-get install doxygen graphviz -y
 
       - name: Run doxygen
-        run: doxygen doc/Doxyfile
+        run: (cd doc && doxygen)
 
       - name: Deploy
         if: github.event_name == 'push'
