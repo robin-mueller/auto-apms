@@ -9,12 +9,14 @@
 
 namespace px4_behavior {
 
+// Struct for behavior tree node plugin resources
 struct BTNodePluginResource
 {
     std::string classname;
     std::string library_path;
 };
 
+// Struct for behavior tree resources
 struct BehaviorTreeResource
 {
     std::string tree_file_name;
