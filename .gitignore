@@ -2,6 +2,8 @@
 install/
 log/
 build/
+doc/*
+!doc/Doxyfile
 
 # Ignore generated docs
 *.dox
