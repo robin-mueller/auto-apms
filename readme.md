@@ -1,10 +1,13 @@
 ![image](https://github.com/robin-mueller/px4-behavior-docs/blob/master/public/logo-wo-bg.png)
 
-# PX4 Behavior-based Control Library
+[![Website](https://img.shields.io/website?url=https://robin-mueller.github.io/px4-behavior-docs/)](https://robin-mueller.github.io/px4-behavior-docs/)
+[![License](https://img.shields.io/github/license/robin-mueller/px4-behavior?color=blue)](https://www.apache.org/licenses/LICENSE-2.0)
+
+[![Release](https://img.shields.io/github/v/release/robin-mueller/px4-behavior)](https://github.com/robin-mueller/px4-behavior/releases)
 
 **A human-friendly mission control framework that allows to create arbitrary flight behaviors.**
 
-- [User Guide](https://robin-mueller.github.io/px4-behavior-docs)
+- [User Guide](https://robin-mueller.github.io/px4-behavior-docs/introduction/)
 - [API Reference](https://robin-mueller.github.io/px4-behavior)
 
 *Currently work in progress*
