@@ -5,6 +5,8 @@
 
 [![Release](https://img.shields.io/github/v/release/robin-mueller/px4-behavior)](https://github.com/robin-mueller/px4-behavior/releases)
 
+# PX4 Behavior | User-friendly Robotic Task Management
+
 *Currently work in progress*
 
 With this ROS 2 package, the goal is to offer a control interface similar to [Nav2 Behavior Trees](https://docs.nav2.org/behavior_trees/index.html) but with greater focus on PX4 applications and more flexibility and user-friendliness. The package is also supposed to facilitate the model-based development process of flight tasks by introducing effective tools and methods for creating highly modular systems.
@@ -18,7 +20,7 @@ This repository provides PX4 developers with
 
 Vist the [User Guide](https://robin-mueller.github.io/px4-behavior-docs/introduction/) for getting started.
 
-## ToDo
+# ToDo
 
 - ~Redesign CMake resource management to integrate better with ament_index~
 - Update behavior executor class and integrate with cmake redesign
@@ -28,6 +30,6 @@ Vist the [User Guide](https://robin-mueller.github.io/px4-behavior-docs/introduc
 - Implement unit tests
 
 
-## Known Issues
+# Known Issues
 
 - On the development system, the first message of `/fmu/out/mode_completed` was usually not received. In that case, the first task to be performed after starting the simulation will abort when completed. After retrying once, everything works fine.
