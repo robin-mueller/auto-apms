@@ -32,14 +32,6 @@ jobs:
         run: sudo apt update && sudo apt-get install doxygen graphviz -y
       - name: Run doxygen
         run: (cd doc && doxygen)
-
-      # - name: Deploy
-      #   if: github.event_name == 'push'
-      #   uses: peaceiris/actions-gh-pages@v4
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     publish_dir: doc/html
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact

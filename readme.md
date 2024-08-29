@@ -5,11 +5,6 @@
 
 [![Release](https://img.shields.io/github/v/release/robin-mueller/px4-behavior)](https://github.com/robin-mueller/px4-behavior/releases)
 
-**A human-friendly mission control framework that allows to create arbitrary flight behaviors.**
-
-- [User Guide](https://robin-mueller.github.io/px4-behavior-docs/introduction/)
-- [API Reference](https://robin-mueller.github.io/px4-behavior)
-
 *Currently work in progress*
 
 With this ROS 2 package, the goal is to offer a control interface similar to [Nav2 Behavior Trees](https://docs.nav2.org/behavior_trees/index.html) but with greater focus on PX4 applications and more flexibility and user-friendliness. The package is also supposed to facilitate the model-based development process of flight tasks by introducing effective tools and methods for creating highly modular systems.
@@ -20,6 +15,8 @@ This repository provides PX4 developers with
 - A model-based flight behavior engine incorporating behavior trees
 - CMake macros for registering behavior tree resources
 - Useful command line tools for orchestrating the system
+
+Vist the [User Guide](https://robin-mueller.github.io/px4-behavior-docs/introduction/) for getting started.
 
 ## ToDo
 
