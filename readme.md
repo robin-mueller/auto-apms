@@ -5,7 +5,7 @@
 
 [![Release](https://img.shields.io/github/v/release/robin-mueller/px4-behavior)](https://github.com/robin-mueller/px4-behavior/releases)
 
-# PX4 Behavior | User-friendly Robotic Task Management
+# PX4 Behavior | User-friendly Mission Management
 
 *Currently work in progress*
 
