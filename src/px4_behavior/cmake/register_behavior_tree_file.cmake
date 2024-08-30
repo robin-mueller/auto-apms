@@ -35,7 +35,7 @@ macro(px4_behavior_register_behavior_tree_file tree_filepath)
                 "\"${_model_build_path}\"" # Absolute directory to write the model definition file to
                 "\"${_PX4_BEHAVIOR_BT_NODE_PLUGINS__BUILD_INFO}\"" # Library paths of the plugins built in this package. Their install locations are not available at build time
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS ${ARGS_PLUGIN_CONFIGS} ${_PX4_BEHAVIOR_BT_NODE_PLUGINS__TARGETS}
+            DEPENDS ${ARGS_PLUGIN_CONFIGS} ${_PX4_BEHAVIOR_BT_NODE_PLUGINS__TARGETS} # TODO: Let CMake parse the config file and add depencencies specifically
             COMMENT "Generate node model definition with config paths ${ARGS_PLUGIN_CONFIGS}.")
         add_custom_target(_target_generate_bt_node_model__${tgt_suffix} ALL
             DEPENDS "${_model_build_path}")

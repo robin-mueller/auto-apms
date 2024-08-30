@@ -4,10 +4,10 @@
 # of the node (in case of a ROS2 node plugin) or empty (in case of a standard behavior tree node plugin).
 #
 # package_name1:
-#   standard_plugin_target_name:
-#   ros2_plugin_target_name: "node_default_port_name"
+#   standard_plugin_key:
+#   ros2_plugin_key: "node_default_port_name"
 # package_name2:
-#   ros2_plugin_target_name: "node_default_port_name"
+#   ros2_plugin_key: "node_default_port_name"
 #
 # NOTE:
 # The ROS2 namespacing concept (https://design.ros2.org/articles/topic_and_service_names.html) 
@@ -20,3 +20,4 @@ px4_behavior:
   GoToAction: "go_to"
   LandAction: "land"
   TakeoffAction: "takeoff"
+  ReadGlobalPosition: "/fmu/out/vehicle_global_position"

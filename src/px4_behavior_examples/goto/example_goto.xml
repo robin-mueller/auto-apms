@@ -4,13 +4,19 @@
   <BehaviorTree ID="MainTree">
     <Sequence>
       <ArmAction wait_until_ready_to_arm="true"
-           action_name=""/>
+                 action_name=""/>
       <TakeoffAction alt="190"
-               action_name=""/>
-      <GoToAction lat="49.860150"
-            lon="8.675836"
-            alt="190"
-            action_name=""/>
+                     action_name=""/>
+      <ReadGlobalPosition pos_vec="{pos_vec}"
+                          alt="{alt}"
+                          lat="{lat}"
+                          lon="{lon}"
+                          topic_name="__default__placeholder__"
+                          _onSuccess="new_lon := lon + 0.0001"/>
+      <GoToAction lat="{lat}"
+                  lon="{new_lon}"
+                  alt="{alt}"
+                  action_name=""/>
       <LandAction action_name=""/>
       <DisarmAction action_name=""/>
     </Sequence>
@@ -43,6 +49,23 @@
       <input_port name="action_name"
                   type="std::string">Action server name</input_port>
     </Action>
+    <Condition ID="ReadGlobalPosition">
+      <output_port name="pos_vec"
+                   default="{pos_vec}"
+                   type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position vector (latitude [°], longitude [°], altitude AMSL [m])</output_port>
+      <output_port name="alt"
+                   default="{alt}"
+                   type="double">Current altitude in meter (AMSL)</output_port>
+      <output_port name="lat"
+                   default="{lat}"
+                   type="double">Current latitude in degree [°]</output_port>
+      <output_port name="lon"
+                   default="{lon}"
+                   type="double">Current longitude in degree [°]</output_port>
+      <input_port name="topic_name"
+                  default="__default__placeholder__"
+                  type="std::string">Topic name</input_port>
+    </Condition>
     <Action ID="TakeoffAction">
       <input_port name="alt"
                   type="double">Target takeoff altitude in meter (AMSL)</input_port>

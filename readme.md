@@ -28,8 +28,3 @@ Vist the [User Guide](https://robin-mueller.github.io/px4-behavior-docs/introduc
 - Create comprehensive documentation of member functions and intended use cases
 - Implement more detailed examples and automate their execution
 - Implement unit tests
-
-
-# Known Issues
-
-- On the development system, the first message of `/fmu/out/mode_completed` was usually not received. In that case, the first task to be performed after starting the simulation will abort when completed. After retrying once, everything works fine.
