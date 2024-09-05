@@ -1,17 +1,31 @@
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
-#include <px4_behavior/commander/action_context.hpp>
-#include <px4_ros2/components/mode.hpp>
-#include <px4_ros2/odometry/attitude.hpp>
-#include <px4_ros2/odometry/global_position.hpp>
-#include <px4_ros2/odometry/local_position.hpp>
-#include <px4_ros2/utils/geodesic.hpp>
-#include <px4_ros2/utils/geometry.hpp>
+#include "px4_behavior/action_context.hpp"
+#include "px4_ros2/components/mode.hpp"
+#include "px4_ros2/odometry/attitude.hpp"
+#include "px4_ros2/odometry/global_position.hpp"
+#include "px4_ros2/odometry/local_position.hpp"
+#include "px4_ros2/utils/geodesic.hpp"
+#include "px4_ros2/utils/geometry.hpp"
 
 namespace px4_behavior {
 
 /**
- * \brief Class to model the mode referring to an external task.
+ * @brief Class to model the mode referring to an external task.
  */
 template <class ActionT>
 class ModeBase : public px4_ros2::ModeBase
@@ -23,9 +37,9 @@ class ModeBase : public px4_ros2::ModeBase
     using ActionContextType = ActionContext<ActionT>;
 
     ModeBase(rclcpp::Node& node,
-                 const Settings& settings,
-                 const std::string& topic_namespace_prefix,
-                 std::shared_ptr<ActionContextType> action_context_ptr)
+             const Settings& settings,
+             const std::string& topic_namespace_prefix,
+             std::shared_ptr<ActionContextType> action_context_ptr)
         : px4_ros2::ModeBase{node, settings, topic_namespace_prefix}, action_context_ptr_{action_context_ptr}
     {}
 

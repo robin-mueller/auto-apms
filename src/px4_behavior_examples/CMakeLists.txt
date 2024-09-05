@@ -18,11 +18,11 @@ find_package(rosidl_default_generators REQUIRED)
 set(ACTION_SOURCES
     )
 set(MESSAGE_SOURCES
-    contingency_management/interfaces/msg/ForceContingency.msg
-    contingency_management/interfaces/msg/LandingApproach.msg
-    contingency_management/interfaces/msg/LandingSiteStatus.msg
-    contingency_management/interfaces/msg/ContingencyEvent.msg
-    contingency_management/interfaces/msg/SystemState.msg)
+    "contingency_management/interfaces/msg/ForceContingency.msg"
+    "contingency_management/interfaces/msg/LandingApproach.msg"
+    "contingency_management/interfaces/msg/LandingSiteStatus.msg"
+    "contingency_management/interfaces/msg/ContingencyEvent.msg"
+    "contingency_management/interfaces/msg/SystemState.msg")
 set(SERVICE_SOURCES
     )
 
@@ -30,31 +30,25 @@ rosidl_generate_interfaces(${PROJECT_NAME} ${ACTION_SOURCES} ${SERVICE_SOURCES} 
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} rosidl_typesupport_cpp)
 
 #
-# ------------ PX4 Behavior Examples | Commander --------------
+# ------------ PX4 Behavior Examples | Example sources --------------
 #
 
-set(EXAMPLE_TARGET_NAME contingency)
-add_executable(${EXAMPLE_TARGET_NAME} commander/src/contingency.cpp)
-ament_target_dependencies(${EXAMPLE_TARGET_NAME}
-    px4_behavior)
-target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="example_${EXAMPLE_TARGET_NAME}")
-install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
+macro(add_and_install_example_executable source_file)
+    get_filename_component(example_target_name "${source_file}" NAME_WE)
+    add_executable(${example_target_name} ${source_file})
+    ament_target_dependencies(${example_target_name} px4_behavior)
+    target_compile_definitions(${example_target_name} PRIVATE EXAMPLE_NAME="${example_target_name}")
+    install(TARGETS ${example_target_name} DESTINATION lib/${PROJECT_NAME})
+endmacro()
 
-#
-# ------------ PX4 Behavior Examples | Goto --------------
-#
+add_and_install_example_executable("src/task_ex1.cpp")
+add_and_install_example_executable("src/behavior_ex1.cpp")
 
-set(EXAMPLE_TARGET_NAME goto)
-add_executable(${EXAMPLE_TARGET_NAME} goto/src/goto.cpp)
-ament_target_dependencies(${EXAMPLE_TARGET_NAME}
-    px4_behavior)
-target_compile_definitions(${EXAMPLE_TARGET_NAME} PRIVATE EXAMPLE_NAME="example_${EXAMPLE_TARGET_NAME}")
-install(TARGETS ${EXAMPLE_TARGET_NAME} DESTINATION lib/${PROJECT_NAME})
-
-# Behavior tree resources
-px4_behavior_register_behavior_tree_file("goto/example_${EXAMPLE_TARGET_NAME}.xml" 
+# Example behavior tree resources
+px4_behavior_register_behavior_tree_file(
+    "resource/relative_goto.xml" 
     PLUGIN_CONFIGS 
-    "goto/example_${EXAMPLE_TARGET_NAME}_plugins.yaml"
+    "resource/relative_goto_plugins.yaml"
     TREE_IDS 
     "MainTree")
 

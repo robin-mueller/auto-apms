@@ -1,10 +1,24 @@
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 #include <chrono>
-#include <px4_behavior/definitions.hpp>
-#include <px4_behavior/commander/action_context.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
+
+#include "px4_behavior/action_context.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace px4_behavior {
 
@@ -13,7 +27,7 @@ static constexpr std::chrono::milliseconds DEFAULT_VALUE_FEEDBACK_INTERVAL{200};
 
 enum class TaskStatus : uint8_t { RUNNING, SUCCESS, FAILURE };
 
-template <class ActionT>
+template <typename ActionT>
 class TaskBase
 {
    public:
@@ -41,15 +55,15 @@ class TaskBase
 
    private:
     /**
-     *  TaskBase specific callbacks
+     *  Implementation specific callbacks
      */
     virtual bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr);
     virtual void SetDefaultResult(std::shared_ptr<Result> result_ptr);
     virtual bool OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
     virtual TaskStatus CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
     virtual TaskStatus ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
-                                               std::shared_ptr<Feedback> feedback_ptr,
-                                               std::shared_ptr<Result> result_ptr) = 0;
+                                   std::shared_ptr<Feedback> feedback_ptr,
+                                   std::shared_ptr<Result> result_ptr) = 0;
 
     /**
      *  Action server callbacks
@@ -168,8 +182,7 @@ bool TaskBase<ActionT>::OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, st
 }
 
 template <class ActionT>
-TaskStatus TaskBase<ActionT>::CancelGoal(std::shared_ptr<const Goal> goal_ptr,
-                                                     std::shared_ptr<Result> result_ptr)
+TaskStatus TaskBase<ActionT>::CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
 {
     (void)goal_ptr;
     (void)result_ptr;

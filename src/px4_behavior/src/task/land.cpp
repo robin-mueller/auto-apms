@@ -12,20 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "px4_behavior_interfaces/action/land.hpp"
 
-#include "behaviortree_cpp/bt_factory.h"
-#include "behaviortree_ros2/ros_node_params.hpp"
+#include "px4_behavior/px4_behavior.hpp"
 
 namespace px4_behavior {
-class BTNodeRegistration
+
+class LandTask : public ModeExecutor<px4_behavior_interfaces::action::Land>
 {
    public:
-    BTNodeRegistration() = default;
-    virtual ~BTNodeRegistration() = default;
+    explicit LandTask(const rclcpp::NodeOptions& options)
+        : ModeExecutor{LAND_TASK_NAME, options, FlightMode::Land}
+    {}
 
-    virtual void RegisterForBehaviorTreeFactory(BT::BehaviorTreeFactory& factory,
-                                                const std::string& type_name,
-                                                const BT::RosNodeParams& params) = 0;
+   private:
+    bool SendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr)
+    {
+        (void)goal_ptr;
+        return client.Land();
+    }
 };
+
 }  // namespace px4_behavior
+
+#include "rclcpp_components/register_node_macro.hpp"
+RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::LandTask)

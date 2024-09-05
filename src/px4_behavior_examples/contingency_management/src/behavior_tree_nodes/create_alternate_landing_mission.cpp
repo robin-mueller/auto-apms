@@ -102,5 +102,5 @@ class CreateAlternateLandingMission : public SyncActionNode
 
 }  // namespace px4_behavior::ops_engine
 
-#include <px4_behavior/register_behavior_tree_node_macro.hpp>
+#include "px4_behavior/register_behavior_tree_node_macro.hpp"
 PX4_BEHAVIOR_REGISTER_BEHAVIOR_TREE_NODE(px4_behavior::ops_engine::CreateAlternateLandingMission)

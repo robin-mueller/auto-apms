@@ -1,11 +1,25 @@
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
-#include <px4_behavior/commander/mode.hpp>
-#include <px4_behavior/commander/task.hpp>
-#include <px4_behavior/commander/vehicle_command_client.hpp>
-#include <px4_msgs/msg/mode_completed.hpp>
-#include <px4_msgs/msg/vehicle_status.hpp>
-#include <px4_ros2/components/wait_for_fmu.hpp>
+#include "px4_behavior/mode.hpp"
+#include "px4_behavior/task_base.hpp"
+#include "px4_behavior/vehicle_command_client.hpp"
+#include "px4_msgs/msg/mode_completed.hpp"
+#include "px4_msgs/msg/vehicle_status.hpp"
+#include "px4_ros2/components/wait_for_fmu.hpp"
 
 namespace px4_behavior {
 
@@ -368,9 +382,9 @@ ModeExecutorFactory<ActionT, ModeT>::ModeExecutorFactory(const std::string& name
     const auto action_context_ptr = std::make_shared<ActionContext<ActionT>>(node_ptr_->get_logger());
 
     mode_ptr_ = std::make_unique<ModeT>(*node_ptr_,
-                                                 px4_ros2::ModeBase::Settings{"mode_" + name},
-                                                 topic_namespace_prefix,
-                                                 action_context_ptr);
+                                        px4_ros2::ModeBase::Settings{"mode_" + name},
+                                        topic_namespace_prefix,
+                                        action_context_ptr);
 
     if (!px4_ros2::waitForFMU(*node_ptr_, std::chrono::seconds(3))) { throw std::runtime_error("No message from FMU"); }
     else {
@@ -384,12 +398,12 @@ ModeExecutorFactory<ActionT, ModeT>::ModeExecutorFactory(const std::string& name
 
     // AFTER (!) registration, the mode id can be queried to set up the executor
     mode_executor_ptr_ = std::make_shared<ModeExecutor<ActionT>>(name,
-                                                                        node_ptr_,
-                                                                        action_context_ptr,
-                                                                        mode_ptr_->id(),
-                                                                        deactivate_before_completion,
-                                                                        execution_interval,
-                                                                        feedback_interval);
+                                                                 node_ptr_,
+                                                                 action_context_ptr,
+                                                                 mode_ptr_->id(),
+                                                                 deactivate_before_completion,
+                                                                 execution_interval,
+                                                                 feedback_interval);
 }
 
 template <class ActionT, class ModeT>

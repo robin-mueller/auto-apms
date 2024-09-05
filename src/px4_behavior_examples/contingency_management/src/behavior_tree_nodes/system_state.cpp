@@ -1,5 +1,5 @@
 #include <px4_behavior_examples/msg/system_state.hpp>
-#include <px4_behavior/bt_ros2_node.hpp>
+#include "px4_behavior/bt_ros2_node.hpp"
 
 #define OUTPUT_KEY_BATTERY "battery_level"
 
@@ -33,5 +33,5 @@ class GetSystemState : public RosTopicSubNode<SystemStateMsg>
 
 }  // namespace px4_behavior
 
-#include <px4_behavior/register_behavior_tree_node_macro.hpp>
+#include "px4_behavior/register_behavior_tree_node_macro.hpp"
 PX4_BEHAVIOR_REGISTER_BEHAVIOR_TREE_NODE(px4_behavior::ops_engine::GetSystemState)

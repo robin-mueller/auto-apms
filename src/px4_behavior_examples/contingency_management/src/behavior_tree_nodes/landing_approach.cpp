@@ -1,5 +1,5 @@
 #include <px4_behavior_examples/msg/landing_approach.hpp>
-#include <px4_behavior/bt_ros2_node.hpp>
+#include "px4_behavior/bt_ros2_node.hpp"
 
 #define OUTPUT_KEY_SITE_ID "next_landing_site_id"
 
@@ -36,5 +36,5 @@ class IsApproachingLanding : public RosTopicSubNode<LandingApproachMsg>
 
 }  // namespace px4_behavior
 
-#include <px4_behavior/register_behavior_tree_node_macro.hpp>
+#include "px4_behavior/register_behavior_tree_node_macro.hpp"
 PX4_BEHAVIOR_REGISTER_BEHAVIOR_TREE_NODE(px4_behavior::ops_engine::IsApproachingLanding)

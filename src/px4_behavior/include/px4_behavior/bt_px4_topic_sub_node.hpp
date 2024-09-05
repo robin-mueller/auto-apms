@@ -1,3 +1,17 @@
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /**
  * Currently, BehaviorTree.CPP does not support changing the QoS settings, so we have to write our own class for
  * subscribing to PX4 topics. This class should not be used once, the library officially supports QoS settings
@@ -8,13 +22,13 @@
 
 #include <boost/signals2.hpp>
 #include <memory>
-#include <rclcpp/allocator/allocator_common.hpp>
-#include <rclcpp/executors.hpp>
 #include <string>
 
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/condition_node.h"
 #include "behaviortree_ros2/ros_node_params.hpp"
+#include "rclcpp/allocator/allocator_common.hpp"
+#include "rclcpp/executors.hpp"
 
 using namespace BT;
 

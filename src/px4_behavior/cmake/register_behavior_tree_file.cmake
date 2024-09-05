@@ -1,4 +1,27 @@
+# Copyright 2024 Robin Müller
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 macro(px4_behavior_register_behavior_tree_file tree_filepath)
+
+    # Check if behavior tree file exists
+    get_filename_component(tree_filepath_abs "${tree_filepath}" REALPATH)
+    if (NOT EXISTS "${tree_filepath_abs}")
+        message(
+            FATAL_ERROR
+            "px4_behavior_register_behavior_tree_file(): Behavior tree file ${tree_filepath_abs} does not exist"
+        )
+    endif()
     
     # Parse arguments
     set(options "")
@@ -6,8 +29,8 @@ macro(px4_behavior_register_behavior_tree_file tree_filepath)
     set(multiValueArgs PLUGIN_CONFIGS TREE_IDS)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    get_filename_component(_tree_file_name "${tree_filepath}" NAME)
-    get_filename_component(_tree_file_stem "${tree_filepath}" NAME_WE)
+    get_filename_component(_tree_file_name "${tree_filepath_abs}" NAME)
+    get_filename_component(_tree_file_stem "${tree_filepath_abs}" NAME_WE)
 
     set(_rel_tree_install_dir "${_PX4_BEHAVIOR_RESOURCES_DIR_RELATIVE}/${_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_DIR_NAME}")
     set(_rel_plugin_config_install_paths "")
@@ -17,7 +40,15 @@ macro(px4_behavior_register_behavior_tree_file tree_filepath)
         set(_rel_plugin_config_install_dir "${_PX4_BEHAVIOR_RESOURCES_DIR_RELATIVE}/${_PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_DIR_NAME}")
         set(_rel_node_model_install_dir "${_rel_tree_install_dir}")
         foreach(_plugin_config_filepath ${ARGS_PLUGIN_CONFIGS})
-            get_filename_component(_plugin_config_file_name "${_plugin_config_filepath}" NAME)
+            # Check if plugin file exists
+            get_filename_component(_plugin_config_filepath_abs "${_plugin_config_filepath}" REALPATH)
+            if (NOT EXISTS "${_plugin_config_filepath_abs}")
+                message(
+                    FATAL_ERROR
+                    "px4_behavior_register_behavior_tree_file(): Plugin file ${_plugin_config_filepath_abs} does not exist"
+                )
+            endif()
+            get_filename_component(_plugin_config_file_name "${_plugin_config_filepath_abs}" NAME)
             list(APPEND _rel_plugin_config_install_paths "${_rel_plugin_config_install_dir}/${_plugin_config_file_name}")
         endforeach()
 
@@ -31,11 +62,11 @@ macro(px4_behavior_register_behavior_tree_file tree_filepath)
         set(_model_build_path "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_model.xml")
         add_custom_command(OUTPUT "${_model_build_path}"
             COMMAND "${_PX4_BEHAVIOR_EXECUTABLES_INSTALL_DIR}/generate_bt_node_model"
-                "\"${ARGS_PLUGIN_CONFIGS}\"" # Absolute path of the config source file
-                "\"${_model_build_path}\"" # Absolute directory to write the model definition file to
+                "\"${ARGS_PLUGIN_CONFIGS}\"" # Paths of the config source files
+                "\"${_model_build_path}\"" # Directory to write the model definition file to
                 "\"${_PX4_BEHAVIOR_BT_NODE_PLUGINS__BUILD_INFO}\"" # Library paths of the plugins built in this package. Their install locations are not available at build time
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS ${ARGS_PLUGIN_CONFIGS} ${_PX4_BEHAVIOR_BT_NODE_PLUGINS__TARGETS} # TODO: Let CMake parse the config file and add depencencies specifically
+            DEPENDS ${ARGS_PLUGIN_CONFIGS} ${_PX4_BEHAVIOR_BT_NODE_PLUGINS__TARGETS} # TODO: Let CMake parse the config file and also add depencencies from other installs
             COMMENT "Generate node model definition with config paths ${ARGS_PLUGIN_CONFIGS}.")
         add_custom_target(_target_generate_bt_node_model__${tgt_suffix} ALL
             DEPENDS "${_model_build_path}")
@@ -56,7 +87,7 @@ macro(px4_behavior_register_behavior_tree_file tree_filepath)
 
     # Install behavior tree
     install(
-        FILES "${tree_filepath}"
+        FILES "${tree_filepath_abs}"
         DESTINATION "${_rel_tree_install_dir}")
 
     # Fill meta info

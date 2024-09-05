@@ -1,8 +1,23 @@
-#include <action_msgs/srv/cancel_goal.hpp>
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "px4_behavior/bt_executor_client.hpp"
+
 #include <functional>
-#include <px4_behavior/bt_executor_client.hpp>
-#include <px4_behavior/definitions.hpp>
-#include <px4_behavior/get_resource.hpp>
+
+#include "action_msgs/srv/cancel_goal.hpp"
+#include "px4_behavior/px4_behavior.hpp"
 
 namespace px4_behavior {
 
@@ -13,7 +28,7 @@ BTExecutorClient::BTExecutorClient(rclcpp::Node& node, const std::string& execut
       upload_service_name_{executor_name + std::string(BT_EXECUTOR_UPLOAD_SERVICE_NAME_SUFFIX)},
       launch_executor_action_name_{executor_name + std::string(BT_EXECUTOR_LAUNCH_ACTION_NAME_SUFFIX)}
 {
-    upload_client_ptr_ = node.create_client<UploadService>(upload_service_name_);
+    upload_client_ptr_ = node.create_client<UploadBehaviorTreeService>(upload_service_name_);
     launch_client_ptr_ = rclcpp_action::create_client<LaunchExecutorAction>(&node, launch_executor_action_name_);
 }
 
@@ -32,7 +47,10 @@ bool BTExecutorClient::UploadBehaviorTreeFromResource(const BehaviorTreeResource
     try {
         content = px4_behavior::ReadBehaviorTreeFile(resource.tree_path);
     } catch (const std::runtime_error& e) {
-        RCLCPP_ERROR(logger_, "UploadBehaviorTree: Error reading tree file path %s: %s", resource.tree_path.c_str(), e.what());
+        RCLCPP_ERROR(logger_,
+                     "UploadBehaviorTree: Error reading tree file path %s: %s",
+                     resource.tree_path.c_str(),
+                     e.what());
         return false;
     }
 
@@ -54,7 +72,7 @@ bool BTExecutorClient::UploadBehaviorTreeFromText(const std::string& xml_data, c
     }
 
     // Send request
-    auto request = std::make_shared<UploadService::Request>();
+    auto request = std::make_shared<UploadBehaviorTreeService::Request>();
     request->xml_data = xml_data;
     request->tree_id = main_tree_id;
     auto future = upload_client_ptr_->async_send_request(request);
@@ -89,13 +107,12 @@ std::shared_future<ExecutionResultSharedPtr> BTExecutorClient::RequestLaunch()
     auto promise_ptr = std::make_shared<std::promise<ExecutionResultSharedPtr>>();
     if (!launch_client_ptr_->wait_for_action_server(WAIT_FOR_SERVER_TIMEOUT)) {
         RCLCPP_ERROR(logger_,
-                     "RequestLaunch: Execution action '%s' is not available",
+                     "RequestLaunch: Launch action '%s' is not available",
                      launch_executor_action_name_.c_str());
         promise_ptr->set_value(nullptr);
         return promise_ptr->get_future();
     }
 
-    using namespace std::placeholders;
     auto send_goal_options = rclcpp_action::Client<LaunchExecutorAction>::SendGoalOptions{};
 
     // Feedback callback
@@ -138,7 +155,7 @@ std::shared_future<ExecutionResultSharedPtr> BTExecutorClient::RequestLaunch()
 
     switch (rclcpp::spin_until_future_complete(node_base_interface_ptr_,
                                                goal_response_future,
-                                               START_EXECUTION_GOAL_RESPONSE_TIMEOUT)) {
+                                               LAUNCH_GOAL_RESPONSE_TIMEOUT)) {
         case rclcpp::FutureReturnCode::SUCCESS:
             break;
         case rclcpp::FutureReturnCode::TIMEOUT:
@@ -166,9 +183,8 @@ std::shared_future<ExecutionResultSharedPtr> BTExecutorClient::RequestLaunch()
 bool BTExecutorClient::RequestCancelation()
 {
     auto cancel_response_future = launch_client_ptr_->async_cancel_goal(launch_executor_goal_handle_);
-    switch (rclcpp::spin_until_future_complete(node_base_interface_ptr_,
-                                               cancel_response_future,
-                                               CANCEL_EXECUTION_RESPONSE_TIMEOUT)) {
+    switch (
+        rclcpp::spin_until_future_complete(node_base_interface_ptr_, cancel_response_future, CANCEL_RESPONSE_TIMEOUT)) {
         case rclcpp::FutureReturnCode::SUCCESS:
             break;
         case rclcpp::FutureReturnCode::TIMEOUT:

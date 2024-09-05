@@ -32,14 +32,14 @@ set(_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_DIR_NAME "behavior_tree")
 set(_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_TYPE_NAME "px4_behavior__behavior_trees")
 
 add_library(px4_behavior SHARED
-    src/commander/vehicle_command_client.cpp
-    src/commander/arm_disarm.cpp
-    src/commander/enable_hold.cpp
-    src/commander/goto.cpp
-    src/commander/land.cpp
-    src/commander/takeoff.cpp
-    src/commander/rtl.cpp
-    src/commander/mission.cpp
+    src/task/vehicle_command_client.cpp
+    src/task/arm_disarm.cpp
+    src/task/enable_hold.cpp
+    src/task/goto.cpp
+    src/task/land.cpp
+    src/task/takeoff.cpp
+    src/task/rtl.cpp
+    src/task/mission.cpp
     src/bt_factory.cpp
     src/get_resource.cpp
     src/bt_executor.cpp
@@ -83,7 +83,7 @@ rclcpp_components_register_nodes(px4_behavior
 # ------------ PX4 Behavior Library | Executables --------------
 #
 
-# Command line tool to create a file that specifies all model definitions of the plugins used
+# Command line tool to create a file containing the behavior tree node models required for Groot
 add_executable(generate_bt_node_model src/cli/generate_bt_node_model.cpp)
 target_link_libraries(generate_bt_node_model px4_behavior)
 if(PX4_BEHAVIOR_DEBUG_LOGGING)
