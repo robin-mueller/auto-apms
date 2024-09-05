@@ -1,3 +1,6 @@
-# Overview
+# API Reference
 
-This is the auto generated API documentation for the [px4-behavior](https://github.com/robin-mueller/px4-behavior) repository.
+This is the automatically generated API documentation for the PX4 Behavior repository. For further information see the links below:
+
+- [GitHub](https://github.com/robin-mueller/px4-behavior)
+- [User Guide](https://robin-mueller.github.io/px4-behavior-docs/introduction)
