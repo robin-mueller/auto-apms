@@ -18,13 +18,14 @@ This repository provides PX4 developers with
 - CMake macros for registering behavior tree resources
 - Useful command line tools for orchestrating the system
 
-Vist the [User Guide](https://robin-mueller.github.io/px4-behavior-docs/introduction/) for getting started.
+Vist the [User Guide](https://robin-mueller.github.io/px4-behavior-docs/welcome/) for getting started.
 
-# ToDo
+# TODO
 
 - ~Redesign CMake resource management to integrate better with ament_index~
 - Update behavior executor class and integrate with cmake redesign
+- Parse plugin config in [src/px4_behavior/cmake/register_behavior_tree_file.cmake]() to make model generation also depend on the libraries installed by upstream packages
 - Make contingency_management example more abstract to represent a general operations engine for UAS (ops_engine)
 - Create comprehensive documentation of member functions and intended use cases
-- Implement more detailed examples and automate their execution
+- Implement more detailed examples
 - Implement unit tests
