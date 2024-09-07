@@ -16,5 +16,5 @@ class FlightOrchestratorExecutor : public BTExecutor
 
 }  // namespace px4_behavior::ops_engine
 
-#include <rclcpp_components/register_node_macro.hpp>
+#include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ops_engine::FlightOrchestratorExecutor);

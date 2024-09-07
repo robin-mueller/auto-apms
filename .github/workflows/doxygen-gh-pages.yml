@@ -38,8 +38,11 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: doc/html
-
+      - uses: 8BitJonny/gh-get-current-pr@3.0.0
+        id: PR
+      
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

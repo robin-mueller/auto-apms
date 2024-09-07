@@ -1,17 +1,28 @@
-#include <behaviortree_cpp/loggers/groot2_publisher.h>
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
-#include <px4_behavior/ros2_bt_observer.hpp>
-#include <px4_behavior_interfaces/action/bt_executor_command.hpp>
-#include <px4_behavior_interfaces/action/launch_bt_executor.hpp>
-#include <px4_behavior_interfaces/srv/upload_behavior_tree.hpp>
+#pragma once
+
+#include "behaviortree_cpp/loggers/groot2_publisher.h"
+#include "px4_behavior/ros2_bt_observer.hpp"
+#include "px4_behavior_interfaces/action/bt_executor_command.hpp"
+#include "px4_behavior_interfaces/action/launch_bt_executor.hpp"
+#include "px4_behavior_interfaces/srv/upload_behavior_tree.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace px4_behavior {
-
-using LaunchExecutorAction = px4_behavior_interfaces::action::LaunchBTExecutor;
-using UploadService = px4_behavior_interfaces::srv::UploadBehaviorTree;
-using CommandAction = px4_behavior_interfaces::action::BTExecutorCommand;
 
 enum class BTExecutorState : uint8_t { IDLE, RUNNING, PAUSED, HALTED, TERMINATED };
 enum class BTExecutorCommand : uint8_t { RUN, PAUSE, HALT, TERMINATE };
@@ -22,6 +33,9 @@ std::string to_string(BTExecutorCommand cmd);
 class BTExecutor
 {
    protected:
+    using LaunchExecutorAction = px4_behavior_interfaces::action::LaunchBTExecutor;
+    using UploadBehaviorTreeService = px4_behavior_interfaces::srv::UploadBehaviorTree;
+    using CommandAction = px4_behavior_interfaces::action::BTExecutorCommand;
     using State = BTExecutorState;
     using Command = BTExecutorCommand;
 
@@ -45,8 +59,8 @@ class BTExecutor
     /**
      *  Services
      */
-    void UploadBehaviorTree(const std::shared_ptr<UploadService::Request> request,
-                            std::shared_ptr<UploadService::Response> response);
+    void UploadBehaviorTree(const std::shared_ptr<UploadBehaviorTreeService::Request> request,
+                            std::shared_ptr<UploadBehaviorTreeService::Response> response);
 
     /**
      *  LaunchBTExecutor action
@@ -85,7 +99,7 @@ class BTExecutor
     std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_ptr_;
     std::shared_ptr<rclcpp::ParameterCallbackHandle> state_change_logging_param_handle_ptr_;
     rclcpp_action::Server<LaunchExecutorAction>::SharedPtr launch_action_ptr_;
-    rclcpp::Service<UploadService>::SharedPtr upload_service_ptr_;
+    rclcpp::Service<UploadBehaviorTreeService>::SharedPtr upload_service_ptr_;
     rclcpp_action::Server<CommandAction>::SharedPtr command_action_ptr_;
     rclcpp::TimerBase::SharedPtr execution_timer_ptr_{nullptr};
     rclcpp::TimerBase::SharedPtr command_request_timer_ptr_{nullptr};

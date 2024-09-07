@@ -1,0 +1,28 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        // Test tasks
+        {
+            "label": "Test px4_behavior (Unit tests)",
+            "detail": "Run all unit tests of px4_behavior",
+            "type": "shell",
+            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select px4_behavior --ctest-args -R px4_behavior_unit_tests",
+            "group": {
+                "kind": "test"
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Test px4_behavior (Integration tests)",
+            "detail": "Run all integration tests of px4_behavior",
+            "type": "shell",
+            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select px4_behavior --ctest-args -R px4_behavior_integration_tests",
+            "group": {
+                "kind": "test"
+            },
+            "problemMatcher": "$gcc"
+        }
+    ]
+}

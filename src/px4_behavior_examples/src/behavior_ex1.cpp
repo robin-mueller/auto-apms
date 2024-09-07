@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 
     {
         BT::Tree tree =
-            px4_behavior::CreateBehaviorTreeFromResource(node, EXAMPLE_NAME, std::nullopt, "px4_behavior_examples");
+            px4_behavior::CreateBehaviorTreeFromResource(node, "relative_goto", std::nullopt, "px4_behavior_examples");
         if (!tree.rootNode()) {
             std::cerr << "Tree couldn't be created\n";
             return EXIT_FAILURE;

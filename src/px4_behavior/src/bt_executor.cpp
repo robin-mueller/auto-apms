@@ -1,7 +1,23 @@
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "px4_behavior/bt_executor.hpp"
+
 #include <chrono>
 #include <functional>
-#include <px4_behavior/bt_executor.hpp>
-#include <px4_behavior/definitions.hpp>
+
+#include "px4_behavior/px4_behavior.hpp"
 
 #define STATE_CHANGE_LOGGING_PARAM_NAME "state_change_logging"
 
@@ -81,8 +97,8 @@ BTExecutor::BTExecutor(const std::string& name,
                                                            std::bind(&BTExecutor::LaunchHandleAccepted, this, _1));
 
     upload_service_ptr_ =
-        node_ptr_->create_service<UploadService>(upload_service_name,
-                                                 std::bind(&BTExecutor::UploadBehaviorTree, this, _1, _2));
+        node_ptr_->create_service<UploadBehaviorTreeService>(upload_service_name,
+                                                             std::bind(&BTExecutor::UploadBehaviorTree, this, _1, _2));
 
     command_action_ptr_ =
         rclcpp_action::create_server<CommandAction>(node_ptr_,
@@ -102,8 +118,8 @@ void BTExecutor::BeforeFirstTick(BT::Blackboard&) {}
 
 BTExecutor::ClosureConduct BTExecutor::OnResult(bool) { return ClosureConduct::SUCCEED; };
 
-void BTExecutor::UploadBehaviorTree(const std::shared_ptr<UploadService::Request> request,
-                                    std::shared_ptr<UploadService::Response> response)
+void BTExecutor::UploadBehaviorTree(const std::shared_ptr<UploadBehaviorTreeService::Request> request,
+                                    std::shared_ptr<UploadBehaviorTreeService::Response> response)
 {
     // Deny upload if executor is currently RUNNING
     if (GetExecutionState() == State::RUNNING) {

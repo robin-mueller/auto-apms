@@ -1,7 +1,21 @@
-#include <px4_behavior/commander/task.hpp>
-#include <px4_behavior/commander/vehicle_command_client.hpp>
-#include <px4_behavior_interfaces/action/arm_disarm.hpp>
-#include <px4_msgs/msg/vehicle_status.hpp>
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "px4_behavior_interfaces/action/arm_disarm.hpp"
+
+#include "px4_behavior/px4_behavior.hpp"
+#include "px4_msgs/msg/vehicle_status.hpp"
 
 namespace px4_behavior {
 
@@ -19,7 +33,7 @@ class ArmDisarmTask : public TaskBase<px4_behavior_interfaces::action::ArmDisarm
 
    public:
     explicit ArmDisarmTask(const rclcpp::NodeOptions& options)
-        : TaskBase{px4_behavior::ARM_DISARM_TASK_NAME, options}, vehicle_command_client_{*this->node_ptr_}
+        : TaskBase{ARM_DISARM_TASK_NAME, options}, vehicle_command_client_{*this->node_ptr_}
     {
         vehicle_status_sub_ptr_ = this->node_ptr_->create_subscription<px4_msgs::msg::VehicleStatus>(
             "/fmu/out/vehicle_status",
@@ -64,8 +78,8 @@ class ArmDisarmTask : public TaskBase<px4_behavior_interfaces::action::ArmDisarm
     }
 
     TaskStatus ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
-                                       std::shared_ptr<Feedback> feedback_ptr,
-                                       std::shared_ptr<Result> result_ptr) final
+                           std::shared_ptr<Feedback> feedback_ptr,
+                           std::shared_ptr<Result> result_ptr) final
     {
         (void)goal_ptr;
         (void)feedback_ptr;
@@ -96,5 +110,5 @@ class ArmDisarmTask : public TaskBase<px4_behavior_interfaces::action::ArmDisarm
 
 }  // namespace px4_behavior
 
-#include <rclcpp_components/register_node_macro.hpp>
+#include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::ArmDisarmTask)

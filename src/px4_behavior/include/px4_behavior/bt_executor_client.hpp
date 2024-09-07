@@ -1,3 +1,17 @@
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 #include <chrono>
@@ -12,15 +26,15 @@
 namespace px4_behavior {
 
 using LaunchExecutorAction = px4_behavior_interfaces::action::LaunchBTExecutor;
-using UploadService = px4_behavior_interfaces::srv::UploadBehaviorTree;
+using UploadBehaviorTreeService = px4_behavior_interfaces::srv::UploadBehaviorTree;
 using ExecutionResultSharedPtr = std::shared_ptr<rclcpp_action::ClientGoalHandle<LaunchExecutorAction>::WrappedResult>;
 
 class BTExecutorClient
 {
     const std::chrono::seconds WAIT_FOR_SERVER_TIMEOUT{3};
     const std::chrono::seconds UPLOAD_RESPONSE_TIMEOUT{5};
-    const std::chrono::seconds START_EXECUTION_GOAL_RESPONSE_TIMEOUT{3};
-    const std::chrono::seconds CANCEL_EXECUTION_RESPONSE_TIMEOUT{1};
+    const std::chrono::seconds LAUNCH_GOAL_RESPONSE_TIMEOUT{3};
+    const std::chrono::seconds CANCEL_RESPONSE_TIMEOUT{1};
 
    public:
     BTExecutorClient(rclcpp::Node& node, const std::string& executor_name);
@@ -38,31 +52,31 @@ class BTExecutorClient
     bool UploadBehaviorTreeFromResource(const BehaviorTreeResource& resource, const std::string& main_tree_id = "");
 
     /**
-     * \brief Upload behavior tree to an executor.
+     * @brief Upload behavior tree to an executor.
      *
      * This method is synchronous, meaning that it blocks until upload result is received.
      *
-     * \param xml_data The XML string containing the trees to register
-     * \param main_tree_id ID of the tree to be created on upload. Empty if main_tree_to_execute XML attribute should be
+     * @param xml_data The XML string containing the trees to register
+     * @param main_tree_id ID of the tree to be created on upload. Empty if main_tree_to_execute XML attribute should be
      * used to determine which tree is to be created
-     * \return True on successful upload, false otherwise
+     * @return True on successful upload, false otherwise
      */
     bool UploadBehaviorTreeFromText(const std::string& xml_data, const std::string& main_tree_id = "");
 
     /**
-     * \brief Request to launch a behavoir tree executor.
+     * @brief Request to launch a behavoir tree executor.
      *
-     * \return Shared future that completes when the process terminates, holding the result. Is nullptr if request
+     * @return Shared future that completes when the process terminates, holding the result. Is nullptr if request
      * failed.
      */
     std::shared_future<ExecutionResultSharedPtr> RequestLaunch();
 
     /**
-     * \brief Request to cancel the current behavior execution process.
+     * @brief Request to cancel the current behavior execution process.
      *
      * This method is synchronous, meaning that it blocks until the cancelation result is received.
      *
-     * \return True if execution was cancelled successfully, false otherwise
+     * @return True if execution was cancelled successfully, false otherwise
      */
     bool RequestCancelation();
 
@@ -77,7 +91,7 @@ class BTExecutorClient
     const std::string executor_name_;
     const std::string upload_service_name_;
     const std::string launch_executor_action_name_;
-    rclcpp::Client<UploadService>::SharedPtr upload_client_ptr_;
+    rclcpp::Client<UploadBehaviorTreeService>::SharedPtr upload_client_ptr_;
     rclcpp_action::Client<LaunchExecutorAction>::SharedPtr launch_client_ptr_;
     rclcpp_action::ClientGoalHandle<LaunchExecutorAction>::SharedPtr launch_executor_goal_handle_{nullptr};
 

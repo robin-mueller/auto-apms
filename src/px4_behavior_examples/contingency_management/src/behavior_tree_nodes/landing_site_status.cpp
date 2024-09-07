@@ -1,5 +1,5 @@
 #include <px4_behavior_examples/msg/landing_site_status.hpp>
-#include <px4_behavior/bt_ros2_node.hpp>
+#include "px4_behavior/bt_ros2_node.hpp"
 
 #define INPUT_KEY_SITE_ID "landing_site_id"
 #define OUTPUT_KEY_SITE_STATUS "landing_site_status"
@@ -47,5 +47,5 @@ class IsLandingSiteClear : public RosTopicSubNode<LandingSiteStatusMsg>
 
 }  // namespace px4_behavior
 
-#include <px4_behavior/register_behavior_tree_node_macro.hpp>
+#include "px4_behavior/register_behavior_tree_node_macro.hpp"
 PX4_BEHAVIOR_REGISTER_BEHAVIOR_TREE_NODE(px4_behavior::ops_engine::IsLandingSiteClear)
