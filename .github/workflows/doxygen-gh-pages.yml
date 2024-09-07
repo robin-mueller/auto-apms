@@ -46,6 +46,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     name: Deploy
+    if: github.event_name != "pull_request"
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
