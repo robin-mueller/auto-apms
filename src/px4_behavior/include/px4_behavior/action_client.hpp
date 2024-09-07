@@ -22,6 +22,9 @@
 
 namespace px4_behavior {
 
+/**
+ * @brief Enum for indicating a goal's current status using e.g. ActionClientWrapper::GetGoalStatus.
+ */
 enum class ActionGoalStatus : uint8_t { REJECTED = 0, RUNNING, COMPLETED };
 
 /**
@@ -71,8 +74,15 @@ class ActionClientWrapper
      * @return `true` if the last goal was cancelled successfully, `false` if request was denied.
      * @throw std::runtime_error if cancelation failed.
      */
-    bool CancelLastGoal(const std::chrono::seconds response_timeout = std::chrono::seconds{3});
+    bool SyncCancelLastGoal(const std::chrono::seconds response_timeout = std::chrono::seconds{3});
 
+    /**
+     * @brief Determine the status of a specific goal by evaluating the corresponding ActionClientWrapper::ResultFuture.
+     * @param future ActionClientWrapper::ResultFuture corresponding to the goal whose status is to be retrieved
+     * @return px4_behavior::ActionGoalStatus value that indicates whether the goal was rejected, is currently
+     * being processed or has completed.
+     * @throw std::runtime_error if \p future is invalid.
+     */
     static ActionGoalStatus GetGoalStatus(const ResultFuture& future);
 
     /**
@@ -82,12 +92,19 @@ class ActionClientWrapper
      */
     typename ClientGoalHandle::SharedPtr active_goal_handle();
 
+    /**
+     * @brief Get the most recent feedback.
+     * @return Shared pointer of the feeback.
+     */
+    std::shared_ptr<const Feedback> feedback();
+
    private:
     const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface_ptr_;
     const rclcpp::Logger logger_;
     const std::string action_name_;
     typename rclcpp_action::Client<ActionT>::SharedPtr client_ptr_;
-    typename ClientGoalHandle::SharedPtr goal_handle_{nullptr};
+    typename ClientGoalHandle::SharedPtr goal_handle_ptr_;
+    std::shared_ptr<const Feedback> feedback_ptr_;
 };
 
 template <typename ActionT>
@@ -111,11 +128,15 @@ typename ActionClientWrapper<ActionT>::ResultFuture ActionClientWrapper<ActionT>
 
     SendGoalOptions _options;
     _options.goal_response_callback = options.goal_response_callback;
-    _options.feedback_callback = options.feedback_callback;
+    _options.feedback_callback = [this, options](typename ClientGoalHandle::SharedPtr client_goal_handle,
+                                                 const std::shared_ptr<const Feedback> feedback) {
+        feedback_ptr_ = feedback;
+        options.feedback_callback(client_goal_handle, feedback);
+    };
     _options.result_callback = [this, promise_ptr, options](const typename ClientGoalHandle::WrappedResult& wr) {
         if (options.result_callback) options.result_callback(wr);
         promise_ptr->set_value(std::make_shared<typename ClientGoalHandle::WrappedResult>(wr));
-        goal_handle_ = nullptr;  // Reset active goal handle
+        goal_handle_ptr_ = nullptr;  // Reset active goal handle
     };
 
     auto goal_response_future = client_ptr_->async_send_goal(goal, _options);
@@ -131,47 +152,44 @@ typename ActionClientWrapper<ActionT>::ResultFuture ActionClientWrapper<ActionT>
 
     auto client_goal_handle_ptr = goal_response_future.get();
     if (!client_goal_handle_ptr) {
-        RCLCPP_WARN(logger_, "Goal was rejected");
         promise_ptr->set_value(nullptr);
         return promise_ptr->get_future();
     }
 
-    goal_handle_ = client_goal_handle_ptr;
+    goal_handle_ptr_ = client_goal_handle_ptr;
     return promise_ptr->get_future();
 }
 
 template <typename ActionT>
-bool ActionClientWrapper<ActionT>::CancelLastGoal(const std::chrono::seconds response_timeout)
+bool ActionClientWrapper<ActionT>::SyncCancelLastGoal(const std::chrono::seconds response_timeout)
 {
-    if (goal_handle_) {
-        auto cancel_response_future = client_ptr_->async_cancel_goal(goal_handle_);
-        switch (
-            rclcpp::spin_until_future_complete(node_base_interface_ptr_, cancel_response_future, response_timeout)) {
-            case rclcpp::FutureReturnCode::SUCCESS:
-                break;
-            case rclcpp::FutureReturnCode::TIMEOUT:
-                throw std::runtime_error("No cancel response due to timeout");
-            case rclcpp::FutureReturnCode::INTERRUPTED:
-                throw std::runtime_error("No cancel response due to interruption");
-        }
+    if (!goal_handle_ptr_) throw std::runtime_error("Cannot cancel goal because goal_handle_ptr_ is nullptr");
 
-        // Evaluate the response message
-        switch (cancel_response_future.get()->return_code) {
-            case action_msgs::srv::CancelGoal::Response::ERROR_NONE:
-                return true;
-            case action_msgs::srv::CancelGoal::Response::ERROR_REJECTED:
-                RCLCPP_WARN(logger_, "Cancel response ERROR_REJECTED");
-                break;
-            case action_msgs::srv::CancelGoal::Response::ERROR_UNKNOWN_GOAL_ID:
-                RCLCPP_WARN(logger_, "Cancel response ERROR_UNKNOWN_GOAL_ID");
-                break;
-            case action_msgs::srv::CancelGoal::Response::ERROR_GOAL_TERMINATED:
-                RCLCPP_WARN(logger_, "Cancel response ERROR_GOAL_TERMINATED");
-                break;
-        }
-        return false;
+    // Send request and await response
+    auto cancel_response_future = client_ptr_->async_cancel_goal(goal_handle_ptr_);
+    switch (rclcpp::spin_until_future_complete(node_base_interface_ptr_, cancel_response_future, response_timeout)) {
+        case rclcpp::FutureReturnCode::SUCCESS:
+            break;
+        case rclcpp::FutureReturnCode::TIMEOUT:
+            throw std::runtime_error("No cancel response due to timeout");
+        case rclcpp::FutureReturnCode::INTERRUPTED:
+            throw std::runtime_error("No cancel response due to interruption");
     }
-    throw std::runtime_error("Cannot cancel goal because goal_handle_ is nullptr");
+
+    // Evaluate the response message
+    switch (cancel_response_future.get()->return_code) {
+        case action_msgs::srv::CancelGoal::Response::ERROR_NONE:
+            return true;
+        case action_msgs::srv::CancelGoal::Response::ERROR_REJECTED:
+            break;
+        case action_msgs::srv::CancelGoal::Response::ERROR_UNKNOWN_GOAL_ID:
+            RCLCPP_WARN(logger_, "Cancel response ERROR_UNKNOWN_GOAL_ID");
+            break;
+        case action_msgs::srv::CancelGoal::Response::ERROR_GOAL_TERMINATED:
+            RCLCPP_WARN(logger_, "Cancel response ERROR_GOAL_TERMINATED");
+            break;
+    }
+    return false;
 }
 
 template <typename ActionT>
@@ -188,7 +206,13 @@ ActionGoalStatus ActionClientWrapper<ActionT>::GetGoalStatus(const ResultFuture&
 template <typename ActionT>
 typename ActionClientWrapper<ActionT>::ClientGoalHandle::SharedPtr ActionClientWrapper<ActionT>::active_goal_handle()
 {
-    return goal_handle_;
+    return goal_handle_ptr_;
+}
+
+template <typename ActionT>
+std::shared_ptr<const typename ActionClientWrapper<ActionT>::Feedback> ActionClientWrapper<ActionT>::feedback()
+{
+    return feedback_ptr_;
 }
 
 }  // namespace px4_behavior

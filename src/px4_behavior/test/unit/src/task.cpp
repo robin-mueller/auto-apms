@@ -14,53 +14,93 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
+
 #include "px4_behavior/action/test.hpp"
 #include "px4_behavior/action_client.hpp"
 #include "px4_behavior/task_base.hpp"
 #include "util.hpp"
 
+using namespace std::chrono_literals;
 using namespace px4_behavior;
 using TestAction = px4_behavior::action::Test;
 
 class TestTask : public TaskBase<TestAction>
 {
    public:
-    TestTask(const std::string& name, rclcpp::Node::SharedPtr node_ptr) : TaskBase{name, node_ptr} {}
+    TestTask(const std::string& name, rclcpp::Node::SharedPtr node_ptr) : TaskBase{name, node_ptr, 0ms, 1ms} {}
 
     bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr) override
     {
-        if (goal_ptr->request == 1) { return false; }
+        if (goal_ptr->request == 1) return false;
         return true;
     }
 
-    void SetDefaultResult(std::shared_ptr<Result> result_ptr) override { result_ptr->result = 1; }
+    void SetInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
+    {
+        if (goal_ptr->request == 2) result_ptr->result = 1;
+        if (goal_ptr->request == 3) result_ptr->result = 10;
+    }
     bool OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
     {
+        if (goal_ptr->request == 5) return false;
+        if (goal_ptr->request == 7) result_ptr->result = 20;
         return true;
     }
     TaskStatus CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
     {
-        (void)goal_ptr;
-        (void)result_ptr;
-        return TaskStatus::SUCCESS;
+        switch (goal_ptr->request) {
+            case 6:
+                // CancelGoalReject
+                if (++result_ptr->result < 23)
+                    return TaskStatus::RUNNING;
+                else
+                    return TaskStatus::SUCCESS;
+            case 8:
+                // CancelGoalAbort
+                result_ptr->result = 40;
+                return TaskStatus::FAILURE;
+            default:
+                throw std::logic_error("Unexpected goal request in CancelGoal: " + std::to_string(goal_ptr->request));
+        }
     }
     TaskStatus ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
                            std::shared_ptr<Feedback> feedback_ptr,
                            std::shared_ptr<Result> result_ptr) override
     {
-        (void)goal_ptr;
-        (void)feedback_ptr;
         switch (goal_ptr->request) {
             case 2:
-                // Default result
+                // InitialResult
                 return TaskStatus::SUCCESS;
             case 3:
-                result_ptr->result = 2;
-                return TaskStatus::SUCCESS;
+                // ExecuteGoal
+                if (++result_ptr->result < 13)
+                    return TaskStatus::RUNNING;
+                else
+                    return TaskStatus::SUCCESS;
+            case 4:
+                // SendFeedback
+                feedback_ptr->feedback = 1;
+                return feeback_received ? TaskStatus::SUCCESS : TaskStatus::RUNNING;
+            case 5:
+                // CancelGoalReject
+                return TaskStatus::RUNNING;
+            case 6:
+                // CancelGoalAccept
+                return TaskStatus::RUNNING;
+            case 7:
+                // ExecuteGoalAbort
+                result_ptr->result = 30;
+                return TaskStatus::FAILURE;
+            case 8:
+                // CancelGoalAbort
+                return TaskStatus::RUNNING;
             default:
-                throw std::runtime_error("Illegal goal request: " + std::to_string(goal_ptr->request));
+                throw std::logic_error("Unexpected goal request in ExecuteGoal: " + std::to_string(goal_ptr->request));
         }
     }
+
+    bool feeback_received = false;
 };
 
 class TaskTest : public testing::Test
@@ -73,26 +113,6 @@ class TaskTest : public testing::Test
         task_client = std::make_shared<ActionClientWrapper<TestAction>>(*node, task_name);
     }
 
-    ~TaskTest() override
-    {
-        // You can do clean-up work that doesn't throw exceptions here.
-    }
-
-    // If the constructor and destructor are not enough for setting up
-    // and cleaning up each test, you can define the following methods:
-
-    void SetUp() override
-    {
-        // Code here will be called immediately after the constructor (right
-        // before each test).
-    }
-
-    void TearDown() override
-    {
-        // Code here will be called immediately after each test (right
-        // before the destructor).
-    }
-
     const std::string task_name = "test_task";
     rclcpp::Node::SharedPtr node;
     std::shared_ptr<TestTask> test_task;
@@ -103,32 +123,111 @@ class TaskTest : public testing::Test
 TEST_F(TaskTest, RejectGoal)
 {
     goal.request = 1;
+
     auto response_future = task_client->SyncSendGoal(goal);
-    ASSERT_EQ(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED);
+    ASSERT_EQ(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was not rejected";
 }
 
-TEST_F(TaskTest, DefaultResult)
+TEST_F(TaskTest, InitialResult)
 {
-    // Default result value
     goal.request = 2;
+
     auto response_future = task_client->SyncSendGoal(goal);
+    ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS)
         << "spin_until_future_complete did not succeed";
     auto result = response_future.get();
     ASSERT_TRUE(result) << "result is nullptr after completion";
-    ASSERT_EQ(result->code, rclcpp_action::ResultCode::SUCCEEDED) << "Task did not succeed";
+    EXPECT_EQ(result->code, rclcpp_action::ResultCode::SUCCEEDED) << "Task did not succeed";
     ASSERT_EQ(result->result->result, 1) << "Result has unexpected value";
 }
 
 TEST_F(TaskTest, ExecuteGoal)
 {
-    // Default result value
     goal.request = 3;
+
     auto response_future = task_client->SyncSendGoal(goal);
+    ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS)
         << "spin_until_future_complete did not succeed";
     auto result = response_future.get();
     ASSERT_TRUE(result) << "result is nullptr after completion";
-    ASSERT_EQ(result->code, rclcpp_action::ResultCode::SUCCEEDED) << "Task did not succeed";
-    ASSERT_EQ(result->result->result, 2) << "Result has unexpected value";
+    EXPECT_EQ(result->code, rclcpp_action::ResultCode::SUCCEEDED) << "Task did not succeed";
+    ASSERT_EQ(result->result->result, 13) << "Result has unexpected value";
+}
+
+TEST_F(TaskTest, SendFeedback)
+{
+    goal.request = 4;
+    ActionClientWrapper<TestAction>::SendGoalOptions send_goal_options;
+    send_goal_options.feedback_callback = [this](
+                                              ActionClientWrapper<TestAction>::ClientGoalHandle::SharedPtr,
+                                              const std::shared_ptr<const ActionClientWrapper<TestAction>::Feedback>) {
+        test_task->feeback_received = true;
+    };
+
+    auto response_future = task_client->SyncSendGoal(goal, send_goal_options);
+    ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS)
+        << "spin_until_future_complete did not succeed";
+    auto result = response_future.get();
+    ASSERT_TRUE(result) << "result is nullptr after completion";
+    EXPECT_EQ(result->code, rclcpp_action::ResultCode::SUCCEEDED) << "Task did not succeed";
+    ASSERT_TRUE(task_client->feedback()) << "No feedback available";
+    ASSERT_EQ(task_client->feedback()->feedback, 1) << "Feedback has unexpected value";
+}
+
+TEST_F(TaskTest, CancelGoalReject)
+{
+    goal.request = 5;
+
+    auto response_future = task_client->SyncSendGoal(goal);
+    ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+    ASSERT_FALSE(task_client->SyncCancelLastGoal()) << "Cancellation was not rejected";
+    ASSERT_EQ(task_client->GetGoalStatus(response_future), ActionGoalStatus::RUNNING)
+        << "Goal is not running after cancellation was rejected";
+}
+
+TEST_F(TaskTest, CancelGoalAccept)
+{
+    goal.request = 6;
+
+    auto response_future = task_client->SyncSendGoal(goal);
+    ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+    ASSERT_TRUE(task_client->SyncCancelLastGoal()) << "Cancellation was rejected";
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS)
+        << "spin_until_future_complete did not succeed";
+    auto result = response_future.get();
+    ASSERT_TRUE(result) << "result is nullptr after completion";
+    EXPECT_EQ(result->code, rclcpp_action::ResultCode::CANCELED) << "Task was not cancelled";
+    ASSERT_EQ(result->result->result, 23) << "Result has unexpected value";
+}
+
+TEST_F(TaskTest, ExecuteGoalAbort)
+{
+    goal.request = 7;
+
+    auto response_future = task_client->SyncSendGoal(goal);
+    ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS)
+        << "spin_until_future_complete did not succeed";
+    auto result = response_future.get();
+    ASSERT_TRUE(result) << "result is nullptr after completion";
+    EXPECT_EQ(result->code, rclcpp_action::ResultCode::ABORTED) << "Task did not abort";
+    ASSERT_EQ(result->result->result, 30) << "Result has unexpected value";
+}
+
+TEST_F(TaskTest, CancelGoalAbort)
+{
+    goal.request = 8;
+
+    auto response_future = task_client->SyncSendGoal(goal);
+    ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+    ASSERT_TRUE(task_client->SyncCancelLastGoal()) << "Cancellation was rejected";
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS)
+        << "spin_until_future_complete did not succeed";
+    auto result = response_future.get();
+    ASSERT_TRUE(result) << "result is nullptr after completion";
+    EXPECT_EQ(result->code, rclcpp_action::ResultCode::ABORTED) << "Task did not abort";
+    ASSERT_EQ(result->result->result, 40) << "Result has unexpected value";
 }

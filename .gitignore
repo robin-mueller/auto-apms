@@ -1,8 +1,10 @@
-.vscode/
 install/
 log/
 build/
 doc/html/
+
+.vscode/*
+!.vscode/tasks.json
 
 # Ignore generated docs
 *.dox

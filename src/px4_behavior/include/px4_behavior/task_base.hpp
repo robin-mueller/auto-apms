@@ -27,7 +27,6 @@ static constexpr std::chrono::milliseconds DEFAULT_VALUE_FEEDBACK_INTERVAL{200};
 
 enum class TaskStatus : uint8_t { RUNNING, SUCCESS, FAILURE };
 
-
 template <typename ActionT>
 class TaskBase
 {
@@ -58,7 +57,7 @@ class TaskBase
      *  Implementation specific callbacks
      */
     virtual bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr);
-    virtual void SetDefaultResult(std::shared_ptr<Result> result_ptr);
+    virtual void SetInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
     virtual bool OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
     virtual TaskStatus CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
     virtual TaskStatus ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
@@ -85,7 +84,6 @@ class TaskBase
     typename rclcpp_action::Server<ActionT>::SharedPtr action_server_ptr_;
     rclcpp::TimerBase::SharedPtr execution_timer_ptr_;
     const std::chrono::milliseconds execution_timer_interval_;
-    std::chrono::milliseconds feedback_interval_;
     std::chrono::steady_clock::time_point last_feedback_ts_;
 };
 
@@ -95,10 +93,7 @@ TaskBase<ActionT>::TaskBase(const std::string& name,
                             std::shared_ptr<ActionContext<ActionT>> action_context_ptr,
                             std::chrono::milliseconds execution_interval,
                             std::chrono::milliseconds feedback_interval)
-    : node_ptr_{node_ptr},
-      action_context_ptr_{action_context_ptr},
-      execution_timer_interval_{execution_interval},
-      feedback_interval_{feedback_interval}
+    : node_ptr_{node_ptr}, action_context_ptr_{action_context_ptr}, execution_timer_interval_{execution_interval}
 {
 #ifdef DEBUG_LOGGING
     // Set logging severity
@@ -122,10 +117,7 @@ TaskBase<ActionT>::TaskBase(const std::string& name,
      */
     rcl_interfaces::msg::ParameterDescriptor param_desc;
     param_desc.description = "Rate at which this task publishes feedback.";
-    node_ptr_->declare_parameter(
-        PARAM_NAME_FEEDBACK_INTERVAL,
-        std::chrono::duration_cast<std::chrono::milliseconds>(DEFAULT_VALUE_FEEDBACK_INTERVAL).count(),
-        param_desc);
+    node_ptr_->declare_parameter(PARAM_NAME_FEEDBACK_INTERVAL, feedback_interval.count(), param_desc);
 }
 
 template <class ActionT>
@@ -166,9 +158,10 @@ bool TaskBase<ActionT>::OnGoalRequest(std::shared_ptr<const Goal> goal_ptr)
 }
 
 template <class ActionT>
-void TaskBase<ActionT>::SetDefaultResult(std::shared_ptr<Result> result_ptr)
+void TaskBase<ActionT>::SetInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
 {
     // By default, the result is initialized using the default values specified in the action message definition.
+    (void)goal_ptr;
     (void)result_ptr;
 }
 
@@ -224,18 +217,21 @@ template <class ActionT>
 void TaskBase<ActionT>::handle_accepted_(std::shared_ptr<GoalHandle> goal_handle_ptr)
 {
     action_context_ptr_->SetUp(goal_handle_ptr);
-    SetDefaultResult(action_context_ptr_->result());
+    const auto goal_ptr = action_context_ptr_->goal_handle()->get_goal();
+    SetInitialResult(goal_ptr, action_context_ptr_->result());
     (void)goal_handle_ptr;  // action_context_ptr_ takes ownership of goal handle from now on
 
     // Create the timer that triggers the execution routine
     execution_timer_ptr_ =
         node_ptr_->create_wall_timer(execution_timer_interval_,
-                                     [this, goal_ptr = action_context_ptr_->goal_handle()->get_goal()]() {
+                                     [this, goal_ptr]() {
                                          this->execution_timer_callback_(goal_ptr);
                                      });
 
-    // Resetting this timestamp here ensures that we wait for one interval before publishing feedback for the first time
-    last_feedback_ts_ = std::chrono::steady_clock::now();
+    // Ensure that feedback is published already at the first cycle
+    const std::chrono::milliseconds feedback_interval{
+            node_ptr_->get_parameter(PARAM_NAME_FEEDBACK_INTERVAL).as_int()};
+    last_feedback_ts_ = std::chrono::steady_clock::now() - feedback_interval;
 }
 
 template <class ActionT>
@@ -261,7 +257,17 @@ void TaskBase<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> go
         }
     }
     else {
-        switch (ExecuteGoal(goal_ptr, action_context_ptr_->feedback(), action_context_ptr_->result())) {
+        const auto ret = ExecuteGoal(goal_ptr, action_context_ptr_->feedback(), action_context_ptr_->result());
+
+        // Publish feedback
+        const std::chrono::milliseconds feedback_interval{
+            node_ptr_->get_parameter(PARAM_NAME_FEEDBACK_INTERVAL).as_int()};
+        if (feedback_interval <= (std::chrono::steady_clock::now() - last_feedback_ts_)) {
+            action_context_ptr_->PublishFeedback();
+            last_feedback_ts_ = std::chrono::steady_clock::now();
+        }
+
+        switch (ret) {
             case TaskStatus::RUNNING:
                 break;
             case TaskStatus::SUCCESS:
@@ -270,13 +276,6 @@ void TaskBase<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> go
             case TaskStatus::FAILURE:
                 action_context_ptr_->Abort();
                 return;
-        }
-
-        // Publish feedback
-        feedback_interval_ = std::chrono::milliseconds(node_ptr_->get_parameter(PARAM_NAME_FEEDBACK_INTERVAL).as_int());
-        if (feedback_interval_ < (std::chrono::steady_clock::now() - last_feedback_ts_)) {
-            action_context_ptr_->PublishFeedback();
-            last_feedback_ts_ = std::chrono::steady_clock::now();
         }
     }
 }

@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 
     RCLCPP_INFO(node_ptr->get_logger(), "Canceling takeoff ...");
 
-    if (!takeoff_client.CancelLastGoal()) {
+    if (!takeoff_client.SyncCancelLastGoal()) {
         std::cerr << "Cancelation of takeoff was rejected\n";
         rclcpp::shutdown();
         return EXIT_FAILURE;
