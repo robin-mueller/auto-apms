@@ -27,13 +27,13 @@ static constexpr std::chrono::milliseconds DEFAULT_VALUE_FEEDBACK_INTERVAL{200};
 
 enum class TaskStatus : uint8_t { RUNNING, SUCCESS, FAILURE };
 
+
 template <typename ActionT>
 class TaskBase
 {
    public:
     static constexpr char PARAM_NAME_FEEDBACK_INTERVAL[] = "feedback_interval_ms";
 
-   protected:
     using Goal = typename ActionContext<ActionT>::Goal;
     using Feedback = typename ActionContext<ActionT>::Feedback;
     using Result = typename ActionContext<ActionT>::Result;

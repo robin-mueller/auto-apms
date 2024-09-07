@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     auto arm_future = arm_disarm_client.SyncSendGoal(arm_goal);
 
     if (arm_future.wait_for(0s) == std::future_status::ready && !arm_future.get()) {
-        std::cerr << "Failed to send arming goal\n";
+        std::cerr << "Arming goal was rejected\n";
         rclcpp::shutdown();
         return EXIT_FAILURE;
     }
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
     auto takeoff_future = takeoff_client.SyncSendGoal(takeoff_goal);
 
     if (takeoff_future.wait_for(0s) == std::future_status::ready && !takeoff_future.get()) {
-        std::cerr << "Failed to send takeoff goal\n";
+        std::cerr << "Takeoff goal was rejected\n";
         rclcpp::shutdown();
         return EXIT_FAILURE;
     }
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
     RCLCPP_INFO(node_ptr->get_logger(), "Canceling takeoff ...");
 
     if (!takeoff_client.CancelLastGoal()) {
-        std::cerr << "Failed to cancel takeoff\n";
+        std::cerr << "Cancelation of takeoff was rejected\n";
         rclcpp::shutdown();
         return EXIT_FAILURE;
     }
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     auto land_future = land_client.SyncSendGoal();
 
     if (land_future.wait_for(0s) == std::future_status::ready && !land_future.get()) {
-        std::cerr << "Failed to send landing goal\n";
+        std::cerr << "Landing goal was rejected\n";
         rclcpp::shutdown();
         return EXIT_FAILURE;
     }

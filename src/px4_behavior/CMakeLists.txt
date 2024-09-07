@@ -31,7 +31,7 @@ set(_PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_TYPE_NAME "px4_behavior__bt_node_plu
 set(_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_DIR_NAME "behavior_tree")
 set(_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_TYPE_NAME "px4_behavior__behavior_trees")
 
-add_library(px4_behavior SHARED
+add_library(px4_behavior_core SHARED
     src/task/vehicle_command_client.cpp
     src/task/arm_disarm.cpp
     src/task/enable_hold.cpp
@@ -45,10 +45,10 @@ add_library(px4_behavior SHARED
     src/bt_executor.cpp
     src/bt_executor_client.cpp
     src/ros2_bt_observer.cpp)
-target_include_directories(px4_behavior PUBLIC
+target_include_directories(px4_behavior_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(px4_behavior
+ament_target_dependencies(px4_behavior_core
     rclcpp 
     rclcpp_action 
     rclcpp_components 
@@ -60,17 +60,17 @@ ament_target_dependencies(px4_behavior
     Eigen3 
     tf2_eigen 
     yaml-cpp)
-target_link_libraries(px4_behavior ${YAML_CPP_LIBRARIES})
-target_compile_definitions(px4_behavior PRIVATE
+target_link_libraries(px4_behavior_core ${YAML_CPP_LIBRARIES})
+target_compile_definitions(px4_behavior_core PRIVATE
     _PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_DIR_NAME="${_PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_DIR_NAME}"
     _PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_TYPE_NAME="${_PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_TYPE_NAME}"
     _PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_DIR_NAME="${_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_DIR_NAME}"
     _PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_TYPE_NAME="${_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_TYPE_NAME}")
 if(PX4_BEHAVIOR_DEBUG_LOGGING)
-    target_compile_definitions(px4_behavior PRIVATE DEBUG_LOGGING)
+    target_compile_definitions(px4_behavior_core PRIVATE DEBUG_LOGGING)
 endif()
 
-rclcpp_components_register_nodes(px4_behavior 
+rclcpp_components_register_nodes(px4_behavior_core 
     "px4_behavior::ArmDisarmTask"
     "px4_behavior::EnableHoldTask"
     "px4_behavior::GoToTask"
@@ -85,21 +85,21 @@ rclcpp_components_register_nodes(px4_behavior
 
 # Command line tool to create a file containing the behavior tree node models required for Groot
 add_executable(generate_bt_node_model src/cli/generate_bt_node_model.cpp)
-target_link_libraries(generate_bt_node_model px4_behavior)
+target_link_libraries(generate_bt_node_model px4_behavior_core)
 if(PX4_BEHAVIOR_DEBUG_LOGGING)
     target_compile_definitions(generate_bt_node_model PRIVATE DEBUG_LOGGING)
 endif()
 
 # Command line tool to register a behavior tree with an executor
 add_executable(upload_tree src/cli/upload_tree.cpp)
-target_link_libraries(upload_tree px4_behavior)
+target_link_libraries(upload_tree px4_behavior_core)
 if(PX4_BEHAVIOR_DEBUG_LOGGING)
     target_compile_definitions(upload_tree PRIVATE DEBUG_LOGGING)
 endif()
 
 # Command line tool to run the executor of a behavior tree
 add_executable(run_executor src/cli/run_executor.cpp)
-target_link_libraries(run_executor px4_behavior)
+target_link_libraries(run_executor px4_behavior_core)
 if(PX4_BEHAVIOR_DEBUG_LOGGING)
     target_compile_definitions(run_executor PRIVATE DEBUG_LOGGING)
 endif()
@@ -127,7 +127,7 @@ add_library(behavior_tree_nodes SHARED
     src/behavior_tree_nodes/action/throw_exception.cpp
     src/behavior_tree_nodes/srv/upload_bt.cpp
     src/behavior_tree_nodes/sub/glob_pos.cpp)
-target_link_libraries(behavior_tree_nodes px4_behavior)
+target_link_libraries(behavior_tree_nodes px4_behavior_core)
 ament_target_dependencies(behavior_tree_nodes
     px4_behavior_interfaces
     px4_msgs
@@ -157,12 +157,16 @@ px4_behavior_register_plugins(behavior_tree_nodes
 # For downstream packages this is registered as an extension to ament_package, but here we need to call this script manually
 include(cmake/register_resources_hook.cmake)
 
+if(BUILD_TESTING)
+    add_subdirectory(test)
+endif()
+
 #
 # ------------ PX4 Behavior Library | Packaging --------------
 #
 
 install(
-    TARGETS px4_behavior
+    TARGETS px4_behavior_core
     EXPORT export_${PROJECT_NAME}
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

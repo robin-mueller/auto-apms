@@ -14,12 +14,19 @@
 
 #pragma once
 
+#include <chrono>
+
 #include "action_msgs/srv/cancel_goal.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 namespace px4_behavior {
 
+enum class ActionGoalStatus : uint8_t { REJECTED = 0, RUNNING, COMPLETED };
+
+/**
+ * @brief Convenience wrapper for a rclcpp_action::Client that introduces synchronous goal handling functions.
+ */
 template <typename ActionT>
 class ActionClientWrapper
 {
@@ -28,10 +35,15 @@ class ActionClientWrapper
     using SendGoalOptions = typename rclcpp_action::Client<ActionT>::SendGoalOptions;
     using Feedback = typename ActionT::Feedback;
     using Result = typename ActionT::Result;
-    using GoalHandle = rclcpp_action::ServerGoalHandle<ActionT>;
     using ClientGoalHandle = rclcpp_action::ClientGoalHandle<ActionT>;
-    using ClientResultSharedPtr = std::shared_ptr<typename ClientGoalHandle::WrappedResult>;
+    using WrappedResultSharedPtr = std::shared_ptr<typename ClientGoalHandle::WrappedResult>;
+    using ResultFuture = std::shared_future<WrappedResultSharedPtr>;
 
+    /**
+     * @brief Constructor.
+     * @param node Node reference. This instance doesn't own the node
+     * @param action_name Name of the corresponding action
+     */
     ActionClientWrapper(rclcpp::Node& node, const std::string& action_name);
 
     /**
@@ -42,13 +54,13 @@ class ActionClientWrapper
      * @param server_timeout Timeout for waiting for the action server to be discovered
      * @param resonse_timeout Timeout for waiting for a goal response from the server
      * @return Shared future that completes when the action finishes, holding the result. The result is `nullptr` if
-     * sending the goal has failed.
+     * the goal was rejected.
+     * @throw std::runtime_error if sending the goal fails.
      */
-    std::shared_future<ClientResultSharedPtr> SyncSendGoal(
-        const Goal& goal = Goal{},
-        const SendGoalOptions& options = SendGoalOptions{},
-        const std::chrono::seconds server_timeout = std::chrono::seconds{3},
-        const std::chrono::seconds response_timeout = std::chrono::seconds{3});
+    ResultFuture SyncSendGoal(const Goal& goal = Goal{},
+                              const SendGoalOptions& options = SendGoalOptions{},
+                              const std::chrono::seconds server_timeout = std::chrono::seconds{3},
+                              const std::chrono::seconds response_timeout = std::chrono::seconds{3});
 
     /**
      * @brief Request to cancel the most recent goal.
@@ -56,9 +68,12 @@ class ActionClientWrapper
      * This method is synchronous, meaning that it blocks until the cancelation result is received.
      *
      * @param response_timeout Timeout for waiting for a cancel response from the server
-     * @return `true` if the last goal was cancelled successfully, `false` if cancelation failed.
+     * @return `true` if the last goal was cancelled successfully, `false` if request was denied.
+     * @throw std::runtime_error if cancelation failed.
      */
     bool CancelLastGoal(const std::chrono::seconds response_timeout = std::chrono::seconds{3});
+
+    static ActionGoalStatus GetGoalStatus(const ResultFuture& future);
 
     /**
      * @brief Get the goal handle of the currently active goal.
@@ -83,17 +98,15 @@ ActionClientWrapper<ActionT>::ActionClientWrapper(rclcpp::Node& node, const std:
 }
 
 template <typename ActionT>
-std::shared_future<typename ActionClientWrapper<ActionT>::ClientResultSharedPtr>
-ActionClientWrapper<ActionT>::SyncSendGoal(const Goal& goal,
-                                           const SendGoalOptions& options,
-                                           const std::chrono::seconds server_timeout,
-                                           const std::chrono::seconds response_timeout)
+typename ActionClientWrapper<ActionT>::ResultFuture ActionClientWrapper<ActionT>::SyncSendGoal(
+    const Goal& goal,
+    const SendGoalOptions& options,
+    const std::chrono::seconds server_timeout,
+    const std::chrono::seconds response_timeout)
 {
-    auto promise_ptr = std::make_shared<std::promise<ClientResultSharedPtr>>();
+    auto promise_ptr = std::make_shared<std::promise<WrappedResultSharedPtr>>();
     if (!client_ptr_->wait_for_action_server(server_timeout)) {
-        RCLCPP_WARN(logger_, "Action server '%s' is not available", action_name_.c_str());
-        promise_ptr->set_value(nullptr);
-        return promise_ptr->get_future();
+        throw std::runtime_error("Action server '" + action_name_ + "' is not available");
     }
 
     SendGoalOptions _options;
@@ -102,7 +115,7 @@ ActionClientWrapper<ActionT>::SyncSendGoal(const Goal& goal,
     _options.result_callback = [this, promise_ptr, options](const typename ClientGoalHandle::WrappedResult& wr) {
         if (options.result_callback) options.result_callback(wr);
         promise_ptr->set_value(std::make_shared<typename ClientGoalHandle::WrappedResult>(wr));
-        goal_handle_ = nullptr;
+        goal_handle_ = nullptr;  // Reset active goal handle
     };
 
     auto goal_response_future = client_ptr_->async_send_goal(goal, _options);
@@ -111,13 +124,9 @@ ActionClientWrapper<ActionT>::SyncSendGoal(const Goal& goal,
         case rclcpp::FutureReturnCode::SUCCESS:
             break;
         case rclcpp::FutureReturnCode::TIMEOUT:
-            RCLCPP_WARN(logger_, "Goal response timeout");
-            promise_ptr->set_value(nullptr);
-            return promise_ptr->get_future();
-        default:
-            RCLCPP_WARN(logger_, "No goal response");
-            promise_ptr->set_value(nullptr);
-            return promise_ptr->get_future();
+            throw std::runtime_error("No goal response due to timeout");
+        case rclcpp::FutureReturnCode::INTERRUPTED:
+            throw std::runtime_error("No goal response due to interruption");
     }
 
     auto client_goal_handle_ptr = goal_response_future.get();
@@ -141,11 +150,9 @@ bool ActionClientWrapper<ActionT>::CancelLastGoal(const std::chrono::seconds res
             case rclcpp::FutureReturnCode::SUCCESS:
                 break;
             case rclcpp::FutureReturnCode::TIMEOUT:
-                RCLCPP_WARN(logger_, "Cancel response timeout");
-                return false;
-            default:
-                RCLCPP_WARN(logger_, "No cancel response");
-                return false;
+                throw std::runtime_error("No cancel response due to timeout");
+            case rclcpp::FutureReturnCode::INTERRUPTED:
+                throw std::runtime_error("No cancel response due to interruption");
         }
 
         // Evaluate the response message
@@ -164,8 +171,18 @@ bool ActionClientWrapper<ActionT>::CancelLastGoal(const std::chrono::seconds res
         }
         return false;
     }
-    RCLCPP_WARN(logger_, "Cannot cancel because goal handle is nullptr");
-    return false;
+    throw std::runtime_error("Cannot cancel goal because goal_handle_ is nullptr");
+}
+
+template <typename ActionT>
+ActionGoalStatus ActionClientWrapper<ActionT>::GetGoalStatus(const ResultFuture& future)
+{
+    if (!future.valid()) throw std::runtime_error("ResultFuture is not valid");
+    if (future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        if (!future.get()) return ActionGoalStatus::REJECTED;
+        return ActionGoalStatus::COMPLETED;
+    }
+    return ActionGoalStatus::RUNNING;
 }
 
 template <typename ActionT>

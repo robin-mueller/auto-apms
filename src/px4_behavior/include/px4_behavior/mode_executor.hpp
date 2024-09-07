@@ -294,7 +294,7 @@ TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<const Goal> goal_p
                 break;
             }
             // Check if nav state changed
-            if (!IsCurrentNavState(static_cast<uint8_t>(mode_id_))) {
+            if (!IsCurrentNavState(mode_id_)) {
                 RCLCPP_WARN(this->node_ptr_->get_logger(),
                             "Flight mode %i was deactivated externally. Aborting...",
                             mode_id_);
