@@ -38,18 +38,18 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: doc/html
+      - uses: 8BitJonny/gh-get-current-pr@3.0.0
+        id: PR
       
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
+    if: needs.PR.outputs.pr_found == false
     runs-on: ubuntu-latest
     name: Deploy
     steps:
-      - uses: 8BitJonny/gh-get-current-pr@3.0.0
-        id: PR
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        if: steps.PR.outputs.pr_found == false
