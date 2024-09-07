@@ -39,14 +39,20 @@ jobs:
         with:
           path: doc/html
 
+  pr-check:
+    name: Check PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 8BitJonny/gh-get-current-pr@3.0.0
+
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
+    needs: [build, pr-check]
     runs-on: ubuntu-latest
     name: Deploy
-    if: github.event_name != "pull_request"
+    if: needs.pr-check.outputs.pr_found == false
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
