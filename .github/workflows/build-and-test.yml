@@ -29,6 +29,7 @@ jobs:
           import-token: ${{ secrets.GITHUB_TOKEN }}
           target-ros2-distro: humble
           vcs-repo-file-url: $GITHUB_WORKSPACE/dependencies.repos
+          no-symlink-install: true
           colcon-defaults: |
             {
               "test": {
