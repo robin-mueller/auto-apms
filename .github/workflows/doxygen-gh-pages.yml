@@ -38,13 +38,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: doc/html
-
-  pr-check:
-    name: Check PR
-    runs-on: ubuntu-latest
-    steps:
-      - uses: 8BitJonny/gh-get-current-pr@3.0.0
-
+      
   deploy:
     environment:
       name: github-pages
@@ -52,8 +46,10 @@ jobs:
     needs: [build, pr-check]
     runs-on: ubuntu-latest
     name: Deploy
-    if: needs.pr-check.outputs.pr_found == false
     steps:
+      - uses: 8BitJonny/gh-get-current-pr@3.0.0
+        id: PR
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        if: steps.PR.outputs.pr_found == false
