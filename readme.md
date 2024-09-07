@@ -3,8 +3,8 @@
 [![Website](https://img.shields.io/website?url=https://robin-mueller.github.io/px4-behavior-docs/)](https://robin-mueller.github.io/px4-behavior-docs/)
 [![License](https://img.shields.io/github/license/robin-mueller/px4-behavior?color=blue)](https://www.apache.org/licenses/LICENSE-2.0)
 
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/robin-mueller/px4-behavior/build-and-test.yml?label=Build%20and%20Test)](https://github.com/robin-mueller/px4-behavior/actions/workflows/build-and-test.yml)
 [![Release](https://img.shields.io/github/v/release/robin-mueller/px4-behavior?label=Release)](https://github.com/robin-mueller/px4-behavior/releases)
+[![Build and Test](https://github.com/robin-mueller/px4-behavior/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/robin-mueller/px4-behavior/actions/workflows/build-and-test.yml)
 
 # PX4 Behavior | User-friendly Mission Management
 

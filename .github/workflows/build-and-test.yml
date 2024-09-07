@@ -1,4 +1,4 @@
-name: Build and test
+name: Build and Test
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   build_and_test:
-    name: Build and test
+    name: Build and Test
     runs-on: ubuntu-latest
     container:
       image: rostooling/setup-ros-docker:ubuntu-jammy-latest
@@ -21,7 +21,7 @@ jobs:
           required-ros-distributions: humble
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Build and test
+      - name: Build and Test
         id: ros-build
         uses: ros-tooling/action-ros-ci@v0.3
         with:
