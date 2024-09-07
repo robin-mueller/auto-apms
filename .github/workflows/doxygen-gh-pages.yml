@@ -42,11 +42,11 @@ jobs:
         id: PR
       
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
-    if: needs.PR.outputs.pr_found == false
     runs-on: ubuntu-latest
     name: Deploy
     steps:
