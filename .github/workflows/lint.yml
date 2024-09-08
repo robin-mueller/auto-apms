@@ -20,7 +20,7 @@ jobs:
         with:
           required-ros-distributions: humble
       - name: Install ROS test dependencies
-        run: rosdep update && rosdep install -t test --from-paths "src/px4_behavior" --rosdistro "humble"
+        run: rosdep fix-permissions && rosdep update && rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/src/px4_behavior" --rosdistro "humble"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Run pre-commit
