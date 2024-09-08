@@ -25,10 +25,10 @@
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Test px4_behavior (Linters)",
-            "detail": "Run all linter tests of px4_behavior",
+            "label": "Test px4_behavior (pre-commit)",
+            "detail": "Run all tests in pre-commit config of px4_behavior",
             "type": "shell",
-            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select px4_behavior --ctest-args -L linter",
+            "command": "pre-commit run -a",
             "group": {
                 "kind": "test"
             },
