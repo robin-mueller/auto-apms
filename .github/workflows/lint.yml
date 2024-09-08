@@ -15,9 +15,9 @@ jobs:
     container:
       image: ros:humble-ros-base-jammy
     steps:
-      - name: Install ROS test dependencies
-        run: rosdep update && rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/src/px4_behavior"
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install ROS test dependencies
+        run: rosdep update && rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/src/px4_behavior"
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
