@@ -18,9 +18,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install ROS test dependencies
-        run: RUNNER_ALLOW_RUNASROOT="0" rosdep update && rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/src/px4_behavior"
+        run: rosdep update && rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/src/px4_behavior"
         shell: bash
       - name: Setup Python for pre-commit
         uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
