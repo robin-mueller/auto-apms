@@ -13,14 +13,10 @@ jobs:
     name: Lint using pre-commit
     runs-on: ubuntu-22.04
     container:
-      image: rostooling/setup-ros-docker:ubuntu-jammy-latest
+      image: ros:humble-ros-base-jammy
     steps:
-      - name: Setup ROS
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: humble
       - name: Install ROS test dependencies
-        run: rosdep fix-permissions && rosdep update && rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/src/px4_behavior" --rosdistro "humble"
+        run: rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/src/px4_behavior"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Run pre-commit
