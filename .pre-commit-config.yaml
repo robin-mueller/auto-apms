@@ -64,6 +64,6 @@ repos:
     hooks:
       - id: ament_copyright
         name: ament_copyright
-        entry: ament_copyright --add-missing "Robin Müller" "apache2"
+        entry: bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && exec ament_copyright --add-missing 'Robin Müller' apache2"
         language: system
         types: [file]

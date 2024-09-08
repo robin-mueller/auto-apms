@@ -11,16 +11,14 @@ on:
 jobs:
   build_and_test:
     name: Build and Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ros:humble-ros-base-jammy
     steps:
       - name: Setup ROS
-        #   uses: ros-tooling/setup-ros@v0.7
-        #   with:
-        #     required-ros-distributions: humble
-        run: |
-          sudo apt-get install python3-colcon-coveragepy-result python3-colcon-lcov-result python3-colcon-meson python3-colcon-mixin
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build and Test
