@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,13 +41,13 @@ jobs:
           path: doc/html
 
   deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
     if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
-    runs-on: ubuntu-latest
-    name: Deploy
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
