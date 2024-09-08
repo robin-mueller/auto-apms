@@ -26,7 +26,7 @@ jobs:
           sudo pip3 install -U rosdep &&
           sudo rosdep init &&
           rosdep update &&
-          rosdep install -t test --from-paths "${GITHUB_WORKSPACE}src/px4_behavior" --rosdistro humble
+          rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/src/px4_behavior" --rosdistro humble
         shell: bash
       - name: Setup Python
         uses: actions/setup-python@v5
