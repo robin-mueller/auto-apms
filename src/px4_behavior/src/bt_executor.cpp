@@ -55,10 +55,10 @@ std::string to_string(BTExecutorCommand cmd)
     return "undefined";
 }
 
-BTExecutor::BTExecutor(const std::string& name,
-                       const rclcpp::NodeOptions& options,
+BTExecutor::BTExecutor(const std::string &name,
+                       const rclcpp::NodeOptions &options,
                        const int groot2_server_port,
-                       const std::chrono::milliseconds& bt_tick_interval)
+                       const std::chrono::milliseconds &bt_tick_interval)
     : node_ptr_{std::make_shared<rclcpp::Node>(name, options)},
       groot2_server_port_{groot2_server_port},
       bt_tick_interval_{bt_tick_interval}
@@ -82,7 +82,7 @@ BTExecutor::BTExecutor(const std::string& name,
     node_ptr_->declare_parameter(STATE_CHANGE_LOGGING_PARAM_NAME, false, desc);
 
     param_subscriber_ptr_ = std::make_shared<rclcpp::ParameterEventHandler>(node_ptr_);
-    auto cb = [this](const rclcpp::Parameter& p) {
+    auto cb = [this](const rclcpp::Parameter &p) {
         if (this->bt_state_observer_ptr_) { this->bt_state_observer_ptr_->set_state_change_logging(p.as_bool()); }
     };
     state_change_logging_param_handle_ptr_ =
@@ -110,13 +110,13 @@ BTExecutor::BTExecutor(const std::string& name,
     global_blackboard_ptr_ = BT::Blackboard::create();
 }
 
-void BTExecutor::OnTreeCreated(BT::Blackboard&) {}
+void BTExecutor::OnTreeCreated(BT::Blackboard &) {}
 
 BTExecutor::Command BTExecutor::ReviewControlCommand(Command current_command, State) { return current_command; }
 
-void BTExecutor::BeforeFirstTick(BT::Blackboard&) {}
+void BTExecutor::BeforeFirstTick(BT::Blackboard &) {}
 
-BTExecutor::ClosureConduct BTExecutor::OnResult(bool) { return ClosureConduct::SUCCEED; };
+BTExecutor::ClosureConduct BTExecutor::OnResult(bool) { return ClosureConduct::SUCCEED; }
 
 void BTExecutor::UploadBehaviorTree(const std::shared_ptr<UploadBehaviorTreeService::Request> request,
                                     std::shared_ptr<UploadBehaviorTreeService::Response> response)
@@ -135,7 +135,7 @@ void BTExecutor::UploadBehaviorTree(const std::shared_ptr<UploadBehaviorTreeServ
     bt_factory_ptr_ = std::make_unique<BT::BehaviorTreeFactory>();
     try {
         this->SetupBehaviorTreeFactory(node_ptr_, *this->bt_factory_ptr_);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         response->success = false;
         response->error_message = "Error setting up behavior tree factory: " + std::string(e.what());
         RCLCPP_ERROR(node_ptr_->get_logger(), "%s", response->error_message.c_str());
@@ -144,7 +144,7 @@ void BTExecutor::UploadBehaviorTree(const std::shared_ptr<UploadBehaviorTreeServ
 
     try {
         bt_factory_ptr_->registerBehaviorTreeFromText(request->xml_data);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         response->success = false;
         response->error_message = "Error registering behavior tree: " + std::string(e.what());
         RCLCPP_ERROR(node_ptr_->get_logger(), "%s", response->error_message.c_str());
@@ -161,7 +161,7 @@ void BTExecutor::UploadBehaviorTree(const std::shared_ptr<UploadBehaviorTreeServ
     // Try to create tree
     try {
         CreateTree(request->tree_id);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         response->success = false;
         response->error_message = "Error creating tree with ID '" + request->tree_id + "': " + std::string(e.what());
         RCLCPP_ERROR(node_ptr_->get_logger(), "%s", response->error_message.c_str());
@@ -172,7 +172,7 @@ void BTExecutor::UploadBehaviorTree(const std::shared_ptr<UploadBehaviorTreeServ
     response->success = true;
 }
 
-rclcpp_action::GoalResponse BTExecutor::LaunchHandleGoal(const rclcpp_action::GoalUUID& uuid,
+rclcpp_action::GoalResponse BTExecutor::LaunchHandleGoal(const rclcpp_action::GoalUUID &uuid,
                                                          std::shared_ptr<const LaunchExecutorAction::Goal> goal_ptr)
 {
     (void)goal_ptr;
@@ -220,7 +220,7 @@ void BTExecutor::LaunchHandleAccepted(
             action_result_ptr->terminated_tree_id = current_tree_id;
             action_result_ptr->tree_result = LaunchExecutorAction::Result::TREE_RESULT_NOT_SET;
 
-            auto abort_goal = [this, goal_handle_ptr, action_result_ptr](const std::string& msg) {
+            auto abort_goal = [this, goal_handle_ptr, action_result_ptr](const std::string &msg) {
                 action_result_ptr->termination_message =
                     msg + "\nProcess terminates from state " + to_string(GetExecutionState());
                 RCLCPP_ERROR(node_ptr_->get_logger(),
@@ -281,11 +281,11 @@ void BTExecutor::LaunchHandleAccepted(
                     [[fallthrough]];
                 case Command::HALT:
                     // Check if already halted
-                    if (execution_state_before == State::HALTED) return;
+                    if (execution_state_before == State::HALTED) { return; }
                     try {
                         behavior_tree_ptr_->haltTree();
                         return;
-                    } catch (const std::exception& e) {
+                    } catch (const std::exception &e) {
                         abort_goal("Error during haltTree() on command " + to_string(control_command_) + ": " +
                                    std::string(e.what()));
                         return;
@@ -298,20 +298,20 @@ void BTExecutor::LaunchHandleAccepted(
             }
 
             // Evaluate callback before executor ticks tree for the first time
-            if (execution_state_before == State::IDLE) BeforeFirstTick(*global_blackboard_ptr_);
+            if (execution_state_before == State::IDLE) { BeforeFirstTick(*global_blackboard_ptr_); }
 
             BT::NodeStatus bt_status = BT::NodeStatus::IDLE;
             try {
                 // It is important to tick EXACTLY once,
                 // since we must prevent blocking the ROS2 runtime execution stack for too long
                 bt_status = behavior_tree_ptr_->tickExactlyOnce();
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 std::string msg = "Behavior tree ran into an exception during tick: " + std::string(e.what());
 
                 // Try to halt tree before aborting
                 try {
                     behavior_tree_ptr_->haltTree();
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     msg += "\nDuring haltTree(), another error occured: " + std::string(e.what());
                 }
                 abort_goal(msg);
@@ -319,7 +319,7 @@ void BTExecutor::LaunchHandleAccepted(
             }
 
             // Determine if routine is to continue
-            if (bt_status == BT::NodeStatus::RUNNING) return;
+            if (bt_status == BT::NodeStatus::RUNNING) { return; }
 
             switch (bt_status) {
                 case BT::NodeStatus::SUCCESS:
@@ -351,7 +351,7 @@ void BTExecutor::LaunchHandleAccepted(
         });
 }
 
-rclcpp_action::GoalResponse BTExecutor::CommandHandleGoal(const rclcpp_action::GoalUUID& uuid,
+rclcpp_action::GoalResponse BTExecutor::CommandHandleGoal(const rclcpp_action::GoalUUID &uuid,
                                                           std::shared_ptr<const CommandAction::Goal> goal_ptr)
 {
     (void)uuid;
@@ -467,16 +467,16 @@ void BTExecutor::CommandHandleAccepted(std::shared_ptr<rclcpp_action::ServerGoal
             auto current_state = GetExecutionState();
             switch (control_command_) {
                 case Command::RUN:
-                    if (current_state != State::RUNNING) return;
+                    if (current_state != State::RUNNING) { return; }
                     break;
                 case Command::PAUSE:
-                    if (current_state != State::PAUSED) return;
+                    if (current_state != State::PAUSED) { return; }
                     break;
                 case Command::HALT:
-                    if (current_state != State::HALTED) return;
+                    if (current_state != State::HALTED) { return; }
                     break;
                 case Command::TERMINATE:
-                    if (current_state != State::TERMINATED) return;
+                    if (current_state != State::TERMINATED) { return; }
                     break;
             }
 
@@ -485,7 +485,7 @@ void BTExecutor::CommandHandleAccepted(std::shared_ptr<rclcpp_action::ServerGoal
         });
 }
 
-void BTExecutor::CreateTree(const std::string& tree_id)
+void BTExecutor::CreateTree(const std::string &tree_id)
 {
     // Throw if bt factory hasn't been set up yet
     if (!bt_factory_ptr_) { throw std::runtime_error("Tree factory hasn't been set up yet"); }
@@ -532,7 +532,7 @@ std::string BTExecutor::GetCreatedTreeID()
     return tree_id;
 }
 
-bool BTExecutor::HasLaunched() { return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled(); };
+bool BTExecutor::HasLaunched() { return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled(); }
 
 void BTExecutor::SetUpExecutionRoutine()
 {

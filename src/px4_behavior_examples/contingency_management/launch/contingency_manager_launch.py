@@ -1,3 +1,17 @@
+# Copyright 2024 Robin Müller
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -11,7 +25,7 @@ from launch.actions import (
 from launch.substitutions import FindExecutable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.event_handlers import OnProcessStart, OnProcessIO
-from launch_ros.actions import ComposableNodeContainer, Node
+from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
 NAMESPACE = ""
@@ -35,9 +49,7 @@ def upload_tree_action(executor_name: str, package_name: str, filename: str):
         RegisterEventHandler(
             OnProcessIO(
                 target_action=execute,
-                on_stdout=lambda event: LogInfo(
-                    msg=f"[{process_name}] {event.text.decode().strip()}"
-                ),
+                on_stdout=lambda event: LogInfo(msg=f"[{process_name}] {event.text.decode().strip()}"),
             )
         ),
     ]
@@ -57,12 +69,13 @@ def generate_launch_description():
         launch_arguments=[("namespace", NAMESPACE)],
     )
 
+    # Multithreading is important due to parallel spin until operations of bt executors
     container = ComposableNodeContainer(
         name="ctmanager_container_node",
         exec_name="ctmanager_container",
         namespace=NAMESPACE,
         package="rclcpp_components",
-        executable="component_container_mt",  # Multithreading is important due to parallel spin until operations of bt executors
+        executable="component_container_mt",
         composable_node_descriptions=[
             ComposableNode(
                 package="px4_behavior",
@@ -94,9 +107,7 @@ def generate_launch_description():
     )
 
     # Register default tree for orchestrator
-    upload_orchestrator_tree = upload_tree_action(
-        "flight_orchestrator", "px4_behavior", "flight_orchestrator"
-    )
+    upload_orchestrator_tree = upload_tree_action("flight_orchestrator", "px4_behavior", "flight_orchestrator")
 
     return LaunchDescription(
         [

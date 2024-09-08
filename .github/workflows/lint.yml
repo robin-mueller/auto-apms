@@ -1,0 +1,20 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  lint:
+    name: Run linters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ROS test dependencies
+        run: sudo apt-get install python3-rosdep && rosdep install -t test --from-paths "src/px4_behavior" --rosdistro "humble"
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1

@@ -25,7 +25,8 @@ ALL_TASK_NAMES = [
     "px4_behavior::LandTask",
     "px4_behavior::TakeoffTask",
     "px4_behavior::RTLTask",
-    "px4_behavior::MissionTask"]
+    "px4_behavior::MissionTask",
+]
 
 
 def generate_launch_description():

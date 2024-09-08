@@ -1,3 +1,17 @@
+// Copyright 2024 Robin Müller
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <regex>
 
 #include "Eigen/Geometry"
@@ -77,7 +91,7 @@ class CreateAlternateLandingMission : public SyncActionNode
         // Read tree template and replace placeholders
         const std::string main_tree_id = "AlternateLandingMission";
         auto resource = FetchBehaviorTreeResource(std::nullopt, main_tree_id, "px4_behavior_examples");
-        if (!resource.has_value()) return NodeStatus::FAILURE;
+        if (!resource.has_value()) { return NodeStatus::FAILURE; }
         auto tree = px4_behavior::ReadBehaviorTreeFile(resource.value().tree_path);
 
         // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -

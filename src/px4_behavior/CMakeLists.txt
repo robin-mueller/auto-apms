@@ -49,16 +49,16 @@ target_include_directories(px4_behavior_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(px4_behavior_core
-    rclcpp 
-    rclcpp_action 
-    rclcpp_components 
+    rclcpp
+    rclcpp_action
+    rclcpp_components
     behaviortree_cpp
     behaviortree_ros2
     px4_behavior_interfaces
-    px4_msgs 
-    px4_ros2_cpp 
-    Eigen3 
-    tf2_eigen 
+    px4_msgs
+    px4_ros2_cpp
+    Eigen3
+    tf2_eigen
     yaml-cpp)
 target_link_libraries(px4_behavior_core ${YAML_CPP_LIBRARIES})
 target_compile_definitions(px4_behavior_core PRIVATE
@@ -70,7 +70,7 @@ if(PX4_BEHAVIOR_DEBUG_LOGGING)
     target_compile_definitions(px4_behavior_core PRIVATE DEBUG_LOGGING)
 endif()
 
-rclcpp_components_register_nodes(px4_behavior_core 
+rclcpp_components_register_nodes(px4_behavior_core
     "px4_behavior::ArmDisarmTask"
     "px4_behavior::EnableHoldTask"
     "px4_behavior::GoToTask"
@@ -157,8 +157,44 @@ px4_behavior_register_plugins(behavior_tree_nodes
 # For downstream packages this is registered as an extension to ament_package, but here we need to call this script manually
 include(cmake/register_resources_hook.cmake)
 
+#
+# ------------ PX4 Behavior Library | Testing --------------
+#
+
 if(BUILD_TESTING)
-    add_subdirectory(test)
+    ### Test interfaces and helper ###
+    find_package(rosidl_default_generators REQUIRED)
+    add_subdirectory(test/interfaces)  # CMAKE_CURRENT_SOURCE_DIR must be at root of 'action' directory for rosidl_generate_interfaces
+    rosidl_get_typesupport_target(test_interfaces ${PROJECT_NAME} rosidl_typesupport_cpp)
+
+    add_library(test_helper SHARED
+        test/helper/src/util.cpp)
+    target_include_directories(test_helper PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/helper/include>)
+    target_link_libraries(test_helper px4_behavior_core)
+
+    ### Unit tests ###
+    find_package(ament_cmake_gtest REQUIRED)
+
+    ament_add_gtest(${PROJECT_NAME}_unit_tests
+        test/unit/src/task.cpp
+
+        test/unit/src/main.cpp)
+    target_include_directories(${PROJECT_NAME}_unit_tests PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/include>)
+    target_link_libraries(${PROJECT_NAME}_unit_tests
+        px4_behavior_core
+        test_helper
+        "${test_interfaces}")
+
+    ### Integration tests ###
+    # ament_add_gtest(${PROJECT_NAME}_integration_tests
+
+    # )
+    # target_include_directories(${PROJECT_NAME}_integration_tests PRIVATE
+    #      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/include>
+    # )
+    # target_link_libraries(${PROJECT_NAME}_integration_tests px4_behavior_core)
 endif()
 
 #
@@ -187,7 +223,7 @@ install(
     DESTINATION include)
 
 install(
-    DIRECTORY launch 
+    DIRECTORY launch
     DESTINATION share/${PROJECT_NAME})
 
 install(
@@ -199,12 +235,12 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 # Dependencies
 ament_export_dependencies(
-    rclcpp 
+    rclcpp
     rclcpp_action
     behaviortree_cpp
     behaviortree_ros2
     px4_behavior_interfaces
-    px4_msgs 
+    px4_msgs
     px4_ros2_cpp
     Eigen3
     tf2_eigen)

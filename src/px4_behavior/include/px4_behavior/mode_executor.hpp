@@ -229,7 +229,7 @@ TaskStatus ModeExecutor<ActionT>::CancelGoal(std::shared_ptr<const Goal> goal_pt
 {
     (void)goal_ptr;
     (void)result_ptr;
-    if (deactivate_before_completion_) return AsyncDeactivateFlightMode();
+    if (deactivate_before_completion_) { return AsyncDeactivateFlightMode(); }
     return TaskStatus::SUCCESS;
 }
 
@@ -307,7 +307,7 @@ TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<const Goal> goal_p
 
     if (deactivate_before_completion_) {
         const auto deactivation_state = AsyncDeactivateFlightMode();
-        if (deactivation_state != TaskStatus::SUCCESS) return deactivation_state;
+        if (deactivation_state != TaskStatus::SUCCESS) { return deactivation_state; }
         // Don't return to complete in same iteration
     }
 

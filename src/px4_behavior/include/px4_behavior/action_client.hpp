@@ -134,7 +134,7 @@ typename ActionClientWrapper<ActionT>::ResultFuture ActionClientWrapper<ActionT>
         options.feedback_callback(client_goal_handle, feedback);
     };
     _options.result_callback = [this, promise_ptr, options](const typename ClientGoalHandle::WrappedResult& wr) {
-        if (options.result_callback) options.result_callback(wr);
+        if (options.result_callback) { options.result_callback(wr); }
         promise_ptr->set_value(std::make_shared<typename ClientGoalHandle::WrappedResult>(wr));
         goal_handle_ptr_ = nullptr;  // Reset active goal handle
     };
@@ -163,7 +163,7 @@ typename ActionClientWrapper<ActionT>::ResultFuture ActionClientWrapper<ActionT>
 template <typename ActionT>
 bool ActionClientWrapper<ActionT>::SyncCancelLastGoal(const std::chrono::seconds response_timeout)
 {
-    if (!goal_handle_ptr_) throw std::runtime_error("Cannot cancel goal because goal_handle_ptr_ is nullptr");
+    if (!goal_handle_ptr_) { throw std::runtime_error("Cannot cancel goal because goal_handle_ptr_ is nullptr"); }
 
     // Send request and await response
     auto cancel_response_future = client_ptr_->async_cancel_goal(goal_handle_ptr_);
@@ -195,9 +195,9 @@ bool ActionClientWrapper<ActionT>::SyncCancelLastGoal(const std::chrono::seconds
 template <typename ActionT>
 ActionGoalStatus ActionClientWrapper<ActionT>::GetGoalStatus(const ResultFuture& future)
 {
-    if (!future.valid()) throw std::runtime_error("ResultFuture is not valid");
+    if (!future.valid()) { throw std::runtime_error("ResultFuture is not valid"); }
     if (future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-        if (!future.get()) return ActionGoalStatus::REJECTED;
+        if (!future.get()) { return ActionGoalStatus::REJECTED; }
         return ActionGoalStatus::COMPLETED;
     }
     return ActionGoalStatus::RUNNING;

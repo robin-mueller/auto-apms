@@ -10,7 +10,7 @@
 #   ros2_plugin_key: "node_default_port_name"
 #
 # NOTE:
-# The ROS2 namespacing concept (https://design.ros2.org/articles/topic_and_service_names.html) 
+# The ROS2 namespacing concept (https://design.ros2.org/articles/topic_and_service_names.html)
 # applies to node_default_port_name. That is, you can specify both relative and absolute names.
 #
 

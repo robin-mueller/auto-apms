@@ -31,6 +31,7 @@
     <member_of_group>rosidl_interface_packages</member_of_group>
 
     <test_depend>ament_cmake_gtest</test_depend>
+    <test_depend>ament_copyright</test_depend>
 
     <export>
         <build_type>ament_cmake</build_type>

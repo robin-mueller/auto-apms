@@ -30,7 +30,7 @@ class BTStateObserver : public BT::StatusChangeLogger
 
     virtual void flush() override;
 
-    void set_state_change_logging(bool active) { state_change_logging_ = active; };
+    void set_state_change_logging(bool active) { state_change_logging_ = active; }
 
     const std::vector<std::string>& running_action_history() { return running_action_history_; }
     const std::string& last_running_action_name() { return last_running_action_name_; }

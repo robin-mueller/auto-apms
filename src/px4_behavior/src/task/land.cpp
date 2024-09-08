@@ -21,9 +21,7 @@ namespace px4_behavior {
 class LandTask : public ModeExecutor<px4_behavior_interfaces::action::Land>
 {
    public:
-    explicit LandTask(const rclcpp::NodeOptions& options)
-        : ModeExecutor{LAND_TASK_NAME, options, FlightMode::Land}
-    {}
+    explicit LandTask(const rclcpp::NodeOptions& options) : ModeExecutor{LAND_TASK_NAME, options, FlightMode::Land} {}
 
    private:
     bool SendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr)

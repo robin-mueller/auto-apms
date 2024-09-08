@@ -38,7 +38,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: doc/html
-      
+
   deploy:
     if: github.event_name == 'push'
     environment:

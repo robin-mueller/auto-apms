@@ -31,7 +31,7 @@ class ThrowException : public SyncActionNode
     {
         auto input = getInput<std::string>(INPUT_KEY_MSG);
         auto node_name = name() == registrationName() ? registrationName() : registrationName() + ": " + name();
-        if (!input.has_value()) throw RuntimeError(node_name + " - An error occured");
+        if (!input.has_value()) { throw RuntimeError(node_name + " - An error occured"); }
         throw RuntimeError(node_name + " - " + input.value());
     }
 };

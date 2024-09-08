@@ -32,19 +32,19 @@ class TestTask : public TaskBase<TestAction>
 
     bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr) override
     {
-        if (goal_ptr->request == 1) return false;
+        if (goal_ptr->request == 1) { return false; }
         return true;
     }
 
     void SetInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
     {
-        if (goal_ptr->request == 2) result_ptr->result = 1;
-        if (goal_ptr->request == 3) result_ptr->result = 10;
+        if (goal_ptr->request == 2) { result_ptr->result = 1; }
+        if (goal_ptr->request == 3) { result_ptr->result = 10; }
     }
     bool OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
     {
-        if (goal_ptr->request == 5) return false;
-        if (goal_ptr->request == 7) result_ptr->result = 20;
+        if (goal_ptr->request == 5) { return false; }
+        if (goal_ptr->request == 7) { result_ptr->result = 20; }
         return true;
     }
     TaskStatus CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
@@ -52,10 +52,10 @@ class TestTask : public TaskBase<TestAction>
         switch (goal_ptr->request) {
             case 6:
                 // CancelGoalReject
-                if (++result_ptr->result < 23)
-                    return TaskStatus::RUNNING;
-                else
+                if (++result_ptr->result < 23) { return TaskStatus::RUNNING; }
+                else {
                     return TaskStatus::SUCCESS;
+                }
             case 8:
                 // CancelGoalAbort
                 result_ptr->result = 40;
@@ -74,10 +74,10 @@ class TestTask : public TaskBase<TestAction>
                 return TaskStatus::SUCCESS;
             case 3:
                 // ExecuteGoal
-                if (++result_ptr->result < 13)
-                    return TaskStatus::RUNNING;
-                else
+                if (++result_ptr->result < 13) { return TaskStatus::RUNNING; }
+                else {
                     return TaskStatus::SUCCESS;
+                }
             case 4:
                 // SendFeedback
                 feedback_ptr->feedback = 1;

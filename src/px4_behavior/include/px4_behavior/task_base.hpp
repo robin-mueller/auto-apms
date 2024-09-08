@@ -195,7 +195,7 @@ rclcpp_action::GoalResponse TaskBase<ActionT>::handle_goal_(const rclcpp_action:
         return rclcpp_action::GoalResponse::REJECT;
     }
 
-    if (OnGoalRequest(goal_ptr)) return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    if (OnGoalRequest(goal_ptr)) { return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE; }
 
     RCLCPP_DEBUG(node_ptr_->get_logger(),
                  "Goal %s was REJECTED because OnGoalRequest() returned false",
@@ -222,15 +222,12 @@ void TaskBase<ActionT>::handle_accepted_(std::shared_ptr<GoalHandle> goal_handle
     (void)goal_handle_ptr;  // action_context_ptr_ takes ownership of goal handle from now on
 
     // Create the timer that triggers the execution routine
-    execution_timer_ptr_ =
-        node_ptr_->create_wall_timer(execution_timer_interval_,
-                                     [this, goal_ptr]() {
-                                         this->execution_timer_callback_(goal_ptr);
-                                     });
+    execution_timer_ptr_ = node_ptr_->create_wall_timer(execution_timer_interval_, [this, goal_ptr]() {
+        this->execution_timer_callback_(goal_ptr);
+    });
 
     // Ensure that feedback is published already at the first cycle
-    const std::chrono::milliseconds feedback_interval{
-            node_ptr_->get_parameter(PARAM_NAME_FEEDBACK_INTERVAL).as_int()};
+    const std::chrono::milliseconds feedback_interval{node_ptr_->get_parameter(PARAM_NAME_FEEDBACK_INTERVAL).as_int()};
     last_feedback_ts_ = std::chrono::steady_clock::now() - feedback_interval;
 }
 

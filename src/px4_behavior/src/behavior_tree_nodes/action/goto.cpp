@@ -46,7 +46,7 @@ class GoToAction : public RosActionNode<px4_behavior_interfaces::action::GoTo>
 
     NodeStatus onResultReceived(const WrappedResult& wr)
     {
-        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) return NodeStatus::SUCCESS;
+        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) { return NodeStatus::SUCCESS; }
         return NodeStatus::FAILURE;
     }
 

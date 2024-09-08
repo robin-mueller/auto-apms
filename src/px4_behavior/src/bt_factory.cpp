@@ -127,7 +127,7 @@ bool RegisterBTNodePlugins(const rclcpp::Node::SharedPtr& node,
 
                 // Check if the plugin has already been registered
 
-                if (registered_plugins.find(plugin_classname) != registered_plugins.end()) continue;
+                if (registered_plugins.find(plugin_classname) != registered_plugins.end()) { continue; }
 
                 if (loaders.find(plugin_library_path) == loaders.end()) {
                     try {

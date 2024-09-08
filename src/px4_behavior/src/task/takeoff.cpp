@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "px4_behavior/px4_behavior.hpp"
 #include "px4_behavior_interfaces/action/takeoff.hpp"
+
+#include "px4_behavior/px4_behavior.hpp"
 
 namespace px4_behavior {
 
@@ -32,7 +33,6 @@ class TakeoffTask : public ModeExecutor<px4_behavior_interfaces::action::Takeoff
 };
 
 }  // namespace px4_behavior
-
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(px4_behavior::TakeoffTask)

@@ -46,10 +46,10 @@ add_and_install_example_executable("src/behavior_ex1.cpp")
 
 # Example behavior tree resources
 px4_behavior_register_behavior_tree_file(
-    "resource/relative_goto.xml" 
-    PLUGIN_CONFIGS 
+    "resource/relative_goto.xml"
+    PLUGIN_CONFIGS
     "resource/relative_goto_plugins.yaml"
-    TREE_IDS 
+    TREE_IDS
     "MainTree")
 
 #
@@ -75,7 +75,7 @@ install(
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin)
 
-rclcpp_components_register_nodes(contingency_management 
+rclcpp_components_register_nodes(contingency_management
     "px4_behavior::ops_engine::FlightOrchestratorExecutor"
     "px4_behavior::ops_engine::SafetyMonitorExecutor"
     "px4_behavior::ops_engine::ContingencyManagerExecutor"
@@ -101,24 +101,24 @@ px4_behavior_register_plugins(behavior_tree_nodes
     "px4_behavior::ops_engine::IsLandingSiteClear"
     "px4_behavior::ops_engine::GetSystemState")
 
-px4_behavior_register_behavior_tree_file("contingency_management/trees/contingency_manager.xml" 
-    PLUGIN_CONFIGS 
+px4_behavior_register_behavior_tree_file("contingency_management/trees/contingency_manager.xml"
+    PLUGIN_CONFIGS
     "contingency_management/config/contingency_manager_plugins.yaml")
-px4_behavior_register_behavior_tree_file("contingency_management/trees/flight_orchestrator.xml" 
-    PLUGIN_CONFIGS 
+px4_behavior_register_behavior_tree_file("contingency_management/trees/flight_orchestrator.xml"
+    PLUGIN_CONFIGS
     "contingency_management/config/orchestrator_plugins.yaml")
-px4_behavior_register_behavior_tree_file("contingency_management/trees/nominal_mission.xml" 
-    PLUGIN_CONFIGS 
+px4_behavior_register_behavior_tree_file("contingency_management/trees/nominal_mission.xml"
+    PLUGIN_CONFIGS
     "contingency_management/config/mission_manager_plugins.yaml")
-px4_behavior_register_behavior_tree_file("contingency_management/trees/safety_monitor.xml" 
-    PLUGIN_CONFIGS 
+px4_behavior_register_behavior_tree_file("contingency_management/trees/safety_monitor.xml"
+    PLUGIN_CONFIGS
     "contingency_management/config/safety_monitor_plugins.yaml")
-px4_behavior_register_behavior_tree_file("contingency_management/trees/alternate_landing_mission.xml" 
+px4_behavior_register_behavior_tree_file("contingency_management/trees/alternate_landing_mission.xml"
     TREE_IDS
     "AlternateLandingMission")
 
 install(
-    DIRECTORY contingency_management/launch 
+    DIRECTORY contingency_management/launch
     DESTINATION share/${PROJECT_NAME})
 
 

@@ -44,7 +44,7 @@ class LoadBehaviorTreeAction : public SyncActionNode
 
         auto resource =
             FetchBehaviorTreeResource(std::filesystem::path{filename}.filename(), std::nullopt, package_name);
-        if (!resource.has_value()) return NodeStatus::FAILURE;
+        if (!resource.has_value()) { return NodeStatus::FAILURE; }
 
         std::string xml_data;
         try {

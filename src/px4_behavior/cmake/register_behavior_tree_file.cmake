@@ -16,13 +16,13 @@ macro(px4_behavior_register_behavior_tree_file tree_filepath)
 
     # Check if behavior tree file exists
     get_filename_component(tree_filepath_abs "${tree_filepath}" REALPATH)
-    if (NOT EXISTS "${tree_filepath_abs}")
+    if(NOT EXISTS "${tree_filepath_abs}")
         message(
             FATAL_ERROR
             "px4_behavior_register_behavior_tree_file(): Behavior tree file ${tree_filepath_abs} does not exist"
         )
     endif()
-    
+
     # Parse arguments
     set(options "")
     set(oneValueArgs "")
@@ -35,14 +35,14 @@ macro(px4_behavior_register_behavior_tree_file tree_filepath)
     set(_rel_tree_install_dir "${_PX4_BEHAVIOR_RESOURCES_DIR_RELATIVE}/${_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_DIR_NAME}")
     set(_rel_plugin_config_install_paths "")
 
-    if (NOT ${ARGS_PLUGIN_CONFIGS} STREQUAL "")
+    if(NOT ${ARGS_PLUGIN_CONFIGS} STREQUAL "")
 
         set(_rel_plugin_config_install_dir "${_PX4_BEHAVIOR_RESOURCES_DIR_RELATIVE}/${_PX4_BEHAVIOR_BT_NODE_PLUGINS__RESOURCE_DIR_NAME}")
         set(_rel_node_model_install_dir "${_rel_tree_install_dir}")
         foreach(_plugin_config_filepath ${ARGS_PLUGIN_CONFIGS})
             # Check if plugin file exists
             get_filename_component(_plugin_config_filepath_abs "${_plugin_config_filepath}" REALPATH)
-            if (NOT EXISTS "${_plugin_config_filepath_abs}")
+            if(NOT EXISTS "${_plugin_config_filepath_abs}")
                 message(
                     FATAL_ERROR
                     "px4_behavior_register_behavior_tree_file(): Plugin file ${_plugin_config_filepath_abs} does not exist"
@@ -92,5 +92,5 @@ macro(px4_behavior_register_behavior_tree_file tree_filepath)
 
     # Fill meta info
     set(_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_FILE "${_PX4_BEHAVIOR_BEHAVIOR_TREE__RESOURCE_FILE}${_tree_file_stem}|${_rel_tree_install_dir}/${_tree_file_name}|${_rel_plugin_config_install_paths}|${ARGS_TREE_IDS}|\n")
-    
+
 endmacro()

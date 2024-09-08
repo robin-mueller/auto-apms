@@ -49,7 +49,7 @@ void BTStateObserver::callback(BT::Duration timestamp,
      * Write to logger but respect a maximum interval if a specific node triggers the same state
      * transitions (e.g. conditions in reactive control statements or loops).
      */
-    if (!state_change_logging_) return;
+    if (!state_change_logging_) { return; }
     const auto key = std::make_pair(node.UID(), CreateStateChangeBitmask(prev_status, status));
     const bool first_log = last_log_map_.count(key) == 0;
 

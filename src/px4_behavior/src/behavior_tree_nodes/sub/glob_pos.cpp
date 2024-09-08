@@ -50,7 +50,7 @@ class ReadGlobalPosition : public PX4RosTopicSubNode<GlobalPositionMsg>
     NodeStatus onTick(const std::shared_ptr<GlobalPositionMsg>& last_msg_ptr) final
     {
         // Check if a new message was received
-        if (last_msg_ptr) last_msg_ = *last_msg_ptr;
+        if (last_msg_ptr) { last_msg_ = *last_msg_ptr; }
 
         if (auto any_locked = getLockedPortContent(OUTPUT_KEY_POS)) {
             setOutput(OUTPUT_KEY_LAT, last_msg_.lat);

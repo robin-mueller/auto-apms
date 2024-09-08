@@ -86,7 +86,7 @@ class ArmDisarmTask : public TaskBase<px4_behavior_interfaces::action::ArmDisarm
 
         switch (state_) {
             case WAIT_FOR_READY_TO_ARM:
-                if (ready_to_arm_) state_ = SEND_COMMAND;
+                if (ready_to_arm_) { state_ = SEND_COMMAND; }
                 break;
             case SEND_COMMAND:
                 if (send_command_callback_()) { state_ = WAIT_FOR_ARMING_STATE_REACHED; }

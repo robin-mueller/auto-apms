@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     std::vector<std::string> config_files = rcpputils::split(argv[1], ';');
     std::filesystem::path output_file{std::filesystem::absolute(argv[2])};
     std::vector<std::string> build_infos;
-    if (argc > 3) build_infos = rcpputils::split(argv[3], ';');
+    if (argc > 3) { build_infos = rcpputils::split(argv[3], ';'); }
 
     // Ensure that arguments are not empty
     if (config_files.empty()) { throw std::runtime_error("Argument config_files must not be empty"); }

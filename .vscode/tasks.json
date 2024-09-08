@@ -23,6 +23,16 @@
                 "kind": "test"
             },
             "problemMatcher": "$gcc"
-        }
+        },
+        {
+            "label": "Test px4_behavior (Linters)",
+            "detail": "Run all linter tests of px4_behavior",
+            "type": "shell",
+            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select px4_behavior --ctest-args -L linter",
+            "group": {
+                "kind": "test"
+            },
+            "problemMatcher": "$gcc"
+        },
     ]
 }

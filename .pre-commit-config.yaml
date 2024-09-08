@@ -1,0 +1,69 @@
+# To use:
+#
+#     pre-commit run -a
+#
+# Or:
+#
+#     pre-commit install  # (runs every time you commit in git)
+#
+# To update this file:
+#
+#     pre-commit autoupdate
+#
+# See https://github.com/pre-commit/pre-commit
+
+repos:
+  # Standard hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-xml
+      - id: check-yaml
+      - id: debug-statements
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+        exclude_types: [rst]
+      - id: fix-byte-order-marker
+
+  # Python hooks
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+
+  # CPP hooks
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: "v18.1.8" # Use the sha / tag you want to point at
+    hooks:
+      - id: clang-format
+        types_or: [c++, c]
+
+  # CMake hooks
+  - repo: https://github.com/cmake-lint/cmake-lint
+    rev: 1.4.3
+    hooks:
+      - id: cmakelint
+
+  # GitHub Workflow hooks
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.1
+    hooks:
+      - id: actionlint
+
+  # Other
+  - repo: local
+    hooks:
+      - id: ament_copyright
+        name: ament_copyright
+        entry: ament_copyright --add-missing "Robin Müller" "apache2"
+        language: system
+        types: [file]

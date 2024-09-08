@@ -19,7 +19,7 @@ macro(px4_behavior_register_plugins plugin_lib_target)
         FATAL_ERROR
         "px4_behavior_register_plugins(): first argument '${plugin_lib_target}' is not a target")
     endif()
-    
+
     # Check target type
     get_target_property(_target_type ${plugin_lib_target} TYPE)
     if(NOT _target_type STREQUAL "SHARED_LIBRARY")
@@ -27,7 +27,7 @@ macro(px4_behavior_register_plugins plugin_lib_target)
         FATAL_ERROR
         "px4_behavior_register_plugins(): first argument '${plugin_lib_target}' is not a shared library target")
     endif()
-    
+
     cmake_parse_arguments(ARGS "" "" "" ${ARGN})
     set(_unique_names)
     foreach(_arg ${ARGS_UNPARSED_ARGUMENTS})
