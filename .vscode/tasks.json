@@ -5,28 +5,28 @@
     "tasks": [
         // Test tasks
         {
-            "label": "Test px4_behavior (Unit tests)",
-            "detail": "Run all unit tests of px4_behavior",
+            "label": "Test auto_apms (Unit tests)",
+            "detail": "Run all unit tests of auto_apms",
             "type": "shell",
-            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select px4_behavior --ctest-args -R px4_behavior_unit_tests",
+            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select auto_apms --ctest-args -R auto_apms_unit_tests",
             "group": {
                 "kind": "test"
             },
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Test px4_behavior (Integration tests)",
-            "detail": "Run all integration tests of px4_behavior",
+            "label": "Test auto_apms (Integration tests)",
+            "detail": "Run all integration tests of auto_apms",
             "type": "shell",
-            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select px4_behavior --ctest-args -R px4_behavior_integration_tests",
+            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select auto_apms --ctest-args -R auto_apms_integration_tests",
             "group": {
                 "kind": "test"
             },
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Test px4_behavior (pre-commit)",
-            "detail": "Run all tests in pre-commit config of px4_behavior",
+            "label": "Test auto_apms (pre-commit)",
+            "detail": "Run all tests in pre-commit config of auto_apms",
             "type": "shell",
             "command": "pre-commit run -a",
             "group": {

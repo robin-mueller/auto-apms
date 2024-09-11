@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>auto_apms</name>
+    <version>0.1.0</version>
+    <description>PX4 Behavior-based Control Library</description>
+    <maintainer email="robin-m-99@gmx.de">Robin Müller</maintainer>
+    <license>Apache License 2.0</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <buildtool_depend>eigen3_cmake_module</buildtool_depend>
+    <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+    <depend>ament_index_cpp</depend>
+    <depend>rclcpp</depend>
+    <depend>rclcpp_action</depend>
+    <depend>rclcpp_components</depend>
+    <depend>rcpputils</depend>
+    <depend>class_loader</depend>
+    <depend>behaviortree_cpp</depend>
+    <depend>behaviortree_ros2</depend>
+    <depend>auto_apms_interfaces</depend>
+    <depend>px4_msgs</depend>
+    <depend>px4_ros2_cpp</depend>
+    <depend>eigen</depend>
+    <depend>tf2_eigen</depend>
+    <depend>yaml-cpp</depend>
+
+    <exec_depend>rosidl_default_runtime</exec_depend>
+
+    <member_of_group>rosidl_interface_packages</member_of_group>
+
+    <test_depend>ament_cmake_gtest</test_depend>
+    <test_depend>ament_copyright</test_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>

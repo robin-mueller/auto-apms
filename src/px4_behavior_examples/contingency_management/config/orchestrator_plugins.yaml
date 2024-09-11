@@ -1,8 +1,0 @@
-px4_behavior:
-  LoadBehaviorTreeAction:
-  ArmAction: "arm_disarm"
-  DisarmAction: "arm_disarm"
-  EnableHoldAction: "enable_hold"
-  TakeoffAction: "takeoff"
-  LaunchExecutorAction: ""
-  UploadBehaviorTreeAction: ""

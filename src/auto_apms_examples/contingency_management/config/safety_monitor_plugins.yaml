@@ -1,0 +1,4 @@
+auto_apms_examples:
+  GetSystemState: "system_state"
+  IsApproachingLanding: "landing_approach"
+  IsLandingSiteClear: "landing_site_status"

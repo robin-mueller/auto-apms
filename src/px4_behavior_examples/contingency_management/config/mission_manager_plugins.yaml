@@ -1,8 +1,0 @@
-px4_behavior:
-  ArmAction: "arm_disarm"
-  DisarmAction: "arm_disarm"
-  EnableHoldAction: "enable_hold"
-  GoToAction: "go_to"
-  LandAction: "land"
-  RTLAction: "rtl"
-  TakeoffAction: "takeoff"
