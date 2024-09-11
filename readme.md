@@ -22,13 +22,13 @@ AutoAPMS provides PX4 developers with
 - CMake macros for registering behavior tree resources
 - Useful command line tools for orchestrating the system
 
-Vist the [User Guide](https://robin-mueller.github.io/auto-apms-guide/welcome/) for getting started.
+Vist the [User Guide](https://robin-mueller.github.io/auto-apms-guide/introduction/overview) for getting started.
 
 # TODO
 
 - ~Redesign CMake resource management to integrate better with ament_index~
 - Update behavior executor class and integrate with cmake redesign
-- Parse plugin config in [register_behavior_tree_file.cmake](./src/auto-apms/cmake/register_behavior_tree_file.cmake) to make model generation also depend on the libraries installed by upstream packages
+- Parse plugin config in [register_behavior_tree_file.cmake](./src/auto_apms/cmake/register_behavior_tree_file.cmake) to make model generation also depend on the libraries installed by upstream packages
 - Polish contingency_management example to enable the development and execution of reactive behaviors for UAS missions
 - Create comprehensive documentation of member functions and intended use cases
 - Implement more detailed examples
