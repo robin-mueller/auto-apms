@@ -32,7 +32,13 @@ set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME "behavior_tree")
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME "auto_apms__behavior_trees")
 
 add_library(auto_apms_core SHARED
-    src/task/vehicle_command_client.cpp
+    src/vehicle_command_client.cpp
+    src/bt_factory.cpp
+    src/get_resource.cpp
+    src/bt_executor.cpp
+    src/bt_executor_client.cpp
+    src/ros2_bt_observer.cpp
+
     src/task/arm_disarm.cpp
     src/task/enable_hold.cpp
     src/task/goto.cpp
@@ -40,11 +46,7 @@ add_library(auto_apms_core SHARED
     src/task/takeoff.cpp
     src/task/rtl.cpp
     src/task/mission.cpp
-    src/bt_factory.cpp
-    src/get_resource.cpp
-    src/bt_executor.cpp
-    src/bt_executor_client.cpp
-    src/ros2_bt_observer.cpp)
+)
 target_include_directories(auto_apms_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
