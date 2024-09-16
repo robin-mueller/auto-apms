@@ -26,56 +26,57 @@ int main(int argc, char** argv)
 
     if (argc < 3) {
         std::cerr
-            << "generate_bt_node_model: Missing inputs! The program requires: \n\t1.) the yaml configuration files "
-               "(separated by ';')\n\t2.) Output file for the registration manifest\n\t3.) Optional: The name of the "
-               "package that builds the behavior tree model \n\t4.) Optional: "
-               "Additional paths for plugin libraries being built by the same package that issues the model generation "
-               "(separated by ';')\n";
-        std::cerr << "Usage: create_bt_node_registration_manifest <registration_config_files> <output_file> "
-                     "[<build_package_name> <build_infos>]\n";
+            << "create_node_registration_manifest: Missing inputs! The program requires: \n\t1.) the yaml "
+               "configuration files "
+               "(separated by ';')\n\t2.) Output file for the registration manifest\n\t3.) Optional: Build information "
+               "for nodes supposed to be registered during compile time (List of '<node_name>@<library_build_path>' "
+               "separated by ';')\n";
+        std::cerr << "Usage: create_node_registration_manifest <registration_config_files> <output_file> "
+                     "[<build_infos>]\n";
         return EXIT_FAILURE;
     }
     std::vector<std::string> registration_config_files = rcpputils::split(argv[1], ';');
     std::filesystem::path output_file{std::filesystem::absolute(argv[2])};
-    std::string build_package_name;
     std::vector<std::string> build_infos;
-    if (argc > 4) {
-        // Both <build_package_name> and <build_infos> must be specified to consider the build paths for the manifest
-        build_package_name = argv[3];
-        build_infos = rcpputils::split(argv[4], ';');
-    }
+    if (argc > 3) { build_infos = rcpputils::split(argv[3], ';'); }
 
     // Ensure that arguments are not empty
     if (registration_config_files.empty()) {
-        throw std::runtime_error("Argument registration_config_files must not be empty");
+        throw std::runtime_error(
+            "create_node_registration_manifest: Argument registration_config_files must not be empty");
     }
-    if (output_file.empty()) { throw std::runtime_error("Argument output_file must not be empty"); }
+    if (output_file.empty()) {
+        throw std::runtime_error("create_node_registration_manifest: Argument output_file must not be empty");
+    }
 
     // Ensure correct extensions
     if (output_file.extension().compare(".yaml") != 0) {
-        throw std::runtime_error("Output file '" + output_file.string() + "' has wrong extension. Must be '.yaml'");
+        throw std::runtime_error("create_node_registration_manifest: Output file '" + output_file.string() +
+                                 "' has wrong extension. Must be '.yaml'");
     }
 
-    // Retrieve plugin library paths from build info of the current package
+    // Retrieve plugin library paths from build info
     std::map<std::string, std::string> build_lib_paths;
     for (const auto& build_info : build_infos) {
         std::vector<std::string> parts = rcpputils::split(build_info, '@');
-        if (parts.size() != 2) { throw std::runtime_error("Invalid build info entry: " + build_info); }
-        const std::string& class_name = parts[0];
-        const std::string& path = parts[1];
-        build_lib_paths[class_name] = path;
+        if (parts.size() != 2) {
+            throw std::runtime_error("create_node_registration_manifest: Invalid build info entry: " + build_info);
+        }
+        build_lib_paths[parts[0]] = parts[1];  // {node_name: library_build_path}
     }
 
     // Fill library parameter with preferred build info if applicable
     resource::BTNodeRegistrationConfigMap registration_config_map =
         resource::ParseBTNodeRegistrationConfig(registration_config_files);
-    for (auto& it : registration_config_map) {
-        auto& reg_config = it.second;
-        if (build_lib_paths.find(reg_config.class_name) != build_lib_paths.end() && !reg_config.library.has_value() &&
-            reg_config.package.value_or(build_package_name) == build_package_name) {
-            reg_config.library = build_lib_paths[reg_config.class_name];
-            reg_config.package = std::nullopt;
+    for (auto& build_info : build_lib_paths) {
+        if (registration_config_map.find(build_info.first) == registration_config_map.end()) {
+            std::cerr << "create_node_registration_manifest: Build info contains node '" + build_info.first +
+                             "' which is not specified in the registration map";
+            return EXIT_FAILURE;
         }
+        registration_config_map[build_info.first].library = build_info.second;
+        registration_config_map[build_info.first].package =
+            std::nullopt;  // Indicate that library is inferred from build info
     }
 
     const auto manifest = resource::CreateBTNodeRegistrationManifest(registration_config_map);
@@ -103,7 +104,7 @@ int main(int argc, char** argv)
         out_stream.close();
     }
     else {
-        std::cerr << "create_bt_node_registration_manifest: Error opening registration manifest output file '"
+        std::cerr << "create_node_registration_manifest: Error opening registration manifest output file '"
                   << output_file << "'\n";
         return EXIT_FAILURE;
     }

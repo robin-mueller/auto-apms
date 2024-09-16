@@ -25,7 +25,11 @@ find_package(tf2_eigen REQUIRED)
 
 option(AUTO_APMS_DEBUG_LOGGING "Enable debug logging severity" ON)
 
-set(_AUTO_APMS_EXECUTABLES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}")
+if(WIN32)
+    set(_AUTO_APMS_EXECUTABLES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin/${PROJECT_NAME}")
+else()
+    set(_AUTO_APMS_EXECUTABLES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}")
+endif()
 set(_AUTO_APMS_BT_NODE_PLUGINS__RESOURCE_DIR_NAME "bt_node_plugins")
 set(_AUTO_APMS_BT_NODE_PLUGINS__RESOURCE_TYPE_NAME "auto_apms__bt_node_plugins")
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME "behavior_tree")
@@ -85,15 +89,19 @@ rclcpp_components_register_nodes(auto_apms_core
 # ------------ PX4 Behavior Library | Executables --------------
 #
 
+# Command line tool to determine which nodes of a registration config require build paths when registered during build time
+add_executable(get_nodes_require_build_info src/cli/get_nodes_require_build_info.cpp)
+target_link_libraries(get_nodes_require_build_info auto_apms_core)
+
 # Command line tool to create a file containing the behavior tree node plugin registration manifest
-add_executable(create_bt_node_registration_manifest src/cli/create_bt_node_registration_manifest.cpp)
-target_link_libraries(create_bt_node_registration_manifest auto_apms_core)
+add_executable(create_node_registration_manifest src/cli/create_node_registration_manifest.cpp)
+target_link_libraries(create_node_registration_manifest auto_apms_core)
 
 # Command line tool to create a file containing the behavior tree node models required for Groot
-add_executable(generate_bt_node_model src/cli/generate_bt_node_model.cpp)
-target_link_libraries(generate_bt_node_model auto_apms_core)
+add_executable(generate_node_model src/cli/generate_node_model.cpp)
+target_link_libraries(generate_node_model auto_apms_core)
 if(AUTO_APMS_DEBUG_LOGGING)
-    target_compile_definitions(generate_bt_node_model PRIVATE DEBUG_LOGGING)
+    target_compile_definitions(generate_node_model PRIVATE DEBUG_LOGGING)
 endif()
 
 # Command line tool to register a behavior tree with an executor
@@ -222,8 +230,9 @@ install(
 
 install(
     TARGETS
-    create_bt_node_registration_manifest
-    generate_bt_node_model
+    get_nodes_require_build_info
+    create_node_registration_manifest
+    generate_node_model
     upload_tree
     run_executor
     DESTINATION ${_AUTO_APMS_EXECUTABLES_INSTALL_DIR})

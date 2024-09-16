@@ -78,28 +78,53 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
         string(REPLACE " " "_" tgt_suffix "${_tree_file_stem}")
         string(TOLOWER "${tgt_suffix}" tgt_suffix)
 
-        # Add custom command and target for model generation
-        set(_model_build_path "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_model.xml")
+        # Assemble dependencies for model generation command
+        execute_process(
+            COMMAND "${_AUTO_APMS_EXECUTABLES_INSTALL_DIR}/get_nodes_require_build_info"
+                "${ARGS_PLUGIN_CONFIGS}" # Paths of the config source files
+                "${_AUTO_APMS_BT_NODE_PLUGINS__BUILD_INFO}" # General build information for node plugins compiled by this package. Generator expressions cannot be evaluated yet since execute_process is handled at configuration time
+                "${PROJECT_NAME}"  # Name of the package that builds the behavior tree model
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            OUTPUT_VARIABLE _node_specific_build_info)
+
+        # message("_node_specific_build_info (${_tree_file_stem}): ${_node_specific_build_info}")
+
+        # Split the list of build info to get the library paths
+        set(_lib_dependencies)
+        foreach(_build_info ${_node_specific_build_info})
+            # Split each item at '@' to separate node_name and build_library_path
+            string(REPLACE "@" ";" _parts ${_build_info})
+
+            # Extract the second part (build_library_path)
+            list(GET _parts 1 _build_library_path)
+            if(NOT ${_build_library_path} IN_LIST _lib_dependencies)
+                list(APPEND _lib_dependencies ${_build_library_path})
+            endif()
+        endforeach()
+
+        # message("_lib_dependencies (${_tree_file_stem}): ${_lib_dependencies}")
+
+        # Create node registration manifest with build info
         set(_node_registration_manifest_path__build "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_registration_manifest__build.yaml")
-        set(_lib_dependencies_path "${PROJECT_BINARY_DIR}/${_tree_file_stem}_lib_dependencies__build.txt")
-        add_custom_command(OUTPUT "${_node_registration_manifest_path__build}" "${_lib_dependencies_path}"
-            COMMAND "${_AUTO_APMS_EXECUTABLES_INSTALL_DIR}/create_bt_node_registration_manifest" > "${_lib_dependencies_path}"
+        add_custom_command(OUTPUT "${_node_registration_manifest_path__build}"
+            COMMAND "${_AUTO_APMS_EXECUTABLES_INSTALL_DIR}/create_node_registration_manifest"
                 "\"${ARGS_PLUGIN_CONFIGS}\"" # Paths of the config source files
                 "\"${_node_registration_manifest_path__build}\"" # File to write the behavior tree node registration manifest to
-                "\"${PROJECT_NAME}\""  # Name of the package that builds the behavior tree model
-                "\"${_AUTO_APMS_BT_NODE_PLUGINS__BUILD_INFO}\"" # Library paths of the plugins built in this package. Their install locations are not available at build time
+                "\"${_node_specific_build_info}\"" # Library paths for nodes built in this package. Their install locations are not available at build time
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             DEPENDS ${ARGS_PLUGIN_CONFIGS}
             COMMENT "Create behavior tree node registration manifest with config paths ${ARGS_PLUGIN_CONFIGS}.")
-        file(READ "${_lib_dependencies_path}" _lib_dependencies)
+
+        # Use the above created manifest for generating the node model
+        set(_model_build_path "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_model.xml")
         add_custom_command(OUTPUT "${_model_build_path}"
-            COMMAND "${_AUTO_APMS_EXECUTABLES_INSTALL_DIR}/generate_bt_node_model"
+            COMMAND "${_AUTO_APMS_EXECUTABLES_INSTALL_DIR}/generate_node_model"
                 "\"${_node_registration_manifest_path__build}\"" # Paths of the automatically created registration manifest including build info
                 "\"${_model_build_path}\"" # File to write the behavior tree node model to
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             DEPENDS "${_node_registration_manifest_path__build}" ${_lib_dependencies}
-            COMMENT "Generate behavior tree node model with libraries ${_lib_dependencies}.")
-        add_custom_target(_target_generate_bt_node_model__${tgt_suffix} ALL
+            COMMENT "Generate behavior tree node model for tree file '${_tree_file_stem}' with libraries ${_lib_dependencies}.")
+        add_custom_target(_target_generate_node_model__${tgt_suffix} ALL
             DEPENDS "${_model_build_path}")
 
         # Install the generated node model file

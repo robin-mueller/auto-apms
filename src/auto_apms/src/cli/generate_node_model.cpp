@@ -28,10 +28,10 @@ int main(int argc, char** argv)
 
     if (argc < 3) {
         std::cerr
-            << "generate_bt_node_model: Missing inputs! The program requires: \n\t1.) the yaml configuration files to "
+            << "generate_node_model: Missing inputs! The program requires: \n\t1.) the yaml configuration files to "
                "pass to auto_apms::RegisterBTNodePlugins (separated by ';')\n\t2.) the xml file to store the "
                "model\n";
-        std::cerr << "Usage: generate_bt_node_model <registration_config_files> <output_file>\n";
+        std::cerr << "Usage: generate_node_model <registration_config_files> <output_file>\n";
         return EXIT_FAILURE;
     }
     std::vector<std::string> registration_config_files = rcpputils::split(argv[1], ';');
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
     }
 
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<rclcpp::Node>("_generate_bt_node_model_temp_node");
+    auto node = std::make_shared<rclcpp::Node>("_generate_node_model_temp_node");
 
 #ifdef DEBUG_LOGGING
     // Set logging severity
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
     // Register all plugins specified in the plugin registration config files
     if (!RegisterBTNodePlugins(node, factory, registration_config_files)) {
-        std::cerr << "generate_bt_node_model: Error registering node plugins\n";
+        std::cerr << "generate_node_model: Error registering node plugins\n";
         return EXIT_FAILURE;
     }
 
@@ -75,7 +75,7 @@ int main(int argc, char** argv)
         out_stream.close();
     }
     else {
-        std::cerr << "generate_bt_node_model: Error opening tree nodes model output file '" << output_file << "'\n";
+        std::cerr << "generate_node_model: Error opening tree nodes model output file '" << output_file << "'\n";
         return EXIT_FAILURE;
     }
 
