@@ -32,9 +32,9 @@ class BTNodeRegistrarTemplate : public BTNodeRegistrar
 
     bool RequiresROSNodeParams() override { return requires_ros_node_params; }
 
-    void RegisterForBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
-                                        const std::string &registration_name,
-                                        const BT::RosNodeParams *const params_ptr = nullptr) override
+    void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
+                                         const std::string &registration_name,
+                                         const BT::RosNodeParams *const params_ptr = nullptr) override
     {
         if constexpr (requires_ros_node_params) {
             if (!params_ptr) {

@@ -66,36 +66,21 @@ int main(int argc, char** argv)
     }
 
     // Fill library parameter with preferred build info if applicable
-    resource::BTNodeRegistrationConfigMap registration_config_map =
-        resource::ParseBTNodeRegistrationConfig(registration_config_files);
+    auto manifest_map = resource::ParseBTNodeManifestFile(registration_config_files);
     for (auto& build_info : build_lib_paths) {
-        if (registration_config_map.find(build_info.first) == registration_config_map.end()) {
+        if (manifest_map.find(build_info.first) == manifest_map.end()) {
             std::cerr << "create_node_registration_manifest: Build info contains node '" + build_info.first +
                              "' which is not specified in the registration map";
             return EXIT_FAILURE;
         }
-        registration_config_map[build_info.first].library = build_info.second;
-        registration_config_map[build_info.first].package =
-            std::nullopt;  // Indicate that library is inferred from build info
+        manifest_map[build_info.first].library = build_info.second;
+        manifest_map[build_info.first].package = std::nullopt;  // Indicate that library is inferred from build info
     }
 
-    const auto manifest = resource::CreateBTNodeRegistrationManifest(registration_config_map);
-    registration_config_map.clear();
-
-    // Create new registration config
-    std::set<std::string> libs;
-    for (const auto& it : manifest) {
-        const auto& m = it.second;
-        resource::BTNodeRegistrationConfig config;
-        config = m.registration_config;
-        config.library = m.library_path;
-        config.package = m.package_name.empty() ? std::nullopt : std::optional<std::string>{m.package_name};
-        registration_config_map[it.first] = config;
-        if (const auto ret = libs.insert(m.library_path); ret.second) std::cout << m.library_path << ';';
-    }
+    const auto validated_manifest_map = resource::ValidateBTNodeManifest(manifest_map);
 
     YAML::Node root;
-    root = registration_config_map;
+    root = validated_manifest_map;
 
     // Write the manifest file
     std::ofstream out_stream{output_file};

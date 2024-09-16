@@ -81,7 +81,7 @@ class ActionClientWrapper
      * @param future ActionClientWrapper::ResultFuture corresponding to the goal whose status is to be retrieved
      * @return auto_apms::ActionGoalStatus value that indicates whether the goal was rejected, is currently
      * being processed or has completed.
-     * @throw std::runtime_error if \p future is invalid.
+     * @throw std::runtime_error if @p future is invalid.
      */
     static ActionGoalStatus GetGoalStatus(const ResultFuture& future);
 
@@ -128,13 +128,15 @@ typename ActionClientWrapper<ActionT>::ResultFuture ActionClientWrapper<ActionT>
 
     SendGoalOptions _options;
     _options.goal_response_callback = options.goal_response_callback;
-    _options.feedback_callback = [this, options](typename ClientGoalHandle::SharedPtr client_goal_handle,
-                                                 const std::shared_ptr<const Feedback> feedback) {
+    _options.feedback_callback = [this, feedback_callback = options.feedback_callback](
+                                     typename ClientGoalHandle::SharedPtr client_goal_handle,
+                                     const std::shared_ptr<const Feedback> feedback) {
         feedback_ptr_ = feedback;
-        options.feedback_callback(client_goal_handle, feedback);
+        if (feedback_callback) { feedback_callback(client_goal_handle, feedback); }
     };
-    _options.result_callback = [this, promise_ptr, options](const typename ClientGoalHandle::WrappedResult& wr) {
-        if (options.result_callback) { options.result_callback(wr); }
+    _options.result_callback = [this, promise_ptr, result_callback = options.result_callback](
+                                   const typename ClientGoalHandle::WrappedResult& wr) {
+        if (result_callback) { result_callback(wr); }
         promise_ptr->set_value(std::make_shared<typename ClientGoalHandle::WrappedResult>(wr));
         goal_handle_ptr_ = nullptr;  // Reset active goal handle
     };

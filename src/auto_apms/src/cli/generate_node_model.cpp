@@ -28,24 +28,27 @@ int main(int argc, char** argv)
 
     if (argc < 3) {
         std::cerr
-            << "generate_node_model: Missing inputs! The program requires: \n\t1.) the yaml configuration files to "
-               "pass to auto_apms::RegisterBTNodePlugins (separated by ';')\n\t2.) the xml file to store the "
+            << "generate_node_model: Missing inputs! The program requires: \n\t1.) the node registration configuration "
+               "files to pass to auto_apms::RegisterBTNodePlugins (separated by ';')\n\t2.) the xml file to store the "
                "model\n";
-        std::cerr << "Usage: generate_node_model <registration_config_files> <output_file>\n";
+        std::cerr << "Usage: generate_node_model <manifest_paths> <output_file>\n";
         return EXIT_FAILURE;
     }
-    std::vector<std::string> registration_config_files = rcpputils::split(argv[1], ';');
+    std::vector<std::string> manifest_paths = rcpputils::split(argv[1], ';');
     std::filesystem::path output_file{std::filesystem::absolute(argv[2])};
 
     // Ensure that arguments are not empty
-    if (registration_config_files.empty()) {
-        throw std::runtime_error("Argument registration_config_files must not be empty");
+    if (manifest_paths.empty()) {
+        throw std::runtime_error("generate_node_model: Argument manifest_paths must not be empty");
     }
-    if (output_file.empty()) { throw std::runtime_error("Argument output_file must not be empty"); }
+    if (output_file.empty()) {
+        throw std::runtime_error("generate_node_model: Argument output_file must not be empty");
+    }
 
     // Ensure correct extensions
     if (output_file.extension().compare(".xml") != 0) {
-        throw std::runtime_error("Output file '" + output_file.string() + "' has wrong extension. Must be '.xml'");
+        throw std::runtime_error("generate_node_model: Output file '" + output_file.string() +
+                                 "' has wrong extension. Must be '.xml'");
     }
 
     rclcpp::init(argc, argv);
@@ -63,7 +66,7 @@ int main(int argc, char** argv)
     BT::BehaviorTreeFactory factory;
 
     // Register all plugins specified in the plugin registration config files
-    if (!RegisterBTNodePlugins(node, factory, registration_config_files)) {
+    if (!RegisterBTNodePlugins(node, manifest_paths, factory)) {
         std::cerr << "generate_node_model: Error registering node plugins\n";
         return EXIT_FAILURE;
     }

@@ -26,9 +26,9 @@ class BTNodeRegistrar
     virtual ~BTNodeRegistrar() = default;
 
     virtual bool RequiresROSNodeParams() = 0;
-    virtual void RegisterForBehaviorTreeFactory(BT::BehaviorTreeFactory& factory,
-                                                const std::string& registration_name,
-                                                const BT::RosNodeParams* const params_ptr = nullptr) = 0;
+    virtual void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory,
+                                                 const std::string& registration_name,
+                                                 const BT::RosNodeParams* const params_ptr = nullptr) = 0;
 };
 
 }  // namespace auto_apms

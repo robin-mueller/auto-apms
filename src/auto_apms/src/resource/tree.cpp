@@ -176,7 +176,7 @@ BT::Tree CreateBehaviorTree(rclcpp::Node::SharedPtr node_ptr,
     const resource::BehaviorTreeResource& bt_resource = bt_resource_opt.value();
 
     // Regsiter associated node plugins
-    if (!RegisterBTNodePlugins(node_ptr, factory, bt_resource.plugin_config_paths)) {
+    if (!RegisterBTNodePlugins(node_ptr, bt_resource.plugin_config_paths, factory)) {
         RCLCPP_ERROR(node_ptr->get_logger(), "CreateBehaviorTree: Registering behavior tree node plugins failed");
         return {};
     }
