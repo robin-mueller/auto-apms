@@ -17,7 +17,7 @@
 #include <chrono>
 #include <future>
 
-#include "auto_apms/get_resource.hpp"
+#include "auto_apms/resource/tree.hpp"
 #include "auto_apms_interfaces/action/launch_bt_executor.hpp"
 #include "auto_apms_interfaces/srv/upload_behavior_tree.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -49,7 +49,8 @@ class BTExecutorClient
      * used to determine which tree is to be created
      * @return True on successful upload, false otherwise
      */
-    bool UploadBehaviorTreeFromResource(const BehaviorTreeResource& resource, const std::string& main_tree_id = "");
+    bool UploadBehaviorTreeFromResource(const resource::BehaviorTreeResource& resource,
+                                        const std::string& main_tree_id = "");
 
     /**
      * @brief Upload behavior tree to an executor.

@@ -1,8 +1,6 @@
-![image](https://github.com/robin-mueller/auto-apms-guide/blob/master/public/logo/logo-wo-bg.png)
+![image](https://github.com/robin-mueller/auto-apms-guide/blob/master/public/logo/logo-wo-bg.png?raw=true)
 
-[![Website](https://img.shields.io/website?url=https://robin-mueller.github.io/auto-apms-guide/)](https://robin-mueller.github.io/auto-apms-guide/)
-[![License](https://img.shields.io/github/license/robin-mueller/auto-apms?color=blue)](https://www.apache.org/licenses/LICENSE-2.0)
-
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)](https://robin-mueller.github.io/auto-apms-guide/)
 [![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)](https://github.com/robin-mueller/auto-apms/releases)
 [![Build and Test](https://github.com/robin-mueller/auto-apms/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/build-and-test.yml)
 
@@ -10,7 +8,7 @@
 
 **Auto**mated **A**ction **P**lanning and **M**ission **S**afeguarding for robotic applications.
 
-With this ROS 2 package, the goal is to offer a comprehensible framework for implementing reactive behaviors during autonomous missions while focusing on PX4 applications. Additionally, this package facilitates the model-based development process of flight actions by introducing effective tools and methods for programmers.
+With this ROS 2 package, the goal is to offer a comprehensible framework for implementing reactive behaviors during autonomous missions while focusing on PX4 applications. Additionally, this package facilitates the model-based flight action development process by introducing effective tools and methods for programmers.
 
 > [!NOTE]
 > This repository is currently a work in progress.

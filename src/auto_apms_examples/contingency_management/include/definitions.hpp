@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "auto_apms/bt_factory.hpp"
 #include "auto_apms_examples/msg/contingency_event.hpp"
+#include "behaviortree_cpp/bt_factory.h"
 
 using ContingencyEventMsg = auto_apms_examples::msg::ContingencyEvent;
 

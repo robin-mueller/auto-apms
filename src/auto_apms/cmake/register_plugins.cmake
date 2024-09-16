@@ -29,14 +29,17 @@ macro(auto_apms_register_plugins plugin_lib_target)
     endif()
 
     cmake_parse_arguments(ARGS "" "" "" ${ARGN})
-    set(_unique_names)
+
+    # Parse behavior tree node class names
     foreach(_arg ${ARGS_UNPARSED_ARGUMENTS})
-        if(_arg IN_LIST _unique_names)
+        if(${_arg} IN_LIST _AUTO_APMS_BT_NODE_PLUGINS__CLASS_NAMES)
             message(
             FATAL_ERROR
-            "auto_apms_register_plugins(): the plugin names must be unique (multiple '${_arg}')")
+            "auto_apms_register_plugins(): a node's class name must be unique within a single package ('${_arg}' has already been registered)")
         endif()
-        list(APPEND _unique_names "${_arg}")
+
+        # Append all class names to a list to keep track of all available behavior tree node classes within this package
+        list(APPEND _AUTO_APMS_BT_NODE_PLUGINS__CLASS_NAMES ${_arg})
 
         # Append to the variable that holds the resource information of the behavior tree node plugins
         if(WIN32)
@@ -46,8 +49,7 @@ macro(auto_apms_register_plugins plugin_lib_target)
         endif()
 
         # Fill meta info
-        list(APPEND _AUTO_APMS_BT_NODE_PLUGINS__TARGETS ${plugin_lib_target})
-        list(APPEND _AUTO_APMS_BT_NODE_PLUGINS__BUILD_INFO "${_arg}|$<TARGET_FILE:${plugin_lib_target}>")
+        list(APPEND _AUTO_APMS_BT_NODE_PLUGINS__BUILD_INFO "${_arg}@$<TARGET_FILE:${plugin_lib_target}>")
         set(_AUTO_APMS_BT_NODE_PLUGINS__RESOURCE_FILE "${_AUTO_APMS_BT_NODE_PLUGINS__RESOURCE_FILE}${_arg}|${_path}/$<TARGET_FILE_NAME:${plugin_lib_target}>\n")
     endforeach()
 

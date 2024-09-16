@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "auto_apms/bt_node_registration_template.hpp"
+#include "auto_apms/bt_node_registrar_template.hpp"
 #include "class_loader/class_loader.hpp"
 
 #define AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE(BTNodeClass) \
-    CLASS_LOADER_REGISTER_CLASS(auto_apms::BTNodeRegistrationTemplate<BTNodeClass>, auto_apms::BTNodeRegistration)
+    CLASS_LOADER_REGISTER_CLASS(auto_apms::BTNodeRegistrarTemplate<BTNodeClass>, auto_apms::BTNodeRegistrar)

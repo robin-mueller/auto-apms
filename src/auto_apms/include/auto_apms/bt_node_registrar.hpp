@@ -18,14 +18,17 @@
 #include "behaviortree_ros2/ros_node_params.hpp"
 
 namespace auto_apms {
-class BTNodeRegistration
+
+class BTNodeRegistrar
 {
    public:
-    BTNodeRegistration() = default;
-    virtual ~BTNodeRegistration() = default;
+    BTNodeRegistrar() = default;
+    virtual ~BTNodeRegistrar() = default;
 
+    virtual bool RequiresROSNodeParams() = 0;
     virtual void RegisterForBehaviorTreeFactory(BT::BehaviorTreeFactory& factory,
-                                                const std::string& type_name,
-                                                const BT::RosNodeParams& params) = 0;
+                                                const std::string& registration_name,
+                                                const BT::RosNodeParams* const params_ptr = nullptr) = 0;
 };
+
 }  // namespace auto_apms

@@ -1,4 +1,11 @@
-auto_apms_examples:
-  GetSystemState: "system_state"
-  IsApproachingLanding: "landing_approach"
-  IsLandingSiteClear: "landing_site_status"
+GetSystemState:
+  class: auto_apms::ops_engine::GetSystemState
+  port: system_state
+
+IsApproachingLanding:
+  class: auto_apms::ops_engine::IsApproachingLanding
+  port: landing_approach
+
+IsLandingSiteClear:
+  class: auto_apms::ops_engine::IsLandingSiteClear
+  port: landing_site_status

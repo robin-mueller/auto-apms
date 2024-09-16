@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <auto_apms/bt_executor.hpp>
-#include <auto_apms/bt_factory.hpp>
 
 using namespace auto_apms;
 

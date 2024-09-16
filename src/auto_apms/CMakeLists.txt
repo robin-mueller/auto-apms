@@ -32,12 +32,12 @@ set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME "behavior_tree")
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME "auto_apms__behavior_trees")
 
 add_library(auto_apms_core SHARED
-    src/vehicle_command_client.cpp
-    src/bt_factory.cpp
-    src/get_resource.cpp
+    src/resource/node.cpp
+    src/resource/tree.cpp
     src/bt_executor.cpp
     src/bt_executor_client.cpp
     src/ros2_bt_observer.cpp
+    src/vehicle_command_client.cpp
 
     src/task/arm_disarm.cpp
     src/task/enable_hold.cpp

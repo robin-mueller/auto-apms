@@ -23,6 +23,15 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
         )
     endif()
 
+    # Verify no duplicates in tree files
+    if("${tree_filepath}" IN_LIST _tree_filepaths)
+        message(
+            FATAL_ERROR
+            "auto_apms_register_behavior_tree_file(): Behavior tree file ${tree_filepath} has already been registered"
+        )
+    endif()
+    list(APPEND _tree_filepaths "${tree_filepath}")
+
     # Parse arguments
     set(options "")
     set(oneValueArgs "")
@@ -40,6 +49,7 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
         set(_rel_plugin_config_install_dir "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BT_NODE_PLUGINS__RESOURCE_DIR_NAME}")
         set(_rel_node_model_install_dir "${_rel_tree_install_dir}")
         foreach(_plugin_config_filepath ${ARGS_PLUGIN_CONFIGS})
+
             # Check if plugin file exists
             get_filename_component(_plugin_config_filepath_abs "${_plugin_config_filepath}" REALPATH)
             if(NOT EXISTS "${_plugin_config_filepath_abs}")
@@ -48,8 +58,18 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
                     "auto_apms_register_behavior_tree_file(): Plugin file ${_plugin_config_filepath_abs} does not exist"
                 )
             endif()
+
             get_filename_component(_plugin_config_file_name "${_plugin_config_filepath_abs}" NAME)
-            list(APPEND _rel_plugin_config_install_paths "${_rel_plugin_config_install_dir}/${_plugin_config_file_name}")
+
+            # Verify no duplicates in config files
+            set(_plugin_config_filepath_install "${_rel_plugin_config_install_dir}/${_plugin_config_file_name}")
+            if("${_plugin_config_filepath_install}" IN_LIST _rel_plugin_config_install_paths)
+                message(
+                    FATAL_ERROR
+                    "auto_apms_register_behavior_tree_file(): Plugin config file path ${_plugin_config_filepath} was provided multiple times"
+                )
+            endif()
+            list(APPEND _rel_plugin_config_install_paths "${_plugin_config_filepath_install}")
         endforeach()
 
         # Generate plugin node model for according to the plugin configuration
@@ -63,10 +83,11 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
         add_custom_command(OUTPUT "${_model_build_path}"
             COMMAND "${_AUTO_APMS_EXECUTABLES_INSTALL_DIR}/generate_bt_node_model"
                 "\"${ARGS_PLUGIN_CONFIGS}\"" # Paths of the config source files
-                "\"${_model_build_path}\"" # Directory to write the model definition file to
+                "\"${_model_build_path}\"" # Directory to write the behavior tree model file to
+                "\"${PROJECT_NAME}\""  # Name of the package that builds the behavior tree model
                 "\"${_AUTO_APMS_BT_NODE_PLUGINS__BUILD_INFO}\"" # Library paths of the plugins built in this package. Their install locations are not available at build time
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS ${ARGS_PLUGIN_CONFIGS} ${_AUTO_APMS_BT_NODE_PLUGINS__TARGETS} # TODO: Let CMake parse the config file and also add depencencies from other installs
+            DEPENDS ${ARGS_PLUGIN_CONFIGS} # TODO: Let CMake parse the config file and also add depencencies from other installs
             COMMENT "Generate node model definition with config paths ${ARGS_PLUGIN_CONFIGS}.")
         add_custom_target(_target_generate_bt_node_model__${tgt_suffix} ALL
             DEPENDS "${_model_build_path}")

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms/bt_ros2_node.hpp"
-#include "auto_apms/get_resource.hpp"
+#include "auto_apms/resource/tree.hpp"
+#include "behaviortree_cpp/action_node.h"
 
 #define INPUT_KEY_PACKAGE "package_name"
 #define INPUT_KEY_FILENAME "filename"
@@ -43,12 +43,12 @@ class LoadBehaviorTreeAction : public SyncActionNode
         auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
 
         auto resource =
-            FetchBehaviorTreeResource(std::filesystem::path{filename}.filename(), std::nullopt, package_name);
+            resource::FetchBehaviorTreeResource(std::filesystem::path{filename}.filename(), std::nullopt, package_name);
         if (!resource.has_value()) { return NodeStatus::FAILURE; }
 
         std::string xml_data;
         try {
-            xml_data = auto_apms::ReadBehaviorTreeFile(resource.value().tree_path);
+            xml_data = resource::ReadBehaviorTreeFile(resource.value().tree_path);
         } catch (const std::runtime_error& e) {
             return NodeStatus::FAILURE;
         }

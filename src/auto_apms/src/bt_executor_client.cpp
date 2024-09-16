@@ -32,7 +32,7 @@ BTExecutorClient::BTExecutorClient(rclcpp::Node& node, const std::string& execut
     launch_client_ptr_ = rclcpp_action::create_client<LaunchExecutorAction>(&node, launch_executor_action_name_);
 }
 
-bool BTExecutorClient::UploadBehaviorTreeFromResource(const BehaviorTreeResource& resource,
+bool BTExecutorClient::UploadBehaviorTreeFromResource(const resource::BehaviorTreeResource& resource,
                                                       const std::string& main_tree_id)
 {
     if (!main_tree_id.empty() && resource.tree_ids.find(main_tree_id) == resource.tree_ids.end()) {
@@ -45,7 +45,7 @@ bool BTExecutorClient::UploadBehaviorTreeFromResource(const BehaviorTreeResource
 
     std::string content;
     try {
-        content = auto_apms::ReadBehaviorTreeFile(resource.tree_path);
+        content = resource::ReadBehaviorTreeFile(resource.tree_path);
     } catch (const std::runtime_error& e) {
         RCLCPP_ERROR(logger_,
                      "UploadBehaviorTree: Error reading tree file path %s: %s",

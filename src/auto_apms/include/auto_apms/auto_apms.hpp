@@ -17,12 +17,12 @@
 #include "auto_apms/action_client.hpp"
 #include "auto_apms/bt_executor.hpp"
 #include "auto_apms/bt_executor_client.hpp"
-#include "auto_apms/bt_factory.hpp"
 #include "auto_apms/bt_ros2_node.hpp"
-#include "auto_apms/get_resource.hpp"
 #include "auto_apms/mode.hpp"
 #include "auto_apms/mode_executor.hpp"
 #include "auto_apms/register_behavior_tree_node_macro.hpp"
+#include "auto_apms/resource/node.hpp"
+#include "auto_apms/resource/tree.hpp"
 #include "auto_apms/task_base.hpp"
 
 namespace auto_apms {

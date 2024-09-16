@@ -17,7 +17,7 @@
 #include <chrono>
 #include <filesystem>
 
-#include "auto_apms/bt_factory.hpp"
+#include "auto_apms/resource/tree.hpp"
 #include "behaviortree_cpp/loggers/bt_cout_logger.h"
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "rclcpp/rclcpp.hpp"
@@ -38,8 +38,7 @@ int main(int argc, char** argv)
     auto node = std::make_shared<rclcpp::Node>(std::string(EXAMPLE_NAME) + "_node");
 
     {
-        BT::Tree tree =
-            auto_apms::CreateBehaviorTreeFromResource(node, "relative_goto", std::nullopt, "auto_apms_examples");
+        BT::Tree tree = auto_apms::CreateBehaviorTree(node, "relative_goto", std::nullopt, "auto_apms_examples");
         if (!tree.rootNode()) {
             std::cerr << "Tree couldn't be created\n";
             return EXIT_FAILURE;

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <auto_apms/bt_executor.hpp>
-#include <auto_apms/bt_factory.hpp>
 #include <auto_apms_examples/msg/contingency_event.hpp>
 #include <definitions.hpp>
 

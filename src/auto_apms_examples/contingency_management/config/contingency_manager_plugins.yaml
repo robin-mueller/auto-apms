@@ -1,18 +1,56 @@
-auto_apms_examples:
-  auto_apms::ops_engine::AsyncPrecondition:
-  CreateAlternateLandingMission:
+AsyncPrecondition:
+  class: auto_apms::ops_engine::AsyncPrecondition
 
-auto_apms:
-  ThrowException:
-  ArmAction: "arm_disarm"
-  DisarmAction: "arm_disarm"
-  EnableHoldAction: "enable_hold"
-  GoToAction: "go_to"
-  GoToVectorAction: "go_to"
-  LandAction: "land"
-  RTLAction: "rtl"
-  TakeoffAction: "takeoff"
-  UploadBehaviorTreeAction: "mission_manager/upload"
-  ResumeExecutorAction: "mission_manager/command"
-  HaltExecutorAction: "mission_manager/command"
-  ReadGlobalPosition: "/fmu/out/vehicle_global_position"
+CreateAlternateLandingMission:
+  class: auto_apms::ops_engine::CreateAlternateLandingMission
+
+ThrowException:
+  class: auto_apms::ThrowException
+
+Arm:
+  class: auto_apms::ArmAction
+  port: arm_disarm
+
+Disarm:
+  class: auto_apms::DisarmAction
+  port: arm_disarm
+
+EnableHold:
+  class: auto_apms::EnableHoldAction
+  port: enable_hold
+
+GoTo:
+  class: auto_apms::GoToAction
+  port: go_to
+
+GoToVector:
+  class: auto_apms::GoToAction
+  port: go_to
+
+Land:
+  class: auto_apms::LandAction
+  port: land
+
+Takeoff:
+  class: auto_apms::TakeoffAction
+  port: takeoff
+
+RTL:
+  class: auto_apms::RTLAction
+  port: rtl
+
+UploadBehaviorTree:
+  class: auto_apms::UploadBehaviorTreeAction
+  port: mission_manager/upload
+
+ResumeExecutor:
+  class: auto_apms::ResumeExecutorAction
+  port: mission_manager/command
+
+HaltExecutor:
+  class: auto_apms::HaltExecutorAction
+  port: mission_manager/command
+
+ReadGlobalPosition:
+  class: auto_apms::ArmAction
+  port: /fmu/out/vehicle_global_position

@@ -16,7 +16,7 @@
 
 #include "Eigen/Geometry"
 #include "auto_apms/bt_ros2_node.hpp"
-#include "auto_apms/get_resource.hpp"
+#include "auto_apms/resource/tree.hpp"
 #include "px4_ros2/utils/geodesic.hpp"
 
 #define INPUT_KEY_POS "pos_vec"
@@ -90,9 +90,10 @@ class CreateAlternateLandingMission : public SyncActionNode
 
         // Read tree template and replace placeholders
         const std::string main_tree_id = "AlternateLandingMission";
-        auto resource = FetchBehaviorTreeResource(std::nullopt, main_tree_id, "auto_apms_examples");
+        auto resource =
+            auto_apms::resource::FetchBehaviorTreeResource(std::nullopt, main_tree_id, "auto_apms_examples");
         if (!resource.has_value()) { return NodeStatus::FAILURE; }
-        auto tree = auto_apms::ReadBehaviorTreeFile(resource.value().tree_path);
+        auto tree = auto_apms::resource::ReadBehaviorTreeFile(resource.value().tree_path);
 
         // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -
         std::regex placeholder("\\$\\{([A-Za-z0-9_-]+)\\}");

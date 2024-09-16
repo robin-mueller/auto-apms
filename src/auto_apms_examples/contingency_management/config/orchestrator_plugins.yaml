@@ -1,8 +1,24 @@
-auto_apms:
-  LoadBehaviorTreeAction:
-  ArmAction: "arm_disarm"
-  DisarmAction: "arm_disarm"
-  EnableHoldAction: "enable_hold"
-  TakeoffAction: "takeoff"
-  LaunchExecutorAction: ""
-  UploadBehaviorTreeAction: ""
+LoadBehaviorTree:
+  class: auto_apms::LoadBehaviorTreeAction
+
+Arm:
+  class: auto_apms::ArmAction
+  port: arm_disarm
+
+Disarm:
+  class: auto_apms::DisarmAction
+  port: arm_disarm
+
+EnableHold:
+  class: auto_apms::EnableHoldAction
+  port: enable_hold
+
+Takeoff:
+  class: auto_apms::TakeoffAction
+  port: takeoff
+
+LaunchExecutor:
+  class: auto_apms::LaunchExecutorAction
+
+UploadBehaviorTree:
+  class: auto_apms::UploadBehaviorTreeAction
