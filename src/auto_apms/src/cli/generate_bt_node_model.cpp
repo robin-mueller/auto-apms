@@ -30,22 +30,12 @@ int main(int argc, char** argv)
         std::cerr
             << "generate_bt_node_model: Missing inputs! The program requires: \n\t1.) the yaml configuration files to "
                "pass to auto_apms::RegisterBTNodePlugins (separated by ';')\n\t2.) the xml file to store the "
-               "model\n\t3.) Optional: The name of the package that builds the behavior tree model \n\t4.) Optional: "
-               "Additional paths for plugin libraries being built by the same package that "
-               "issues the model generation (separated by ';')\n";
-        std::cerr << "Usage: generate_bt_node_model <registration_config_files> <output_file> [<build_package_name> "
-                     "<build_infos>]\n";
+               "model\n";
+        std::cerr << "Usage: generate_bt_node_model <registration_config_files> <output_file>\n";
         return EXIT_FAILURE;
     }
     std::vector<std::string> registration_config_files = rcpputils::split(argv[1], ';');
     std::filesystem::path output_file{std::filesystem::absolute(argv[2])};
-    std::string build_package_name;
-    std::vector<std::string> build_infos;
-    if (argc > 4) {
-        // Both <build_package_name> and <build_infos> must be specified to consider the build resources for the model
-        build_package_name = argv[3];
-        build_infos = rcpputils::split(argv[4], ';');
-    }
 
     // Ensure that arguments are not empty
     if (registration_config_files.empty()) {
@@ -72,29 +62,8 @@ int main(int argc, char** argv)
 
     BT::BehaviorTreeFactory factory;
 
-    // Retrieve plugin library paths from build info of the current package (preferred)
-    std::map<std::string, std::string> plugin_library_paths;
-    for (const auto& build_info : build_infos) {
-        std::vector<std::string> parts = rcpputils::split(build_info, '@');
-        if (parts.size() != 2) { throw std::runtime_error("Invalid build info entry: " + build_info); }
-        const std::string& class_name = parts[0];
-        const std::string& path = parts[1];
-        plugin_library_paths[class_name] = path;
-    }
-
-    // Fill library parameter with build info if applicable
-    auto registration_config = resource::ParseBTNodePluginConfiguration(registration_config_files);
-    for (auto& it : registration_config) {
-        auto& params = it.second;
-        if (plugin_library_paths.find(params.class_name) != plugin_library_paths.end() && !params.library.has_value() &&
-            params.package.value_or(build_package_name) == build_package_name) {
-            params.library = plugin_library_paths[params.class_name];
-            params.package = std::nullopt;
-        }
-    }
-
-    // Register all plugins specified in the plugin configuration
-    if (!RegisterBTNodePlugins(node, factory, resource::CreateNodeRegistrationManifest(registration_config))) {
+    // Register all plugins specified in the plugin registration config files
+    if (!RegisterBTNodePlugins(node, factory, registration_config_files)) {
         std::cerr << "generate_bt_node_model: Error registering node plugins\n";
         return EXIT_FAILURE;
     }

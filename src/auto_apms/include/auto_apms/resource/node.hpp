@@ -70,7 +70,7 @@ struct BTNodeRegistrationManifest
 {
     std::string library_path;
     std::string package_name;  // Empty if library path was provided manually
-    BTNodeRegistrationConfig params;
+    BTNodeRegistrationConfig registration_config;
 };
 
 /**
@@ -81,21 +81,22 @@ struct BTNodeRegistrationManifest
  */
 using BTNodeRegistrationManifestMap = std::map<std::string, BTNodeRegistrationManifest>;
 
-BTNodeRegistrationConfigMap ParseBTNodePluginConfiguration(const std::string& path);
-BTNodeRegistrationConfigMap ParseBTNodePluginConfiguration(const std::vector<std::string>& paths);
+BTNodeRegistrationConfigMap ParseBTNodeRegistrationConfig(const std::string& path);
+BTNodeRegistrationConfigMap ParseBTNodeRegistrationConfig(const std::vector<std::string>& paths);
 
-std::vector<BTNodeResource> FetchBTNodePluginResources(const std::string& package_name);
+std::vector<BTNodeResource> FetchBTNodeResources(const std::string& package_name);
 
-BTNodeRegistrationManifestMap CreateNodeRegistrationManifest(const BTNodeRegistrationConfigMap& registration_config);
+BTNodeRegistrationManifestMap CreateBTNodeRegistrationManifest(
+    const BTNodeRegistrationConfigMap& registration_config_map);
 
 }  // namespace resource
 
 bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                            BT::BehaviorTreeFactory& factory,
-                           const std::string& plugin_config_path);
+                           const std::string& registration_config_path);
 bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                            BT::BehaviorTreeFactory& factory,
-                           const std::vector<std::string>& plugin_config_paths);
+                           const std::vector<std::string>& registration_config_paths);
 bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                            BT::BehaviorTreeFactory& factory,
                            const resource::BTNodeRegistrationManifestMap& manifest_map);

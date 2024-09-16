@@ -169,12 +169,12 @@ BT::RosNodeParams BTNodeRegistrationConfig::CreateROSNodeParams(rclcpp::Node::Sh
 
 std::set<std::string> BTNodeRegistrationConfig::GetRequiredNames() { return {BT_NODE_YAML_PARAM_CLASS}; }
 
-BTNodeRegistrationConfigMap ParseBTNodePluginConfiguration(const std::string& path)
+BTNodeRegistrationConfigMap ParseBTNodeRegistrationConfig(const std::string& path)
 {
-    return ParseBTNodePluginConfiguration({path});
+    return ParseBTNodeRegistrationConfig({path});
 }
 
-BTNodeRegistrationConfigMap ParseBTNodePluginConfiguration(const std::vector<std::string>& paths)
+BTNodeRegistrationConfigMap ParseBTNodeRegistrationConfig(const std::vector<std::string>& paths)
 {
     BTNodeRegistrationConfigMap map;
     for (const auto& path : paths) {
@@ -192,7 +192,7 @@ BTNodeRegistrationConfigMap ParseBTNodePluginConfiguration(const std::vector<std
     return map;
 }
 
-std::vector<BTNodeResource> FetchBTNodePluginResources(const std::string& package_name)
+std::vector<BTNodeResource> FetchBTNodeResources(const std::string& package_name)
 {
     std::string content;
     std::string base_path;
@@ -214,33 +214,28 @@ std::vector<BTNodeResource> FetchBTNodePluginResources(const std::string& packag
     return resources;
 }
 
-BTNodeRegistrationManifestMap CreateNodeRegistrationManifest(const BTNodeRegistrationConfigMap& registration_config)
+BTNodeRegistrationManifestMap CreateBTNodeRegistrationManifest(
+    const BTNodeRegistrationConfigMap& registration_config_map)
 {
     BTNodeRegistrationManifestMap manifest;
 
     // Collect resources
     std::map<std::string, std::vector<BTNodeResource>> resources;
     for (const auto& it : ament_index_cpp::get_resources(_AUTO_APMS_BT_NODE_PLUGINS__RESOURCE_TYPE_NAME)) {
-        resources[it.first] = FetchBTNodePluginResources(it.first);
+        resources[it.first] = FetchBTNodeResources(it.first);
     }
 
     // Assemble paths of corresponding shared libraries for class_loader
-    for (const auto& config : registration_config) {
-        const auto& registration_name = config.first;
-        const auto& params = config.second;
-
-        manifest[registration_name].params = params;
+    for (const auto& config : registration_config_map) {
+        const auto& name = config.first;
+        const auto& reg_config = config.second;
+        manifest[name].registration_config = reg_config;
 
         // If a library path has been provided we will use this one
-        if (params.library.has_value()) {
-            if (params.package.has_value()) {
-                throw std::runtime_error(
-                    "Since a library path has been provided, it is obsolete to specify the package parameter for "
-                    "node '" +
-                    registration_name + "'");
-            }
-            manifest[registration_name].library_path = params.library.value();
-            // package_name is left empty and indicates that the library was not resolved by parsing resources
+        if (reg_config.library.has_value() && !reg_config.package.has_value()) {
+            // package_name is left empty which indicates that the library was not resolved by parsing resources
+            manifest[name].package_name = "";
+            manifest[name].library_path = reg_config.library.value();
             continue;
         };
 
@@ -249,7 +244,7 @@ BTNodeRegistrationManifestMap CreateNodeRegistrationManifest(const BTNodeRegistr
         for (const auto& it : resources) {
             const auto& package = it.first;
             for (const auto& resource : it.second) {
-                if (resource.class_name == params.class_name) {
+                if (resource.class_name == reg_config.class_name) {
                     if (matching_libs.find(package) != matching_libs.end()) {
                         // There shouldn't be multiple matching resources in a package since this is already checked by
                         // CMake during compile time
@@ -261,36 +256,42 @@ BTNodeRegistrationManifestMap CreateNodeRegistrationManifest(const BTNodeRegistr
         }
 
         if (matching_libs.empty()) {
-            throw std::runtime_error("The parameters for node '" + registration_name + "' suggest to load class '" +
-                                     params.class_name + "', but no such resource has been registered");
+            throw std::runtime_error("The parameters for node '" + name + "' suggest to load class '" +
+                                     reg_config.class_name +
+                                     "', but no such resource has been registered by any package");
         }
 
-        // Find the correct resource and complete load information
-        std::string node_lib_path;
-        if (params.package.has_value()) {
-            // If a specific package name was given, try to find a corresponding resource there
-            if (resources.find(params.package.value()) == resources.end()) {
-                throw std::runtime_error("The parameters for node '" + registration_name +
-                                         "' suggest to load from package '" + params.package.value() +
-                                         "', but no behavior tree node resources could be found within that package");
-            }
-            if (matching_libs.find(params.package.value()) == matching_libs.end()) {
-                throw std::runtime_error("The parameters for node '" + registration_name + "' suggest to load class '" +
-                                         params.class_name + "' from package '" + params.package.value() +
+        // Find the correct resource, verify and complete load information
+        if (reg_config.package.has_value()) {
+            // Verify the class name can be found
+            if (matching_libs.find(reg_config.package.value()) == matching_libs.end()) {
+                throw std::runtime_error("The parameters for node '" + name + "' suggest to load class '" +
+                                         reg_config.class_name + "' from package '" + reg_config.package.value() +
                                          "', but no such resource has been registered by that package");
             }
-            manifest[registration_name].package_name = params.package.value();
-            manifest[registration_name].library_path = matching_libs[params.package.value()];
-        }
-        else if (matching_libs.size() > 1) {
-            // If there are multiple matching resources, a specific package name must be given
-            throw std::runtime_error("There are multiple matching resources for class '" + params.class_name +
-                                     "', but the optional parameter '" + BT_NODE_YAML_PARAM_PACKAGE +
-                                     "' was not specified for node '" + registration_name + "'");
+
+            // Verify that the specified library is correct (Validation step for e.g. automatically generated configs)
+            if (reg_config.library.has_value() &&
+                matching_libs[reg_config.package.value()] != reg_config.library.value()) {
+                throw std::runtime_error("The specified library path for node '" + name +
+                                         "' does not comply with the corresponding resource of package '" +
+                                         reg_config.package.value() + "'");
+            }
+
+            manifest[name].package_name = reg_config.package.value();
+            manifest[name].library_path = matching_libs[reg_config.package.value()];
         }
         else {
-            manifest[registration_name].package_name = matching_libs.begin()->first;
-            manifest[registration_name].library_path = matching_libs.begin()->second;
+            if (matching_libs.size() > 1) {
+                // If there are multiple matching resources, a specific package name must be given
+                throw std::runtime_error("There are multiple matching resources for class '" + reg_config.class_name +
+                                         "', but the optional parameter '" + BT_NODE_YAML_PARAM_PACKAGE +
+                                         "' was not specified for node '" + name + "'");
+            }
+            else {
+                manifest[name].package_name = matching_libs.begin()->first;
+                manifest[name].library_path = matching_libs.begin()->second;
+            }
         }
     }
     return manifest;
@@ -300,18 +301,18 @@ BTNodeRegistrationManifestMap CreateNodeRegistrationManifest(const BTNodeRegistr
 
 bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                            BT::BehaviorTreeFactory& factory,
-                           const std::string& plugin_config_path)
+                           const std::string& registration_config_path)
 {
-    return RegisterBTNodePlugins(node_ptr, factory, {plugin_config_path});
+    return RegisterBTNodePlugins(node_ptr, factory, {registration_config_path});
 }
 
 bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                            BT::BehaviorTreeFactory& factory,
-                           const std::vector<std::string>& plugin_config_paths)
+                           const std::vector<std::string>& registration_config_paths)
 {
     resource::BTNodeRegistrationConfigMap registration_config;
     try {
-        registration_config = resource::ParseBTNodePluginConfiguration(plugin_config_paths);
+        registration_config = resource::ParseBTNodeRegistrationConfig(registration_config_paths);
     } catch (const std::exception& e) {
         RCLCPP_ERROR(node_ptr->get_logger(),
                      "RegisterBTNodePlugins: Collecting load information from configuration failed: %s",
@@ -321,7 +322,7 @@ bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
 
     resource::BTNodeRegistrationManifestMap manifest;
     try {
-        manifest = resource::CreateNodeRegistrationManifest(registration_config);
+        manifest = resource::CreateBTNodeRegistrationManifest(registration_config);
     } catch (const std::exception& e) {
         RCLCPP_ERROR(node_ptr->get_logger(),
                      "RegisterBTNodePlugins: Creating registration manifest failed: %s",
@@ -359,7 +360,8 @@ bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
         class_loader::ClassLoader* loader = loaders[manifest.library_path].get();
 
         // Look if the class we search for is actually present in the library.
-        const std::string factory_classname = "auto_apms::BTNodeRegistrarTemplate<" + manifest.params.class_name + ">";
+        const std::string factory_classname =
+            "auto_apms::BTNodeRegistrarTemplate<" + manifest.registration_config.class_name + ">";
         if (!loader->isClassAvailable<BTNodeRegistrar>(factory_classname)) {
             RCLCPP_ERROR(node_ptr->get_logger(),
                          "RegisterBTNodePlugins: Class '%s' is not available in %s. You most likely misspelled the "
@@ -374,21 +376,21 @@ bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
         RCLCPP_DEBUG(node_ptr->get_logger(),
                      "RegisterBTNodePlugins: Register behavior tree node plugin '%s (%s)' from library %s",
                      registration_name.c_str(),
-                     manifest.params.class_name.c_str(),
+                     manifest.registration_config.class_name.c_str(),
                      manifest.library_path.c_str());
 
         try {
             if (plugin_instance->RequiresROSNodeParams()) {
-                auto params = manifest.params.CreateROSNodeParams(node_ptr);
+                auto params = manifest.registration_config.CreateROSNodeParams(node_ptr);
                 plugin_instance->RegisterForBehaviorTreeFactory(factory, registration_name, &params);
             }
             else {
-                if (manifest.params.IsROSSpecific()) {
+                if (manifest.registration_config.IsROSSpecific()) {
                     RCLCPP_WARN(node_ptr->get_logger(),
                                 "RegisterBTNodePlugins: ROS specific parameters were given for node '%s (%s)', but it "
                                 "doesn't require any",
                                 registration_name.c_str(),
-                                manifest.params.class_name.c_str());
+                                manifest.registration_config.class_name.c_str());
                 }
                 plugin_instance->RegisterForBehaviorTreeFactory(factory, registration_name);
             }
@@ -396,7 +398,7 @@ bool RegisterBTNodePlugins(rclcpp::Node::SharedPtr node_ptr,
             RCLCPP_ERROR(node_ptr->get_logger(),
                          "RegisterBTNodePlugins: Failed to register node '%s (%s)': %s",
                          registration_name.c_str(),
-                         manifest.params.class_name.c_str(),
+                         manifest.registration_config.class_name.c_str(),
                          e.what());
             return false;
         }

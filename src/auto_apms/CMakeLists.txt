@@ -85,6 +85,10 @@ rclcpp_components_register_nodes(auto_apms_core
 # ------------ PX4 Behavior Library | Executables --------------
 #
 
+# Command line tool to create a file containing the behavior tree node plugin registration manifest
+add_executable(create_bt_node_registration_manifest src/cli/create_bt_node_registration_manifest.cpp)
+target_link_libraries(create_bt_node_registration_manifest auto_apms_core)
+
 # Command line tool to create a file containing the behavior tree node models required for Groot
 add_executable(generate_bt_node_model src/cli/generate_bt_node_model.cpp)
 target_link_libraries(generate_bt_node_model auto_apms_core)
@@ -217,7 +221,11 @@ install(
     RUNTIME DESTINATION bin)
 
 install(
-    TARGETS generate_bt_node_model upload_tree run_executor
+    TARGETS
+    create_bt_node_registration_manifest
+    generate_bt_node_model
+    upload_tree
+    run_executor
     DESTINATION ${_AUTO_APMS_EXECUTABLES_INSTALL_DIR})
 
 install(

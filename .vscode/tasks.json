@@ -9,9 +9,7 @@
             "detail": "Run all unit tests of auto_apms",
             "type": "shell",
             "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select auto_apms --ctest-args -R auto_apms_unit_tests",
-            "group": {
-                "kind": "test"
-            },
+            "group": "test",
             "problemMatcher": "$gcc"
         },
         {
@@ -19,9 +17,7 @@
             "detail": "Run all integration tests of auto_apms",
             "type": "shell",
             "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select auto_apms --ctest-args -R auto_apms_integration_tests",
-            "group": {
-                "kind": "test"
-            },
+            "group": "test",
             "problemMatcher": "$gcc"
         },
         {
@@ -29,9 +25,7 @@
             "detail": "Run all tests in pre-commit config of auto_apms",
             "type": "shell",
             "command": "pre-commit run -a",
-            "group": {
-                "kind": "test"
-            },
+            "group": "test",
             "problemMatcher": "$gcc"
         },
     ]
