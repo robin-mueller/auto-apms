@@ -1,4 +1,4 @@
-![image](https://github.com/robin-mueller/auto-apms-guide/blob/master/public/logo/logo-wo-bg.png?raw=true)
+![image](https://github.com/robin-mueller/auto-apms-guide/blob/master/src/public/logo/logo-wo-bg.png?raw=true)
 
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)](https://robin-mueller.github.io/auto-apms-guide/)
 [![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)](https://github.com/robin-mueller/auto-apms/releases)

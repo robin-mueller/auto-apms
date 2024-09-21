@@ -1,6 +1,6 @@
 # AutoAPMS API Reference
 
-<img src="https://github.com/robin-mueller/auto-apms-guide/blob/master/public/logo/logo-wo-bg.png?raw=true" style="display:block;float:none;margin-left:auto;margin-right:auto;width:60%">
+<img src="https://github.com/robin-mueller/auto-apms-guide/blob/master/src/public/logo/logo-wo-bg.png?raw=true" style="display:block;float:none;margin-left:auto;margin-right:auto;width:60%">
 
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)](https://robin-mueller.github.io/auto-apms-guide/)
 [![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)](https://github.com/robin-mueller/auto-apms/releases)
