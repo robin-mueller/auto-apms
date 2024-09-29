@@ -11,4 +11,4 @@ This is the automatically generated documentation for the C++ API offered by the
 For further information see the links below:
 
 - [GitHub](https://github.com/robin-mueller/auto-apms)
-- [User Guide](https://robin-mueller.github.io/auto-apms-guide/introduction/overview)
+- [User Guide](https://robin-mueller.github.io/auto-apms-guide/intro)

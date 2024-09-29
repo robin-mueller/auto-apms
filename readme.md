@@ -16,11 +16,11 @@ With this ROS 2 package, the goal is to offer a comprehensible framework for imp
 AutoAPMS provides PX4 developers with
 - A generic approach for implementing tasks within the ROS 2 middleware
 - Various predefined tasks commonly performed by UASs
-- A model-based flight behavior engine incorporating behavior trees
-- CMake macros for registering behavior tree resources
+- An action-based flight behavior engine incorporating behavior trees
+- An efficient Behavior Tree resource system integrating with `ament_index`
 - Useful command line tools for orchestrating the system
 
-Vist the [User Guide](https://robin-mueller.github.io/auto-apms-guide/introduction/overview) for getting started.
+Vist the [User Guide](https://robin-mueller.github.io/auto-apms-guide/getting-started) for getting started.
 
 # TODO
 
