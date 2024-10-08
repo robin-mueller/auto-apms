@@ -1,8 +1,10 @@
-<img src="https://robin-mueller.github.io/auto-apms-guide/logo/logo.png" style="display:block;float:none;margin-left:auto;margin-right:auto;margin-bottom:20px;width:60%">
+<p align="center" width="100%">
+    <img width="70%" src="https://robin-mueller.github.io/auto-apms-guide/logo/logo.png">
+</p>
 
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)](https://robin-mueller.github.io/auto-apms-guide/)
 [![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)](https://github.com/robin-mueller/auto-apms/releases)
-[![Build and Test](https://github.com/robin-mueller/auto-apms/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/build-and-test.yml)
+[![Build and Test](https://github.com/robin-mueller/auto-apms/actions/workflows/build-and-test.yaml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/build-and-test.yaml)
 
 **Auto**mated **A**ction **P**lanning and **M**ission **S**afeguarding for Robotics.
 
