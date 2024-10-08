@@ -869,10 +869,10 @@ WARN_LOGFILE           =
 # Runtime artifacts, plugins and executables should be excluded to keep docs tidy.
 
 # Includes
-INPUT                 += ../auto_apms/include/auto_apms ../auto_apms/include/auto_apms/resource
+INPUT                 += ../auto_apms/include/auto_apms ../auto_apms/include/auto_apms/behavior_tree
 
 # Sources
-INPUT                 += ../auto_apms/src ../auto_apms/src/resource
+INPUT                 += ../auto_apms/src ../auto_apms/src/behavior_tree
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
