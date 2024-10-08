@@ -34,8 +34,7 @@ class BTNodePluginLoader
      * @param[in] node_ptr ROS node to use for ROS specific behavior tree nodes.
      * @param[in] manifest Parameters used for loading and configuring the behavior tree node.
      * @param[in,out] factory Behavior tree factory instance that the behavior tree nodes will register with.
-     * @param[in,out] class_loaders Map of class_loader::ClassLoader instances to use for loading the
-     * shared libraries.
+     * @param[in,out] class_loader The class loader to use for loading the shared libraries.
      * @throw exceptions::BTNodePluginLoadingError if registration fails.
      */
     static void Load(rclcpp::Node::SharedPtr node_ptr,

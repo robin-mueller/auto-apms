@@ -23,12 +23,20 @@ namespace auto_apms {
 
 BT::Tree CreateBehaviorTree(BTNodePluginLoader& node_plugin_loader,
                             const std::string& tree_xml,
-                            BT::BehaviorTreeFactory* const factory = nullptr,
+                            BT::BehaviorTreeFactory& factory,
+                            BT::Blackboard::Ptr parent_blackboard_ptr = nullptr);
+
+BT::Tree CreateBehaviorTree(BTNodePluginLoader& node_plugin_loader,
+                            const std::string& tree_xml,
                             BT::Blackboard::Ptr parent_blackboard_ptr = nullptr);
 
 BT::Tree CreateBehaviorTree(rclcpp::Node::SharedPtr node_ptr,
                             const BehaviorTreeResource& resource,
-                            BT::BehaviorTreeFactory* const factory = nullptr,
+                            BT::BehaviorTreeFactory& factory,
+                            BT::Blackboard::Ptr parent_blackboard_ptr = nullptr);
+
+BT::Tree CreateBehaviorTree(rclcpp::Node::SharedPtr node_ptr,
+                            const BehaviorTreeResource& resource,
                             BT::Blackboard::Ptr parent_blackboard_ptr = nullptr);
 
 }  // namespace auto_apms
