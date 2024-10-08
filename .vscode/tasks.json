@@ -3,10 +3,17 @@
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
+        {
+            "label": "Create docs",
+            "detail": "Create API documentation with doxygen",
+            "type": "shell",
+            "command": "cd doc && doxygen",
+            "problemMatcher": "$gcc"
+        },
         // Test tasks
         {
             "label": "Test auto_apms (Unit tests)",
-            "detail": "Run all unit tests of auto_apms",
+            "detail": "Run all unit tests of auto-apms",
             "type": "shell",
             "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select auto_apms --ctest-args -R auto_apms_unit_tests",
             "group": "test",
@@ -14,7 +21,7 @@
         },
         {
             "label": "Test auto_apms (Integration tests)",
-            "detail": "Run all integration tests of auto_apms",
+            "detail": "Run all integration tests of auto-apms",
             "type": "shell",
             "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select auto_apms --ctest-args -R auto_apms_integration_tests",
             "group": "test",
@@ -22,7 +29,7 @@
         },
         {
             "label": "Test auto_apms (pre-commit)",
-            "detail": "Run all tests in pre-commit config of auto_apms",
+            "detail": "Run all tests in pre-commit config of auto-apms",
             "type": "shell",
             "command": "pre-commit run -a",
             "group": "test",

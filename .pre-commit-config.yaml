@@ -24,7 +24,7 @@ repos:
       - id: check-merge-conflict
       - id: check-xml
       - id: check-yaml
-      - id: debug-statements
+      - id: check-vcs-permalinks
       - id: mixed-line-ending
       - id: trailing-whitespace
         exclude_types: [rst]
