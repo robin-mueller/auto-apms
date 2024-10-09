@@ -3,8 +3,8 @@
 <package format="3">
     <name>auto_apms_examples</name>
     <version>0.1.0</version>
-    <description>Examples for auto_apms</description>
-    <maintainer email="robin-m-99@gmx.de">Robin Müller</maintainer>
+    <description>Examples for auto_apms package</description>
+    <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
     <license>Apache License 2.0</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>

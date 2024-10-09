@@ -3,8 +3,8 @@
 <package format="3">
     <name>auto_apms</name>
     <version>0.1.0</version>
-    <description>PX4 Behavior-based Control Library</description>
-    <maintainer email="robin-m-99@gmx.de">Robin Müller</maintainer>
+    <description>ROS 2 Mission Design and Management framework for PX4 powered systems and other robots</description>
+    <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
     <license>Apache License 2.0</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
