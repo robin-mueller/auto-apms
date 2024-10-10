@@ -138,6 +138,8 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
                 "Failed to write node plugin manifest for '${_tree_file_stem}' parsing [${ARGS_NODE_PLUGIN_MANIFEST}]"
             )
         endif()
+        # Create a command to evaluate the generator expressions inculded in the manifest file after the CMake configuration stage.
+        # NOTE: The file isn't fully processed right after the invocation of the file(GENERATE ...) macro.
         file(GENERATE OUTPUT "${_node_plugin_manifest__build_path}" INPUT "${_node_plugin_manifest__build_path}")
 
         # Use the above created manifest for generating the node model

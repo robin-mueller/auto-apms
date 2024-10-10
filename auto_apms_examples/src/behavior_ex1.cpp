@@ -40,7 +40,9 @@ int main(int argc, char** argv)
 
     {
         BT::Tree tree =
-            CreateBehaviorTree(node, BehaviorTreeResource::SelectByFileName("relative_goto", "auto_apms_examples"));
+            BehaviorTree::Create(node,
+                                 BehaviorTreeResource::SelectByFileName("relative_goto", "auto_apms_examples"),
+                                 "");
         BT::Groot2Publisher publisher(tree);
         BT::StdCoutLogger logger(tree);
         logger.enableTransitionToIdle(false);

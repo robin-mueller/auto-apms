@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms/behavior_tree/tree_xml.hpp"
+#include "auto_apms/behavior_tree/behavior_tree.hpp"
 #include "auto_apms/exceptions.hpp"
 #include "behaviortree_cpp/action_node.h"
 
@@ -50,7 +50,7 @@ class LoadBehaviorTreeAction : public SyncActionNode
             return NodeStatus::FAILURE;
         }
 
-        setOutput<std::string>(OUTPUT_KEY_DATA, BehaviorTreeXML{resource}.WriteToString());
+        setOutput<std::string>(OUTPUT_KEY_DATA, BehaviorTree{resource}.WriteToString());
         return NodeStatus::SUCCESS;
     }
 };

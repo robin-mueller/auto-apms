@@ -30,7 +30,7 @@ struct ResourceNotFoundError : public ExceptionBase
     using ExceptionBase::ExceptionBase;
 };
 
-struct BTNodePluginManifestLogicError : public ExceptionBase
+struct BTNodePluginManifestError : public ExceptionBase
 {
     using ExceptionBase::ExceptionBase;
 };

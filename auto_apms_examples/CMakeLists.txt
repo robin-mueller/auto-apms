@@ -107,16 +107,16 @@ auto_apms_register_plugins(behavior_tree_nodes
 auto_apms_register_behavior_tree_file("contingency_management/trees/contingency_manager.xml"
     NODE_PLUGIN_MANIFEST
     "contingency_management/config/contingency_manager_plugins.yaml")
-auto_apms_register_behavior_tree_file("contingency_management/trees/flight_orchestrator.xml"
-    NODE_PLUGIN_MANIFEST
-    "contingency_management/config/orchestrator_plugins.yaml")
-auto_apms_register_behavior_tree_file("contingency_management/trees/nominal_mission.xml"
-    NODE_PLUGIN_MANIFEST
-    "contingency_management/config/mission_manager_plugins.yaml")
-auto_apms_register_behavior_tree_file("contingency_management/trees/safety_monitor.xml"
-    NODE_PLUGIN_MANIFEST
-    "contingency_management/config/safety_monitor_plugins.yaml")
-auto_apms_register_behavior_tree_file("contingency_management/trees/alternate_landing_mission.xml")
+# auto_apms_register_behavior_tree_file("contingency_management/trees/flight_orchestrator.xml"
+#     NODE_PLUGIN_MANIFEST
+#     "contingency_management/config/orchestrator_plugins.yaml")
+# auto_apms_register_behavior_tree_file("contingency_management/trees/nominal_mission.xml"
+#     NODE_PLUGIN_MANIFEST
+#     "contingency_management/config/mission_manager_plugins.yaml")
+# auto_apms_register_behavior_tree_file("contingency_management/trees/safety_monitor.xml"
+#     NODE_PLUGIN_MANIFEST
+#     "contingency_management/config/safety_monitor_plugins.yaml")
+# auto_apms_register_behavior_tree_file("contingency_management/trees/alternate_landing_mission.xml")
 
 install(
     DIRECTORY contingency_management/launch

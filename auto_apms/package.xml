@@ -25,6 +25,8 @@
     <depend>eigen</depend>
     <depend>tf2_eigen</depend>
     <depend>yaml-cpp</depend>
+    <depend>tinyxml2_vendor</depend>
+    <depend>generate_parameter_library</depend>
 
     <exec_depend>rosidl_default_runtime</exec_depend>
 

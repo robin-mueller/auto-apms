@@ -1,0 +1,41 @@
+auto_apms::detail::rosparam::bt_node_plugin_manifest:
+
+  ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES}:
+    type: string_array
+    description: "Registration names of behavior tree nodes"
+    validation:
+        unique<>: null
+
+  __map_${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES}:
+
+    ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_CLASS}:
+      type: string
+      description: "Name of the class that will eventually be loaded and registered"
+      validation:
+        not_empty<>: null
+
+    ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_PACKAGE}:
+      type: string
+      description: "Name of the package that registers the node plugin"
+
+    ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_LIBRARY}:
+      type: string
+      description: "Path to the shared library that defines the plugin class"
+
+    ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_PORT}:
+      type: string
+      description: "Associated ROS2 topic or action name"
+
+    ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_WAIT_TIMEOUT}:
+      type: double
+      default_value: 3
+      description: Timeout [s] for initially discovering the associated ROS2 node
+      validation:
+        gt_eq<>: [0]
+
+    ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_REQUEST_TIMEOUT}:
+      type: double
+      default_value: 1.5
+      description: Timeout [s] for waiting for a goal response
+      validation:
+        gt_eq<>: [0]

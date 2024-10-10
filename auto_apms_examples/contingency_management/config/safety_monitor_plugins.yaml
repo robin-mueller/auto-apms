@@ -1,11 +1,11 @@
 GetSystemState:
-  class: auto_apms::ops_engine::GetSystemState
+  class_name: auto_apms::ops_engine::GetSystemState
   port: system_state
 
 IsApproachingLanding:
-  class: auto_apms::ops_engine::IsApproachingLanding
+  class_name: auto_apms::ops_engine::IsApproachingLanding
   port: landing_approach
 
 IsLandingSiteClear:
-  class: auto_apms::ops_engine::IsLandingSiteClear
+  class_name: auto_apms::ops_engine::IsLandingSiteClear
   port: landing_site_status

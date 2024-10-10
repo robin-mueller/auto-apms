@@ -14,46 +14,89 @@
 
 #include "auto_apms/behavior_tree/behavior_tree.hpp"
 
+#include "auto_apms/behavior_tree/node_loader.hpp"
+
 namespace auto_apms {
 
-BT::Tree CreateBehaviorTree(BTNodePluginLoader& node_plugin_loader,
-                            const std::string& tree_xml,
-                            BT::BehaviorTreeFactory& factory,
-                            BT::Blackboard::Ptr parent_blackboard_ptr)
+BehaviorTree::BehaviorTree(const std::string& file_path) { doc_.LoadFile(file_path.c_str()); }
+
+BehaviorTree::BehaviorTree(const Resource& resource) : BehaviorTree{resource.tree_path}
+{
+    node_plugin_manifest_ = NodePluginManifest::FromResource(resource);
+}
+
+BT::Tree BehaviorTree::Create(const std::string& tree_str,
+                              const std::string& main_id,
+                              BT::BehaviorTreeFactory& factory,
+                              BT::Blackboard::Ptr parent_blackboard_ptr)
 {
     // Create empty blackboard if none was provided
     if (!parent_blackboard_ptr) parent_blackboard_ptr = BT::Blackboard::create();
 
+    factory.registerBehaviorTreeFromText(tree_str);
+    return factory.createTree(main_id, parent_blackboard_ptr);
+}
+
+BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
+                              const Resource& resource,
+                              const std::string& main_id,
+                              BT::BehaviorTreeFactory& factory,
+                              BT::Blackboard::Ptr parent_blackboard_ptr)
+{
     // Load behavior tree node plugins
-    node_plugin_loader.Load(factory);
+    BTNodePluginLoader::Load(node_ptr, NodePluginManifest::FromResource(resource), factory);
 
-    // The main_tree_to_execute attribute will be used to determine the entry point
-    return factory.createTreeFromText(tree_xml, parent_blackboard_ptr);
+    // Load tree from file
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(resource.tree_path.c_str());
+    tinyxml2::XMLPrinter printer;
+    doc.Print(&printer);
+    return Create(printer.CStr(), main_id, factory, parent_blackboard_ptr);
 }
 
-BT::Tree CreateBehaviorTree(BTNodePluginLoader& node_plugin_loader,
-                            const std::string& tree_xml,
-                            BT::Blackboard::Ptr parent_blackboard_ptr)
+BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
+                              const Resource& resource,
+                              const std::string& main_id,
+                              BT::Blackboard::Ptr parent_blackboard_ptr)
 {
     BT::BehaviorTreeFactory factory;
-    return CreateBehaviorTree(node_plugin_loader, tree_xml, factory, parent_blackboard_ptr);
+    return Create(node_ptr, resource, main_id, factory, parent_blackboard_ptr);
 }
 
-BT::Tree CreateBehaviorTree(rclcpp::Node::SharedPtr node_ptr,
-                            const BehaviorTreeResource& resource,
-                            BT::BehaviorTreeFactory& factory,
-                            BT::Blackboard::Ptr parent_blackboard_ptr)
+BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
+                              BT::BehaviorTreeFactory& factory,
+                              BT::Blackboard::Ptr parent_blackboard_ptr) const
 {
-    BTNodePluginLoader loader{node_ptr, BTNodePluginLoader::Manifest::FromFiles(resource.node_manifest_paths)};
-    return CreateBehaviorTree(loader, BehaviorTreeXML{resource}.WriteToString(), factory, parent_blackboard_ptr);
+    // Load behavior tree node plugins
+    BTNodePluginLoader::Load(node_ptr, node_plugin_manifest_, factory);
+
+    // Create behavior tree using main tree attribute
+    return Create(WriteToString(), "", factory, parent_blackboard_ptr);
 }
 
-BT::Tree CreateBehaviorTree(rclcpp::Node::SharedPtr node_ptr,
-                            const BehaviorTreeResource& resource,
-                            BT::Blackboard::Ptr parent_blackboard_ptr)
+BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr, BT::Blackboard::Ptr parent_blackboard_ptr) const
 {
     BT::BehaviorTreeFactory factory;
-    return CreateBehaviorTree(node_ptr, resource, factory, parent_blackboard_ptr);
+    return Create(node_ptr, factory, parent_blackboard_ptr);
+}
+
+std::string BehaviorTree::GetMainID() const
+{
+    if (const auto main_tree_id = doc_.RootElement()->Attribute(MAIN_TREE_ATTRIBUTE_NAME)) return main_tree_id;
+    return "";
+}
+
+BehaviorTree& BehaviorTree::SetMainID(const std::string& main_tree_id)
+{
+    doc_.RootElement()->SetAttribute(MAIN_TREE_ATTRIBUTE_NAME, main_tree_id.c_str());
+    return *this;
+}
+
+std::string BehaviorTree::WriteToString() const
+{
+    tinyxml2::XMLPrinter printer;
+    doc_.Print(&printer);
+    return printer.CStr();
 }
 
 }  // namespace auto_apms

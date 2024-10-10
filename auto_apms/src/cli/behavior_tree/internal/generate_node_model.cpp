@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     if (argc < 4) {
         std::cerr
             << "generate_node_model: Missing inputs! The program requires: \n\t1.) The path to the node plugin "
-               "manifest path\n\t2.) Paths to shared libraries to be loaded\n\t3.) The xml file to store the model.\n";
+               "manifest.\n\t2.) Paths to shared libraries to be loaded.\n\t3.) The xml file to store the model.\n";
         std::cerr << "Usage: generate_node_model <manifest_file> <library_paths> <output_file>.\n";
         return EXIT_FAILURE;
     }
@@ -65,7 +65,8 @@ int main(int argc, char** argv)
 
         // Create and write the behavior tree model file
         BT::BehaviorTreeFactory factory;
-        BTNodePluginLoader::Load(node, BTNodePluginLoader::Manifest::FromFile(manifest_file), factory, *class_loader);
+        const auto manifest = BTNodePluginLoader::Manifest::FromFile(manifest_file);
+        BTNodePluginLoader::Load(node, manifest, factory, *class_loader);
         std::ofstream out_stream{output_file};
         if (out_stream.is_open()) {
             out_stream << BT::writeTreeNodesModelXML(factory);

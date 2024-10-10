@@ -22,24 +22,30 @@
 
 namespace auto_apms {
 
-BTNodePluginLoader::BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr, const Manifest& manifest)
+BTNodePluginLoader::BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr,
+                                       const Manifest& manifest,
+                                       const std::string& param_prefix)
     : node_ptr_{node_ptr},
-      manifest_{manifest},
-      class_loader_ptr_{std::make_unique<class_loader::MultiLibraryClassLoader>(false)}
-{}
+      class_loader_ptr_{std::make_unique<class_loader::MultiLibraryClassLoader>(false)},
+      param_prefix_{param_prefix},
+      param_listener_{node_ptr_, param_prefix}
+{
+    UpdateManifest(manifest);
+}
 
 void BTNodePluginLoader::Load(rclcpp::Node::SharedPtr node_ptr,
                               const Manifest& manifest,
                               BT::BehaviorTreeFactory& factory,
                               class_loader::MultiLibraryClassLoader& class_loader)
 {
-    const auto verified_manifest = manifest.Verify();
-    for (const auto& [node_name, params] : verified_manifest.MapView()) {
-        if (!params.library.has_value()) {
-            throw exceptions::BTNodePluginLoadingError("Load parameters for node '" + node_name +
+    auto m = manifest;  // Copy to be able to modify
+    for (const auto& [node_name, params] : m.LocateAndVerifyLibraries().map()) {
+        if (params.library.empty()) {
+            // Library path is a required field
+            throw exceptions::BTNodePluginLoadingError("Parameters for node '" + node_name +
                                                        "' do not specify a library path.");
         }
-        const auto& library_path = params.library.value();
+        const auto& library_path = params.library;
 
         if (!class_loader.isLibraryAvailable(library_path)) {
             try {
@@ -71,18 +77,16 @@ void BTNodePluginLoader::Load(rclcpp::Node::SharedPtr node_ptr,
         auto plugin_instance = class_loader.createInstance<detail::BTNodePluginBase>(factory_classname, library_path);
         try {
             if (plugin_instance->RequiresROSNodeParams()) {
-                const auto ros_node_params = params.CreateROSNodeParams(node_ptr);
-                plugin_instance->RegisterWithBehaviorTreeFactory(factory, node_name, &ros_node_params);
+                BT::RosNodeParams ros_params;
+                ros_params.nh = node_ptr;
+                ros_params.default_port_value = params.port;
+                ros_params.wait_for_server_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::duration<double>(params.wait_timeout));
+                ros_params.server_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::duration<double>(params.request_timeout));
+                plugin_instance->RegisterWithBehaviorTreeFactory(factory, node_name, &ros_params);
             }
             else {
-                if (params.IsROSSpecific()) {
-                    RCLCPP_WARN(
-                        node_ptr->get_logger(),
-                        "BTNodePluginLoader::Load - ROS specific parameters were given for node '%s (%s)', but it "
-                        "doesn't require any.",
-                        node_name.c_str(),
-                        params.class_name.c_str());
-                }
                 plugin_instance->RegisterWithBehaviorTreeFactory(factory, node_name);
             }
         } catch (const std::exception& e) {
@@ -92,9 +96,24 @@ void BTNodePluginLoader::Load(rclcpp::Node::SharedPtr node_ptr,
     }
 }
 
+void BTNodePluginLoader::Load(rclcpp::Node::SharedPtr node_ptr,
+                              const Manifest& manifest,
+                              BT::BehaviorTreeFactory& factory)
+{
+    class_loader::MultiLibraryClassLoader class_loader{false};
+    Load(node_ptr, manifest, factory, class_loader);
+}
+
 void BTNodePluginLoader::Load(BT::BehaviorTreeFactory& factory)
 {
-    Load(node_ptr_, manifest_, factory, *class_loader_ptr_);
+    Load(node_ptr_, GetManifest(), factory, *class_loader_ptr_);
+}
+
+BTNodePluginLoader::Manifest BTNodePluginLoader::GetManifest() { return param_listener_.get_params().names_map; }
+
+void BTNodePluginLoader::UpdateManifest(const Manifest& manifest)
+{
+    manifest.ToROSParameters(node_ptr_, param_prefix_);
 }
 
 }  // namespace auto_apms

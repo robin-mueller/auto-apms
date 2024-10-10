@@ -17,7 +17,7 @@
 #include <functional>
 
 #include "action_msgs/srv/cancel_goal.hpp"
-#include "auto_apms/behavior_tree/tree_xml.hpp"
+#include "auto_apms/behavior_tree/behavior_tree.hpp"
 #include "auto_apms/constants.hpp"
 
 namespace auto_apms {
@@ -35,7 +35,7 @@ BTExecutorClient::BTExecutorClient(rclcpp::Node& node, const std::string& execut
 
 bool BTExecutorClient::UploadBehaviorTree(const BehaviorTreeResource& resource, const std::string& main_tree_id)
 {
-    BehaviorTreeXML tree{resource};
+    BehaviorTree tree{resource};
     if (!main_tree_id.empty()) tree.SetMainID(main_tree_id);
     return UploadBehaviorTree(tree.WriteToString(), "");
 }

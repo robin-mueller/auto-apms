@@ -16,20 +16,20 @@
 #include <iostream>
 #include <set>
 
-#include "auto_apms/behavior_tree/node_plugin_load_manifest.hpp"
+#include "auto_apms/behavior_tree/node_plugin_manifest.hpp"
 #include "auto_apms/exceptions.hpp"
 #include "rcpputils/split.hpp"
 
-using NodePluginManifest = auto_apms::detail::BTNodePluginLoadManifest;
+using NodePluginManifest = auto_apms::detail::BTNodePluginManifest;
 
 int main(int argc, char** argv)
 {
     if (argc < 5) {
         std::cerr << "create_node_plugin_manifest: Missing inputs! The program requires: \n\t1.) the yaml "
-                     "node manifest files (separated by ';')\n\t2.) Build information for nodes supposed to be "
+                     "node manifest files (separated by ';').\n\t2.) Build information for nodes supposed to be "
                      "registered during build time (List of '<class_name>@<library_build_path>' "
-                     "separated by ';')\n\t3.) The name of the package that provides the build targets\n\t4.) Output "
-                     "file for the complete node plugin manifest\n\t";
+                     "separated by ';').\n\t3.) The name of the package that provides the build targets.\n\t4.) Output "
+                     "file for the complete node plugin manifest.\n\t";
         std::cerr << "Usage: create_node_plugin_manifest <manifest_files> <build_infos> <build_package_name> "
                      "<output_file>\n";
         return EXIT_FAILURE;
@@ -68,17 +68,18 @@ int main(int argc, char** argv)
         }
 
         auto output_manifest = NodePluginManifest::FromFiles(manifest_files);
-        for (const auto& [node_name, params] : output_manifest.MapView()) {
+        for (const auto& [node_name, params] : output_manifest.map()) {
             auto& node_load_params = output_manifest[node_name];
+            auto temp_manifest = NodePluginManifest({{node_name, output_manifest[node_name]}});
             try {
-                node_load_params = NodePluginManifest::VerifyParameters(node_load_params, {build_package_name});
+                node_load_params = temp_manifest.LocateAndVerifyLibraries({build_package_name})[node_name];
             } catch (const auto_apms::exceptions::ResourceNotFoundError& e) {
                 if (build_lib_paths.find(params.class_name) == build_lib_paths.end()) {
                     throw std::runtime_error("Node '" + node_name + "' (" + params.class_name +
                                              ") requires build infos, but none were given.");
                 }
                 node_load_params.library = build_lib_paths[params.class_name];
-                node_load_params.package = std::nullopt;
+                node_load_params.package = "";
             }
         }
 
@@ -86,8 +87,8 @@ int main(int argc, char** argv)
 
         // Print unique list of libraries to stdout
         std::set<std::string> paths;
-        for (const auto& [node_name, params] : output_manifest.MapView()) {
-            const auto& path = params.library.value();
+        for (const auto& [node_name, params] : output_manifest.map()) {
+            const auto& path = params.library;
             if (const auto& [_, success] = paths.insert(path); success) { std::cout << path << ';'; }
         }
 

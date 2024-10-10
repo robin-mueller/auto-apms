@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "auto_apms/behavior_tree/node_plugin_load_manifest.hpp"
+#include "auto_apms/behavior_tree/node_plugin_manifest.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 #include "class_loader/multi_library_class_loader.hpp"
 #include "rclcpp/node.hpp"
@@ -23,10 +23,14 @@ namespace auto_apms {
 
 class BTNodePluginLoader
 {
-   public:
-    using Manifest = detail::BTNodePluginLoadManifest;
+    using ManifestParamListener = detail::rosparam::bt_node_plugin_manifest::ParamListener;
 
-    BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr, const Manifest& manifest);
+   public:
+    using Manifest = detail::BTNodePluginManifest;
+
+    BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr,
+                       const Manifest& manifest,
+                       const std::string& param_prefix = "node_plugins.");
 
     /**
      * @brief Load behavior tree node plugins and register with behavior tree factory.
@@ -42,13 +46,28 @@ class BTNodePluginLoader
                      BT::BehaviorTreeFactory& factory,
                      class_loader::MultiLibraryClassLoader& class_loader);
 
+    /**
+     * @overload
+     *
+     * This signature will initialize an empty class loader before parsing @p manifest. Keep in mind, that if you call
+     * this function multiple times, shared libraries will be loaded and unloaded each time repeatedly. Use @link
+     * BTNodePluginLoader::Load this signature@endlink instead if you want to keep an actively managed cache of loaded
+     * libraries and improve performance.
+     */
+    static void Load(rclcpp::Node::SharedPtr node_ptr, const Manifest& manifest, BT::BehaviorTreeFactory& factory);
+
     /// @overload
     void Load(BT::BehaviorTreeFactory& factory);
 
+    Manifest GetManifest();
+
+    void UpdateManifest(const Manifest& manifest);
+
    private:
     rclcpp::Node::SharedPtr node_ptr_;
-    Manifest manifest_;
     std::unique_ptr<class_loader::MultiLibraryClassLoader> class_loader_ptr_;
+    const std::string param_prefix_;
+    ManifestParamListener param_listener_;
 };
 
 }  // namespace auto_apms
