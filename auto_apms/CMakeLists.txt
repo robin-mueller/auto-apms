@@ -9,6 +9,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(rcpputils REQUIRED)
+find_package(class_loader REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(behaviortree_ros2 REQUIRED)
 find_package(auto_apms_interfaces REQUIRED)
@@ -80,6 +82,8 @@ ament_target_dependencies(auto_apms_core
     rclcpp
     rclcpp_action
     rclcpp_components
+    rcpputils
+    class_loader
     behaviortree_cpp
     behaviortree_ros2
     auto_apms_interfaces
@@ -277,6 +281,7 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
     rclcpp
     rclcpp_action
+    class_loader
     behaviortree_cpp
     behaviortree_ros2
     auto_apms_interfaces

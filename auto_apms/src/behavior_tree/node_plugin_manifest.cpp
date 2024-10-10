@@ -112,7 +112,7 @@ BTNodePluginManifest::BTNodePluginManifest(const ParamMap& param_map) : param_ma
 
 BTNodePluginManifest BTNodePluginManifest::FromResource(const BehaviorTreeResource& resource)
 {
-    return FromFiles(resource.node_manifest_paths);
+    return FromFile(resource.node_manifest_path);
 }
 
 BTNodePluginManifest BTNodePluginManifest::FromFiles(const std::vector<std::string>& file_paths)

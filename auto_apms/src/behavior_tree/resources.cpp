@@ -68,12 +68,7 @@ std::vector<BehaviorTreeResource> BehaviorTreeResource::CollectFromPackage(const
             BehaviorTreeResource r;
             r.name = parts[0];
             r.tree_path = make_absolute_path(parts[1]);
-            std::vector<std::string> node_manifest_paths = rcpputils::split(parts[2], ';');
-            std::transform(node_manifest_paths.begin(),
-                           node_manifest_paths.end(),
-                           node_manifest_paths.begin(),
-                           make_absolute_path);
-            r.node_manifest_paths = {node_manifest_paths.begin(), node_manifest_paths.end()};
+            r.node_manifest_path = make_absolute_path(parts[2]);
             std::vector<std::string> tree_ids_vec = rcpputils::split(parts[3], ';');
             r.tree_ids = {tree_ids_vec.begin(), tree_ids_vec.end()};
             resources.push_back(r);

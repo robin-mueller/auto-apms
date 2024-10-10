@@ -42,7 +42,7 @@ struct BehaviorTreeResource
 {
     std::string name;
     std::string tree_path;
-    std::vector<std::string> node_manifest_paths;
+    std::string node_manifest_path;
     std::set<std::string> tree_ids;
 
     /**

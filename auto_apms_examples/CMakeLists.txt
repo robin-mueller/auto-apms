@@ -48,7 +48,8 @@ add_and_install_example_executable("src/behavior_ex1.cpp")
 auto_apms_register_behavior_tree(
     "resource/relative_goto.xml"
     NODE_PLUGIN_MANIFEST
-    "resource/relative_goto_plugins.yaml")
+    "resource/relative_goto_plugins.yaml"
+)
 
 #
 # ------------ PX4 Behavior Examples | Contingency Management --------------
@@ -102,20 +103,25 @@ auto_apms_register_behavior_tree_nodes(behavior_tree_nodes
     "auto_apms::ops_engine::CreateAlternateLandingMission"
     "auto_apms::ops_engine::IsApproachingLanding"
     "auto_apms::ops_engine::IsLandingSiteClear"
-    "auto_apms::ops_engine::GetSystemState")
+    "auto_apms::ops_engine::GetSystemState"
+)
 
 auto_apms_register_behavior_tree("contingency_management/trees/contingency_manager.xml"
     NODE_PLUGIN_MANIFEST
-    "contingency_management/config/contingency_manager_plugins.yaml")
+    "contingency_management/config/contingency_manager_plugins.yaml"
+)
 auto_apms_register_behavior_tree("contingency_management/trees/flight_orchestrator.xml"
     NODE_PLUGIN_MANIFEST
-    "contingency_management/config/orchestrator_plugins.yaml")
+    "contingency_management/config/orchestrator_plugins.yaml"
+)
 auto_apms_register_behavior_tree("contingency_management/trees/nominal_mission.xml"
     NODE_PLUGIN_MANIFEST
-    "contingency_management/config/mission_manager_plugins.yaml")
+    "contingency_management/config/mission_manager_plugins.yaml"
+)
 auto_apms_register_behavior_tree("contingency_management/trees/safety_monitor.xml"
     NODE_PLUGIN_MANIFEST
-    "contingency_management/config/safety_monitor_plugins.yaml")
+    "contingency_management/config/safety_monitor_plugins.yaml"
+)
 auto_apms_register_behavior_tree("contingency_management/trees/alternate_landing_mission.xml")
 
 install(

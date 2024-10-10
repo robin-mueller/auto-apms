@@ -66,35 +66,14 @@ macro(auto_apms_register_behavior_tree tree_filepath)
     get_filename_component(_tree_file_stem "${_tree_abs_path__source}" NAME_WE)
 
     set(_tree_rel_dir__install "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE}")
-    set(_node_plugin_manifest_rel_paths__install "")
+    set(_node_plugin_manifest_rel_path__install "")
 
     if(NOT ${ARGS_NODE_PLUGIN_MANIFEST} STREQUAL "")
-
+        file(MAKE_DIRECTORY "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}")
+        list(REMOVE_DUPLICATES ARGS_NODE_PLUGIN_MANIFEST) # Disregard duplicates
         set(_node_plugin_manifest_rel_dir__install "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__NODE}")
+        set(_node_plugin_manifest_created_file_name "${_tree_file_stem}_node_plugin_manifest.yaml")
         set(_node_model_rel_dir__install "${_tree_rel_dir__install}")
-        foreach(_node_plugin_manifest_path__source ${ARGS_NODE_PLUGIN_MANIFEST})
-
-            # Check if plugin file exists
-            get_filename_component(_node_plugin_manifest_abs_path__source "${_node_plugin_manifest_path__source}" REALPATH)
-            if(NOT EXISTS "${_node_plugin_manifest_abs_path__source}")
-                message(
-                    FATAL_ERROR
-                    "auto_apms_register_behavior_tree(): Node plugin manifest file ${_node_plugin_manifest_abs_path__source} does not exist"
-                )
-            endif()
-
-            get_filename_component(_node_plugin_manifest_file_name "${_node_plugin_manifest_abs_path__source}" NAME)
-
-            # Verify no duplicates in config files
-            set(_path "${_node_plugin_manifest_rel_dir__install}/${_node_plugin_manifest_file_name}")
-            if("${_path}" IN_LIST _node_plugin_manifest_rel_paths__install)
-                message(
-                    FATAL_ERROR
-                    "auto_apms_register_behavior_tree(): Node plugin manifest file ${_node_plugin_manifest_path__source} was provided multiple times"
-                )
-            endif()
-            list(APPEND _node_plugin_manifest_rel_paths__install "${_path}")
-        endforeach()
 
         ##############################################################################
         #### Generate node model according to the behavior tree's plugin configuration
@@ -106,7 +85,7 @@ macro(auto_apms_register_behavior_tree tree_filepath)
         # Create the complete manifest for model generation.
         # However, this command is mainly relevant for defining a variable containing the library paths and generator expressions
         # for direct node plugin dependencies of the registered behavior tree
-        set(_node_plugin_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_plugin_manifest__build.yaml")
+        set(_node_plugin_manifest_abs_path__build "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}/${_node_plugin_manifest_created_file_name}")
         execute_process(
             COMMAND "${_AUTO_APMS_INTERNAL_CLI_INSTALL_DIR}/create_node_plugin_manifest"
                 "${ARGS_NODE_PLUGIN_MANIFEST}" # Paths of the manifest source files
@@ -117,23 +96,23 @@ macro(auto_apms_register_behavior_tree tree_filepath)
                 "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_BUILD_INFO}"
 
                 "${PROJECT_NAME}"  # Name of the package that builds the behavior tree model
-                "${_node_plugin_manifest_abs_path__build}"  # File to write the behavior tree node load manifest to
+                "${_node_plugin_manifest_abs_path__build}"  # File to write the behavior tree node plugin manifest to
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             OUTPUT_VARIABLE _node_plugin_library_paths
             RESULT_VARIABLE _return_code)
         if(_return_code EQUAL 1)
             message(
                 FATAL_ERROR
-                "Failed to write node plugin manifest for '${_tree_file_stem}' parsing [${ARGS_NODE_PLUGIN_MANIFEST}]"
+                "Failed to create node plugin manifest for '${_tree_file_stem}' parsing [${ARGS_NODE_PLUGIN_MANIFEST}]"
             )
         endif()
         # Create a command to evaluate the generator expressions inculded in the manifest file after the CMake configuration stage.
         # NOTE: The file isn't fully processed right after the invocation of the file(GENERATE ...) macro.
         file(GENERATE OUTPUT "${_node_plugin_manifest_abs_path__build}" INPUT "${_node_plugin_manifest_abs_path__build}")
-        list(APPEND _node_plugin_manifest_abs_paths__build "${_node_plugin_manifest_abs_path__build}")
+        set(_node_plugin_manifest_rel_path__install "${_node_plugin_manifest_rel_dir__install}/${_node_plugin_manifest_created_file_name}")
 
         # Use the above created manifest for generating the node model
-        set(_node_model_abs_path__build "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_model.xml")
+        set(_node_model_abs_path__build "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}/${_tree_file_stem}_node_model.xml")
         add_custom_command(OUTPUT "${_node_model_abs_path__build}"
             COMMAND "${_AUTO_APMS_INTERNAL_CLI_INSTALL_DIR}/generate_node_model"
                 "\"${_node_plugin_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
@@ -162,9 +141,9 @@ macro(auto_apms_register_behavior_tree tree_filepath)
             DESTINATION "${_node_model_rel_dir__install}")
 
 
-        # Install plugin manifest files to make them available during runtime
+        # Install the generated node plugin manifest file
         install(
-            FILES ${_node_plugin_manifest_abs_paths__build}
+            FILES "${_node_plugin_manifest_abs_path__build}"
             DESTINATION "${_node_plugin_manifest_rel_dir__install}"
         )
 
@@ -176,6 +155,6 @@ macro(auto_apms_register_behavior_tree tree_filepath)
         DESTINATION "${_tree_rel_dir__install}")
 
     # Fill meta info
-    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_plugin_manifest_rel_paths__install}|${_file_tree_ids}|\n")
+    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_plugin_manifest_rel_path__install}|${_file_tree_ids}|\n")
 
 endmacro()
