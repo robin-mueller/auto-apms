@@ -39,8 +39,8 @@ class BTNodePluginManifest
     static const std::string PARAM_NAME_PACKAGE;
     static const std::string PARAM_NAME_LIBRARY;
     static const std::string PARAM_NAME_PORT;
-    static const std::string PARAM_NAME_REQUEST_TIMEOUT;
     static const std::string PARAM_NAME_WAIT_TIMEOUT;
+    static const std::string PARAM_NAME_REQUEST_TIMEOUT;
 
     BTNodePluginManifest(const ParamMap& param_map = {});
 
@@ -89,11 +89,10 @@ class BTNodePluginManifest
      * given, a verification is performed. Otherwise, the library entry will be left as is. The other parameters remain
      * untouched and are simply copied.
      *
-     * This should be called before loading the plugins of the manifest to ensure that the correct plugins will be
-     * found.
+     * Should be called before loading the plugins of the manifest to ensure that the correct ones will be found.
      *
      * @param ignore_packages Package names to ignore when searching for resources.
-     * @throw exceptions::ResourceNotFoundError if the corresponding required resource cannot be determined.
+     * @throw exceptions::ResourceNotFoundError if no unique resource for a node can be found.
      * @throw exceptions::BTNodePluginManifestError if a violation of the above mentioned rules occurs.
      * @return New manifest object with updated parameters.
      */
@@ -103,7 +102,8 @@ class BTNodePluginManifest
 
     std::string ToString() const;
 
-    void ToROSParameters(rclcpp::Node::SharedPtr node_ptr, const std::string& prefix = "") const;
+    rcl_interfaces::msg::SetParametersResult ToROSParameters(rclcpp::Node::SharedPtr node_ptr,
+                                                             const std::string& prefix = "") const;
 
     const ParamMap& map() const;
 

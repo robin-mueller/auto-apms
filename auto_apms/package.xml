@@ -24,7 +24,7 @@
     <depend>px4_ros2_cpp</depend>
     <depend>eigen</depend>
     <depend>tf2_eigen</depend>
-    <depend>yaml-cpp</depend>
+    <depend>yaml_cpp_vendor</depend>
     <depend>tinyxml2_vendor</depend>
     <depend>generate_parameter_library</depend>
 

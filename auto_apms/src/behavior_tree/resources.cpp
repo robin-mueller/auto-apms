@@ -66,7 +66,7 @@ std::vector<BehaviorTreeResource> BehaviorTreeResource::CollectFromPackage(const
             if (parts.size() != 4) { throw std::runtime_error("Invalid resource entry"); }
 
             BehaviorTreeResource r;
-            r.tree_file_name = parts[0];
+            r.name = parts[0];
             r.tree_path = make_absolute_path(parts[1]);
             std::vector<std::string> node_manifest_paths = rcpputils::split(parts[2], ';');
             std::transform(node_manifest_paths.begin(),
@@ -126,7 +126,7 @@ BehaviorTreeResource BehaviorTreeResource::SelectByFileName(const std::string& f
     std::vector<BehaviorTreeResource> matching_resources;
     for (const auto& package_name : search_packages) {
         for (const auto& r : CollectFromPackage(package_name)) {
-            if (r.tree_file_name == file_stem) { matching_resources.push_back(r); }
+            if (r.name == file_stem) { matching_resources.push_back(r); }
         }
     }
 

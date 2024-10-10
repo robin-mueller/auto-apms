@@ -40,7 +40,7 @@ struct BTNodeResource
 /// @brief Struct for behavior tree resource data
 struct BehaviorTreeResource
 {
-    std::string tree_file_name;
+    std::string name;
     std::string tree_path;
     std::vector<std::string> node_manifest_paths;
     std::set<std::string> tree_ids;

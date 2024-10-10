@@ -13,11 +13,11 @@
 # limitations under the License.
 
 # Macro that registers a library target for a behavior tree node plugin
-macro(auto_apms_register_plugins plugin_lib_target)
+macro(auto_apms_register_behavior_tree_nodes plugin_lib_target)
     if(NOT TARGET ${plugin_lib_target})
         message(
         FATAL_ERROR
-        "auto_apms_register_plugins(): '${plugin_lib_target}' is not a target.")
+        "auto_apms_register_behavior_tree_nodes(): '${plugin_lib_target}' is not a target.")
     endif()
 
     # Check target type
@@ -25,7 +25,7 @@ macro(auto_apms_register_plugins plugin_lib_target)
     if(NOT _target_type STREQUAL "SHARED_LIBRARY")
         message(
         FATAL_ERROR
-        "auto_apms_register_plugins(): '${plugin_lib_target}' is not a shared library target.")
+        "auto_apms_register_behavior_tree_nodes(): '${plugin_lib_target}' is not a shared library target.")
     endif()
 
     cmake_parse_arguments(ARGS "" "" "" ${ARGN})
@@ -35,7 +35,7 @@ macro(auto_apms_register_plugins plugin_lib_target)
         if(${_arg} IN_LIST _AUTO_APMS_BEHAVIOR_TREE__NODE_CLASS_NAMES)
             message(
             FATAL_ERROR
-            "auto_apms_register_plugins(): Class name '${_arg}' has already been registered before.")
+            "auto_apms_register_behavior_tree_nodes(): Class name '${_arg}' has already been registered before.")
         endif()
 
         # Append all class names to a list to keep track of all available behavior tree node classes within this package

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms/behavior_tree/node_loader.hpp"
+#include "auto_apms/behavior_tree/node_plugin_loader.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -64,7 +64,8 @@ void BTNodePluginLoader::Load(rclcpp::Node::SharedPtr node_ptr,
                 "Node '" + node_name + " (" + params.class_name + ")' cannot be loaded, because factory class '" +
                 factory_classname +
                 "' couldn't be found. You most likely misspelled the class name in CMake when registering it using "
-                "auto_apms_register_plugins() or forgot to call the AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE macro in the "
+                "auto_apms_register_behavior_tree_nodes() or forgot to call the AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE "
+                "macro in the "
                 "source file."};
         }
 

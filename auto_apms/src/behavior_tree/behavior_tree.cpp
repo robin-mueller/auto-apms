@@ -14,16 +14,31 @@
 
 #include "auto_apms/behavior_tree/behavior_tree.hpp"
 
-#include "auto_apms/behavior_tree/node_loader.hpp"
+#include <tinyxml2.h>
+
+#include "auto_apms/behavior_tree/node_plugin_loader.hpp"
 
 namespace auto_apms {
 
-BehaviorTree::BehaviorTree(const std::string& file_path) { doc_.LoadFile(file_path.c_str()); }
+const std::string BehaviorTree::MAIN_TREE_ATTRIBUTE_NAME = "main_tree_to_execute";
+
+struct BehaviorTree::Impl
+{
+    NodePluginManifest node_plugin_manifest;
+    tinyxml2::XMLDocument doc;
+};
+
+BehaviorTree::BehaviorTree(const std::string& file_path) : pimpl_{std::make_unique<Impl>()}
+{
+    pimpl_->doc.LoadFile(file_path.c_str());
+}
 
 BehaviorTree::BehaviorTree(const Resource& resource) : BehaviorTree{resource.tree_path}
 {
-    node_plugin_manifest_ = NodePluginManifest::FromResource(resource);
+    pimpl_->node_plugin_manifest = NodePluginManifest::FromResource(resource);
 }
+
+BehaviorTree::~BehaviorTree() {}
 
 BT::Tree BehaviorTree::Create(const std::string& tree_str,
                               const std::string& main_id,
@@ -68,7 +83,7 @@ BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
                               BT::Blackboard::Ptr parent_blackboard_ptr) const
 {
     // Load behavior tree node plugins
-    BTNodePluginLoader::Load(node_ptr, node_plugin_manifest_, factory);
+    BTNodePluginLoader::Load(node_ptr, pimpl_->node_plugin_manifest, factory);
 
     // Create behavior tree using main tree attribute
     return Create(WriteToString(), "", factory, parent_blackboard_ptr);
@@ -82,20 +97,21 @@ BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr, BT::Blackboard::
 
 std::string BehaviorTree::GetMainID() const
 {
-    if (const auto main_tree_id = doc_.RootElement()->Attribute(MAIN_TREE_ATTRIBUTE_NAME)) return main_tree_id;
+    if (const auto main_tree_id = pimpl_->doc.RootElement()->Attribute(MAIN_TREE_ATTRIBUTE_NAME.c_str()))
+        return main_tree_id;
     return "";
 }
 
 BehaviorTree& BehaviorTree::SetMainID(const std::string& main_tree_id)
 {
-    doc_.RootElement()->SetAttribute(MAIN_TREE_ATTRIBUTE_NAME, main_tree_id.c_str());
+    pimpl_->doc.RootElement()->SetAttribute(MAIN_TREE_ATTRIBUTE_NAME.c_str(), main_tree_id.c_str());
     return *this;
 }
 
 std::string BehaviorTree::WriteToString() const
 {
     tinyxml2::XMLPrinter printer;
-    doc_.Print(&printer);
+    pimpl_->doc.Print(&printer);
     return printer.CStr();
 }
 

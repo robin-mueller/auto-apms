@@ -12,55 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-macro(auto_apms_register_behavior_tree_file tree_filepath)
+macro(auto_apms_register_behavior_tree tree_filepath)
 
     # Check if behavior tree file exists
-    get_filename_component(tree_filepath_abs "${tree_filepath}" REALPATH)
-    if(NOT EXISTS "${tree_filepath_abs}")
+    get_filename_component(_tree_abs_path__source "${tree_filepath}" REALPATH)
+    if(NOT EXISTS "${_tree_abs_path__source}")
         message(
             FATAL_ERROR
-            "auto_apms_register_behavior_tree_file(): Behavior tree file ${tree_filepath_abs} does not exist"
+            "auto_apms_register_behavior_tree(): Behavior tree file ${_tree_abs_path__source} does not exist"
         )
     endif()
 
     # Verify no duplicates in tree files
-    if("${tree_filepath}" IN_LIST _tree_filepaths)
+    if("${_tree_abs_path__source}" IN_LIST _tree_abs_paths__source)
         message(
             FATAL_ERROR
-            "auto_apms_register_behavior_tree_file(): Behavior tree file '${tree_filepath}' was already registered"
+            "auto_apms_register_behavior_tree(): Behavior tree file ${_tree_abs_path__source} was already registered"
         )
     endif()
-    list(APPEND _tree_filepaths "${tree_filepath}")
-
-    # Verify BTCPP_format exists and is 4
-    file(READ "${tree_filepath}" _tree_file_content)
-    string(REGEX MATCHALL "BTCPP_format=\"4\"" _matches "${_tree_file_content}")
-    list(LENGTH _matches _root_btcpp_format_matches_length)
-    if(NOT _root_btcpp_format_matches_length EQUAL 1)
-        message(
-            FATAL_ERROR
-            "auto_apms_register_behavior_tree_file(): Behavior tree file '${tree_filepath}' has wrong XML format"
-        )
-    endif()
+    list(APPEND _tree_abs_paths__source "${_tree_abs_path__source}")
 
     # Collect all available behavior tree IDs
+    file(READ "${_tree_abs_path__source}" _tree_file_content)
     string(REGEX MATCHALL "<BehaviorTree ID=\"[A-Za-z0-9_]+\">" _matches "${_tree_file_content}")
     if(_matches STREQUAL "")
         message(
             FATAL_ERROR
-            "auto_apms_register_behavior_tree_file(): Behavior tree file '${tree_filepath}' doesn't specify any valid behavior trees"
+            "auto_apms_register_behavior_tree(): Behavior tree file ${_tree_abs_path__source} doesn't specify any valid behavior trees"
         )
     endif()
     set(_file_tree_ids "")
     foreach(_match ${_matches})
         string(REGEX MATCH "<BehaviorTree ID=\"([A-Za-z0-9_]+)\">" _ "${_match}")
         set(_tree_id ${CMAKE_MATCH_1})
-
         # Verify no duplicates in tree IDs
         if("${_tree_id}" IN_LIST _tree_ids)
             message(
                 FATAL_ERROR
-                "auto_apms_register_behavior_tree_file(): Behavior tree ID '${_tree_id}' was already registered"
+                "auto_apms_register_behavior_tree(): Behavior tree ID '${_tree_id}' was already registered"
             )
         endif()
         list(APPEND _tree_ids "${_tree_id}")
@@ -73,51 +62,51 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
     set(multiValueArgs NODE_PLUGIN_MANIFEST)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    get_filename_component(_tree_file_name "${tree_filepath_abs}" NAME)
-    get_filename_component(_tree_file_stem "${tree_filepath_abs}" NAME_WE)
+    get_filename_component(_tree_file_name "${_tree_abs_path__source}" NAME)
+    get_filename_component(_tree_file_stem "${_tree_abs_path__source}" NAME_WE)
 
-    set(_rel_tree_install_dir "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE}")
-    set(_rel_plugin_config_install_paths "")
+    set(_tree_rel_dir__install "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE}")
+    set(_node_plugin_manifest_rel_paths__install "")
 
     if(NOT ${ARGS_NODE_PLUGIN_MANIFEST} STREQUAL "")
 
-        set(_rel_plugin_config_install_dir "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__NODE}")
-        set(_rel_node_model_install_dir "${_rel_tree_install_dir}")
-        foreach(_node_plugin_manifest_path ${ARGS_NODE_PLUGIN_MANIFEST})
+        set(_node_plugin_manifest_rel_dir__install "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__NODE}")
+        set(_node_model_rel_dir__install "${_tree_rel_dir__install}")
+        foreach(_node_plugin_manifest_path__source ${ARGS_NODE_PLUGIN_MANIFEST})
 
             # Check if plugin file exists
-            get_filename_component(_node_plugin_manifest_path_abs "${_node_plugin_manifest_path}" REALPATH)
-            if(NOT EXISTS "${_node_plugin_manifest_path_abs}")
+            get_filename_component(_node_plugin_manifest_abs_path__source "${_node_plugin_manifest_path__source}" REALPATH)
+            if(NOT EXISTS "${_node_plugin_manifest_abs_path__source}")
                 message(
                     FATAL_ERROR
-                    "auto_apms_register_behavior_tree_file(): Node plugin manifest file ${_node_plugin_manifest_path_abs} does not exist"
+                    "auto_apms_register_behavior_tree(): Node plugin manifest file ${_node_plugin_manifest_abs_path__source} does not exist"
                 )
             endif()
 
-            get_filename_component(_plugin_config_file_name "${_node_plugin_manifest_path_abs}" NAME)
+            get_filename_component(_node_plugin_manifest_file_name "${_node_plugin_manifest_abs_path__source}" NAME)
 
             # Verify no duplicates in config files
-            set(_node_plugin_manifest_path_install "${_rel_plugin_config_install_dir}/${_plugin_config_file_name}")
-            if("${_node_plugin_manifest_path_install}" IN_LIST _rel_plugin_config_install_paths)
+            set(_path "${_node_plugin_manifest_rel_dir__install}/${_node_plugin_manifest_file_name}")
+            if("${_path}" IN_LIST _node_plugin_manifest_rel_paths__install)
                 message(
                     FATAL_ERROR
-                    "auto_apms_register_behavior_tree_file(): Node plugin manifest file ${_node_plugin_manifest_path} was provided multiple times"
+                    "auto_apms_register_behavior_tree(): Node plugin manifest file ${_node_plugin_manifest_path__source} was provided multiple times"
                 )
             endif()
-            list(APPEND _rel_plugin_config_install_paths "${_node_plugin_manifest_path_install}")
+            list(APPEND _node_plugin_manifest_rel_paths__install "${_path}")
         endforeach()
 
         ##############################################################################
         #### Generate node model according to the behavior tree's plugin configuration
 
-        # Make sure the custom target name is valid
-        string(REPLACE " " "_" tgt_suffix "${_tree_file_stem}")
-        string(TOLOWER "${tgt_suffix}" tgt_suffix)
+        # Create a valid suffix for the custom target
+        string(REPLACE " " "_" _node_mode_custom_target_suffix "${_tree_file_stem}")
+        string(TOLOWER "${_node_mode_custom_target_suffix}" _node_mode_custom_target_suffix)
 
         # Create the complete manifest for model generation.
         # However, this command is mainly relevant for defining a variable containing the library paths and generator expressions
         # for direct node plugin dependencies of the registered behavior tree
-        set(_node_plugin_manifest__build_path "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_plugin_manifest__build.yaml")
+        set(_node_plugin_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_plugin_manifest__build.yaml")
         execute_process(
             COMMAND "${_AUTO_APMS_INTERNAL_CLI_INSTALL_DIR}/create_node_plugin_manifest"
                 "${ARGS_NODE_PLUGIN_MANIFEST}" # Paths of the manifest source files
@@ -128,7 +117,7 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
                 "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_BUILD_INFO}"
 
                 "${PROJECT_NAME}"  # Name of the package that builds the behavior tree model
-                "${_node_plugin_manifest__build_path}"  # File to write the behavior tree node load manifest to
+                "${_node_plugin_manifest_abs_path__build}"  # File to write the behavior tree node load manifest to
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             OUTPUT_VARIABLE _node_plugin_library_paths
             RESULT_VARIABLE _return_code)
@@ -140,13 +129,14 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
         endif()
         # Create a command to evaluate the generator expressions inculded in the manifest file after the CMake configuration stage.
         # NOTE: The file isn't fully processed right after the invocation of the file(GENERATE ...) macro.
-        file(GENERATE OUTPUT "${_node_plugin_manifest__build_path}" INPUT "${_node_plugin_manifest__build_path}")
+        file(GENERATE OUTPUT "${_node_plugin_manifest_abs_path__build}" INPUT "${_node_plugin_manifest_abs_path__build}")
+        list(APPEND _node_plugin_manifest_abs_paths__build "${_node_plugin_manifest_abs_path__build}")
 
         # Use the above created manifest for generating the node model
-        set(_model_build_path "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_model.xml")
-        add_custom_command(OUTPUT "${_model_build_path}"
+        set(_node_model_abs_path__build "${PROJECT_BINARY_DIR}/${_tree_file_stem}_node_model.xml")
+        add_custom_command(OUTPUT "${_node_model_abs_path__build}"
             COMMAND "${_AUTO_APMS_INTERNAL_CLI_INSTALL_DIR}/generate_node_model"
-                "\"${_node_plugin_manifest__build_path}\"" # Path to the complete node plugin manifest
+                "\"${_node_plugin_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
 
                 # Libraries to be loaded.
                 # IMPORTANT: Since we have the manifest, passing this to COMMAND doesn't seem necessary,
@@ -157,35 +147,35 @@ macro(auto_apms_register_behavior_tree_file tree_filepath)
                 # to the shared libraries (Ensuring the command is executed when they are recompiled).
                 "\"${_node_plugin_library_paths}\""
 
-                "\"${_model_build_path}\"" # File to write the behavior tree node model to
+                "\"${_node_model_abs_path__build}\"" # File to write the behavior tree node model to
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             DEPENDS ${ARGS_NODE_PLUGIN_MANIFEST} ${_node_plugin_library_paths}
             COMMENT "Generate behavior tree node model for tree file '${_tree_file_stem}' with libraries [${_node_plugin_library_paths}].")
-        add_custom_target(_target_generate_node_model__${tgt_suffix} ALL
-            DEPENDS "${_model_build_path}")
+        add_custom_target(_target_generate_node_model__${_node_mode_custom_target_suffix} ALL
+            DEPENDS "${_node_model_abs_path__build}")
 
         ##############################################################################
 
         # Install the generated node model file
         install(
-            FILES "${_model_build_path}"
-            DESTINATION "${_rel_node_model_install_dir}")
+            FILES "${_node_model_abs_path__build}"
+            DESTINATION "${_node_model_rel_dir__install}")
 
 
-        # Install plugin configuration files to make them available during runtime
+        # Install plugin manifest files to make them available during runtime
         install(
-            FILES ${ARGS_NODE_PLUGIN_MANIFEST}
-            DESTINATION "${_rel_plugin_config_install_dir}"
+            FILES ${_node_plugin_manifest_abs_paths__build}
+            DESTINATION "${_node_plugin_manifest_rel_dir__install}"
         )
 
     endif()
 
     # Install behavior tree
     install(
-        FILES "${tree_filepath_abs}"
-        DESTINATION "${_rel_tree_install_dir}")
+        FILES "${_tree_abs_path__source}"
+        DESTINATION "${_tree_rel_dir__install}")
 
     # Fill meta info
-    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_rel_tree_install_dir}/${_tree_file_name}|${_rel_plugin_config_install_paths}|${_file_tree_ids}|\n")
+    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_plugin_manifest_rel_paths__install}|${_file_tree_ids}|\n")
 
 endmacro()

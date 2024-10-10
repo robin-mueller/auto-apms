@@ -22,6 +22,7 @@
 #include "behaviortree_ros2/ros_node_params.hpp"
 #include "yaml-cpp/yaml.h"
 
+/// @internal
 namespace YAML {
 template <>
 struct convert<auto_apms::detail::BTNodePluginManifest::ParamMap>
@@ -36,8 +37,8 @@ struct convert<auto_apms::detail::BTNodePluginManifest::ParamMap>
             params_node[Manifest::PARAM_NAME_PACKAGE] = params.package;
             params_node[Manifest::PARAM_NAME_LIBRARY] = params.library;
             params_node[Manifest::PARAM_NAME_PORT] = params.port;
-            params_node[Manifest::PARAM_NAME_REQUEST_TIMEOUT] = params.request_timeout;
             params_node[Manifest::PARAM_NAME_WAIT_TIMEOUT] = params.wait_timeout;
+            params_node[Manifest::PARAM_NAME_REQUEST_TIMEOUT] = params.request_timeout;
             node[name] = params_node;
         }
         return node;
@@ -91,6 +92,7 @@ struct convert<auto_apms::detail::BTNodePluginManifest::ParamMap>
     }
 };
 }  // namespace YAML
+/// @endinternal
 
 namespace auto_apms::detail {
 
@@ -274,19 +276,24 @@ std::string BTNodePluginManifest::ToString() const
     return out.c_str();
 }
 
-void BTNodePluginManifest::ToROSParameters(rclcpp::Node::SharedPtr node_ptr, const std::string& prefix) const
+rcl_interfaces::msg::SetParametersResult BTNodePluginManifest::ToROSParameters(rclcpp::Node::SharedPtr node_ptr,
+                                                                               const std::string& prefix) const
 {
     std::string dot_prefix = prefix;
     if (!dot_prefix.empty() && dot_prefix.back() != '.') dot_prefix += ".";
+
+    std::vector<rclcpp::Parameter> param_vec;
     for (const auto& [node_name, params] : param_map_) {
-        node_ptr->set_parameter(rclcpp::Parameter(dot_prefix + PARAM_NAME_NAMES, node_name));
-        node_ptr->set_parameter(rclcpp::Parameter(dot_prefix + PARAM_NAME_CLASS, params.class_name));
-        node_ptr->set_parameter(rclcpp::Parameter(dot_prefix + PARAM_NAME_LIBRARY, params.library));
-        node_ptr->set_parameter(rclcpp::Parameter(dot_prefix + PARAM_NAME_PACKAGE, params.package));
-        node_ptr->set_parameter(rclcpp::Parameter(dot_prefix + PARAM_NAME_PORT, params.port));
-        node_ptr->set_parameter(rclcpp::Parameter(dot_prefix + PARAM_NAME_WAIT_TIMEOUT, params.wait_timeout));
-        node_ptr->set_parameter(rclcpp::Parameter(dot_prefix + PARAM_NAME_REQUEST_TIMEOUT, params.request_timeout));
+        auto full_param_name = [&](const std::string& s) { return fmt::format("{}{}.{}", dot_prefix, node_name, s); };
+        param_vec.push_back({dot_prefix + PARAM_NAME_NAMES, node_name});
+        param_vec.push_back({full_param_name(PARAM_NAME_CLASS), params.class_name});
+        param_vec.push_back({full_param_name(PARAM_NAME_LIBRARY), params.library});
+        param_vec.push_back({full_param_name(PARAM_NAME_PACKAGE), params.package});
+        param_vec.push_back({full_param_name(PARAM_NAME_PORT), params.port});
+        param_vec.push_back({full_param_name(PARAM_NAME_WAIT_TIMEOUT), params.wait_timeout});
+        param_vec.push_back({full_param_name(PARAM_NAME_REQUEST_TIMEOUT), params.request_timeout});
     }
+    return node_ptr->set_parameters_atomically(param_vec);
 }
 
 const BTNodePluginManifest::ParamMap& BTNodePluginManifest::map() const { return param_map_; }

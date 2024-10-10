@@ -14,17 +14,14 @@
 
 #pragma once
 
-#include <tinyxml2.h>
-
 #include "auto_apms/behavior_tree/node_plugin_manifest.hpp"
-#include "auto_apms/behavior_tree/resources.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 
 namespace auto_apms {
 
 class BehaviorTree
 {
-    static constexpr char MAIN_TREE_ATTRIBUTE_NAME[] = "main_tree_to_execute";
+    static const std::string MAIN_TREE_ATTRIBUTE_NAME;
 
    public:
     using Resource = BehaviorTreeResource;
@@ -32,6 +29,8 @@ class BehaviorTree
 
     BehaviorTree(const std::string& file_path);
     BehaviorTree(const Resource& resource);
+
+    ~BehaviorTree();
 
     static BT::Tree Create(const std::string& tree_str,
                            const std::string& main_id,
@@ -62,8 +61,8 @@ class BehaviorTree
     std::string WriteToString() const;
 
    private:
-    NodePluginManifest node_plugin_manifest_;
-    tinyxml2::XMLDocument doc_;
+    struct Impl;
+    std::unique_ptr<Impl> pimpl_;
 };
 
 }  // namespace auto_apms

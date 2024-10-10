@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms/behavior_tree/resources.hpp"
 #include "auto_apms/bt_executor_client.hpp"
 
 enum class TextColor { GREEN, RED, YELLOW, BLUE, MAGENTA, CYAN };

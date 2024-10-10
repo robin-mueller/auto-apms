@@ -16,7 +16,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "auto_apms/behavior_tree/node_loader.hpp"
+#include "auto_apms/behavior_tree/node_plugin_loader.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 #include "rcpputils/split.hpp"
 
