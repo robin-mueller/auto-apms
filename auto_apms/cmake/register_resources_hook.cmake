@@ -12,10 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(DEFINED _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE)
-    ament_index_register_resource("${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE}" CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE}")
+if(NOT DEFINED _AUTO_APMS_RESOURCES_DIR_RELATIVE)
+    # Make sure this also works when included manually in the original package
+    set(_AUTO_APMS_RESOURCES_DIR_RELATIVE "share/${PROJECT_NAME}/${PROJECT_NAME}")
 endif()
+
+if(DEFINED _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT)
+    file(GENERATE
+        OUTPUT "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_RELATIVE}/node_plugins.xml"
+        CONTENT "<class_libraries>\n${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT}</class_libraries>"
+    )
+    install(
+        FILES
+        "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_RELATIVE}/node_plugins.xml"
+        DESTINATION
+        "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__NODE}"
+    )
+    ament_index_register_resource(
+        "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE}"
+        CONTENT
+        "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__NODE}/node_plugins.xml"
+    )
+endif()
+
 if(DEFINED _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE)
-    ament_index_register_resource("${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE}" CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}")
+    ament_index_register_resource(
+        "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE}"
+        CONTENT
+        "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}"
+    )
 endif()
 

@@ -69,7 +69,7 @@ macro(auto_apms_register_behavior_tree tree_filepath)
     set(_node_plugin_manifest_rel_path__install "")
 
     if(NOT ${ARGS_NODE_PLUGIN_MANIFEST} STREQUAL "")
-        file(MAKE_DIRECTORY "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}")
+        file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_RELATIVE}")
         list(REMOVE_DUPLICATES ARGS_NODE_PLUGIN_MANIFEST) # Disregard duplicates
         set(_node_plugin_manifest_rel_dir__install "${_AUTO_APMS_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__NODE}")
         set(_node_plugin_manifest_created_file_name "${_tree_file_stem}_node_plugin_manifest.yaml")
@@ -85,7 +85,7 @@ macro(auto_apms_register_behavior_tree tree_filepath)
         # Create the complete manifest for model generation.
         # However, this command is mainly relevant for defining a variable containing the library paths and generator expressions
         # for direct node plugin dependencies of the registered behavior tree
-        set(_node_plugin_manifest_abs_path__build "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}/${_node_plugin_manifest_created_file_name}")
+        set(_node_plugin_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_RELATIVE}/${_node_plugin_manifest_created_file_name}")
         execute_process(
             COMMAND "${_AUTO_APMS_INTERNAL_CLI_INSTALL_DIR}/create_node_plugin_manifest"
                 "${ARGS_NODE_PLUGIN_MANIFEST}" # Paths of the manifest source files
@@ -112,21 +112,19 @@ macro(auto_apms_register_behavior_tree tree_filepath)
         set(_node_plugin_manifest_rel_path__install "${_node_plugin_manifest_rel_dir__install}/${_node_plugin_manifest_created_file_name}")
 
         # Use the above created manifest for generating the node model
-        set(_node_model_abs_path__build "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}/${_tree_file_stem}_node_model.xml")
+        set(_node_model_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_RELATIVE}/${_tree_file_stem}_node_model.xml")
         add_custom_command(OUTPUT "${_node_model_abs_path__build}"
             COMMAND "${_AUTO_APMS_INTERNAL_CLI_INSTALL_DIR}/generate_node_model"
                 "\"${_node_plugin_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
+                "\"${_node_model_abs_path__build}\"" # File to write the behavior tree node model to
 
-                # Libraries to be loaded.
-                # IMPORTANT: Since we have the manifest, passing this to COMMAND doesn't seem necessary,
-                # but it is, because this adds a target-level dependency to targets configured by this package
-                # which may be present in _node_plugin_library_paths as generator expressions.
-                # Otherwise, there would be an error saying 'there is no rule to make target'.
+                # IMPORTANT: Since we have the manifest, passing this variable to COMMAND isn't strictly necessary,
+                # but because this adds target-level dependencies to the custom command, it is required.
+                # All targets in _node_plugin_library_paths (generator expression or not) ar added as dependencies to the command.
+                # If this would be omitted, there would be an error saying 'there is no rule to make target ...'.
                 # Additionally, this variable needs to be passed to DEPENDS as well to create a file-level dependency
                 # to the shared libraries (Ensuring the command is executed when they are recompiled).
                 "\"${_node_plugin_library_paths}\""
-
-                "\"${_node_model_abs_path__build}\"" # File to write the behavior tree node model to
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             DEPENDS ${ARGS_NODE_PLUGIN_MANIFEST} ${_node_plugin_library_paths}
             COMMENT "Generate behavior tree node model for tree file '${_tree_file_stem}' with libraries [${_node_plugin_library_paths}].")

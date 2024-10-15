@@ -14,58 +14,70 @@
 
 #pragma once
 
+#include "auto_apms/behavior_tree/node_plugin_base.hpp"
 #include "auto_apms/behavior_tree/node_plugin_manifest.hpp"
 #include "behaviortree_cpp/bt_factory.h"
-#include "class_loader/multi_library_class_loader.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/node.hpp"
 
 namespace auto_apms {
 
-class BTNodePluginLoader
+class BTNodePluginLoader : private pluginlib::ClassLoader<detail::BTNodePluginBase>
 {
     using ManifestParamListener = detail::rosparam::bt_node_plugin_manifest::ParamListener;
 
    public:
     using Manifest = detail::BTNodePluginManifest;
 
-    BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr,
-                       const Manifest& manifest,
-                       const std::string& param_prefix = "node_plugins.");
+    BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr, const std::set<std::string>& package_names = {});
 
     /**
      * @brief Load behavior tree node plugins and register with behavior tree factory.
      *
-     * @param[in] node_ptr ROS node to use for ROS specific behavior tree nodes.
      * @param[in] manifest Parameters used for loading and configuring the behavior tree node.
      * @param[in,out] factory Behavior tree factory instance that the behavior tree nodes will register with.
-     * @param[in,out] class_loader The class loader to use for loading the shared libraries.
      * @throw exceptions::BTNodePluginLoadingError if registration fails.
      */
-    static void Load(rclcpp::Node::SharedPtr node_ptr,
-                     const Manifest& manifest,
-                     BT::BehaviorTreeFactory& factory,
-                     class_loader::MultiLibraryClassLoader& class_loader);
+    void Load(const Manifest& manifest, BT::BehaviorTreeFactory& factory);
 
     /**
      * @overload
      *
-     * This signature will initialize an empty class loader before parsing @p manifest. Keep in mind, that if you call
-     * this function multiple times, shared libraries will be loaded and unloaded each time repeatedly. Use @link
-     * BTNodePluginLoader::Load this signature@endlink instead if you want to keep an actively managed cache of loaded
-     * libraries and improve performance.
+     * Infers the manifest for loading from the node's parameters.
      */
-    static void Load(rclcpp::Node::SharedPtr node_ptr, const Manifest& manifest, BT::BehaviorTreeFactory& factory);
-
-    /// @overload
     void Load(BT::BehaviorTreeFactory& factory);
 
-    Manifest GetManifest();
+    /**
+     * @brief Fill the resource information of the plugins given by @p manifest.
+     *
+     * This function autocompletes the package and library fields of the manifest according to this instance's
+     * underlying resource information if possible. Depending on the package paramters, the manifest will be updated:
+     *
+     * - **Package undefined**: The library path will be resolved by looking up the class name
+     * in the internal map of node plugin resources **considering all packages specified in the constructor**.
+     *
+     * - **Package defined**: The library path will be resolved by looking up the class name in
+     * the internal map of node plugin resources **considering only resources registered by the given package**.
+     *
+     * The library parameter will be overwritten in any case and other parameters remain untouched and are simply
+     * copied.
+     *
+     * This method is mainly used for introspection purposes.
+     *
+     * @param manifest Manifest object representing an exhaustive list of behavior tree node plugins to locate and
+     * verify. Will be modified inplace according to the rules above.
+     * @throw exceptions::ResourceNotFoundError if no unique resource for a node can be found.
+     */
+    void AutoCompleteManifest(Manifest& manifest);
 
-    void UpdateManifest(const Manifest& manifest);
+    Manifest GetManifestFromParameters();
+
+    void UpdateParameters(const Manifest& manifest);
 
    private:
+    static std::vector<std::string> GetPluginXMLFilePaths(const std::set<std::string>& package_names);
+
     rclcpp::Node::SharedPtr node_ptr_;
-    std::unique_ptr<class_loader::MultiLibraryClassLoader> class_loader_ptr_;
     const std::string param_prefix_;
     ManifestParamListener param_listener_;
 };

@@ -14,21 +14,13 @@
 
 #pragma once
 
-#include "behaviortree_cpp/bt_factory.h"
-#include "behaviortree_ros2/ros_node_params.hpp"
+#include <set>
+#include <string>
 
-namespace auto_apms::detail {
+namespace auto_apms {
+namespace detail {
 
-class BTNodePluginBase
-{
-   public:
-    BTNodePluginBase() = default;
-    virtual ~BTNodePluginBase() = default;
+std::set<std::string> GetAllPackagesWithResource(const std::string& resource_type);
 
-    virtual bool RequiresROSNodeParams() const = 0;
-    virtual void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
-                                                 const std::string &registration_name,
-                                                 const BT::RosNodeParams *const params_ptr = nullptr) const = 0;
-};
-
-}  // namespace auto_apms::detail
+}  // namespace detail
+}  // namespace auto_apms

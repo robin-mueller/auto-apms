@@ -31,21 +31,21 @@ macro(auto_apms_register_behavior_tree_nodes plugin_lib_target)
     cmake_parse_arguments(ARGS "" "" "" ${ARGN})
 
     # Parse behavior tree node class names
-    foreach(_arg ${ARGS_UNPARSED_ARGUMENTS})
-        if(${_arg} IN_LIST _AUTO_APMS_BEHAVIOR_TREE__NODE_CLASS_NAMES)
+    foreach(_class_name ${ARGS_UNPARSED_ARGUMENTS})
+        if(${_class_name} IN_LIST _AUTO_APMS_BEHAVIOR_TREE__NODE_CLASS_NAMES)
             message(
             FATAL_ERROR
-            "auto_apms_register_behavior_tree_nodes(): Class name '${_arg}' has already been registered before.")
+            "auto_apms_register_behavior_tree_nodes(): Class name '${_class_name}' has already been registered before.")
         endif()
 
         # Append all class names to a list to keep track of all available behavior tree node classes within this package
-        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_CLASS_NAMES ${_arg})
+        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_CLASS_NAMES ${_class_name})
 
-        # Fill meta info
-        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_BUILD_INFO "${_arg}@$<TARGET_FILE:${plugin_lib_target}>")
+        # Append to the variable that holds the build information of the behavior tree node plugins (<class_name>@<library_path>)
+        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_BUILD_INFO "${_class_name}@$<TARGET_FILE:${plugin_lib_target}>")
 
-        # Append to the variable that holds the resource information of the behavior tree node plugins
-        set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE}${_arg}|lib/$<TARGET_FILE_NAME:${plugin_lib_target}>\n")
+        # Append to the variable that holds the content of the pluginlib xml file
+        set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT}<library path=\"${plugin_lib_target}\"><class name=\"${_class_name}\" type=\"auto_apms::detail::BTNodePlugin<${_class_name}>\" base_class_type=\"auto_apms::detail::BTNodePluginBase\" /></library>\n")
     endforeach()
 
 endmacro()

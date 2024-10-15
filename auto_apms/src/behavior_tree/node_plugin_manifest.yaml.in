@@ -2,6 +2,7 @@ auto_apms::detail::rosparam::bt_node_plugin_manifest:
 
   ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES}:
     type: string_array
+    default_value: []
     description: "Registration names of behavior tree nodes"
     validation:
         unique<>: null

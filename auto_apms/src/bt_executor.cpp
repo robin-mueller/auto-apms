@@ -63,7 +63,7 @@ BTExecutor::BTExecutor(const std::string &name,
       groot2_server_port_{groot2_server_port},
       bt_tick_interval_{bt_tick_interval}
 {
-#ifdef DEBUG_LOGGING
+#ifdef _AUTO_APMS_DEBUG_LOGGING
     // Set logging severity to DEBUG
     auto ret = rcutils_logging_set_logger_level(node_ptr_->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
     if (ret != RCUTILS_RET_OK) {

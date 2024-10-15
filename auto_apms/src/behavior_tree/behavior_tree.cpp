@@ -16,9 +16,100 @@
 
 #include <tinyxml2.h>
 
+#include "ament_index_cpp/get_resource.hpp"
 #include "auto_apms/behavior_tree/node_plugin_loader.hpp"
+#include "auto_apms/exceptions.hpp"
+#include "auto_apms/resources.hpp"
+#include "rcpputils/split.hpp"
 
 namespace auto_apms {
+
+std::vector<BehaviorTreeResource> BehaviorTreeResource::CollectFromPackage(const std::string& package_name)
+{
+    std::string content;
+    std::string base_path;
+    std::vector<BehaviorTreeResource> resources;
+    if (ament_index_cpp::get_resource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE,
+                                      package_name,
+                                      content,
+                                      &base_path)) {
+        std::vector<std::string> lines = rcpputils::split(content, '\n', true);
+        auto make_absolute_path = [base_path](const std::string& s) { return base_path + "/" + s; };
+        for (const auto& line : lines) {
+            std::vector<std::string> parts = rcpputils::split(line, '|', false);
+            if (parts.size() != 4) {
+                throw std::runtime_error("Invalid behavior tree resource file (Package: '" + package_name + "').");
+                ;
+            }
+
+            BehaviorTreeResource r;
+            r.name = parts[0];
+            r.tree_path = make_absolute_path(parts[1]);
+            r.node_manifest_path = make_absolute_path(parts[2]);
+            std::vector<std::string> tree_ids_vec = rcpputils::split(parts[3], ';');
+            r.tree_ids = {tree_ids_vec.begin(), tree_ids_vec.end()};
+            resources.push_back(r);
+        }
+    }
+    return resources;
+}
+
+BehaviorTreeResource BehaviorTreeResource::SelectByID(const std::string& tree_id, const std::string& package_name)
+{
+    std::set<std::string> search_packages;
+    if (!package_name.empty()) { search_packages.insert(package_name); }
+    else {
+        search_packages = detail::GetAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE);
+    }
+
+    std::vector<BehaviorTreeResource> matching_resources;
+    for (const auto& package_name : search_packages) {
+        for (const auto& r : CollectFromPackage(package_name)) {
+            if (r.tree_ids.find(tree_id) != r.tree_ids.end()) { matching_resources.push_back(r); }
+        }
+    }
+
+    if (matching_resources.empty()) {
+        throw exceptions::ResourceNotFoundError{"No behavior tree with ID '" + tree_id + "' was registered."};
+    }
+    if (matching_resources.size() > 1) {
+        throw exceptions::ResourceNotFoundError{
+            "The behavior tree ID '" + tree_id +
+            "' exists multiple times. Use the 'package_name' argument to narrow down the search."};
+    }
+
+    return matching_resources[0];
+}
+
+BehaviorTreeResource BehaviorTreeResource::SelectByFileName(const std::string& file_name,
+                                                            const std::string& package_name)
+{
+    const std::string file_stem = std::filesystem::path{file_name}.stem().string();
+    std::set<std::string> search_packages;
+    if (!package_name.empty()) { search_packages.insert(package_name); }
+    else {
+        search_packages = detail::GetAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE);
+    }
+
+    std::vector<BehaviorTreeResource> matching_resources;
+    for (const auto& package_name : search_packages) {
+        for (const auto& r : CollectFromPackage(package_name)) {
+            if (r.name == file_stem) { matching_resources.push_back(r); }
+        }
+    }
+
+    if (matching_resources.empty()) {
+        throw exceptions::ResourceNotFoundError{"No behavior tree file with name '" + file_stem +
+                                                ".xml' was registered."};
+    }
+    if (matching_resources.size() > 1) {
+        throw exceptions::ResourceNotFoundError{
+            "Multiple behavior tree files with name '" + file_stem +
+            ".xml' are registered. Use the 'package_name' argument to narrow down the search."};
+    }
+
+    return matching_resources[0];
+}
 
 const std::string BehaviorTree::MAIN_TREE_ATTRIBUTE_NAME = "main_tree_to_execute";
 
@@ -35,7 +126,7 @@ BehaviorTree::BehaviorTree(const std::string& file_path) : pimpl_{std::make_uniq
 
 BehaviorTree::BehaviorTree(const Resource& resource) : BehaviorTree{resource.tree_path}
 {
-    pimpl_->node_plugin_manifest = NodePluginManifest::FromResource(resource);
+    pimpl_->node_plugin_manifest = NodePluginManifest::FromFile(resource.node_manifest_path);
 }
 
 BehaviorTree::~BehaviorTree() {}
@@ -59,7 +150,7 @@ BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
                               BT::Blackboard::Ptr parent_blackboard_ptr)
 {
     // Load behavior tree node plugins
-    BTNodePluginLoader::Load(node_ptr, NodePluginManifest::FromResource(resource), factory);
+    BTNodePluginLoader{node_ptr}.Load(NodePluginManifest::FromFile(resource.node_manifest_path), factory);
 
     // Load tree from file
     tinyxml2::XMLDocument doc;
@@ -83,7 +174,7 @@ BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
                               BT::Blackboard::Ptr parent_blackboard_ptr) const
 {
     // Load behavior tree node plugins
-    BTNodePluginLoader::Load(node_ptr, pimpl_->node_plugin_manifest, factory);
+    BTNodePluginLoader{node_ptr}.Load(pimpl_->node_plugin_manifest, factory);
 
     // Create behavior tree using main tree attribute
     return Create(WriteToString(), "", factory, parent_blackboard_ptr);

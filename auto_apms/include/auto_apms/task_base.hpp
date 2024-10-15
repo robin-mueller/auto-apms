@@ -95,7 +95,7 @@ TaskBase<ActionT>::TaskBase(const std::string& name,
                             std::chrono::milliseconds feedback_interval)
     : node_ptr_{node_ptr}, action_context_ptr_{action_context_ptr}, execution_timer_interval_{execution_interval}
 {
-#ifdef DEBUG_LOGGING
+#ifdef _AUTO_APMS_DEBUG_LOGGING
     // Set logging severity
     auto ret = rcutils_logging_set_logger_level(node_ptr_->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
     if (ret != RCUTILS_RET_OK) {

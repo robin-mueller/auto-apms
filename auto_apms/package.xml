@@ -16,7 +16,7 @@
     <depend>rclcpp_action</depend>
     <depend>rclcpp_components</depend>
     <depend>rcpputils</depend>
-    <depend>class_loader</depend>
+    <depend>pluginlib</depend>
     <depend>behaviortree_cpp</depend>
     <depend>behaviortree_ros2</depend>
     <depend>auto_apms_interfaces</depend>

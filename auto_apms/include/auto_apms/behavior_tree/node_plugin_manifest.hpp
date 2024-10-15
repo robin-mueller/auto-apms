@@ -12,11 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms/version.hpp"
-
 #pragma once
 
-#include "auto_apms/behavior_tree/resources.hpp"
 #include "auto_apms_rosparam__bt_node_plugin_manifest.hpp"
 
 namespace auto_apms::detail {
@@ -44,8 +41,6 @@ class BTNodePluginManifest
 
     BTNodePluginManifest(const ParamMap& param_map = {});
 
-    static BTNodePluginManifest FromResource(const BehaviorTreeResource& resource);
-
     /**
      * @brief Create a node plugin manifest from multiple files. They are loaded in the given order.
      * @param file_paths Paths to the manifest files.
@@ -70,33 +65,6 @@ class BTNodePluginManifest
     BTNodePluginManifest& Remove(const std::string& node_name);
 
     BTNodePluginManifest& Merge(const BTNodePluginManifest& m);
-
-    /**
-     * @brief Find/Verify the shared library paths of the plugins specified in the manifest.
-     *
-     * The behavior of this function can be summarized according to the following ruleset:
-     * - **Library undefined** - **Package undefined**: The library path will be resolved by looking up the class name
-     * in the installed node plugin resources. There must be exactly one package associated with that class name.
-     * - **Library undefined** - **Package defined**: The library path will be resolved by looking up the class name in
-     * the resources registered by the given package.
-     * - **Library defined** - **Package undefined**: The given library path will be left as is and no further
-     * validation will be conducted, so you should know what you're doing.
-     * - **Library defined** - **Package defined**: The given package will be searched for a matching resource and it
-     * will be verified that the library associated with the resource matches the one specified.
-     *
-     * So this function checks each plugin's configuration parameters and adds the absolute paths of associated
-     * libraries to the returned manifest if not already specified. In case the library is specified and a package is
-     * given, a verification is performed. Otherwise, the library entry will be left as is. The other parameters remain
-     * untouched and are simply copied.
-     *
-     * Should be called before loading the plugins of the manifest to ensure that the correct ones will be found.
-     *
-     * @param ignore_packages Package names to ignore when searching for resources.
-     * @throw exceptions::ResourceNotFoundError if no unique resource for a node can be found.
-     * @throw exceptions::BTNodePluginManifestError if a violation of the above mentioned rules occurs.
-     * @return New manifest object with updated parameters.
-     */
-    BTNodePluginManifest& LocateAndVerifyLibraries(const std::set<std::string> ignore_packages = {});
 
     void ToFile(const std::string& file_path) const;
 

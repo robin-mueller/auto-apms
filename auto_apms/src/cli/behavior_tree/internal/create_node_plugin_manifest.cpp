@@ -16,11 +16,10 @@
 #include <iostream>
 #include <set>
 
-#include "auto_apms/behavior_tree/node_plugin_manifest.hpp"
+#include "auto_apms/behavior_tree/node_plugin_loader.hpp"
 #include "auto_apms/exceptions.hpp"
+#include "auto_apms/resources.hpp"
 #include "rcpputils/split.hpp"
-
-using NodePluginManifest = auto_apms::detail::BTNodePluginManifest;
 
 int main(int argc, char** argv)
 {
@@ -34,6 +33,8 @@ int main(int argc, char** argv)
                      "<output_file>\n";
         return EXIT_FAILURE;
     }
+
+    using PluginLoader = auto_apms::BTNodePluginLoader;
 
     try {
         std::vector<std::string> manifest_files;
@@ -54,11 +55,23 @@ int main(int argc, char** argv)
                                      "' has wrong extension. Must be '.yaml'.");
         }
 
+        rclcpp::init(argc, argv);
+        auto node_ptr = std::make_shared<rclcpp::Node>("_create_node_plugin_manifest_temp_node");
+
+#ifdef _AUTO_APMS_DEBUG_LOGGING
+        // Set logging severity
+        auto ret = rcutils_logging_set_logger_level(node_ptr->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
+        if (ret != RCUTILS_RET_OK) {
+            RCLCPP_ERROR(node_ptr->get_logger(), "Error setting severity: %s", rcutils_get_error_string().str);
+            rcutils_reset_error();
+        }
+#endif
+
         // Retrieve plugin library paths from build info
         std::map<std::string, std::string> build_lib_paths;
         for (const auto& build_info : build_infos) {
             std::vector<std::string> parts = rcpputils::split(build_info, '@');
-            if (parts.size() != 2) { throw std::runtime_error("Invalid build info entry (" + build_info + ")."); }
+            if (parts.size() != 2) { throw std::runtime_error("Invalid build info entry ('" + build_info + "')."); }
             const std::string& class_name = parts[0];
             const std::string& build_path = parts[1];
             if (build_lib_paths.find(class_name) != build_lib_paths.end()) {
@@ -67,22 +80,28 @@ int main(int argc, char** argv)
             build_lib_paths[class_name] = build_path;  // {class_name: build_path}
         }
 
-        auto output_manifest = NodePluginManifest::FromFiles(manifest_files);
+        auto output_manifest = PluginLoader::Manifest::FromFiles(manifest_files);
+        auto all_but_build_package =
+            auto_apms::detail::GetAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
+        all_but_build_package.erase(build_package_name);
+        auto loader = PluginLoader{node_ptr, all_but_build_package};
         for (const auto& [node_name, params] : output_manifest.map()) {
-            auto& node_load_params = output_manifest[node_name];
-            auto temp_manifest = NodePluginManifest({{node_name, output_manifest[node_name]}});
+            auto temp_manifest = PluginLoader::Manifest({{node_name, params}});
             try {
-                node_load_params = temp_manifest.LocateAndVerifyLibraries({build_package_name})[node_name];
+                loader.AutoCompleteManifest(temp_manifest);
+                output_manifest[node_name] = temp_manifest[node_name];
             } catch (const auto_apms::exceptions::ResourceNotFoundError& e) {
                 if (build_lib_paths.find(params.class_name) == build_lib_paths.end()) {
-                    throw std::runtime_error("Node '" + node_name + "' (" + params.class_name +
-                                             ") requires build infos, but none were given.");
+                    throw std::runtime_error("Node '" + node_name + "' ('" + params.class_name +
+                                             "') requires build infos, but none were given.");
                 }
-                node_load_params.library = build_lib_paths[params.class_name];
-                node_load_params.package = "";
+                // Store the temporary library path to be used during build time until the install is available
+                output_manifest[node_name].library = build_lib_paths[params.class_name];
+                output_manifest[node_name].package = build_package_name;
             }
         }
 
+        // Save the manifest
         output_manifest.ToFile(output_file);
 
         // Print unique list of libraries to stdout

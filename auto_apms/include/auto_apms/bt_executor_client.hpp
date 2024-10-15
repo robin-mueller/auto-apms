@@ -17,7 +17,7 @@
 #include <chrono>
 #include <future>
 
-#include "auto_apms/behavior_tree/resources.hpp"
+#include "auto_apms/behavior_tree/behavior_tree.hpp"
 #include "auto_apms_interfaces/action/launch_bt_executor.hpp"
 #include "auto_apms_interfaces/srv/upload_behavior_tree.hpp"
 #include "rclcpp/rclcpp.hpp"

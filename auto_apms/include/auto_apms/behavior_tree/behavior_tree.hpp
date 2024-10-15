@@ -19,6 +19,26 @@
 
 namespace auto_apms {
 
+/// @brief Struct for behavior tree resource data
+struct BehaviorTreeResource
+{
+    std::string name;
+    std::string tree_path;
+    std::string node_manifest_path;
+    std::set<std::string> tree_ids;
+
+    /**
+     * @brief Collect all behavior tree resources registered by a certain package.
+     * @param package_name Name of the package to search for resources.
+     * @return Collection of all resources found in @p package_name.
+     */
+    static std::vector<BehaviorTreeResource> CollectFromPackage(const std::string& package_name);
+
+    static BehaviorTreeResource SelectByID(const std::string& tree_id, const std::string& package_name = "");
+
+    static BehaviorTreeResource SelectByFileName(const std::string& file_name, const std::string& package_name = "");
+};
+
 class BehaviorTree
 {
     static const std::string MAIN_TREE_ATTRIBUTE_NAME;

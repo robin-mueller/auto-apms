@@ -36,17 +36,17 @@ class BTNodePlugin : public BTNodePluginBase
     BTNodePlugin() = default;
     virtual ~BTNodePlugin() = default;
 
-    bool RequiresROSNodeParams() override { return requires_ros_node_params; }
+    bool RequiresROSNodeParams() const override { return requires_ros_node_params; }
 
     void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
                                          const std::string &registration_name,
-                                         const BT::RosNodeParams *const params_ptr = nullptr) override
+                                         const BT::RosNodeParams *const params_ptr = nullptr) const override
     {
         if constexpr (requires_ros_node_params) {
             if (!params_ptr) {
                 throw std::runtime_error(
                     boost::core::demangle(typeid(BTNodeType).name()) +
-                    " requires to pass a valid BT::RosNodeParams object via argument 'params_ptr'");
+                    " requires a valid BT::RosNodeParams object to be passed via argument 'params_ptr'.");
             }
             factory.registerNodeType<BTNodeType>(registration_name, *params_ptr);
         }
@@ -58,6 +58,12 @@ class BTNodePlugin : public BTNodePluginBase
 
 }  // namespace auto_apms::detail
 
-#include "class_loader/class_loader.hpp"
-#define AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE(BTNodeClass) \
-    CLASS_LOADER_REGISTER_CLASS(auto_apms::detail::BTNodePlugin<BTNodeClass>, auto_apms::detail::BTNodePluginBase)
+#include "pluginlib/class_list_macros.hpp"
+
+/**
+ * @brief Macro for registering a behavior tree node plugin
+ * @def AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE(class_type)
+ * @param class_type The fully qualified class name
+ */
+#define AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE(class_type) \
+    PLUGINLIB_EXPORT_CLASS(auto_apms::detail::BTNodePlugin<class_type>, auto_apms::detail::BTNodePluginBase)
