@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install ROS dependencies
+      - name: Install ROS linter packages
         run: |
           sudo apt install software-properties-common &&
           sudo add-apt-repository universe &&
@@ -23,10 +23,7 @@ jobs:
           sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg &&
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null &&
           sudo apt update && sudo apt upgrade &&
-          sudo pip3 install -U rosdep &&
-          sudo rosdep init &&
-          rosdep update &&
-          rosdep install -t test --from-paths "${GITHUB_WORKSPACE}/auto_apms" --rosdistro humble
+          sudo apt install ros-humble-ament-copyright
         shell: bash
       - name: Setup Python
         uses: actions/setup-python@v5

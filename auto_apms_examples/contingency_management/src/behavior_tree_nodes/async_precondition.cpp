@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms/behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node_plugin.hpp"
 
 #define INPUT_KEY_IF "if"
 #define INPUT_KEY_ELSE "else"
@@ -102,5 +102,5 @@ class AsyncPrecondition : public DecoratorNode
 
 }  // namespace auto_apms::ops_engine
 
-#include "auto_apms/behavior_tree/node_plugin.hpp"
-AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE(auto_apms::ops_engine::AsyncPrecondition)
+#include "auto_apms_behavior_tree/node_plugin.hpp"
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms::ops_engine::AsyncPrecondition)

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <auto_apms/bt_executor.hpp>
+#include <auto_apms_behavior_tree/bt_executor.hpp>
 #include <auto_apms_examples/msg/landing_approach.hpp>
 #include <definitions.hpp>
 
@@ -20,7 +20,7 @@
 #define KEY_NEXT_LANDING_SITE_ID "next_landing_site_id"
 #define KEY_IS_APPROACHING_LANDING "is_approaching_landing"
 
-using namespace auto_apms;
+using namespace auto_apms_behavior_tree;
 using LandingApproachMsg = auto_apms_examples::msg::LandingApproach;
 
 namespace auto_apms::ops_engine {

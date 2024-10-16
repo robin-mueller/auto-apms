@@ -15,8 +15,8 @@
 #include <regex>
 
 #include "Eigen/Geometry"
-#include "auto_apms/behavior_tree/behavior_tree.hpp"
-#include "auto_apms/behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/behavior_tree.hpp"
+#include "auto_apms_behavior_tree/node_plugin.hpp"
 #include "px4_ros2/utils/geodesic.hpp"
 
 #define INPUT_KEY_POS "pos_vec"
@@ -90,7 +90,10 @@ class CreateAlternateLandingMission : public SyncActionNode
 
         // Read tree template and replace placeholders
         const std::string main_tree_id = "AlternateLandingMission";
-        auto tree = BehaviorTree{BehaviorTreeResource::SelectByID(main_tree_id, "auto_apms_examples")}.WriteToString();
+        auto tree =
+            auto_apms_behavior_tree::BehaviorTree{
+                auto_apms_behavior_tree::BehaviorTreeResource::SelectByID(main_tree_id, "auto_apms_examples")}
+                .WriteToString();
 
         // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -
         std::regex placeholder("\\$\\{([A-Za-z0-9_-]+)\\}");
@@ -114,4 +117,4 @@ class CreateAlternateLandingMission : public SyncActionNode
 
 }  // namespace auto_apms::ops_engine
 
-AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE(auto_apms::ops_engine::CreateAlternateLandingMission)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms::ops_engine::CreateAlternateLandingMission)

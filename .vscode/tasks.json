@@ -12,23 +12,23 @@
         },
         // Test tasks
         {
-            "label": "Test auto_apms (Unit tests)",
+            "label": "Test auto-apms packages (Unit tests)",
             "detail": "Run all unit tests of auto-apms",
             "type": "shell",
-            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select auto_apms --ctest-args -R auto_apms_unit_tests",
+            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select-regex auto_apms\\S* --ctest-args \"-R auto_apms\\S*_unit_tests\"",
             "group": "test",
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Test auto_apms (Integration tests)",
+            "label": "Test auto-apms packages (Integration tests)",
             "detail": "Run all integration tests of auto-apms",
             "type": "shell",
-            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select auto_apms --ctest-args -R auto_apms_integration_tests",
+            "command": "colcon test --build-base ${workspaceFolder:px4-ros2-env}/build --install-base ${workspaceFolder:px4-ros2-env}/install --packages-select-regex auto_apms\\S* --ctest-args \"-R auto_apms\\S*_integration_tests\"",
             "group": "test",
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Test auto_apms (pre-commit)",
+            "label": "Run auto-apms Pre-Commit",
             "detail": "Run all tests in pre-commit config of auto-apms",
             "type": "shell",
             "command": "pre-commit run -a",

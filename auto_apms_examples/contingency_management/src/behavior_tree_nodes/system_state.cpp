@@ -14,7 +14,7 @@
 
 #include <auto_apms_examples/msg/system_state.hpp>
 
-#include "auto_apms/behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node_plugin.hpp"
 
 #define OUTPUT_KEY_BATTERY "battery_level"
 
@@ -48,5 +48,5 @@ class GetSystemState : public RosTopicSubNode<SystemStateMsg>
 
 }  // namespace auto_apms::ops_engine
 
-#include "auto_apms/behavior_tree/node_plugin.hpp"
-AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE(auto_apms::ops_engine::GetSystemState)
+#include "auto_apms_behavior_tree/node_plugin.hpp"
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms::ops_engine::GetSystemState)

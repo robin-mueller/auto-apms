@@ -4,25 +4,25 @@
 #
 
 Arm:
-  class_name: auto_apms::ArmAction
+  class_name: auto_apms_px4::ArmAction
   port: arm_disarm
 
 Disarm:
-  class_name: auto_apms::DisarmAction
+  class_name: auto_apms_px4::DisarmAction
   port: arm_disarm
 
 GoTo:
-  class_name: auto_apms::GoToAction
+  class_name: auto_apms_px4::GoToAction
   port: go_to
 
 Land:
-  class_name: auto_apms::LandAction
+  class_name: auto_apms_px4::LandAction
   port: land
 
 Takeoff:
-  class_name: auto_apms::TakeoffAction
+  class_name: auto_apms_px4::TakeoffAction
   port: takeoff
 
 ReadGlobalPosition:
-  class_name: auto_apms::ReadGlobalPosition
+  class_name: auto_apms_px4::ReadGlobalPosition
   port: /fmu/out/vehicle_global_position

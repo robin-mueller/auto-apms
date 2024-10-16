@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms/action_client.hpp"
-#include "auto_apms/constants.hpp"
+#include "auto_apms_core/action_client.hpp"
 #include "auto_apms_interfaces/action/arm_disarm.hpp"
 #include "auto_apms_interfaces/action/land.hpp"
 #include "auto_apms_interfaces/action/takeoff.hpp"
@@ -32,10 +31,9 @@ int main(int argc, char* argv[])
 
     RCLCPP_INFO(node_ptr->get_logger(), "Running example '%s' ...", EXAMPLE_NAME);
 
-    auto arm_disarm_client =
-        auto_apms::ActionClientWrapper<ArmDisarmAction>(*node_ptr, auto_apms::ARM_DISARM_TASK_NAME);
-    auto takeoff_client = auto_apms::ActionClientWrapper<TakeoffAction>(*node_ptr, auto_apms::TAKEOFF_TASK_NAME);
-    auto land_client = auto_apms::ActionClientWrapper<LandAction>(*node_ptr, auto_apms::LAND_TASK_NAME);
+    auto arm_disarm_client = auto_apms_core::ActionClientWrapper<ArmDisarmAction>(*node_ptr, "arm_disarm");
+    auto takeoff_client = auto_apms_core::ActionClientWrapper<TakeoffAction>(*node_ptr, "takeoff");
+    auto land_client = auto_apms_core::ActionClientWrapper<LandAction>(*node_ptr, "land");
 
     RCLCPP_INFO(node_ptr->get_logger(), "Arming ...");
 

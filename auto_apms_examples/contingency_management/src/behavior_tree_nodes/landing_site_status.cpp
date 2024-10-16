@@ -14,7 +14,7 @@
 
 #include <auto_apms_examples/msg/landing_site_status.hpp>
 
-#include "auto_apms/behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node_plugin.hpp"
 
 #define INPUT_KEY_SITE_ID "landing_site_id"
 #define OUTPUT_KEY_SITE_STATUS "landing_site_status"
@@ -62,5 +62,5 @@ class IsLandingSiteClear : public RosTopicSubNode<LandingSiteStatusMsg>
 
 }  // namespace auto_apms::ops_engine
 
-#include "auto_apms/behavior_tree/node_plugin.hpp"
-AUTO_APMS_REGISTER_BEHAVIOR_TREE_NODE(auto_apms::ops_engine::IsLandingSiteClear)
+#include "auto_apms_behavior_tree/node_plugin.hpp"
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms::ops_engine::IsLandingSiteClear)

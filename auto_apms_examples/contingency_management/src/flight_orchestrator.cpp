@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <auto_apms/bt_executor.hpp>
+#include <auto_apms_behavior_tree/bt_executor.hpp>
 
-using namespace auto_apms;
+using namespace auto_apms_behavior_tree;
 
 namespace auto_apms::ops_engine {
 

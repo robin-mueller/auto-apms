@@ -25,7 +25,7 @@ jobs:
         id: ros-build
         uses: ros-tooling/action-ros-ci@v0.3
         with:
-          package-name: auto_apms
+          package-name: auto_apms_core auto_apms_behavior_tree auto_apms_px4
           import-token: ${{ secrets.GITHUB_TOKEN }}
           target-ros2-distro: humble
           vcs-repo-file-url: ${GITHUB_WORKSPACE}/dependencies.repos
@@ -34,7 +34,7 @@ jobs:
             {
               "test": {
                 "ctest-args": [
-                  "-R", "auto_apms_unit_tests"
+                  "-R", "auto_apms_\S*_unit_tests"
                 ]
               }
             }

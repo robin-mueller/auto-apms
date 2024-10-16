@@ -17,7 +17,7 @@
 #include <chrono>
 #include <filesystem>
 
-#include "auto_apms/behavior_tree/behavior_tree.hpp"
+#include "auto_apms_behavior_tree/behavior_tree.hpp"
 #include "behaviortree_cpp/loggers/bt_cout_logger.h"
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "rclcpp/rclcpp.hpp"
@@ -25,7 +25,7 @@
 sig_atomic_t volatile shutdown_requested = 0;
 
 using namespace std::chrono_literals;
-using namespace auto_apms;
+using namespace auto_apms_behavior_tree;
 
 int main(int argc, char** argv)
 {

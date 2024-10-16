@@ -5,52 +5,52 @@ CreateAlternateLandingMission:
   class_name: auto_apms::ops_engine::CreateAlternateLandingMission
 
 ThrowException:
-  class_name: auto_apms::ThrowException
+  class_name: auto_apms_behavior_tree::ThrowException
 
 Arm:
-  class_name: auto_apms::ArmAction
+  class_name: auto_apms_px4::ArmAction
   port: arm_disarm
 
 Disarm:
-  class_name: auto_apms::DisarmAction
+  class_name: auto_apms_px4::DisarmAction
   port: arm_disarm
 
 EnableHold:
-  class_name: auto_apms::EnableHoldAction
+  class_name: auto_apms_px4::EnableHoldAction
   port: enable_hold
 
 GoTo:
-  class_name: auto_apms::GoToAction
+  class_name: auto_apms_px4::GoToAction
   port: go_to
 
 GoToVector:
-  class_name: auto_apms::GoToAction
+  class_name: auto_apms_px4::GoToAction
   port: go_to
 
 Land:
-  class_name: auto_apms::LandAction
+  class_name: auto_apms_px4::LandAction
   port: land
 
 Takeoff:
-  class_name: auto_apms::TakeoffAction
+  class_name: auto_apms_px4::TakeoffAction
   port: takeoff
 
 RTL:
-  class_name: auto_apms::RTLAction
+  class_name: auto_apms_px4::RTLAction
   port: rtl
 
 UploadBehaviorTree:
-  class_name: auto_apms::UploadBehaviorTreeAction
+  class_name: auto_apms_behavior_tree::UploadBehaviorTreeAction
   port: mission_manager/upload
 
 ResumeExecutor:
-  class_name: auto_apms::ResumeExecutorAction
+  class_name: auto_apms_behavior_tree::ResumeExecutorAction
   port: mission_manager/command
 
 HaltExecutor:
-  class_name: auto_apms::HaltExecutorAction
+  class_name: auto_apms_behavior_tree::HaltExecutorAction
   port: mission_manager/command
 
 ReadGlobalPosition:
-  class_name: auto_apms::ArmAction
+  class_name: auto_apms_px4::ReadGlobalPosition
   port: /fmu/out/vehicle_global_position

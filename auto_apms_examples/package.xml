@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
     <name>auto_apms_examples</name>
-    <version>0.1.0</version>
+    <version>0.0.0</version>
     <description>Examples for auto_apms package</description>
     <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
     <license>Apache License 2.0</license>
@@ -11,9 +11,13 @@
     <buildtool_depend>rosidl_default_generators</buildtool_depend>
 
     <!-- <depend>action_msgs</depend> -->
-    <depend>auto_apms</depend>
+    <depend>auto_apms_core</depend>
+    <depend>auto_apms_behavior_tree</depend>
+    <depend>auto_apms_interfaces</depend>
     <depend>rclcpp_components</depend>
+    <depend>px4_ros2_cpp</depend>
 
+    <exec_depend>auto_apms_px4</exec_depend>
     <exec_depend>rosidl_default_runtime</exec_depend>
 
     <member_of_group>rosidl_interface_packages</member_of_group>
