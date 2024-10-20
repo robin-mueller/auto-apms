@@ -27,9 +27,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - uses: mattnotmitt/doxygen-action@edge
+      - name: Install Doxygen
+        uses: ssciwr/doxygen-install@v1
         with:
-          doxyfile-path: doc/Doxyfile
+          version: 1.12.0
+      - name: Run Doxygen
+        run: doxygen doc/Doxyfile
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact

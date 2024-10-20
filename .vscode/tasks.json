@@ -7,7 +7,7 @@
             "label": "Create docs",
             "detail": "Create API documentation with doxygen",
             "type": "shell",
-            "command": "cd doc && doxygen",
+            "command": "doxygen doc/Doxyfile",
             "problemMatcher": "$gcc"
         },
         // Test tasks

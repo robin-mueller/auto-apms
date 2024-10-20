@@ -61,20 +61,20 @@ PROJECT_BRIEF          = "Resilient Robot Mission Management"
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = favicon-96x96.png
+PROJECT_LOGO           = doc/favicon-96x96.png
 
 # With the PROJECT_ICON tag one can specify an icon that is included in the tabs
 # when the HTML document is shown. Doxygen will copy the logo to the output
 # directory.
 
-PROJECT_ICON           = favicon.ico
+PROJECT_ICON           = doc/favicon.ico
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
 # entered, it will be relative to the location where Doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       =
+OUTPUT_DIRECTORY       = doc
 
 # If the CREATE_SUBDIRS tag is set to YES then Doxygen will create up to 4096
 # sub-directories (in 2 levels) under the output directory of each output format
@@ -199,10 +199,10 @@ STRIP_FROM_PATH        =
 # specify the list of include paths that are normally passed to the compiler
 # using the -I flag.
 
-STRIP_FROM_INC_PATH    += /home/runner/work/auto-apms/auto-apms/auto_apms_core/include/
-STRIP_FROM_INC_PATH    += /home/runner/work/auto-apms/auto-apms/auto_apms_behavior_tree/include/
-STRIP_FROM_INC_PATH    += /home/runner/work/auto-apms/auto-apms/auto_apms_px4/include/
-STRIP_FROM_INC_PATH    += /home/runner/work/auto-apms/auto-apms/auto_apms_mission/include/
+STRIP_FROM_INC_PATH    += ./auto_apms_core/include/
+STRIP_FROM_INC_PATH    += ./auto_apms_behavior_tree/include/
+STRIP_FROM_INC_PATH    += ./auto_apms_px4/include/
+STRIP_FROM_INC_PATH    += ./auto_apms_mission/include/
 
 # If the SHORT_NAMES tag is set to YES, Doxygen will generate much shorter (but
 # less readable) file names. This can be useful is your file systems doesn't
@@ -968,10 +968,10 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                 += ../auto_apms_core/include/auto_apms_core ../auto_apms_core/src
-INPUT                 += ../auto_apms_behavior_tree/include/auto_apms_behavior_tree ../auto_apms_behavior_tree/src
-INPUT                 += ../auto_apms_px4/include/auto_apms_px4 ../auto_apms_px4/src
-INPUT                 += ../auto_apms_mission/include/auto_apms_mission ../auto_apms_mission/src
+INPUT                 += auto_apms_core/include/auto_apms_core auto_apms_core/src
+INPUT                 += auto_apms_behavior_tree/include/auto_apms_behavior_tree auto_apms_behavior_tree/src
+INPUT                 += auto_apms_px4/include/auto_apms_px4 auto_apms_px4/src
+INPUT                 += auto_apms_mission/include/auto_apms_mission auto_apms_mission/src
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1387,7 +1387,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_HEADER            = header.html
+HTML_HEADER            = doc/header.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank Doxygen will generate a standard
@@ -1427,7 +1427,7 @@ HTML_STYLESHEET        =
 # documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = doxygen-awesome.css
+HTML_EXTRA_STYLESHEET  = doc/doxygen-awesome.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1437,7 +1437,7 @@ HTML_EXTRA_STYLESHEET  = doxygen-awesome.css
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = doxygen-awesome-darkmode-toggle.js doxygen-awesome-fragment-copy-button.js doxygen-awesome-paragraph-link.js doxygen-awesome-interactive-toc.js favicon.ico
+HTML_EXTRA_FILES       = doc/doxygen-awesome-darkmode-toggle.js doc/doxygen-awesome-fragment-copy-button.js doc/doxygen-awesome-paragraph-link.js
 
 # The HTML_COLORSTYLE tag can be used to specify if the generated HTML output
 # should be rendered with a dark or light theme.
