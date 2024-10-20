@@ -17,8 +17,14 @@
 #include <set>
 #include <string>
 
-namespace auto_apms_behavior_tree {
+namespace auto_apms_core {
 
+/**
+ * @brief Collect all package names that register a certain type resource.
+ * @ingroup auto_apms_core
+ * @param resource_type Name of the resource type.
+ * @return Package names.
+ */
 std::set<std::string> GetAllPackagesWithResource(const std::string& resource_type);
 
-}  // namespace auto_apms_behavior_tree
+}  // namespace auto_apms_core

@@ -1,7 +1,7 @@
 install/
 log/
 build/
-docs/html/
+doc/html/
 
 .vscode/*
 !.vscode/tasks.json

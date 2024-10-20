@@ -19,8 +19,9 @@
 namespace auto_apms_behavior_tree {
 
 /**
- * @brief Resource lookup data and configuration parameters required for loading and registering a behavior tree node
- * plugin.
+ * @ingroup auto_apms_behavior_tree
+ * @brief Data structure for resource lookup data and configuration parameters required for loading and
+ * registering a behavior tree node plugin.
  */
 class BTNodePluginManifest
 {

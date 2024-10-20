@@ -3,7 +3,7 @@
 <package format="3">
   <name>auto_apms_behavior_tree</name>
   <version>0.0.0</version>
-  <description>Convenience tools for integrating the behavior tree paradigm with AutoAPMS</description>
+  <description>Useful Tooling for Behavior Tree development</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
   <license>Apache License 2.0</license>
 
@@ -20,6 +20,7 @@
   <depend>yaml_cpp_vendor</depend>
   <depend>tinyxml2_vendor</depend>
   <depend>generate_parameter_library</depend>
+  <depend>auto_apms_core</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

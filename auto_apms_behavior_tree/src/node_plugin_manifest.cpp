@@ -20,7 +20,7 @@
 #include "behaviortree_ros2/ros_node_params.hpp"
 #include "yaml-cpp/yaml.h"
 
-/// @internal
+/// @cond
 namespace YAML {
 template <>
 struct convert<auto_apms_behavior_tree::BTNodePluginManifest::ParamMap>
@@ -90,7 +90,7 @@ struct convert<auto_apms_behavior_tree::BTNodePluginManifest::ParamMap>
     }
 };
 }  // namespace YAML
-/// @endinternal
+/// @endcond
 
 namespace auto_apms_behavior_tree {
 

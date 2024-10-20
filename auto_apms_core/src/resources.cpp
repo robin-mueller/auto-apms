@@ -12,25 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "auto_apms_core/resources.hpp"
 
-#include "auto_apms_core/exceptions.hpp"
+#include "ament_index_cpp/get_resources.hpp"
 
-namespace auto_apms_behavior_tree::exceptions {
+namespace auto_apms_core {
 
-struct ResourceNotFoundError : public auto_apms_core::exceptions::ExceptionBase
+std::set<std::string> GetAllPackagesWithResource(const std::string& resource_type)
 {
-    using ExceptionBase::ExceptionBase;
-};
+    std::set<std::string> all_packages;
+    for (const auto& [package_name, _] : ament_index_cpp::get_resources(resource_type)) {
+        all_packages.insert(package_name);
+    }
+    return all_packages;
+}
 
-struct BTNodePluginManifestError : public auto_apms_core::exceptions::ExceptionBase
-{
-    using ExceptionBase::ExceptionBase;
-};
-
-struct BTNodePluginLoadingError : public auto_apms_core::exceptions::ExceptionBase
-{
-    using ExceptionBase::ExceptionBase;
-};
-
-}  // namespace auto_apms_behavior_tree::exceptions
+}  // namespace auto_apms_core

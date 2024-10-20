@@ -33,7 +33,7 @@ BTExecutorClient::BTExecutorClient(rclcpp::Node& node, const std::string& execut
     launch_client_ptr_ = rclcpp_action::create_client<LaunchExecutorAction>(&node, launch_executor_action_name_);
 }
 
-bool BTExecutorClient::UploadBehaviorTree(const BehaviorTreeResource& resource, const std::string& main_tree_id)
+bool BTExecutorClient::UploadBehaviorTree(const BTResource& resource, const std::string& main_tree_id)
 {
     BehaviorTree tree{resource};
     if (!main_tree_id.empty()) tree.SetMainID(main_tree_id);

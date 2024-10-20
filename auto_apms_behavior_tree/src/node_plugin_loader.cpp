@@ -18,7 +18,7 @@
 #include <fstream>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/util.hpp"
+#include "auto_apms_core/resources.hpp"
 #include "rcpputils/split.hpp"
 
 namespace auto_apms_behavior_tree {
@@ -27,7 +27,7 @@ BTNodePluginLoader::BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr, const s
     : ClassLoader{"auto_apms_behavior_tree",
                   "auto_apms_behavior_tree::BTNodePluginBase",
                   "",
-                  GetPluginXMLFilePaths(package_names.empty() ? GetAllPackagesWithResource(
+                  GetPluginXMLFilePaths(package_names.empty() ? auto_apms_core::GetAllPackagesWithResource(
                                                                     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE)
                                                               : package_names)},
       node_ptr_{node_ptr},

@@ -61,8 +61,8 @@ class BTNodePlugin : public BTNodePluginBase
 #include "pluginlib/class_list_macros.hpp"
 
 /**
+ * @ingroup auto_apms_behavior_tree
  * @brief Macro for registering a behavior tree node plugin.
- * @def AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(class_type)
  * @param class_type The fully qualified class name.
  */
 #define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(class_type) \

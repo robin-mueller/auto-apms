@@ -16,6 +16,7 @@ find_package(auto_apms_interfaces REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
 find_package(generate_parameter_library REQUIRED)
+find_package(auto_apms_core)
 
 option(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING "Enable debug logging severity" ON)
 
@@ -56,7 +57,6 @@ add_library(auto_apms_behavior_tree SHARED
     src/bt_executor.cpp
     src/bt_executor_client.cpp
     src/ros2_bt_observer.cpp
-    src/util.cpp
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -83,6 +83,7 @@ ament_target_dependencies(auto_apms_behavior_tree
     auto_apms_interfaces
     yaml_cpp_vendor
     TinyXML2
+    auto_apms_core
 )
 target_link_libraries(auto_apms_behavior_tree
     node_plugin_loader_params
@@ -176,6 +177,7 @@ ament_export_dependencies(
     auto_apms_interfaces
     yaml_cpp_vendor
     TinyXML2
+    auto_apms_core
 )
 
 ###### Non export libraries ######

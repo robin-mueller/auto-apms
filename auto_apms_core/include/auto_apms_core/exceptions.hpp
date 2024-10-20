@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/util.hpp"
+#pragma once
 
-#include "ament_index_cpp/get_resources.hpp"
+#include <stdexcept>
 
-namespace auto_apms_behavior_tree {
+namespace auto_apms_core::exceptions {
 
-std::set<std::string> GetAllPackagesWithResource(const std::string& resource_type)
+/**
+ * @brief Base class for all exceptions of AutoAPMS
+ */
+class ExceptionBase : public std::runtime_error
 {
-    std::set<std::string> all_packages;
-    for (const auto& [package_name, _] : ament_index_cpp::get_resources(resource_type)) {
-        all_packages.insert(package_name);
-    }
-    return all_packages;
-}
+   public:
+    explicit inline ExceptionBase(const std::string& msg) : std::runtime_error(msg) {}
+};
 
-}  // namespace auto_apms_behavior_tree
+}  // namespace auto_apms_core::exceptions

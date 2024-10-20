@@ -18,7 +18,7 @@
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree/node_plugin_loader.hpp"
-#include "auto_apms_behavior_tree/util.hpp"
+#include "auto_apms_core/resources.hpp"
 #include "rcpputils/split.hpp"
 
 int main(int argc, char** argv)
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 
         auto output_manifest = PluginLoader::Manifest::FromFiles(manifest_files);
         auto all_but_build_package =
-            auto_apms_behavior_tree::GetAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
+            auto_apms_core::GetAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
         all_but_build_package.erase(build_package_name);
         auto loader = PluginLoader{node_ptr, all_but_build_package};
         for (const auto& [node_name, params] : output_manifest.map()) {

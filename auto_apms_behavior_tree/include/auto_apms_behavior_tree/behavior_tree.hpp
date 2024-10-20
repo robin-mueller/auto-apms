@@ -14,13 +14,21 @@
 
 #pragma once
 
+#include <tinyxml2.h>
+
 #include "auto_apms_behavior_tree/node_plugin_manifest.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 
 namespace auto_apms_behavior_tree {
 
+/**
+ * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
+ * @brief Useful Tooling for Behavior Tree development.
+ * @{
+ */
+
 /// @brief Struct for behavior tree resource data
-struct BehaviorTreeResource
+struct BTResource
 {
     std::string name;
     std::string tree_path;
@@ -32,25 +40,22 @@ struct BehaviorTreeResource
      * @param package_name Name of the package to search for resources.
      * @return Collection of all resources found in @p package_name.
      */
-    static std::vector<BehaviorTreeResource> CollectFromPackage(const std::string& package_name);
+    static std::vector<BTResource> CollectFromPackage(const std::string& package_name);
 
-    static BehaviorTreeResource SelectByID(const std::string& tree_id, const std::string& package_name = "");
+    static BTResource SelectByID(const std::string& tree_id, const std::string& package_name = "");
 
-    static BehaviorTreeResource SelectByFileName(const std::string& file_name, const std::string& package_name = "");
+    static BTResource SelectByFileName(const std::string& file_name, const std::string& package_name = "");
 };
 
 class BehaviorTree
 {
-    static const std::string MAIN_TREE_ATTRIBUTE_NAME;
+    static inline const std::string MAIN_TREE_ATTRIBUTE_NAME = "main_tree_to_execute";
 
    public:
-    using Resource = BehaviorTreeResource;
     using NodePluginManifest = BTNodePluginManifest;
 
-    BehaviorTree(const std::string& file_path);
-    BehaviorTree(const Resource& resource);
-
-    ~BehaviorTree();
+    BehaviorTree(const std::string& file_path, const NodePluginManifest& node_plugin_manifest = {});
+    BehaviorTree(const BTResource& resource);
 
     static BT::Tree Create(const std::string& tree_str,
                            const std::string& main_id,
@@ -58,13 +63,13 @@ class BehaviorTree
                            BT::Blackboard::Ptr parent_blackboard_ptr = nullptr);
 
     static BT::Tree Create(rclcpp::Node::SharedPtr node_ptr,
-                           const Resource& resource,
+                           const BTResource& resource,
                            const std::string& main_id,
                            BT::BehaviorTreeFactory& factory,
                            BT::Blackboard::Ptr parent_blackboard_ptr = nullptr);
 
     static BT::Tree Create(rclcpp::Node::SharedPtr node_ptr,
-                           const Resource& resource,
+                           const BTResource& resource,
                            const std::string& main_id,
                            BT::Blackboard::Ptr parent_blackboard_ptr = nullptr);
 
@@ -81,8 +86,9 @@ class BehaviorTree
     std::string WriteToString() const;
 
    private:
-    struct Impl;
-    std::unique_ptr<Impl> pimpl_;
+    NodePluginManifest node_plugin_manifest_;
+    tinyxml2::XMLDocument doc_;
 };
+/// @}
 
 }  // namespace auto_apms_behavior_tree

@@ -30,6 +30,10 @@ enum class BTExecutorCommand : uint8_t { RUN, PAUSE, HALT, TERMINATE };
 std::string to_string(BTExecutorState state);
 std::string to_string(BTExecutorCommand cmd);
 
+/**
+ * @brief Abstract class implementing a generic interface for executing behavior trees.
+ * @ingroup auto_apms_behavior_tree
+ */
 class BTExecutor
 {
    protected:

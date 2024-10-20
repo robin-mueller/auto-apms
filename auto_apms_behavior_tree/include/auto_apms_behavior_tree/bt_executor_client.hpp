@@ -29,6 +29,10 @@ using LaunchExecutorAction = auto_apms_interfaces::action::LaunchBTExecutor;
 using UploadBehaviorTreeService = auto_apms_interfaces::srv::UploadBehaviorTree;
 using ExecutionResultSharedPtr = std::shared_ptr<rclcpp_action::ClientGoalHandle<LaunchExecutorAction>::WrappedResult>;
 
+/**
+ * @brief Client for behavior tree executor nodes.
+ * @ingroup auto_apms_behavior_tree
+ */
 class BTExecutorClient
 {
     const std::chrono::seconds WAIT_FOR_SERVER_TIMEOUT{3};
@@ -49,7 +53,7 @@ class BTExecutorClient
      * used to determine which tree is to be created.
      * @return True on successful upload, false otherwise.
      */
-    bool UploadBehaviorTree(const BehaviorTreeResource& resource, const std::string& main_tree_id = "");
+    bool UploadBehaviorTree(const BTResource& resource, const std::string& main_tree_id = "");
 
     /**
      * @brief Upload behavior tree to an executor.

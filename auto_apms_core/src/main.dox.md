@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)](https://github.com/robin-mueller/auto-apms/releases)
 [![Build and Test](https://github.com/robin-mueller/auto-apms/actions/workflows/build-and-test.yaml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/build-and-test.yaml)
 
-This is the automatically generated documentation for the C++ API offered by the **AutoAPMS** project. Here you can find an extensive list of the `auto_apms` namespace members and a detailed definition of the interfaces required for developing actions and behaviors wihtin this framework.
+This is the automatically generated documentation for the C++ API offered by the AutoAPMS repository. Here you will find detailed information for each individual member of the [ROS 2 packages](./modules.html) that make up AutoAPMS.
 
 For further information see the links below:
 

@@ -92,7 +92,7 @@ class CreateAlternateLandingMission : public SyncActionNode
         const std::string main_tree_id = "AlternateLandingMission";
         auto tree =
             auto_apms_behavior_tree::BehaviorTree{
-                auto_apms_behavior_tree::BehaviorTreeResource::SelectByID(main_tree_id, "auto_apms_examples")}
+                auto_apms_behavior_tree::BTResource::SelectByID(main_tree_id, "auto_apms_examples")}
                 .WriteToString();
 
         // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -

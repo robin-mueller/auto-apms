@@ -43,9 +43,9 @@ class LoadBehaviorTreeAction : public SyncActionNode
         auto package_name = getInput<std::string>(INPUT_KEY_PACKAGE).value();
         auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
 
-        BehaviorTreeResource resource;
+        BTResource resource;
         try {
-            resource = BehaviorTreeResource::SelectByFileName(filename, package_name);
+            resource = BTResource::SelectByFileName(filename, package_name);
         } catch (const exceptions::ResourceNotFoundError& e) {
             return NodeStatus::FAILURE;
         }

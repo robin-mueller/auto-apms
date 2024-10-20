@@ -32,13 +32,13 @@ jobs:
       - name: Install doxygen
         run: sudo apt update && sudo apt-get install doxygen graphviz -y
       - name: Run doxygen
-        run: (cd docs && doxygen)
+        run: (cd doc && doxygen)
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/html
+          path: doc/html
 
   deploy:
     name: Deploy

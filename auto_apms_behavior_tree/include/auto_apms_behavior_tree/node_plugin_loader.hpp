@@ -22,6 +22,10 @@
 
 namespace auto_apms_behavior_tree {
 
+/**
+ * @brief Utility class that manages the process of loading and registering behavior tree node plugins.
+ * @ingroup auto_apms_behavior_tree
+ */
 class BTNodePluginLoader : private pluginlib::ClassLoader<BTNodePluginBase>
 {
     using ManifestParamListener = node_plugin_loader_params::ParamListener;
