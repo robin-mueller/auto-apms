@@ -179,7 +179,10 @@ STRIP_FROM_PATH        = /home/runner/work/auto-apms/auto-apms/
 # specify the list of include paths that are normally passed to the compiler
 # using the -I flag.
 
-STRIP_FROM_INC_PATH    = /home/runner/work/auto-apms/auto-apms/auto_apms/include/
+STRIP_FROM_INC_PATH    += /home/runner/work/auto-apms/auto-apms/auto_apms_core/include/
+STRIP_FROM_INC_PATH    += /home/runner/work/auto-apms/auto-apms/auto_apms_behavior_tree/include/
+STRIP_FROM_INC_PATH    += /home/runner/work/auto-apms/auto-apms/auto_apms_px4/include/
+STRIP_FROM_INC_PATH    += /home/runner/work/auto-apms/auto-apms/auto_apms_mission/include/
 
 # If the SHORT_NAMES tag is set to YES, doxygen will generate much shorter (but
 # less readable) file names. This can be useful is your file systems doesn't

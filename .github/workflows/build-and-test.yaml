@@ -34,7 +34,7 @@ jobs:
             {
               "test": {
                 "ctest-args": [
-                  "-R", "auto_apms_\S*_unit_tests"
+                  "-R", "auto_apms_\\S*_unit_tests"
                 ]
               }
             }

@@ -23,7 +23,7 @@ namespace auto_apms_behavior_tree {
 
 /**
  * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
- * @brief Useful Tooling for Behavior Tree development.
+ * @brief Useful tooling for Behavior Tree development.
  * @{
  */
 
