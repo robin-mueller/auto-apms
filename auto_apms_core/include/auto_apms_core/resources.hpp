@@ -20,7 +20,7 @@
 namespace auto_apms_core {
 
 /**
- * @brief Collect all package names that register a certain type resource.
+ * @brief Collect all package names that register a certain type of `ament_index` resources.
  * @ingroup auto_apms_core
  * @param resource_type Name of the resource type.
  * @return Package names.
