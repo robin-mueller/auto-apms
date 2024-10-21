@@ -13,12 +13,11 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "behaviortree_cpp/scripting/script_parser.hpp"
 
 #define INPUT_KEY_IF "if"
 #define INPUT_KEY_ELSE "else"
 #define INPUT_KEY_CHECK_WHILE_RUNNING "check_while_running"
-
-using namespace BT;
 
 namespace auto_apms::ops_engine {
 
@@ -26,49 +25,50 @@ namespace auto_apms::ops_engine {
  * Same as PreconditionNode but when the condition is true, this node returns RUNNING immediately and executes the tick
  * in the next iteration.
  */
-class AsyncPrecondition : public DecoratorNode
+class AsyncPrecondition : public BT::DecoratorNode
 {
    public:
-    AsyncPrecondition(const std::string& name, const NodeConfig& config) : DecoratorNode(name, config)
+    AsyncPrecondition(const std::string& name, const BT::NodeConfig& config) : DecoratorNode(name, config)
     {
         loadExecutor();
     }
 
     virtual ~AsyncPrecondition() override = default;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
-        return {InputPort<std::string>(INPUT_KEY_IF,
-                                       "If true, return RUNNING. Otherwise, return what's specified in argument '" +
-                                           std::string(INPUT_KEY_ELSE) + "'"),
-                InputPort<NodeStatus>(INPUT_KEY_ELSE,
-                                      NodeStatus::SKIPPED,
-                                      "Return status if condition is "
-                                      "false"),
-                InputPort<bool>(INPUT_KEY_CHECK_WHILE_RUNNING,
-                                false,
-                                "Check the condition in argument '" + std::string(INPUT_KEY_IF) +
-                                    "' also while the child is RUNNING")};
+        return {BT::InputPort<std::string>(INPUT_KEY_IF,
+                                           "If true, return RUNNING. Otherwise, return what's specified in argument '" +
+                                               std::string(INPUT_KEY_ELSE) + "'"),
+                BT::InputPort<BT::NodeStatus>(INPUT_KEY_ELSE,
+                                              BT::NodeStatus::SKIPPED,
+                                              "Return status if condition is "
+                                              "false"),
+                BT::InputPort<bool>(INPUT_KEY_CHECK_WHILE_RUNNING,
+                                    false,
+                                    "Check the condition in argument '" + std::string(INPUT_KEY_IF) +
+                                        "' also while the child is RUNNING")};
     }
 
    private:
-    virtual BT::NodeStatus tick() override
+    virtual BT::NodeStatus tick() override final
     {
         // Load the result of the condition
         loadExecutor();
-        Ast::Environment env = {config().blackboard, config().enums};
+        BT::Ast::Environment env = {config().blackboard, config().enums};
         bool condition_result = _executor(env).cast<bool>();
 
         BT::NodeStatus else_return;
         if (!getInput(INPUT_KEY_ELSE, else_return)) {
-            throw RuntimeError("Missing parameter [" + std::string(INPUT_KEY_ELSE) + "] in Precondition");
+            throw auto_apms_behavior_tree::exceptions::RosNodeError("Missing parameter [" +
+                                                                    std::string(INPUT_KEY_ELSE) + "] in Precondition");
         }
 
         // Return RUNNING the first time the condition is true
-        if (status() == NodeStatus::IDLE) {
+        if (status() == BT::NodeStatus::IDLE) {
             if (condition_result) {
-                setStatus(NodeStatus::RUNNING);  // Change the current status
-                return NodeStatus::RUNNING;
+                setStatus(BT::NodeStatus::RUNNING);  // Change the current status
+                return BT::NodeStatus::RUNNING;
             }
             return else_return;
         }
@@ -85,11 +85,12 @@ class AsyncPrecondition : public DecoratorNode
     {
         std::string script;
         if (!getInput(INPUT_KEY_IF, script)) {
-            throw RuntimeError("Missing parameter [" + std::string(INPUT_KEY_IF) + "] in Precondition");
+            throw auto_apms_behavior_tree::exceptions::RosNodeError("Missing parameter [" + std::string(INPUT_KEY_IF) +
+                                                                    "] in Precondition");
         }
         if (script == _script) { return; }
-        auto executor = ParseScript(script);
-        if (!executor) { throw RuntimeError(executor.error()); }
+        auto executor = BT::ParseScript(script);
+        if (!executor) { throw auto_apms_behavior_tree::exceptions::RosNodeError(executor.error()); }
         else {
             _executor = executor.value();
             _script = script;
@@ -97,10 +98,9 @@ class AsyncPrecondition : public DecoratorNode
     }
 
     std::string _script;
-    ScriptFunction _executor;
+    BT::ScriptFunction _executor;
 };
 
 }  // namespace auto_apms::ops_engine
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
 AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms::ops_engine::AsyncPrecondition)

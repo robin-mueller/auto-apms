@@ -11,7 +11,6 @@ find_package(rclcpp_action REQUIRED)
 find_package(rcpputils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
-find_package(behaviortree_ros2 REQUIRED)
 find_package(auto_apms_interfaces REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
@@ -79,11 +78,10 @@ ament_target_dependencies(auto_apms_behavior_tree
     rcpputils
     pluginlib
     behaviortree_cpp
-    behaviortree_ros2
-    auto_apms_interfaces
     yaml_cpp_vendor
     TinyXML2
     auto_apms_core
+    auto_apms_interfaces
 )
 target_link_libraries(auto_apms_behavior_tree
     node_plugin_loader_params
@@ -173,11 +171,11 @@ ament_export_dependencies(
     rcpputils
     pluginlib
     behaviortree_cpp
-    behaviortree_ros2
-    auto_apms_interfaces
     yaml_cpp_vendor
     TinyXML2
     auto_apms_core
+    auto_apms_interfaces
+    generate_parameter_library
 )
 
 ###### Non export libraries ######

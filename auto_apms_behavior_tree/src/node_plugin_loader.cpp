@@ -112,7 +112,7 @@ void BTNodePluginLoader::Load(const Manifest& manifest, BT::BehaviorTreeFactory&
 
         try {
             if (plugin_instance->RequiresROSNodeParams()) {
-                BT::RosNodeParams ros_params;
+                RosNodeParams ros_params;
                 ros_params.nh = node_ptr_;
                 ros_params.default_port_value = params.port;
                 ros_params.wait_for_server_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(

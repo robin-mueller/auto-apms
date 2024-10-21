@@ -14,31 +14,29 @@
 
 #include "auto_apms_behavior_tree/behavior_tree.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "behaviortree_cpp/action_node.h"
+#include "auto_apms_behavior_tree/node_plugin.hpp"
 
 #define INPUT_KEY_PACKAGE "package_name"
 #define INPUT_KEY_FILENAME "filename"
 #define OUTPUT_KEY_DATA "xml_data"
 
-using namespace BT;
-
 namespace auto_apms_behavior_tree {
 
-class LoadBehaviorTreeAction : public SyncActionNode
+class LoadBehaviorTreeAction : public BT::SyncActionNode
 {
    public:
     using SyncActionNode::SyncActionNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
-        return {InputPort<std::string>(INPUT_KEY_PACKAGE, "Name of the ROS2 package containing the trees file"),
-                InputPort<std::string>(INPUT_KEY_FILENAME, "Name of the trees file (Extension may be omitted)"),
-                OutputPort<std::string>(OUTPUT_KEY_DATA,
-                                        "{xml_data}",
-                                        "XML string containing the data for the behavior trees")};
+        return {BT::InputPort<std::string>(INPUT_KEY_PACKAGE, "Name of the ROS2 package containing the trees file"),
+                BT::InputPort<std::string>(INPUT_KEY_FILENAME, "Name of the trees file (Extension may be omitted)"),
+                BT::OutputPort<std::string>(OUTPUT_KEY_DATA,
+                                            "{xml_data}",
+                                            "XML string containing the data for the behavior trees")};
     }
 
-    NodeStatus tick() final
+    BT::NodeStatus tick() final
     {
         auto package_name = getInput<std::string>(INPUT_KEY_PACKAGE).value();
         auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
@@ -47,15 +45,14 @@ class LoadBehaviorTreeAction : public SyncActionNode
         try {
             resource = BTResource::SelectByFileName(filename, package_name);
         } catch (const exceptions::ResourceNotFoundError& e) {
-            return NodeStatus::FAILURE;
+            return BT::NodeStatus::FAILURE;
         }
 
         setOutput<std::string>(OUTPUT_KEY_DATA, BehaviorTree{resource}.WriteToString());
-        return NodeStatus::SUCCESS;
+        return BT::NodeStatus::SUCCESS;
     }
 };
 
 }  // namespace auto_apms_behavior_tree
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
 AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::LoadBehaviorTreeAction)

@@ -15,7 +15,6 @@
 #include <Eigen/Geometry>
 
 #include "auto_apms_behavior_tree/node_plugin.hpp"
-#include "auto_apms_px4/bt_px4_topic_sub_node.hpp"
 #include "px4_msgs/msg/vehicle_global_position.hpp"
 
 #define OUTPUT_KEY_LAT "lat"
@@ -23,31 +22,34 @@
 #define OUTPUT_KEY_ALT "alt"
 #define OUTPUT_KEY_POS "pos_vec"
 
-using namespace BT;
 using GlobalPositionMsg = px4_msgs::msg::VehicleGlobalPosition;
 
 namespace auto_apms_px4 {
 
-class ReadGlobalPosition : public PX4RosTopicSubNode<GlobalPositionMsg>
+class ReadGlobalPosition : public auto_apms_behavior_tree::RosSubscriberNode<GlobalPositionMsg>
 {
     GlobalPositionMsg last_msg_;
 
    public:
-    using PX4RosTopicSubNode::PX4RosTopicSubNode;
+    ReadGlobalPosition(const std::string& instance_name,
+                       const BT::NodeConfig& conf,
+                       const auto_apms_behavior_tree::RosNodeParams& params)
+        : RosSubscriberNode{instance_name, conf, params, rclcpp::SensorDataQoS{}}
+    {}
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
         return providedBasicPorts(
-            {OutputPort<Eigen::Vector3d>(
+            {BT::OutputPort<Eigen::Vector3d>(
                  OUTPUT_KEY_POS,
                  "{pos_vec}",
                  "Current global position vector (latitude [°], longitude [°], altitude AMSL [m])"),
-             OutputPort<double>(OUTPUT_KEY_LAT, "{lat}", "Current latitude in degree [°]"),
-             OutputPort<double>(OUTPUT_KEY_LON, "{lon}", "Current longitude in degree [°]"),
-             OutputPort<double>(OUTPUT_KEY_ALT, "{alt}", "Current altitude in meter (AMSL)")});
+             BT::OutputPort<double>(OUTPUT_KEY_LAT, "{lat}", "Current latitude in degree [°]"),
+             BT::OutputPort<double>(OUTPUT_KEY_LON, "{lon}", "Current longitude in degree [°]"),
+             BT::OutputPort<double>(OUTPUT_KEY_ALT, "{alt}", "Current altitude in meter (AMSL)")});
     }
 
-    NodeStatus onTick(const std::shared_ptr<GlobalPositionMsg>& last_msg_ptr) final
+    BT::NodeStatus onTick(const std::shared_ptr<GlobalPositionMsg>& last_msg_ptr) final
     {
         // Check if a new message was received
         if (last_msg_ptr) { last_msg_ = *last_msg_ptr; }
@@ -58,10 +60,10 @@ class ReadGlobalPosition : public PX4RosTopicSubNode<GlobalPositionMsg>
             setOutput(OUTPUT_KEY_ALT, last_msg_.alt);
             Eigen::Vector3d pos{last_msg_.lat, last_msg_.lon, last_msg_.alt};
             any_locked.assign(pos);
-            return NodeStatus::SUCCESS;
+            return BT::NodeStatus::SUCCESS;
         }
         RCLCPP_ERROR(logger(), "%s - getLockedPortContent() failed for argument %s", name().c_str(), OUTPUT_KEY_POS);
-        return NodeStatus::FAILURE;
+        return BT::NodeStatus::FAILURE;
     }
 };
 

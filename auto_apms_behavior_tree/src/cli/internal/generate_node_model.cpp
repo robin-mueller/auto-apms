@@ -102,7 +102,7 @@ int main(int argc, char** argv)
             try {
                 const auto plugin_instance = class_loader.createUniqueInstance<BTNodePluginBase>(factory_classname);
                 if (plugin_instance->RequiresROSNodeParams()) {
-                    BT::RosNodeParams ros_params;
+                    RosNodeParams ros_params;
                     ros_params.nh = node_ptr;
                     ros_params.default_port_value = params.port;
                     ros_params.wait_for_server_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(

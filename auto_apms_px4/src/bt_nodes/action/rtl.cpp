@@ -16,40 +16,14 @@
 
 #include "auto_apms_behavior_tree/node_plugin.hpp"
 
-using namespace BT;
-
 namespace auto_apms_px4 {
 
-class RTLAction : public RosActionNode<auto_apms_interfaces::action::RTL>
+class RTLAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::RTL>
 {
    public:
     using RosActionNode::RosActionNode;
 
-    static PortsList providedPorts() { return providedBasicPorts({}); }
-
-    bool setGoal(Goal& goal)
-    {
-        (void)goal;
-        return true;
-    }
-
-    NodeStatus onResultReceived(const WrappedResult& wr)
-    {
-        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) { return NodeStatus::SUCCESS; }
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFailure(ActionNodeErrorCode error)
-    {
-        RCLCPP_ERROR(logger(), "%s - Error: %d - %s", name().c_str(), error, toStr(error));
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback)
-    {
-        (void)feedback;
-        return NodeStatus::RUNNING;
-    }
+    static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 };
 
 }  // namespace auto_apms_px4

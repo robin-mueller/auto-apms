@@ -17,22 +17,20 @@
 
 #define INPUT_KEY_WAIT "wait_until_ready_to_arm"
 
-using namespace BT;
-
 namespace auto_apms_px4 {
 
-class ArmAction : public RosActionNode<auto_apms_interfaces::action::ArmDisarm>
+class ArmAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::ArmDisarm>
 {
    public:
     using RosActionNode::RosActionNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
         return providedBasicPorts(
-            {InputPort<bool>(INPUT_KEY_WAIT,
-                             true,
-                             "Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will "
-                             "be rejected.")});
+            {BT::InputPort<bool>(INPUT_KEY_WAIT,
+                                 true,
+                                 "Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will "
+                                 "be rejected.")});
     }
 
     bool setGoal(Goal& goal)
@@ -40,24 +38,6 @@ class ArmAction : public RosActionNode<auto_apms_interfaces::action::ArmDisarm>
         goal.arming_state = Goal::ARMING_STATE_ARM;
         goal.wait_until_ready_to_arm = getInput<bool>(INPUT_KEY_WAIT).value();
         return true;
-    }
-
-    NodeStatus onResultReceived(const WrappedResult& wr)
-    {
-        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) { return NodeStatus::SUCCESS; }
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFailure(ActionNodeErrorCode error)
-    {
-        RCLCPP_ERROR(logger(), "%s - Error: %d - %s", name().c_str(), error, toStr(error));
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback)
-    {
-        (void)feedback;
-        return NodeStatus::RUNNING;
     }
 };
 

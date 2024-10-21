@@ -23,28 +23,27 @@
 #define OUTPUT_KEY_DATA "xml_data"
 #define OUTPUT_KEY_ID "tree_id"
 
-using namespace BT;
-
 namespace auto_apms::ops_engine {
 
-class CreateAlternateLandingMission : public SyncActionNode
+class CreateAlternateLandingMission : public BT::SyncActionNode
 {
    public:
     using SyncActionNode::SyncActionNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
-        return {InputPort<Eigen::Vector3d>(INPUT_KEY_POS,
+        return {
+            BT::InputPort<Eigen::Vector3d>(INPUT_KEY_POS,
                                            "Current global position (latitude [°], longitude [°], altitude AMSL [m])"),
-                OutputPort<std::string>(OUTPUT_KEY_DATA,
+            BT::OutputPort<std::string>(OUTPUT_KEY_DATA,
                                         "{xml_data}",
                                         "String containing the XML data of the alternate landing mission tree"),
-                OutputPort<std::string>(OUTPUT_KEY_ID,
+            BT::OutputPort<std::string>(OUTPUT_KEY_ID,
                                         "{tree_id}",
                                         "The ID of the tree that acts as the entry point for the mission")};
     }
 
-    NodeStatus tick() final
+    BT::NodeStatus tick() override final
     {
         Eigen::Vector2d current_global_pos;
         double current_alt;
@@ -111,7 +110,7 @@ class CreateAlternateLandingMission : public SyncActionNode
 
         // Currently there is no easy way to read the tree id from the xml without creating it
         setOutput<std::string>(OUTPUT_KEY_ID, main_tree_id);
-        return NodeStatus::SUCCESS;
+        return BT::NodeStatus::SUCCESS;
     }
 };
 

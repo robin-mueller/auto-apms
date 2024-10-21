@@ -16,23 +16,24 @@
 
 #define INPUT_KEY_MSG "message"
 
-using namespace BT;
-
 namespace auto_apms_behavior_tree {
 
-class ThrowException : public SyncActionNode
+class ThrowException : public BT::SyncActionNode
 {
    public:
     using SyncActionNode::SyncActionNode;
 
-    static PortsList providedPorts() { return {InputPort<std::string>(INPUT_KEY_MSG, "Error message. Can be empty")}; }
+    static BT::PortsList providedPorts()
+    {
+        return {BT::InputPort<std::string>(INPUT_KEY_MSG, "Error message. Can be empty")};
+    }
 
-    NodeStatus tick() final
+    BT::NodeStatus tick() final
     {
         auto input = getInput<std::string>(INPUT_KEY_MSG);
         auto node_name = name() == registrationName() ? registrationName() : registrationName() + ": " + name();
-        if (!input.has_value()) { throw RuntimeError(node_name + " - An error occured"); }
-        throw RuntimeError(node_name + " - " + input.value());
+        if (!input.has_value()) { throw exceptions::RosNodeError(node_name + " - An error occured"); }
+        throw exceptions::RosNodeError(node_name + " - " + input.value());
     }
 };
 

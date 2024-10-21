@@ -18,42 +18,23 @@
 
 #define INPUT_KEY_ALTITUDE "alt"
 
-using namespace BT;
-
 namespace auto_apms_px4 {
 
-class TakeoffAction : public RosActionNode<auto_apms_interfaces::action::Takeoff>
+class TakeoffAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::Takeoff>
 {
    public:
     using RosActionNode::RosActionNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
-        return providedBasicPorts({InputPort<double>(INPUT_KEY_ALTITUDE, "Target takeoff altitude in meter (AMSL)")});
+        return providedBasicPorts(
+            {BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target takeoff altitude in meter (AMSL)")});
     }
 
     bool setGoal(Goal& goal)
     {
         goal.altitude_amsl_m = getInput<double>(INPUT_KEY_ALTITUDE).value();
         return true;
-    }
-
-    NodeStatus onResultReceived(const WrappedResult& wr)
-    {
-        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) { return NodeStatus::SUCCESS; }
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFailure(ActionNodeErrorCode error)
-    {
-        RCLCPP_ERROR(logger(), "%s - Error: %d - %s", name().c_str(), error, toStr(error));
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback)
-    {
-        (void)feedback;
-        return NodeStatus::RUNNING;
     }
 };
 

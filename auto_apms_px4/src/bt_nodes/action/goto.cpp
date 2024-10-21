@@ -19,20 +19,18 @@
 #define INPUT_KEY_LONGITUDE "lon"
 #define INPUT_KEY_ALTITUDE "alt"
 
-using namespace BT;
-
 namespace auto_apms_px4 {
 
-class GoToAction : public RosActionNode<auto_apms_interfaces::action::GoTo>
+class GoToAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::GoTo>
 {
    public:
     using RosActionNode::RosActionNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
-        return providedBasicPorts({InputPort<double>(INPUT_KEY_LATITUDE, "Target latitude"),
-                                   InputPort<double>(INPUT_KEY_LONGITUDE, "Target longitude"),
-                                   InputPort<double>(INPUT_KEY_ALTITUDE, "Target altitude in meter (AMSL)")});
+        return providedBasicPorts({BT::InputPort<double>(INPUT_KEY_LATITUDE, "Target latitude"),
+                                   BT::InputPort<double>(INPUT_KEY_LONGITUDE, "Target longitude"),
+                                   BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target altitude in meter (AMSL)")});
     }
 
     bool setGoal(Goal& goal)
@@ -42,18 +40,6 @@ class GoToAction : public RosActionNode<auto_apms_interfaces::action::GoTo>
         goal.alt = getInput<double>(INPUT_KEY_ALTITUDE).value();
         goal.head_towards_destination = true;
         return true;
-    }
-
-    NodeStatus onResultReceived(const WrappedResult& wr)
-    {
-        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) { return NodeStatus::SUCCESS; }
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFailure(ActionNodeErrorCode error)
-    {
-        RCLCPP_ERROR(logger(), "%s - Error: %d - %s", name().c_str(), error, toStr(error));
-        return NodeStatus::FAILURE;
     }
 };
 

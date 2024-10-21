@@ -15,8 +15,6 @@
 #include "auto_apms_behavior_tree/node_plugin.hpp"
 #include "auto_apms_interfaces/action/bt_executor_command.hpp"
 
-using namespace BT;
-
 namespace auto_apms_behavior_tree {
 
 class ResumeExecutorAction : public RosActionNode<auto_apms_interfaces::action::BTExecutorCommand>
@@ -28,18 +26,6 @@ class ResumeExecutorAction : public RosActionNode<auto_apms_interfaces::action::
     {
         goal.command = Goal::COMMAND_RESUME;
         return true;
-    }
-
-    NodeStatus onResultReceived(const WrappedResult& wr)
-    {
-        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) { return NodeStatus::SUCCESS; }
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFailure(ActionNodeErrorCode error)
-    {
-        RCLCPP_ERROR(logger(), "%s - Error: %d - %s", name().c_str(), error, toStr(error));
-        return NodeStatus::FAILURE;
     }
 };
 

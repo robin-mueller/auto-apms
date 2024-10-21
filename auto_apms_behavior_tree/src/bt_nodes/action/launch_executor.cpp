@@ -15,8 +15,6 @@
 #include "auto_apms_behavior_tree/node_plugin.hpp"
 #include "auto_apms_interfaces/action/launch_bt_executor.hpp"
 
-using namespace BT;
-
 namespace auto_apms_behavior_tree {
 
 class LaunchExecutorAction : public RosActionNode<auto_apms_interfaces::action::LaunchBTExecutor>
@@ -26,34 +24,22 @@ class LaunchExecutorAction : public RosActionNode<auto_apms_interfaces::action::
    public:
     using RosActionNode::RosActionNode;
 
-    static PortsList providedPorts() { return providedBasicPorts({}); }
+    static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 
-    bool setGoal(Goal& goal)
-    {
-        (void)goal;
-        return true;
-    }
-
-    NodeStatus onResultReceived(const WrappedResult& wr)
+    BT::NodeStatus onResultReceived(const WrappedResult& wr)
     {
         switch (wr.result->tree_result) {
             case ActionType::Result::TREE_RESULT_SUCCESS:
-                return NodeStatus::SUCCESS;
+                return BT::NodeStatus::SUCCESS;
             case ActionType::Result::TREE_RESULT_FAILURE:
-                return NodeStatus::FAILURE;
+                return BT::NodeStatus::FAILURE;
             default:
-                throw BT::RuntimeError(name() + ": Received illegal tree result " +
-                                       std::to_string(wr.result->tree_result));
+                throw exceptions::RosNodeError(name() + ": Received illegal tree result " +
+                                               std::to_string(wr.result->tree_result));
         }
     }
 
-    NodeStatus onFailure(ActionNodeErrorCode error)
-    {
-        RCLCPP_ERROR(logger(), "%s - Error: %d - %s", name().c_str(), error, toStr(error));
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback)
+    BT::NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback)
     {
         if (feedback->running_action_timestamp > last_running_node_timestamp_) {
             last_running_node_timestamp_ = feedback->running_action_timestamp;
@@ -63,7 +49,7 @@ class LaunchExecutorAction : public RosActionNode<auto_apms_interfaces::action::
                          feedback->root_tree_id.c_str(),
                          feedback->running_action_name.c_str());
         }
-        return NodeStatus::RUNNING;
+        return BT::NodeStatus::RUNNING;
     }
 };
 

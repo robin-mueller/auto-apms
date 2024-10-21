@@ -15,7 +15,6 @@
   <depend>rcpputils</depend>
   <depend>pluginlib</depend>
   <depend>behaviortree_cpp</depend>
-  <depend>behaviortree_ros2</depend>
   <depend>auto_apms_interfaces</depend>
   <depend>yaml_cpp_vendor</depend>
   <depend>tinyxml2_vendor</depend>

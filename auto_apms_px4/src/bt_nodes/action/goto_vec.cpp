@@ -19,19 +19,17 @@
 
 #define INPUT_KEY_VEC "vector"
 
-using namespace BT;
-
 namespace auto_apms_px4 {
 
-class GoToVectorAction : public RosActionNode<auto_apms_interfaces::action::GoTo>
+class GoToVectorAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::GoTo>
 {
    public:
     using RosActionNode::RosActionNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
         return providedBasicPorts(
-            {InputPort<Eigen::Vector3d>(INPUT_KEY_VEC, "Target position as a pointer to a vector")});
+            {BT::InputPort<Eigen::Vector3d>(INPUT_KEY_VEC, "Target position as a pointer to a vector")});
     }
 
     bool setGoal(Goal& goal)
@@ -55,18 +53,6 @@ class GoToVectorAction : public RosActionNode<auto_apms_interfaces::action::GoTo
         }
         RCLCPP_ERROR(logger(), "%s - getLockedPortContent() failed for argument %s", name().c_str(), INPUT_KEY_VEC);
         return false;
-    }
-
-    NodeStatus onResultReceived(const WrappedResult& wr)
-    {
-        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) { return NodeStatus::SUCCESS; }
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFailure(ActionNodeErrorCode error)
-    {
-        RCLCPP_ERROR(logger(), "%s - Error: %d - %s", name().c_str(), error, toStr(error));
-        return NodeStatus::FAILURE;
     }
 };
 

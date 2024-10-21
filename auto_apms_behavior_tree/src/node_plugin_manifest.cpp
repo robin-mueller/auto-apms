@@ -17,7 +17,7 @@
 #include <fstream>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "behaviortree_ros2/ros_node_params.hpp"
+#include "auto_apms_behavior_tree/node_base/node_params.hpp"
 #include "yaml-cpp/yaml.h"
 
 /// @cond

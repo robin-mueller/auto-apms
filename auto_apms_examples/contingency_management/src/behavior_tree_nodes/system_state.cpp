@@ -18,35 +18,33 @@
 
 #define OUTPUT_KEY_BATTERY "battery_level"
 
-using namespace BT;
 using SystemStateMsg = auto_apms_examples::msg::SystemState;
 
 namespace auto_apms::ops_engine {
 
-class GetSystemState : public RosTopicSubNode<SystemStateMsg>
+class GetSystemState : public auto_apms_behavior_tree::RosSubscriberNode<SystemStateMsg>
 {
     SystemStateMsg last_msg_;
 
    public:
-    using RosTopicSubNode::RosTopicSubNode;
+    using RosSubscriberNode::RosSubscriberNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
         return providedBasicPorts(
-            {OutputPort<float>(OUTPUT_KEY_BATTERY, "{battery_level}", "Battery level in percent")});
+            {BT::OutputPort<float>(OUTPUT_KEY_BATTERY, "{battery_level}", "Battery level in percent")});
     }
 
-    NodeStatus onTick(const std::shared_ptr<SystemStateMsg>& last_msg_ptr) final
+    BT::NodeStatus onTick(const std::shared_ptr<SystemStateMsg>& last_msg_ptr) override final
     {
         // Check if a new message was received
         if (last_msg_ptr) { last_msg_ = *last_msg_ptr; }
 
         setOutput(OUTPUT_KEY_BATTERY, last_msg_.battery_level_percent);
-        return NodeStatus::SUCCESS;
+        return BT::NodeStatus::SUCCESS;
     }
 };
 
 }  // namespace auto_apms::ops_engine
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
 AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms::ops_engine::GetSystemState)

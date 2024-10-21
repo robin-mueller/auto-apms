@@ -15,39 +15,19 @@
 #include "auto_apms_behavior_tree/node_plugin.hpp"
 #include "auto_apms_interfaces/action/arm_disarm.hpp"
 
-using namespace BT;
-
 namespace auto_apms_px4 {
 
-class DisarmAction : public RosActionNode<auto_apms_interfaces::action::ArmDisarm>
+class DisarmAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::ArmDisarm>
 {
    public:
     using RosActionNode::RosActionNode;
 
-    static PortsList providedPorts() { return providedBasicPorts({}); }
+    static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 
     bool setGoal(Goal& goal)
     {
         goal.arming_state = Goal::ARMING_STATE_DISARM;
         return true;
-    }
-
-    NodeStatus onResultReceived(const WrappedResult& wr)
-    {
-        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) { return NodeStatus::SUCCESS; }
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFailure(ActionNodeErrorCode error)
-    {
-        RCLCPP_ERROR(logger(), "%s - Error: %d - %s", name().c_str(), error, toStr(error));
-        return NodeStatus::FAILURE;
-    }
-
-    NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback)
-    {
-        (void)feedback;
-        return NodeStatus::RUNNING;
     }
 };
 

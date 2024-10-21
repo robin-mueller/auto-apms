@@ -18,38 +18,36 @@
 
 #define OUTPUT_KEY_SITE_ID "next_landing_site_id"
 
-using namespace BT;
 using LandingApproachMsg = auto_apms_examples::msg::LandingApproach;
 
 namespace auto_apms::ops_engine {
 
-class IsApproachingLanding : public RosTopicSubNode<LandingApproachMsg>
+class IsApproachingLanding : public auto_apms_behavior_tree::RosSubscriberNode<LandingApproachMsg>
 {
    public:
-    using RosTopicSubNode::RosTopicSubNode;
+    using RosSubscriberNode::RosSubscriberNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
-        return providedBasicPorts({OutputPort<uint8_t>(OUTPUT_KEY_SITE_ID,
-                                                       "{next_landing_site_id}",
-                                                       "ID of the next landing site to be approached")});
+        return providedBasicPorts({BT::OutputPort<uint8_t>(OUTPUT_KEY_SITE_ID,
+                                                           "{next_landing_site_id}",
+                                                           "ID of the next landing site to be approached")});
     }
 
-    NodeStatus onTick(const std::shared_ptr<LandingApproachMsg>& last_msg_ptr) final
+    BT::NodeStatus onTick(const std::shared_ptr<LandingApproachMsg>& last_msg_ptr) override final
     {
         // Check if a new message was received
         if (!last_msg_ptr) {
             RCLCPP_WARN(logger(), "%s - No new landing approach message was received", name().c_str());
-            return NodeStatus::FAILURE;
+            return BT::NodeStatus::FAILURE;
         }
 
         setOutput(OUTPUT_KEY_SITE_ID, last_msg_ptr->next_landing_site_id);
 
-        return last_msg_ptr->is_approaching ? NodeStatus::SUCCESS : NodeStatus::FAILURE;
+        return last_msg_ptr->is_approaching ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
     }
 };
 
 }  // namespace auto_apms::ops_engine
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
 AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms::ops_engine::IsApproachingLanding)

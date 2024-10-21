@@ -19,17 +19,17 @@
 #include "auto_apms_behavior_tree/node_plugin_base.hpp"
 
 // Include base classes for inheritance in downstream source files
-#include "behaviortree_ros2/bt_action_node.hpp"
-#include "behaviortree_ros2/bt_service_node.hpp"
-#include "behaviortree_ros2/bt_topic_pub_node.hpp"
-#include "behaviortree_ros2/bt_topic_sub_node.hpp"
+#include "auto_apms_behavior_tree/node_base/ros_action_node.hpp"
+#include "auto_apms_behavior_tree/node_base/ros_publisher_node.hpp"
+#include "auto_apms_behavior_tree/node_base/ros_service_node.hpp"
+#include "auto_apms_behavior_tree/node_base/ros_subscriber_node.hpp"
 
 namespace auto_apms_behavior_tree {
 
 template <
     typename BTNodeType,
-    bool requires_ros_node_params = std::
-        is_constructible<BTNodeType, const std::string &, const BT::NodeConfig &, const BT::RosNodeParams &>::value>
+    bool requires_ros_node_params =
+        std::is_constructible<BTNodeType, const std::string &, const BT::NodeConfig &, const RosNodeParams &>::value>
 class BTNodePlugin : public BTNodePluginBase
 {
    public:
@@ -40,13 +40,13 @@ class BTNodePlugin : public BTNodePluginBase
 
     void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
                                          const std::string &registration_name,
-                                         const BT::RosNodeParams *const params_ptr = nullptr) const override
+                                         const RosNodeParams *const params_ptr = nullptr) const override
     {
         if constexpr (requires_ros_node_params) {
             if (!params_ptr) {
                 throw std::runtime_error(
                     boost::core::demangle(typeid(BTNodeType).name()) +
-                    " requires a valid BT::RosNodeParams object to be passed via argument 'params_ptr'.");
+                    " requires a valid RosNodeParams object to be passed via argument 'params_ptr'.");
             }
             factory.registerNodeType<BTNodeType>(registration_name, *params_ptr);
         }

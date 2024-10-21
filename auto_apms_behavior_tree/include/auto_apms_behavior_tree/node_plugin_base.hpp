@@ -14,8 +14,8 @@
 
 #pragma once
 
+#include "auto_apms_behavior_tree/node_base/node_params.hpp"
 #include "behaviortree_cpp/bt_factory.h"
-#include "behaviortree_ros2/ros_node_params.hpp"
 
 namespace auto_apms_behavior_tree {
 
@@ -28,7 +28,7 @@ class BTNodePluginBase
     virtual bool RequiresROSNodeParams() const = 0;
     virtual void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
                                                  const std::string &registration_name,
-                                                 const BT::RosNodeParams *const params_ptr = nullptr) const = 0;
+                                                 const RosNodeParams *const params_ptr = nullptr) const = 0;
 };
 
 }  // namespace auto_apms_behavior_tree

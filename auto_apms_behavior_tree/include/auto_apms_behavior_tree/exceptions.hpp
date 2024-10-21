@@ -33,4 +33,9 @@ struct BTNodePluginLoadingError : public auto_apms_core::exceptions::ExceptionBa
     using ExceptionBase::ExceptionBase;
 };
 
+struct RosNodeError : public auto_apms_core::exceptions::ExceptionBase
+{
+    using ExceptionBase::ExceptionBase;
+};
+
 }  // namespace auto_apms_behavior_tree::exceptions

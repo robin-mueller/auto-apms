@@ -18,8 +18,6 @@
 #define INPUT_KEY_TREE "xml_data"
 #define INPUT_KEY_ID "tree_id"
 
-using namespace BT;
-
 namespace auto_apms_behavior_tree {
 
 class UploadBehaviorTreeAction : public RosServiceNode<auto_apms_interfaces::srv::UploadBehaviorTree>
@@ -27,14 +25,14 @@ class UploadBehaviorTreeAction : public RosServiceNode<auto_apms_interfaces::srv
    public:
     using RosServiceNode::RosServiceNode;
 
-    static PortsList providedPorts()
+    static BT::PortsList providedPorts()
     {
         return providedBasicPorts(
-            {InputPort<std::string>(INPUT_KEY_TREE,
-                                    "XML string containing the data for the behavior trees to be registered"),
-             InputPort<std::string>(INPUT_KEY_ID,
-                                    "ID of the tree that should be created. Empty means to use the "
-                                    "main_tree_to_execute attribute to determine which tree is to be executed")});
+            {BT::InputPort<std::string>(INPUT_KEY_TREE,
+                                        "XML string containing the data for the behavior trees to be registered"),
+             BT::InputPort<std::string>(INPUT_KEY_ID,
+                                        "ID of the tree that should be created. Empty means to use the "
+                                        "main_tree_to_execute attribute to determine which tree is to be executed")});
     }
 
     bool setRequest(Request::SharedPtr& request) final
@@ -44,11 +42,11 @@ class UploadBehaviorTreeAction : public RosServiceNode<auto_apms_interfaces::srv
         return true;
     }
 
-    NodeStatus onResponseReceived(const Response::SharedPtr& response) final
+    BT::NodeStatus onResponseReceived(const Response::SharedPtr& response) final
     {
-        if (response->success) { return NodeStatus::SUCCESS; }
+        if (response->success) { return BT::NodeStatus::SUCCESS; }
         RCLCPP_ERROR(logger(), "%s - Error: %s", name().c_str(), response->error_message.c_str());
-        return NodeStatus::FAILURE;
+        return BT::NodeStatus::FAILURE;
     }
 };
 
