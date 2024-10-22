@@ -64,7 +64,7 @@ class RosSubscriberNode : public BT::ConditionNode
      * @brief Any subclass of RosTopicNode that accepts parameters must provide a
      * providedPorts method and call providedBasicPorts in it.
      * @param addition Additional ports to add to BT port list
-     * @returnBT::PortsList Containing basic ports along with node-specific ports
+     * @return BT::PortsList Containing basic ports along with node-specific ports
      */
     static BT::PortsList providedBasicPorts(BT::PortsList addition)
     {
@@ -75,7 +75,7 @@ class RosSubscriberNode : public BT::ConditionNode
 
     /**
      * @brief Creates list of BT ports
-     * @returnBT::PortsList Containing basic ports along with node-specific ports
+     * @return BT::PortsList Containing basic ports along with node-specific ports
      */
     static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 

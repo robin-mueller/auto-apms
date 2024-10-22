@@ -22,8 +22,24 @@
 
 namespace auto_apms_core {
 
+/**
+ * @defgroup auto_apms_core AutoAPMS - Core
+ * @brief Fundamental base classes and utility functions.
+ */
+
+/**
+ * @brief Status of the auto_apms_core::Task execution process.
+ * @ingroup auto_apms_core
+ */
 enum class TaskStatus : uint8_t { RUNNING, SUCCESS, FAILURE };
 
+/**
+ * @brief Generic base class for robot actions.
+ *
+ * A auto_apms_core::Task is esentially a wrapper for a rclcpp_action::Server providing convenient extension points.
+ *
+ * @ingroup auto_apms_core
+ */
 template <typename ActionT>
 class Task
 {

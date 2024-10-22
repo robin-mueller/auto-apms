@@ -106,7 +106,7 @@ install(
 )
 
 #
-# ------------ Examples --------------
+# ------------ Example Executables --------------
 #
 
 macro(add_and_install_example_executable source_file)
@@ -119,13 +119,15 @@ macro(add_and_install_example_executable source_file)
 endmacro()
 
 add_and_install_example_executable("src/task_ex1.cpp" auto_apms_core auto_apms_interfaces)
-add_and_install_example_executable("src/behavior_ex1.cpp" auto_apms_behavior_tree)
 
-# Example behavior tree resources
+#
+# ------------ Example Behavior Trees --------------
+#
+
 auto_apms_behavior_tree_register_file(
-    "resource/relative_goto.xml"
+    "example_trees/relative_goto/relative_goto.xml"
     NODE_PLUGIN_MANIFEST
-    "resource/relative_goto_plugins.yaml"
+    "example_trees/relative_goto/node_plugins.yaml"
 )
 
 

@@ -89,10 +89,7 @@ class CreateAlternateLandingMission : public BT::SyncActionNode
 
         // Read tree template and replace placeholders
         const std::string main_tree_id = "AlternateLandingMission";
-        auto tree =
-            auto_apms_behavior_tree::BehaviorTree{
-                auto_apms_behavior_tree::BTResource::SelectByID(main_tree_id, "auto_apms_examples")}
-                .WriteToString();
+        auto tree = auto_apms_behavior_tree::BTCreator::FromTreeID(main_tree_id, "auto_apms_examples")->WriteToString();
 
         // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -
         std::regex placeholder("\\$\\{([A-Za-z0-9_-]+)\\}");

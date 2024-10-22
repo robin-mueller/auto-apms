@@ -15,30 +15,11 @@
 #include <signal.h>
 
 #include "auto_apms_behavior_tree/bt_executor_client.hpp"
+#include "auto_apms_core/util/console.hpp"
 
 sig_atomic_t volatile shutdown_requested = 0;
 
-enum class TextColor { GREEN, RED, YELLOW, BLUE, MAGENTA, CYAN };
-
-std::string colored(const std::string& text, TextColor color)
-{
-    switch (color) {
-        case TextColor::RED:
-            return "\x1b[31m" + text + "\x1b[0m";
-        case TextColor::GREEN:
-            return "\x1b[32m" + text + "\x1b[0m";
-        case TextColor::YELLOW:
-            return "\x1b[33m" + text + "\x1b[0m";
-        case TextColor::BLUE:
-            return "\x1b[34m" + text + "\x1b[0m";
-        case TextColor::MAGENTA:
-            return "\x1b[35m" + text + "\x1b[0m";
-        case TextColor::CYAN:
-            return "\x1b[36m" + text + "\x1b[0m";
-    }
-    return "undefined";
-}
-
+using namespace auto_apms_core::util;
 using namespace auto_apms_behavior_tree;
 
 int main(int argc, char* argv[])
@@ -52,8 +33,8 @@ int main(int argc, char* argv[])
     const std::string namespace_{argv[1]};
     const std::string executor_name{argv[2]};
 
-    std::cout << "Starting Behavior Tree Executor '" << colored(executor_name, TextColor::CYAN) << "' in namespace '"
-              << colored(namespace_, TextColor::CYAN) << "'" << std::endl;
+    std::cout << "Starting Behavior Tree Executor '" << ColoredText(executor_name, TextColor::CYAN)
+              << "' in namespace '" << ColoredText(namespace_, TextColor::CYAN) << "'" << std::endl;
 
     // Ensure that rclcpp is not shut down before the tree has terminated
     rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
@@ -87,7 +68,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    std::cout << " --> " << colored("Behavior tree is executing", TextColor::GREEN) << std::endl;
+    std::cout << " --> " << ColoredText("Behavior tree is executing", TextColor::GREEN) << std::endl;
     std::cout << "\nBehavior tree execution log:" << std::endl;
 
     // Spin node as long as tree has not terminated while checking for ctrl+c signal
@@ -119,37 +100,39 @@ int main(int argc, char* argv[])
             switch (execution_result_ptr->result->tree_result) {
                 case LaunchExecutorAction::Result::TREE_RESULT_SUCCESS:
                     std::cout << "\n --> "
-                              << colored("Behavior tree with ID '", TextColor::GREEN) +
-                                     colored(terminated_tree_id, TextColor::CYAN) +
-                                     colored("' succeeded", TextColor::GREEN)
+                              << ColoredText("Behavior tree with ID '", TextColor::GREEN) +
+                                     ColoredText(terminated_tree_id, TextColor::CYAN) +
+                                     ColoredText("' succeeded", TextColor::GREEN)
                               << std::endl;
                     break;
                 case LaunchExecutorAction::Result::TREE_RESULT_FAILURE:
                     std::cout << "\n --> "
-                              << colored("Behavior tree with ID '", TextColor::RED) +
-                                     colored(terminated_tree_id, TextColor::CYAN) + colored("' failed", TextColor::RED)
+                              << ColoredText("Behavior tree with ID '", TextColor::RED) +
+                                     ColoredText(terminated_tree_id, TextColor::CYAN) +
+                                     ColoredText("' failed", TextColor::RED)
                               << std::endl;
                     break;
                 case LaunchExecutorAction::Result::TREE_RESULT_NOT_SET:
                     std::cout << "\n --> "
-                              << colored("Execution of behavior tree with ID '", TextColor::YELLOW) +
-                                     colored(terminated_tree_id, TextColor::CYAN) +
-                                     colored("' succeeded, but no result was specified", TextColor::YELLOW)
+                              << ColoredText("Execution of behavior tree with ID '", TextColor::YELLOW) +
+                                     ColoredText(terminated_tree_id, TextColor::CYAN) +
+                                     ColoredText("' succeeded, but no result was specified", TextColor::YELLOW)
                               << std::endl;
                     break;
             }
             break;
         case rclcpp_action::ResultCode::CANCELED:
             std::cout << "\n --> "
-                      << colored("Behavior tree with ID '", TextColor::YELLOW) +
-                             colored(terminated_tree_id, TextColor::CYAN) + colored("' was halted", TextColor::YELLOW)
+                      << ColoredText("Behavior tree with ID '", TextColor::YELLOW) +
+                             ColoredText(terminated_tree_id, TextColor::CYAN) +
+                             ColoredText("' was halted", TextColor::YELLOW)
                       << std::endl;
             break;
         case rclcpp_action::ResultCode::ABORTED:
             std::cout << "\n --> "
-                      << colored("Execution of behavior tree with ID '", TextColor::RED) +
-                             colored(terminated_tree_id, TextColor::CYAN) +
-                             colored(
+                      << ColoredText("Execution of behavior tree with ID '", TextColor::RED) +
+                             ColoredText(terminated_tree_id, TextColor::CYAN) +
+                             ColoredText(
                                  "' terminated unexpectedly!\n\n" + execution_result_ptr->result->termination_message,
                                  TextColor::RED)
                       << std::endl;

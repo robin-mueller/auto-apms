@@ -123,22 +123,26 @@ auto_apms_behavior_tree_register_nodes(bt_nodes
 # ------------ Utility Executables --------------
 #
 
-# Command line tool to create a file containing a complete behavior tree node plugin load manifest
+# Create a file containing a complete behavior tree node plugin load manifest
 add_executable(create_node_plugin_manifest "src/cli/internal/create_node_plugin_manifest.cpp")
 target_link_libraries(create_node_plugin_manifest auto_apms_behavior_tree)
 target_compile_definitions(create_node_plugin_manifest PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE}"
 )
 
-# Command line tool to create the node model according to a behavior tree node plugin manifest
+# Generate the node model according to a behavior tree node plugin manifest
 add_executable(generate_node_model "src/cli/internal/generate_node_model.cpp")
 target_link_libraries(generate_node_model auto_apms_behavior_tree)
 
-# Command line tool to register a behavior tree with an executor
+# Run a behavior tree registered with the ament_index
+add_executable(run_behavior_tree "src/cli/run_behavior_tree.cpp")
+target_link_libraries(run_behavior_tree auto_apms_behavior_tree)
+
+# Register a behavior tree with an executor
 add_executable(upload_tree "src/cli/upload_tree.cpp")
 target_link_libraries(upload_tree auto_apms_behavior_tree)
 
-# Command line tool to run the executor of a behavior tree
+# Run the executor of a behavior tree
 add_executable(run_executor "src/cli/run_executor.cpp")
 target_link_libraries(run_executor auto_apms_behavior_tree)
 
@@ -190,6 +194,7 @@ install(
 ###### Publicly available cli tools ######
 install(
     TARGETS
+    run_behavior_tree
     upload_tree
     run_executor
     DESTINATION lib/${PROJECT_NAME}

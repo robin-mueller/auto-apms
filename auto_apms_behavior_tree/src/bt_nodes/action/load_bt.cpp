@@ -41,14 +41,14 @@ class LoadBehaviorTreeAction : public BT::SyncActionNode
         auto package_name = getInput<std::string>(INPUT_KEY_PACKAGE).value();
         auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
 
-        BTResource resource;
+        BTCreator::SharedPtr tree_creator_ptr;
         try {
-            resource = BTResource::SelectByFileName(filename, package_name);
+            tree_creator_ptr = BTCreator::FromTreeFileName(filename, package_name);
         } catch (const exceptions::ResourceNotFoundError& e) {
             return BT::NodeStatus::FAILURE;
         }
 
-        setOutput<std::string>(OUTPUT_KEY_DATA, BehaviorTree{resource}.WriteToString());
+        setOutput<std::string>(OUTPUT_KEY_DATA, tree_creator_ptr->WriteToString());
         return BT::NodeStatus::SUCCESS;
     }
 };

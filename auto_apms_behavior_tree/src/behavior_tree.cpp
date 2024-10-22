@@ -43,6 +43,7 @@ std::vector<BTResource> BTResource::CollectFromPackage(const std::string& packag
             BTResource r;
             r.name = parts[0];
             r.tree_path = make_absolute_path(parts[1]);
+            r.package_name = package_name;
             r.node_manifest_path = make_absolute_path(parts[2]);
             std::vector<std::string> tree_ids_vec = rcpputils::split(parts[3], ';');
             r.tree_ids = {tree_ids_vec.begin(), tree_ids_vec.end()};
@@ -110,20 +111,32 @@ BTResource BTResource::SelectByFileName(const std::string& file_name, const std:
     return matching_resources[0];
 }
 
-BehaviorTree::BehaviorTree(const std::string& file_path, const NodePluginManifest& node_plugin_manifest)
+BTCreator::BTCreator(const std::string& file_path, const NodePluginManifest& node_plugin_manifest)
     : node_plugin_manifest_{node_plugin_manifest}
 {
     doc_.LoadFile(file_path.c_str());
 }
 
-BehaviorTree::BehaviorTree(const BTResource& resource)
-    : BehaviorTree{resource.tree_path, NodePluginManifest::FromFile(resource.node_manifest_path)}
+BTCreator::BTCreator(const BTResource& resource)
+    : BTCreator{resource.tree_path, NodePluginManifest::FromFile(resource.node_manifest_path)}
 {}
 
-BT::Tree BehaviorTree::Create(const std::string& tree_str,
-                              const std::string& main_id,
-                              BT::BehaviorTreeFactory& factory,
-                              BT::Blackboard::Ptr parent_blackboard_ptr)
+BTCreator::SharedPtr BTCreator::FromTreeID(const std::string& tree_id, const std::string& package_name)
+{
+    SharedPtr ptr = std::make_shared<BTCreator>(BTResource::SelectByID(tree_id, package_name));
+    ptr->SetMainTreeID(tree_id);
+    return ptr;
+}
+
+BTCreator::SharedPtr BTCreator::FromTreeFileName(const std::string& file_name, const std::string& package_name)
+{
+    return std::make_shared<BTCreator>(BTResource::SelectByFileName(file_name, package_name));
+}
+
+BT::Tree BTCreator::Create(const std::string& tree_str,
+                           const std::string& main_id,
+                           BT::BehaviorTreeFactory& factory,
+                           BT::Blackboard::Ptr parent_blackboard_ptr)
 {
     // Create empty blackboard if none was provided
     if (!parent_blackboard_ptr) parent_blackboard_ptr = BT::Blackboard::create();
@@ -132,35 +145,9 @@ BT::Tree BehaviorTree::Create(const std::string& tree_str,
     return factory.createTree(main_id, parent_blackboard_ptr);
 }
 
-BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
-                              const BTResource& resource,
-                              const std::string& main_id,
-                              BT::BehaviorTreeFactory& factory,
-                              BT::Blackboard::Ptr parent_blackboard_ptr)
-{
-    // Load behavior tree node plugins
-    BTNodePluginLoader{node_ptr}.Load(NodePluginManifest::FromFile(resource.node_manifest_path), factory);
-
-    // Load tree from file
-    tinyxml2::XMLDocument doc;
-    doc.LoadFile(resource.tree_path.c_str());
-    tinyxml2::XMLPrinter printer;
-    doc.Print(&printer);
-    return Create(printer.CStr(), main_id, factory, parent_blackboard_ptr);
-}
-
-BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
-                              const BTResource& resource,
-                              const std::string& main_id,
-                              BT::Blackboard::Ptr parent_blackboard_ptr)
-{
-    BT::BehaviorTreeFactory factory;
-    return Create(node_ptr, resource, main_id, factory, parent_blackboard_ptr);
-}
-
-BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
-                              BT::BehaviorTreeFactory& factory,
-                              BT::Blackboard::Ptr parent_blackboard_ptr) const
+BT::Tree BTCreator::Create(rclcpp::Node::SharedPtr node_ptr,
+                           BT::BehaviorTreeFactory& factory,
+                           BT::Blackboard::Ptr parent_blackboard_ptr) const
 {
     // Load behavior tree node plugins
     BTNodePluginLoader{node_ptr}.Load(node_plugin_manifest_, factory);
@@ -169,25 +156,24 @@ BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr,
     return Create(WriteToString(), "", factory, parent_blackboard_ptr);
 }
 
-BT::Tree BehaviorTree::Create(rclcpp::Node::SharedPtr node_ptr, BT::Blackboard::Ptr parent_blackboard_ptr) const
+BT::Tree BTCreator::Create(rclcpp::Node::SharedPtr node_ptr, BT::Blackboard::Ptr parent_blackboard_ptr) const
 {
     BT::BehaviorTreeFactory factory;
     return Create(node_ptr, factory, parent_blackboard_ptr);
 }
 
-std::string BehaviorTree::GetMainID() const
+std::string BTCreator::GetMainTreeID() const
 {
     if (const auto main_tree_id = doc_.RootElement()->Attribute(MAIN_TREE_ATTRIBUTE_NAME.c_str())) return main_tree_id;
     return "";
 }
 
-BehaviorTree& BehaviorTree::SetMainID(const std::string& main_tree_id)
+void BTCreator::SetMainTreeID(const std::string& main_tree_id)
 {
-    doc_.RootElement()->SetAttribute(MAIN_TREE_ATTRIBUTE_NAME.c_str(), main_tree_id.c_str());
-    return *this;
+    if (!main_tree_id.empty()) doc_.RootElement()->SetAttribute(MAIN_TREE_ATTRIBUTE_NAME.c_str(), main_tree_id.c_str());
 }
 
-std::string BehaviorTree::WriteToString() const
+std::string BTCreator::WriteToString() const
 {
     tinyxml2::XMLPrinter printer;
     doc_.Print(&printer);

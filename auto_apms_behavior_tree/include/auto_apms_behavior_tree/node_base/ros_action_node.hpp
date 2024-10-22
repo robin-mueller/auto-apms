@@ -93,7 +93,7 @@ class RosActionNode : public BT::ActionNodeBase
      * providedPorts method and call providedBasicPorts in it.
      *
      * @param addition Additional ports to add to BT port list
-     * @returnBT::PortsList containing basic ports along with node-specific ports
+     * @return BT::PortsList containing basic ports along with node-specific ports
      */
     static BT::PortsList providedBasicPorts(BT::PortsList addition)
     {
@@ -104,7 +104,7 @@ class RosActionNode : public BT::ActionNodeBase
 
     /**
      * @brief Creates list of BT ports
-     * @returnBT::PortsList Containing basic ports along with node-specific ports
+     * @return BT::PortsList Containing basic ports along with node-specific ports
      */
     static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 

@@ -54,7 +54,7 @@ class RosPublisherNode : public BT::ConditionNode
      * providedPorts method and call providedBasicPorts in it.
      *
      * @param addition Additional ports to add to BT port list
-     * @returnBT::PortsList Containing basic ports along with node-specific ports
+     * @return BT::PortsList Containing basic ports along with node-specific ports
      */
     static BT::PortsList providedBasicPorts(BT::PortsList addition)
     {
@@ -65,7 +65,7 @@ class RosPublisherNode : public BT::ConditionNode
 
     /**
      * @brief Creates list of BT ports
-     * @returnBT::PortsList Containing basic ports along with node-specific ports
+     * @return BT::PortsList Containing basic ports along with node-specific ports
      */
     static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 

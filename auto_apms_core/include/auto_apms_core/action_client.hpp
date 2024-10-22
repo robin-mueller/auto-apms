@@ -23,12 +23,17 @@
 namespace auto_apms_core {
 
 /**
- * @brief Enum for indicating a goal's current status using e.g. ActionClientWrapper::GetGoalStatus.
+ * @brief Enum for indicating a ROS 2 action goal's current status.
+ *
+ * It is used to represent the internal state of auto_apms_core::ActionClientWrapper.
+ *
+ * @ingroup auto_apms_core
  */
 enum class ActionGoalStatus : uint8_t { REJECTED = 0, RUNNING, COMPLETED };
 
 /**
  * @brief Convenience wrapper for a rclcpp_action::Client that introduces synchronous goal handling functions.
+ * @ingroup auto_apms_core
  */
 template <typename ActionT>
 class ActionClientWrapper
@@ -55,7 +60,7 @@ class ActionClientWrapper
      * @param goal Goal of the action that will be sent to the server
      * @param options Goal options to be forwarded
      * @param server_timeout Timeout for waiting for the action server to be discovered
-     * @param resonse_timeout Timeout for waiting for a goal response from the server
+     * @param response_timeout Timeout for waiting for a goal response from the server
      * @return Shared future that completes when the action finishes, holding the result. The result is `nullptr` if
      * the goal was rejected.
      * @throw std::runtime_error if sending the goal fails.

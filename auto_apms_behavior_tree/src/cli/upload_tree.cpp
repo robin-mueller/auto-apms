@@ -13,28 +13,9 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/bt_executor_client.hpp"
+#include "auto_apms_core/util/console.hpp"
 
-enum class TextColor { GREEN, RED, YELLOW, BLUE, MAGENTA, CYAN };
-
-std::string colored(const std::string& text, TextColor color)
-{
-    switch (color) {
-        case TextColor::RED:
-            return "\x1b[31m" + text + "\x1b[0m";
-        case TextColor::GREEN:
-            return "\x1b[32m" + text + "\x1b[0m";
-        case TextColor::YELLOW:
-            return "\x1b[33m" + text + "\x1b[0m";
-        case TextColor::BLUE:
-            return "\x1b[34m" + text + "\x1b[0m";
-        case TextColor::MAGENTA:
-            return "\x1b[35m" + text + "\x1b[0m";
-        case TextColor::CYAN:
-            return "\x1b[36m" + text + "\x1b[0m";
-    }
-    return "undefined";
-}
-
+using namespace auto_apms_core::util;
 using namespace auto_apms_behavior_tree;
 
 int main(int argc, char* argv[])
@@ -54,12 +35,12 @@ int main(int argc, char* argv[])
     const std::string tree_file_name{argv[4]};
     const std::string main_tree_id{argc > 5 ? argv[5] : ""};
 
-    std::cout << "Uploading behavior tree to executor '" << colored(executor_name, TextColor::CYAN)
-              << "' in namespace '" << colored(namespace_, TextColor::CYAN) << "'"
-              << "\n\tpackage_name  \t'" << colored(package_name, TextColor::CYAN) << "'"
-              << "\n\ttrees_filename\t'" << colored(tree_file_name, TextColor::CYAN) << "'"
+    std::cout << "Uploading behavior tree to executor '" << ColoredText(executor_name, TextColor::CYAN)
+              << "' in namespace '" << ColoredText(namespace_, TextColor::CYAN) << "'"
+              << "\n\tpackage_name  \t'" << ColoredText(package_name, TextColor::CYAN) << "'"
+              << "\n\ttrees_filename\t'" << ColoredText(tree_file_name, TextColor::CYAN) << "'"
               << "\n\ttree_id       \t'"
-              << colored(main_tree_id.empty() ? "[main_tree_to_execute]" : main_tree_id, TextColor::CYAN) << "'"
+              << ColoredText(main_tree_id.empty() ? "[main_tree_to_execute]" : main_tree_id, TextColor::CYAN) << "'"
               << std::endl;
 
     rclcpp::init(argc, argv);
@@ -79,10 +60,10 @@ int main(int argc, char* argv[])
     // Register all behavior trees that are defined in the file with the executor
     if (bt_executor_client.UploadBehaviorTree(BTResource::SelectByFileName(tree_file_name, package_name),
                                               main_tree_id)) {
-        std::cout << " --> " << colored("Registration successful", TextColor::GREEN) << std::endl;
+        std::cout << " --> " << ColoredText("Registration successful", TextColor::GREEN) << std::endl;
     }
     else {
-        std::cout << " --> " << colored("Registration failed", TextColor::RED) << std::endl;
+        std::cout << " --> " << ColoredText("Registration failed", TextColor::RED) << std::endl;
     }
 
     rclcpp::shutdown();

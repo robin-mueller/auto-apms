@@ -35,9 +35,9 @@ BTExecutorClient::BTExecutorClient(rclcpp::Node& node, const std::string& execut
 
 bool BTExecutorClient::UploadBehaviorTree(const BTResource& resource, const std::string& main_tree_id)
 {
-    BehaviorTree tree{resource};
-    if (!main_tree_id.empty()) tree.SetMainID(main_tree_id);
-    return UploadBehaviorTree(tree.WriteToString(), "");
+    BTCreator creator{resource};
+    creator.SetMainTreeID(main_tree_id);
+    return UploadBehaviorTree(creator.WriteToString(), "");
 }
 
 bool BTExecutorClient::UploadBehaviorTree(std::string xml_data, const std::string& main_tree_id)

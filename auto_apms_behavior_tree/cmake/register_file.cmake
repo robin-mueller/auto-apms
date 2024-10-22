@@ -23,14 +23,17 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
         )
     endif()
 
-    # Verify no duplicates in tree files
-    if("${_tree_abs_path__source}" IN_LIST _tree_abs_paths__source)
+    get_filename_component(_tree_file_name "${_tree_abs_path__source}" NAME)
+    get_filename_component(_tree_file_stem "${_tree_abs_path__source}" NAME_WE)
+
+    # Verify no duplicates in tree file names
+    if("${_tree_file_name}" IN_LIST _tree_file_names)
         message(
             FATAL_ERROR
-            "auto_apms_behavior_tree_register_file(): Behavior tree file ${_tree_abs_path__source} was already registered"
+            "auto_apms_behavior_tree_register_file(): A behavior tree file with name '${_tree_file_name}' was already registered"
         )
     endif()
-    list(APPEND _tree_abs_paths__source "${_tree_abs_path__source}")
+    list(APPEND _tree_file_names "${_tree_file_name}")
 
     # Collect all available behavior tree IDs
     file(READ "${_tree_abs_path__source}" _tree_file_content)
@@ -61,9 +64,6 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
     set(oneValueArgs "")
     set(multiValueArgs NODE_PLUGIN_MANIFEST)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-    get_filename_component(_tree_file_name "${_tree_abs_path__source}" NAME)
-    get_filename_component(_tree_file_stem "${_tree_abs_path__source}" NAME_WE)
 
     set(_tree_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE}")
     set(_node_plugin_manifest_rel_path__install "")
