@@ -15,33 +15,30 @@
 #pragma once
 
 #include <chrono>
-#include <memory>
-#include <rclcpp/rclcpp.hpp>
 #include <string>
+
+#include "rclcpp/rclcpp.hpp"
 
 namespace auto_apms_behavior_tree {
 
 struct RosNodeParams
 {
+    /// Handle for the ROS2 node.
     std::weak_ptr<rclcpp::Node> nh;
-
     /**
-     * @brief Default port value of ROS 2 communication interfaces.
+     * @brief Default port name of the corresponding ROS 2 communication interface.
      *
      * This has different meaning based on the context:
-     * - RosActionNode: name of the action server
-     * - RosServiceNode: name of the service
-     * - RosPublisherNode: name of the topic to publish to
-     * - RosSubscriberNode: name of the topic to subscribe to
+     * - RosActionNode: Name of the action server
+     * - RosServiceNode: Name of the service
+     * - RosPublisherNode: Name of the topic to publish to
+     * - RosSubscriberNode: Name of the topic to subscribe to
      */
-    std::string default_port_value;
-
-    // parameters used only by service client and action clients
-
-    // timeout when sending a request
-    std::chrono::milliseconds server_timeout = std::chrono::milliseconds(1000);
-    // timeout used when detecting the server the first time
-    std::chrono::milliseconds wait_for_server_timeout = std::chrono::milliseconds(500);
+    std::string default_port_name;
+    /// Timeout [s] for initially discovering the associated ROS2 node.
+    std::chrono::milliseconds wait_for_server_timeout = std::chrono::milliseconds{3000};
+    /// Timeout [s] for waiting for a response for the requested service or goal.
+    std::chrono::milliseconds request_timeout = std::chrono::milliseconds(1500);
 };
 
 }  // namespace auto_apms_behavior_tree

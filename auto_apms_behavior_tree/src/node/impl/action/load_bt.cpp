@@ -14,7 +14,7 @@
 
 #include "auto_apms_behavior_tree/behavior_tree.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 
 #define INPUT_KEY_PACKAGE "package_name"
 #define INPUT_KEY_FILENAME "filename"

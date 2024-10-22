@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 #include "auto_apms_interfaces/action/bt_executor_command.hpp"
 
 namespace auto_apms_behavior_tree {
 
-class HaltExecutorAction : public RosActionNode<auto_apms_interfaces::action::BTExecutorCommand>
+class PauseExecutorAction : public RosActionNode<auto_apms_interfaces::action::BTExecutorCommand>
 {
    public:
     using RosActionNode::RosActionNode;
 
     bool setGoal(Goal& goal)
     {
-        goal.command = Goal::COMMAND_HALT;
+        goal.command = Goal::COMMAND_PAUSE;
         return true;
     }
 };
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::HaltExecutorAction)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::PauseExecutorAction)

@@ -21,7 +21,7 @@
 #include <string>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node_base/node_params.hpp"
+#include "auto_apms_behavior_tree/node/ros_params.hpp"
 #include "behaviortree_cpp/condition_node.h"
 
 namespace auto_apms_behavior_tree {
@@ -38,7 +38,7 @@ namespace auto_apms_behavior_tree {
  * The name of the topic will be determined as follows:
  *
  * 1. If a value is passes in the BT::InputPort "topic_name", use that
- * 2. Otherwise, use the value in RosNodeParams::default_port_value
+ * 2. Otherwise, use the value in RosNodeParams::default_port_name
  */
 template <class TopicT>
 class RosSubscriberNode : public BT::ConditionNode
@@ -166,13 +166,13 @@ inline RosSubscriberNode<T>::RosSubscriberNode(const std::string& instance_name,
         const std::string& bb_topic_name = portIt->second;
 
         if (bb_topic_name.empty() || bb_topic_name == "__default__placeholder__") {
-            if (params.default_port_value.empty()) {
+            if (params.default_port_name.empty()) {
                 throw std::logic_error(
                     "Both [topic_name] in the BT::InputPort and the RosNodeParams "
                     "are empty.");
             }
             else {
-                createSubscriber(params.default_port_value);
+                createSubscriber(params.default_port_name);
             }
         }
         else if (!isBlackboardPointer(bb_topic_name)) {
@@ -187,13 +187,13 @@ inline RosSubscriberNode<T>::RosSubscriberNode(const std::string& instance_name,
         }
     }
     else {
-        if (params.default_port_value.empty()) {
+        if (params.default_port_name.empty()) {
             throw std::logic_error(
                 "Both [topic_name] in the BT::InputPort and the RosNodeParams "
                 "are empty.");
         }
         else {
-            createSubscriber(params.default_port_value);
+            createSubscriber(params.default_port_name);
         }
     }
 }

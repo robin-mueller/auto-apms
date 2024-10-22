@@ -16,7 +16,7 @@
 
 #include "ament_index_cpp/get_resource.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node_plugin_loader.hpp"
+#include "auto_apms_behavior_tree/node/plugin_loader.hpp"
 #include "auto_apms_core/resources.hpp"
 #include "rcpputils/split.hpp"
 
@@ -37,11 +37,9 @@ std::vector<BTResource> BTResource::CollectFromPackage(const std::string& packag
             std::vector<std::string> parts = rcpputils::split(line, '|', false);
             if (parts.size() != 4) {
                 throw std::runtime_error("Invalid behavior tree resource file (Package: '" + package_name + "').");
-                ;
             }
-
             BTResource r;
-            r.name = parts[0];
+            r.tree_file_stem = parts[0];
             r.tree_path = make_absolute_path(parts[1]);
             r.package_name = package_name;
             r.node_manifest_path = make_absolute_path(parts[2]);
@@ -94,7 +92,7 @@ BTResource BTResource::SelectByFileName(const std::string& file_name, const std:
     std::vector<BTResource> matching_resources;
     for (const auto& package_name : search_packages) {
         for (const auto& r : CollectFromPackage(package_name)) {
-            if (r.name == file_stem) { matching_resources.push_back(r); }
+            if (r.tree_file_stem == file_stem) { matching_resources.push_back(r); }
         }
     }
 

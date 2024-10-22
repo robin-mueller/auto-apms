@@ -16,13 +16,13 @@
 
 #include <boost/core/demangle.hpp>
 
-#include "auto_apms_behavior_tree/node_plugin_base.hpp"
+#include "auto_apms_behavior_tree/node/plugin_base.hpp"
 
 // Include base classes for inheritance in downstream source files
-#include "auto_apms_behavior_tree/node_base/ros_action_node.hpp"
-#include "auto_apms_behavior_tree/node_base/ros_publisher_node.hpp"
-#include "auto_apms_behavior_tree/node_base/ros_service_node.hpp"
-#include "auto_apms_behavior_tree/node_base/ros_subscriber_node.hpp"
+#include "auto_apms_behavior_tree/node/ros_action_node.hpp"
+#include "auto_apms_behavior_tree/node/ros_publisher_node.hpp"
+#include "auto_apms_behavior_tree/node/ros_service_node.hpp"
+#include "auto_apms_behavior_tree/node/ros_subscriber_node.hpp"
 
 namespace auto_apms_behavior_tree {
 

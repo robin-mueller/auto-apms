@@ -16,7 +16,7 @@
 
 #include <tinyxml2.h>
 
-#include "auto_apms_behavior_tree/node_plugin_manifest.hpp"
+#include "auto_apms_behavior_tree/node/plugin_manifest.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 
 namespace auto_apms_behavior_tree {
@@ -37,7 +37,7 @@ struct BTResource
     BTResource() = default;
 
    public:
-    std::string name;
+    std::string tree_file_stem;
     std::string tree_path;
     std::string package_name;
     std::string node_manifest_path;
@@ -61,7 +61,7 @@ struct BTResource
  * This class wraps the functionality provided by the BT::BehaviorTreeFactory class of
  * [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) and offers a user-friendly API for creating
  * behavior trees. In contrast to the original package, the user doesn't need to manually register behavior tree node
- * entities with the factory in order to create an instance of BT::Tree and execute it. Instead, this class
+ * entities with the factory in order to create an instance of BT::Tree. Instead, this class
  * conveniently automates this process for you by querying the available `ament_index` plugin resources implemented and
  * registered by the developer.
  *

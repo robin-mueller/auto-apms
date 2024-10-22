@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include "auto_apms_behavior_tree/node_base/node_params.hpp"
-#include "behaviortree_cpp/bt_factory.h"
+#include "auto_apms_behavior_tree/executor_base.hpp"
 
 namespace auto_apms_behavior_tree {
 
-class BTNodePluginBase
-{
-   public:
-    BTNodePluginBase() = default;
-    virtual ~BTNodePluginBase() = default;
+BTExecutorBase::BTExecutorBase(const std::string& node_name, const rclcpp::NodeOptions& options)
+    : node_ptr_{std::make_shared<rclcpp::Node>(node_name, options)}, param_lisenter_{node_ptr_}
+{}
 
-    virtual bool RequiresROSNodeParams() const = 0;
-    virtual void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
-                                                 const std::string &registration_name,
-                                                 const RosNodeParams *const params_ptr = nullptr) const = 0;
-};
+rclcpp::Node::SharedPtr BTExecutorBase::node() { return node_ptr_; }
+
+rclcpp::node_interfaces::NodeBaseInterface::SharedPtr BTExecutorBase::get_node_base_interface()
+{
+    return node_ptr_->get_node_base_interface();
+}
+
+BT::Blackboard::Ptr BTExecutorBase::global_blackboard() { return global_blackboard_ptr_; }
 
 }  // namespace auto_apms_behavior_tree

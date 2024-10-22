@@ -16,7 +16,7 @@
 
 #include "Eigen/Geometry"
 #include "auto_apms_behavior_tree/behavior_tree.hpp"
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 #include "px4_ros2/utils/geodesic.hpp"
 
 #define INPUT_KEY_POS "pos_vec"

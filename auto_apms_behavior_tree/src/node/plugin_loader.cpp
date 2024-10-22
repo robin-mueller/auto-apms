@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node_plugin_loader.hpp"
+#include "auto_apms_behavior_tree/node/plugin_loader.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -114,10 +114,10 @@ void BTNodePluginLoader::Load(const Manifest& manifest, BT::BehaviorTreeFactory&
             if (plugin_instance->RequiresROSNodeParams()) {
                 RosNodeParams ros_params;
                 ros_params.nh = node_ptr_;
-                ros_params.default_port_value = params.port;
+                ros_params.default_port_name = params.port;
                 ros_params.wait_for_server_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::duration<double>(params.wait_timeout));
-                ros_params.server_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
+                ros_params.request_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::duration<double>(params.request_timeout));
                 plugin_instance->RegisterWithBehaviorTreeFactory(factory, node_name, &ros_params);
             }

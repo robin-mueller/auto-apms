@@ -14,7 +14,7 @@
 
 #include <auto_apms_examples/msg/system_state.hpp>
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 
 #define OUTPUT_KEY_BATTERY "battery_level"
 

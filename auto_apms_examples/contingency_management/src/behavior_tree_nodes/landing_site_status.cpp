@@ -14,7 +14,7 @@
 
 #include <auto_apms_examples/msg/landing_site_status.hpp>
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 
 #define INPUT_KEY_SITE_ID "landing_site_id"
 #define OUTPUT_KEY_SITE_STATUS "landing_site_status"

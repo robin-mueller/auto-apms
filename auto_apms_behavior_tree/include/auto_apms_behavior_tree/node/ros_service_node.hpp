@@ -20,7 +20,7 @@
 #include <string>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node_base/node_params.hpp"
+#include "auto_apms_behavior_tree/node/ros_params.hpp"
 
 namespace auto_apms_behavior_tree {
 
@@ -57,7 +57,7 @@ inline const char* toStr(const ServiceNodeErrorCode& err)
  * The name of the service will be determined as follows:
  *
  * 1. If a value is passes in the BT::InputPort "service_name", use that
- * 2. Otherwise, use the value in RosNodeParams::default_port_value
+ * 2. Otherwise, use the value in RosNodeParams::default_port_name.
  */
 template <class ServiceT>
 class RosServiceNode : public BT::ActionNodeBase
@@ -198,7 +198,7 @@ inline RosServiceNode<T>::RosServiceNode(const std::string& instance_name,
                                          const RosNodeParams& params)
     : BT::ActionNodeBase(instance_name, conf),
       node_(params.nh),
-      service_timeout_(params.server_timeout),
+      service_timeout_(params.request_timeout),
       wait_for_service_timeout_(params.wait_for_server_timeout)
 {
     // check port remapping
@@ -216,7 +216,7 @@ inline RosServiceNode<T>::RosServiceNode(const std::string& instance_name,
         }
     }
     // no port value or it is empty. Use the default port value
-    if (!srv_instance_ && !params.default_port_value.empty()) { createClient(params.default_port_value); }
+    if (!srv_instance_ && !params.default_port_name.empty()) { createClient(params.default_port_name); }
 }
 
 template <class T>

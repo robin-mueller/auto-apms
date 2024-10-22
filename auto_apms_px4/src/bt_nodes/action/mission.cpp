@@ -14,7 +14,7 @@
 
 #include "auto_apms_interfaces/action/mission.hpp"
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 
 #define INPUT_KEY_DO_RESTART "do_restart"
 

@@ -14,7 +14,7 @@
 
 #include <Eigen/Geometry>
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 #include "px4_msgs/msg/vehicle_global_position.hpp"
 
 #define OUTPUT_KEY_LAT "lat"

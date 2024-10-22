@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/node_plugin_base.hpp"
-#include "auto_apms_behavior_tree/node_plugin_manifest.hpp"
+#include "auto_apms_behavior_tree/node/plugin_base.hpp"
+#include "auto_apms_behavior_tree/node/plugin_manifest.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 #include "pluginlib/class_loader.hpp"
 #include "rclcpp/node.hpp"

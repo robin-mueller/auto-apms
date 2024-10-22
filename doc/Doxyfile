@@ -969,7 +969,7 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                 += auto_apms_core/include/auto_apms_core auto_apms_core/src
-INPUT                 += auto_apms_behavior_tree/include/auto_apms_behavior_tree auto_apms_behavior_tree/include/auto_apms_behavior_tree/node_base auto_apms_behavior_tree/src
+INPUT                 += auto_apms_behavior_tree/include/auto_apms_behavior_tree auto_apms_behavior_tree/include/auto_apms_behavior_tree/node auto_apms_behavior_tree/src
 INPUT                 += auto_apms_px4/include/auto_apms_px4 auto_apms_px4/src
 INPUT                 += auto_apms_mission/include/auto_apms_mission auto_apms_mission/src
 

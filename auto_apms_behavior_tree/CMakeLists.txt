@@ -21,6 +21,12 @@ option(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING "Enable debug logging severity" ON)
 
 set(_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/internal")
 
+# Behavior tree executor parameter names
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE "tree")
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE "tick_rate")
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT "groot2_port")
+
+# Node plugin manifest parameter names
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES "names")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_CLASS "class_name")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_PACKAGE "package")
@@ -39,20 +45,21 @@ set(_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE "auto_apms_behavior_tree")
 # ------------ Library --------------
 #
 
-#### Generate parameter headers employing https://github.com/PickNikRobotics/generate_parameter_library
-configure_file(src/node_plugin_loader_params.yaml.in "${CMAKE_CURRENT_BINARY_DIR}/node_plugin_loader_params.yaml")
+# Generate parameter headers employing https://github.com/PickNikRobotics/generate_parameter_library
+configure_file("src/executor_params.yaml.in" "${CMAKE_CURRENT_BINARY_DIR}/executor_params.yaml")
+configure_file("src/node/plugin_loader_params.yaml.in" "${CMAKE_CURRENT_BINARY_DIR}/node_plugin_loader_params.yaml")
 set(_temp ${CMAKE_CURRENT_SOURCE_DIR})  # WORKAROUND: temporarily change CMAKE_CURRENT_SOURCE_DIR since the function doesn't allow to load the parameter definition file from a different directory
 set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
-generate_parameter_library(
-    node_plugin_loader_params
-    node_plugin_loader_params.yaml
-)
+generate_parameter_library(executor_params "executor_params.yaml")
+generate_parameter_library(node_plugin_loader_params "node_plugin_loader_params.yaml")
 set(CMAKE_CURRENT_SOURCE_DIR ${_temp})
 
 add_library(auto_apms_behavior_tree SHARED
-    src/node_plugin_manifest.cpp
-    src/node_plugin_loader.cpp
+    src/node/plugin_manifest.cpp
+    src/node/plugin_loader.cpp
     src/behavior_tree.cpp
+    src/executor_base.cpp
+
     src/bt_executor.cpp
     src/bt_executor_client.cpp
     src/ros2_bt_observer.cpp
@@ -84,6 +91,7 @@ ament_target_dependencies(auto_apms_behavior_tree
     auto_apms_interfaces
 )
 target_link_libraries(auto_apms_behavior_tree
+    executor_params
     node_plugin_loader_params
 )
 
@@ -95,13 +103,13 @@ ament_generate_version_header(auto_apms_behavior_tree HEADER_PATH "${PROJECT_NAM
 #
 
 add_library(bt_nodes SHARED
-    "src/bt_nodes/srv/upload_bt.cpp"
-    "src/bt_nodes/action/throw_exception.cpp"
-    "src/bt_nodes/action/load_bt.cpp"
-    "src/bt_nodes/action/launch_executor.cpp"
-    "src/bt_nodes/action/halt_executor.cpp"
-    "src/bt_nodes/action/pause_executor.cpp"
-    "src/bt_nodes/action/resume_executor.cpp"
+    "src/node/impl/srv/upload_bt.cpp"
+    "src/node/impl/action/throw_exception.cpp"
+    "src/node/impl/action/load_bt.cpp"
+    "src/node/impl/action/launch_executor.cpp"
+    "src/node/impl/action/halt_executor.cpp"
+    "src/node/impl/action/pause_executor.cpp"
+    "src/node/impl/action/resume_executor.cpp"
 )
 target_link_libraries(bt_nodes auto_apms_behavior_tree)
 
@@ -162,6 +170,7 @@ endif()
 install(
     TARGETS
     auto_apms_behavior_tree
+    executor_params
     node_plugin_loader_params
     EXPORT export_${PROJECT_NAME}
     LIBRARY DESTINATION lib

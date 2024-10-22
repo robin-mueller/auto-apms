@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 #include "auto_apms_interfaces/action/launch_bt_executor.hpp"
 
 namespace auto_apms_behavior_tree {

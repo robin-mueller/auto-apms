@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_interfaces/action/land.hpp"
-
 #include "auto_apms_behavior_tree/node/plugin.hpp"
+#include "auto_apms_interfaces/action/bt_executor_command.hpp"
 
-namespace auto_apms_px4 {
+namespace auto_apms_behavior_tree {
 
-class LandAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::Land>
+class ResumeExecutorAction : public RosActionNode<auto_apms_interfaces::action::BTExecutorCommand>
 {
    public:
     using RosActionNode::RosActionNode;
+
+    bool setGoal(Goal& goal)
+    {
+        goal.command = Goal::COMMAND_RESUME;
+        return true;
+    }
 };
 
-}  // namespace auto_apms_px4
+}  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_px4::LandAction)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::ResumeExecutorAction)

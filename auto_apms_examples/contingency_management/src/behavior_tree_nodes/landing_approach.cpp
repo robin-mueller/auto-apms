@@ -14,7 +14,7 @@
 
 #include <auto_apms_examples/msg/landing_approach.hpp>
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 
 #define OUTPUT_KEY_SITE_ID "next_landing_site_id"
 

@@ -17,7 +17,7 @@
 #include <set>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node_plugin_loader.hpp"
+#include "auto_apms_behavior_tree/node/plugin_loader.hpp"
 #include "auto_apms_core/resources.hpp"
 #include "rcpputils/split.hpp"
 

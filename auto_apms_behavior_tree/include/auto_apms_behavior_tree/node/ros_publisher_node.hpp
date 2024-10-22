@@ -20,7 +20,7 @@
 #include <string>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node_base/node_params.hpp"
+#include "auto_apms_behavior_tree/node/ros_params.hpp"
 #include "behaviortree_cpp/condition_node.h"
 
 namespace auto_apms_behavior_tree {
@@ -110,13 +110,13 @@ inline RosPublisherNode<T>::RosPublisherNode(const std::string& instance_name,
         const std::string& bb_topic_name = portIt->second;
 
         if (bb_topic_name.empty() || bb_topic_name == "__default__placeholder__") {
-            if (params.default_port_value.empty()) {
+            if (params.default_port_name.empty()) {
                 throw std::logic_error(
                     "Both [topic_name] in the BT::InputPort and the RosNodeParams "
                     "are empty.");
             }
             else {
-                createPublisher(params.default_port_value);
+                createPublisher(params.default_port_name);
             }
         }
         else if (!isBlackboardPointer(bb_topic_name)) {
@@ -131,13 +131,13 @@ inline RosPublisherNode<T>::RosPublisherNode(const std::string& instance_name,
         }
     }
     else {
-        if (params.default_port_value.empty()) {
+        if (params.default_port_name.empty()) {
             throw std::logic_error(
                 "Both [topic_name] in the BT::InputPort and the RosNodeParams "
                 "are empty.");
         }
         else {
-            createPublisher(params.default_port_value);
+            createPublisher(params.default_port_name);
         }
     }
 }

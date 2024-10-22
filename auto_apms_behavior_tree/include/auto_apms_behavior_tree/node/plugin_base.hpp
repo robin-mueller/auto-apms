@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
-#include "auto_apms_interfaces/action/bt_executor_command.hpp"
+#pragma once
+
+#include "auto_apms_behavior_tree/node/ros_params.hpp"
+#include "behaviortree_cpp/bt_factory.h"
 
 namespace auto_apms_behavior_tree {
 
-class ResumeExecutorAction : public RosActionNode<auto_apms_interfaces::action::BTExecutorCommand>
+class BTNodePluginBase
 {
    public:
-    using RosActionNode::RosActionNode;
+    BTNodePluginBase() = default;
+    virtual ~BTNodePluginBase() = default;
 
-    bool setGoal(Goal& goal)
-    {
-        goal.command = Goal::COMMAND_RESUME;
-        return true;
-    }
+    virtual bool RequiresROSNodeParams() const = 0;
+    virtual void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
+                                                 const std::string &registration_name,
+                                                 const RosNodeParams *const params_ptr = nullptr) const = 0;
 };
 
 }  // namespace auto_apms_behavior_tree
-
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::ResumeExecutorAction)

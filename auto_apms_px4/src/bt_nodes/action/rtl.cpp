@@ -14,7 +14,7 @@
 
 #include "auto_apms_interfaces/action/rtl.hpp"
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 
 namespace auto_apms_px4 {
 

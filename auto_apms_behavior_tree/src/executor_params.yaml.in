@@ -1,0 +1,21 @@
+${PROJECT_NAME}::executor_params:
+
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE}:
+      type: string
+      description: Behavior tree identifier.
+      validation:
+        not_empty<>: null
+
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}:
+      type: double
+      default_value: 100
+      description: Rate [ms] at which the behavior tree is being ticked.
+      validation:
+        gt_eq<>: [0]
+
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT}:
+      type: int
+      default_value: 5555
+      description: Server port for the Groot2 publisher.
+      validation:
+        gt_eq<>: [0]

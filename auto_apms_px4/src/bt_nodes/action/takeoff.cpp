@@ -14,7 +14,7 @@
 
 #include "auto_apms_interfaces/action/takeoff.hpp"
 
-#include "auto_apms_behavior_tree/node_plugin.hpp"
+#include "auto_apms_behavior_tree/node/plugin.hpp"
 
 #define INPUT_KEY_ALTITUDE "alt"
 

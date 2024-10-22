@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node_plugin_manifest.hpp"
+#include "auto_apms_behavior_tree/node/plugin_manifest.hpp"
 
 #include <fstream>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node_base/node_params.hpp"
 #include "yaml-cpp/yaml.h"
 
 /// @cond

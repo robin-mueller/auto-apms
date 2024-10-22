@@ -20,7 +20,7 @@
 #include <string>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node_base/node_params.hpp"
+#include "auto_apms_behavior_tree/node/ros_params.hpp"
 #include "behaviortree_cpp/action_node.h"
 #include "rclcpp_action/rclcpp_action.hpp"
 
@@ -70,7 +70,7 @@ inline const char* toStr(const ActionNodeErrorCode& err)
  * The name of the action will be determined as follows:
  *
  * 1. If a value is passes in the BT::InputPort "action_name", use that
- * 2. Otherwise, use the value in RosNodeParams::default_port_value
+ * 2. Otherwise, use the value in RosNodeParams::default_port_name.
  */
 template <class ActionT>
 class RosActionNode : public BT::ActionNodeBase
@@ -225,7 +225,7 @@ inline RosActionNode<T>::RosActionNode(const std::string& instance_name,
                                        const RosNodeParams& params)
     : BT::ActionNodeBase(instance_name, conf),
       node_(params.nh),
-      server_timeout_(params.server_timeout),
+      server_timeout_(params.request_timeout),
       wait_for_server_timeout_(params.wait_for_server_timeout)
 {
     // Three cases:
@@ -248,7 +248,7 @@ inline RosActionNode<T>::RosActionNode(const std::string& instance_name,
         }
     }
     // no port value or it is empty. Use the default value
-    if (!client_instance_ && !params.default_port_value.empty()) { createClient(params.default_port_value); }
+    if (!client_instance_ && !params.default_port_name.empty()) { createClient(params.default_port_name); }
 }
 
 template <class T>
