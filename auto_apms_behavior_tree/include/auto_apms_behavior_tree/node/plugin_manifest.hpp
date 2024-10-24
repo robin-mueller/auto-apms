@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "node_plugin_loader_params.hpp"
+#include "node_plugin_manifest_params.hpp"
 
 namespace auto_apms_behavior_tree {
 
@@ -26,11 +26,14 @@ namespace auto_apms_behavior_tree {
 class BTNodePluginManifest
 {
    public:
-    /// @brief Generated ROS2 parameter struct holding the core load information.
-    using Params = node_plugin_loader_params::Params::MapNames;
+    /// Generated ROS2 parameter struct holding the core load information.
+    using Params = node_plugin_manifest_params::Params::MapNames;
 
-    /// @brief Mapping of a node's name and its load parameters.
+    /// Mapping of a node's name and its load parameters.
     using ParamMap = std::map<std::string, Params>;
+
+    /// Listener for ROS2 node parameters.
+    using ParamListener = node_plugin_manifest_params::ParamListener;
 
     static const std::string PARAM_NAME_NAMES;
     static const std::string PARAM_NAME_CLASS;
@@ -55,6 +58,8 @@ class BTNodePluginManifest
     static BTNodePluginManifest FromFile(const std::string& file_path);
 
     static BTNodePluginManifest Parse(const std::string& manifest_str);
+
+    static BTNodePluginManifest FromParamListener(const ParamListener& param_listener);
 
     bool Contains(const std::string& node_name) const;
 

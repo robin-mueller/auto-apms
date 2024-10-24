@@ -18,6 +18,8 @@ option(AUTO_APMS_CORE_DEBUG_LOGGING "Enable debug logging severity" ON)
 #
 
 add_library(auto_apms_core_lib SHARED
+    "src/util/console.cpp"
+    "src/util/split.cpp"
     "src/resources.cpp"
 )
 target_include_directories(auto_apms_core_lib PUBLIC

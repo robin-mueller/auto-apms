@@ -23,16 +23,13 @@
 
 namespace auto_apms_behavior_tree {
 
-BTNodePluginLoader::BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr, const std::set<std::string>& package_names)
+BTNodePluginLoader::BTNodePluginLoader(const std::set<std::string>& package_names)
     : ClassLoader{"auto_apms_behavior_tree",
                   "auto_apms_behavior_tree::BTNodePluginBase",
                   "",
                   GetPluginXMLFilePaths(package_names.empty() ? auto_apms_core::GetAllPackagesWithResource(
                                                                     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE)
-                                                              : package_names)},
-      node_ptr_{node_ptr},
-      param_prefix_{"node_plugins."},
-      param_listener_{node_ptr_, param_prefix_}
+                                                              : package_names)}
 {}
 
 std::vector<std::string> BTNodePluginLoader::GetPluginXMLFilePaths(const std::set<std::string>& package_names)
@@ -81,19 +78,21 @@ void BTNodePluginLoader::AutoCompleteManifest(Manifest& manifest)
     }
 }
 
-void BTNodePluginLoader::Load(const Manifest& manifest, BT::BehaviorTreeFactory& factory)
+void BTNodePluginLoader::Load(const Manifest& manifest,
+                              rclcpp::Node::SharedPtr node_ptr,
+                              BT::BehaviorTreeFactory& factory)
 {
     for (const auto& [node_name, params] : manifest.map()) {
         // Check if the class we search for is actually available with the loader.
         if (!isClassAvailable(params.class_name)) {
-            throw exceptions::BTNodePluginLoadingError{
+            throw exceptions::BTNodePluginLoaderError{
                 "Node '" + node_name + " (" + params.class_name +
                 ")' cannot be loaded, because it's not registered by the packages searched by the plugin loader. It's "
                 "also possible that you misspelled the class name in CMake when registering it in the CMakeLists.txt "
                 "using auto_apms_behavior_tree_register_nodes()."};
         }
 
-        RCLCPP_DEBUG(node_ptr_->get_logger(),
+        RCLCPP_DEBUG(node_ptr->get_logger(),
                      "BTNodePluginLoader::Load - Register behavior tree node plugin '%s (%s)' from library %s.",
                      node_name.c_str(),
                      params.class_name.c_str(),
@@ -103,7 +102,7 @@ void BTNodePluginLoader::Load(const Manifest& manifest, BT::BehaviorTreeFactory&
         try {
             plugin_instance = createUniqueInstance(params.class_name);
         } catch (const std::exception& e) {
-            throw exceptions::BTNodePluginLoadingError(
+            throw exceptions::BTNodePluginLoaderError(
                 "Failed to create an instance of node '" + node_name + " (" + params.class_name +
                 ")'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE macro must be called in the source file "
                 "for the plugin to be discoverable. Error message: " +
@@ -113,7 +112,7 @@ void BTNodePluginLoader::Load(const Manifest& manifest, BT::BehaviorTreeFactory&
         try {
             if (plugin_instance->RequiresROSNodeParams()) {
                 RosNodeParams ros_params;
-                ros_params.nh = node_ptr_;
+                ros_params.nh = node_ptr;
                 ros_params.default_port_name = params.port;
                 ros_params.wait_for_server_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::duration<double>(params.wait_timeout));
@@ -125,24 +124,10 @@ void BTNodePluginLoader::Load(const Manifest& manifest, BT::BehaviorTreeFactory&
                 plugin_instance->RegisterWithBehaviorTreeFactory(factory, node_name);
             }
         } catch (const std::exception& e) {
-            throw exceptions::BTNodePluginLoadingError("Failed to register node '" + node_name + " (" +
-                                                       params.class_name + ")' with factory: " + e.what() + ".");
+            throw exceptions::BTNodePluginLoaderError("Failed to register node '" + node_name + " (" +
+                                                      params.class_name + ")' with factory: " + e.what() + ".");
         }
     }
-}
-
-void BTNodePluginLoader::Load(BT::BehaviorTreeFactory& factory) { Load(GetManifestFromParameters(), factory); }
-
-BTNodePluginLoader::Manifest BTNodePluginLoader::GetManifestFromParameters()
-{
-    return param_listener_.get_params().names_map;
-}
-
-void BTNodePluginLoader::UpdateParameters(const Manifest& manifest)
-{
-    auto m = manifest;
-    AutoCompleteManifest(m);
-    m.ToROSParameters(node_ptr_, param_prefix_);
 }
 
 }  // namespace auto_apms_behavior_tree

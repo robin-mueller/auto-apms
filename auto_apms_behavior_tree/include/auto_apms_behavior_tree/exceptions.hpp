@@ -18,17 +18,22 @@
 
 namespace auto_apms_behavior_tree::exceptions {
 
+struct ResourceIdentityFormatError : public auto_apms_core::exceptions::ExceptionBase
+{
+    using ExceptionBase::ExceptionBase;
+};
+
 struct ResourceNotFoundError : public auto_apms_core::exceptions::ExceptionBase
 {
     using ExceptionBase::ExceptionBase;
 };
 
-struct BTNodePluginManifestError : public auto_apms_core::exceptions::ExceptionBase
+struct BTCreatorError : public auto_apms_core::exceptions::ExceptionBase
 {
     using ExceptionBase::ExceptionBase;
 };
 
-struct BTNodePluginLoadingError : public auto_apms_core::exceptions::ExceptionBase
+struct BTNodePluginLoaderError : public auto_apms_core::exceptions::ExceptionBase
 {
     using ExceptionBase::ExceptionBase;
 };

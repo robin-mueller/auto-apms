@@ -55,18 +55,6 @@ int main(int argc, char** argv)
                                      "' has wrong extension. Must be '.yaml'.");
         }
 
-        rclcpp::init(argc, argv);
-        auto node_ptr = std::make_shared<rclcpp::Node>("_create_node_plugin_manifest_temp_node");
-
-#ifdef _AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING
-        // Set logging severity
-        auto ret = rcutils_logging_set_logger_level(node_ptr->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
-        if (ret != RCUTILS_RET_OK) {
-            RCLCPP_ERROR(node_ptr->get_logger(), "Error setting severity: %s", rcutils_get_error_string().str);
-            rcutils_reset_error();
-        }
-#endif
-
         // Retrieve plugin library paths from build info
         std::map<std::string, std::string> build_lib_paths;
         for (const auto& build_info : build_infos) {
@@ -84,7 +72,7 @@ int main(int argc, char** argv)
         auto all_but_build_package =
             auto_apms_core::GetAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
         all_but_build_package.erase(build_package_name);
-        auto loader = PluginLoader{node_ptr, all_but_build_package};
+        auto loader = PluginLoader{all_but_build_package};
         for (const auto& [node_name, params] : output_manifest.map()) {
             auto temp_manifest = PluginLoader::Manifest({{node_name, params}});
             try {

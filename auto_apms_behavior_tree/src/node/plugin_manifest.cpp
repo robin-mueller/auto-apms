@@ -126,6 +126,11 @@ BTNodePluginManifest BTNodePluginManifest::Parse(const std::string& manifest_str
     return {YAML::Load(manifest_str).as<ParamMap>()};
 }
 
+BTNodePluginManifest BTNodePluginManifest::FromParamListener(const ParamListener& param_listener)
+{
+    return param_listener.get_params().names_map;
+}
+
 bool BTNodePluginManifest::Contains(const std::string& node_name) const
 {
     return param_map_.find(node_name) != param_map_.end();

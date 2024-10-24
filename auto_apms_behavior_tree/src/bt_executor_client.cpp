@@ -17,8 +17,8 @@
 #include <functional>
 
 #include "action_msgs/srv/cancel_goal.hpp"
-#include "auto_apms_behavior_tree/behavior_tree.hpp"
 #include "auto_apms_behavior_tree/constants.hpp"
+#include "auto_apms_behavior_tree/creator.hpp"
 
 namespace auto_apms_behavior_tree {
 
@@ -31,13 +31,6 @@ BTExecutorClient::BTExecutorClient(rclcpp::Node& node, const std::string& execut
 {
     upload_client_ptr_ = node.create_client<UploadBehaviorTreeService>(upload_service_name_);
     launch_client_ptr_ = rclcpp_action::create_client<LaunchExecutorAction>(&node, launch_executor_action_name_);
-}
-
-bool BTExecutorClient::UploadBehaviorTree(const BTResource& resource, const std::string& main_tree_id)
-{
-    BTCreator creator{resource};
-    creator.SetMainTreeID(main_tree_id);
-    return UploadBehaviorTree(creator.WriteToString(), "");
 }
 
 bool BTExecutorClient::UploadBehaviorTree(std::string xml_data, const std::string& main_tree_id)

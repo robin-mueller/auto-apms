@@ -23,33 +23,31 @@
 namespace auto_apms_behavior_tree {
 
 /**
- * @brief Utility class that manages the process of loading and registering behavior tree node plugins.
+ * @brief Utility class that facilitates the process of loading and registering behavior tree node plugins.
  * @ingroup auto_apms_behavior_tree
  */
 class BTNodePluginLoader : private pluginlib::ClassLoader<BTNodePluginBase>
 {
-    using ManifestParamListener = node_plugin_loader_params::ParamListener;
-
    public:
     using Manifest = BTNodePluginManifest;
 
-    BTNodePluginLoader(rclcpp::Node::SharedPtr node_ptr, const std::set<std::string>& package_names = {});
+    /**
+     * @brief Create a class loader instance that is only searching for behavior tree node plugins installed in the
+     * packages specified in @p package_names.
+     * @param package_names Set of packages to consider when searching the installed plugin resources. Leave empty to
+     * search in all packages.
+     */
+    BTNodePluginLoader(const std::set<std::string>& package_names = {});
 
     /**
      * @brief Load behavior tree node plugins and register with behavior tree factory.
      *
      * @param[in] manifest Parameters used for loading and configuring the behavior tree node.
+     * @param[in,out] node_ptr ROS2 node to pass to RosNodeParams.
      * @param[in,out] factory Behavior tree factory instance that the behavior tree nodes will register with.
-     * @throw exceptions::BTNodePluginLoadingError if registration fails.
+     * @throw exceptions::BTNodePluginLoaderError if registration fails.
      */
-    void Load(const Manifest& manifest, BT::BehaviorTreeFactory& factory);
-
-    /**
-     * @overload
-     *
-     * Infers the manifest for loading from the node's parameters.
-     */
-    void Load(BT::BehaviorTreeFactory& factory);
+    void Load(const Manifest& manifest, rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory& factory);
 
     /**
      * @brief Fill the node plugin resource information in @p manifest.
@@ -73,16 +71,8 @@ class BTNodePluginLoader : private pluginlib::ClassLoader<BTNodePluginBase>
      */
     void AutoCompleteManifest(Manifest& manifest);
 
-    Manifest GetManifestFromParameters();
-
-    void UpdateParameters(const Manifest& manifest);
-
    private:
     static std::vector<std::string> GetPluginXMLFilePaths(const std::set<std::string>& package_names);
-
-    rclcpp::Node::SharedPtr node_ptr_;
-    const std::string param_prefix_;
-    ManifestParamListener param_listener_;
 };
 
 }  // namespace auto_apms_behavior_tree

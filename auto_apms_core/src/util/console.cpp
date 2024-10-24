@@ -12,24 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <string>
+#include "auto_apms_core/util/console.hpp"
 
 namespace auto_apms_core::util {
 
-enum class TextColor { GREEN, RED, YELLOW, BLUE, MAGENTA, CYAN };
-
-/**
- * @brief Add ANSI color escape sequences to display the text in color when printed to console.
- *
- * The text color will be reset to default after the text ends.
- *
- * @ingroup auto_apms_core
- * @param text Text to be displayed.
- * @param color Desired color of the text.
- * @return String including corresponding ANSI color escape sequences.
- */
-std::string ColoredText(const std::string& text, TextColor color);
+std::string ColoredText(const std::string& text, TextColor color)
+{
+    switch (color) {
+        case TextColor::GREEN:
+            return "\x1b[32m" + text + "\x1b[0m";
+        case TextColor::RED:
+            return "\x1b[31m" + text + "\x1b[0m";
+        case TextColor::YELLOW:
+            return "\x1b[33m" + text + "\x1b[0m";
+        case TextColor::BLUE:
+            return "\x1b[34m" + text + "\x1b[0m";
+        case TextColor::MAGENTA:
+            return "\x1b[35m" + text + "\x1b[0m";
+        case TextColor::CYAN:
+            return "\x1b[36m" + text + "\x1b[0m";
+    }
+    return text;
+}
 
 }  // namespace auto_apms_core::util

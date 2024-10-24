@@ -1,14 +1,12 @@
-${PROJECT_NAME}::node_plugin_loader_params:
-
+${PROJECT_NAME}::node_plugin_manifest_params:
   ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES}:
     type: string_array
     default_value: []
     description: Registration names of all loaded behavior tree nodes.
     validation:
-        unique<>: null
+      unique<>: null
 
   __map_${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES}:
-
     ${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_CLASS}:
       type: string
       description: Fully qualified name of the class.

@@ -44,19 +44,19 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
             "auto_apms_behavior_tree_register_file(): Behavior tree file ${_tree_abs_path__source} doesn't specify any valid behavior trees"
         )
     endif()
-    set(_file_tree_ids "")
+    set(_file_tree_names "")
     foreach(_match ${_matches})
         string(REGEX MATCH "<BehaviorTree ID=\"([A-Za-z0-9_]+)\">" _ "${_match}")
-        set(_tree_id ${CMAKE_MATCH_1})
+        set(_tree_name ${CMAKE_MATCH_1})
         # Verify no duplicates in tree IDs
-        if("${_tree_id}" IN_LIST _tree_ids)
+        if("${_tree_name}" IN_LIST _all_tree_names)
             message(
                 FATAL_ERROR
-                "auto_apms_behavior_tree_register_file(): Behavior tree ID '${_tree_id}' was already registered"
+                "auto_apms_behavior_tree_register_file(): Behavior tree with name '${_tree_name}' was already registered"
             )
         endif()
-        list(APPEND _tree_ids "${_tree_id}")
-        list(APPEND _file_tree_ids "${_tree_id}")
+        list(APPEND _all_tree_names "${_tree_name}")
+        list(APPEND _file_tree_names "${_tree_name}")
     endforeach()
 
     # Parse arguments
@@ -153,6 +153,6 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
         DESTINATION "${_tree_rel_dir__install}")
 
     # Fill meta info
-    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_plugin_manifest_rel_path__install}|${_file_tree_ids}|\n")
+    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_plugin_manifest_rel_path__install}|${_file_tree_names}|\n")
 
 endmacro()

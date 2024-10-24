@@ -337,7 +337,7 @@ inline void RosActionNode<T>::cancelGoal()
             }
         }
         else {
-            RCLCPP_WARN(logger(), "cancelGoal called on an empty goal_handle");
+            RCLCPP_WARN(logger(), "cancelGoal called but goal_handle_ is nullptr");
             return;
         }
     }
@@ -431,12 +431,13 @@ inline BT::NodeStatus RosActionNode<T>::tick()
             if (goal_handle_->get_goal_id() == result.goal_id) {
                 RCLCPP_DEBUG(logger(), "result_callback");
                 result_ = result;
+                goal_handle_ = nullptr;  // Reset internal goal handle
                 emitWakeUpSignal();
             }
         };
         //--------------------
-        goal_options.goal_response_callback = [this](typename GoalHandle::SharedPtr const future_handle) {
-            auto goal_handle_ = future_handle.get();
+        goal_options.goal_response_callback = [this](typename GoalHandle::SharedPtr goal_handle) {
+            goal_handle_ = goal_handle;
             if (!goal_handle_) { RCLCPP_ERROR(logger(), "Goal was rejected by server"); }
             else {
                 RCLCPP_DEBUG(logger(), "Goal accepted by server, waiting for result");

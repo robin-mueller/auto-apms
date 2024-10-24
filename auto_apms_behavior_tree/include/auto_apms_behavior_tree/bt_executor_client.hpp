@@ -17,7 +17,7 @@
 #include <chrono>
 #include <future>
 
-#include "auto_apms_behavior_tree/behavior_tree.hpp"
+#include "auto_apms_behavior_tree/resource.hpp"
 #include "auto_apms_interfaces/action/launch_bt_executor.hpp"
 #include "auto_apms_interfaces/srv/upload_behavior_tree.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -42,18 +42,6 @@ class BTExecutorClient
 
    public:
     BTExecutorClient(rclcpp::Node& node, const std::string& executor_name);
-
-    /**
-     * @brief Upload behavior tree to an executor.
-     *
-     * This method is synchronous, meaning that it blocks until upload result is received.
-     *
-     * @param resource Behavior tree resource.
-     * @param main_tree_id ID of the tree to be created on upload. Empty if main_tree_to_execute XML attribute should be
-     * used to determine which tree is to be created.
-     * @return True on successful upload, false otherwise.
-     */
-    bool UploadBehaviorTree(const BTResource& resource, const std::string& main_tree_id = "");
 
     /**
      * @brief Upload behavior tree to an executor.

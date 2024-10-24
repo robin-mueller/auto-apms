@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/ros2_bt_observer.hpp"
+#include "auto_apms_behavior_tree/state_observer.hpp"
 #include "auto_apms_interfaces/action/bt_executor_command.hpp"
 #include "auto_apms_interfaces/action/launch_bt_executor.hpp"
 #include "auto_apms_interfaces/srv/upload_behavior_tree.hpp"
@@ -115,7 +115,7 @@ class BTExecutor
     std::unique_ptr<BT::Groot2Publisher> bt_groot2_publisher_ptr_{nullptr};
     std::unique_ptr<BTStateObserver> bt_state_observer_ptr_{nullptr};
     Command control_command_;
-    bool is_paused_{true};  // Needs to be true for the state to evaluate to IDLE in the first iteration
+    bool is_paused_{true};
     LaunchExecutorAction::Feedback last_feedback_;
 };
 

@@ -83,7 +83,7 @@ BTExecutor::BTExecutor(const std::string &name,
 
     param_subscriber_ptr_ = std::make_shared<rclcpp::ParameterEventHandler>(node_ptr_);
     auto cb = [this](const rclcpp::Parameter &p) {
-        if (this->bt_state_observer_ptr_) { this->bt_state_observer_ptr_->set_state_change_logging(p.as_bool()); }
+        if (this->bt_state_observer_ptr_) { this->bt_state_observer_ptr_->set_logging(p.as_bool()); }
     };
     state_change_logging_param_handle_ptr_ =
         param_subscriber_ptr_->add_parameter_callback(STATE_CHANGE_LOGGING_PARAM_NAME, cb);

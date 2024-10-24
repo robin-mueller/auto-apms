@@ -15,21 +15,21 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace auto_apms_core::util {
 
-enum class TextColor { GREEN, RED, YELLOW, BLUE, MAGENTA, CYAN };
-
 /**
- * @brief Add ANSI color escape sequences to display the text in color when printed to console.
+ * @brief Split a string at a specific delimiter string (Delimiter may consist of multiple characters).
  *
- * The text color will be reset to default after the text ends.
+ * Will preserve empty strings, so for example with the delimiter being `::` passing the string `::foo` will
+ * output a vector with two elements {"", "foo"}.
  *
  * @ingroup auto_apms_core
- * @param text Text to be displayed.
- * @param color Desired color of the text.
- * @return String including corresponding ANSI color escape sequences.
+ * @param str String to split into multiple tokens.
+ * @param delimiter Delimiter string at which the string shall be split.
+ * @return Vector of string representing the string's tokens without the delimiter.
  */
-std::string ColoredText(const std::string& text, TextColor color);
+std::vector<std::string> SplitString(const std::string& str, const std::string& delimiter);
 
 }  // namespace auto_apms_core::util

@@ -58,8 +58,9 @@ int main(int argc, char* argv[])
     auto bt_executor_client = BTExecutorClient(*node_ptr, executor_name);
 
     // Register all behavior trees that are defined in the file with the executor
-    if (bt_executor_client.UploadBehaviorTree(BTResource::SelectByFileName(tree_file_name, package_name),
-                                              main_tree_id)) {
+    if (bt_executor_client.UploadBehaviorTree(
+            BTResource::SelectByFileName(tree_file_name, package_name).WriteTreeToString(),
+            main_tree_id)) {
         std::cout << " --> " << ColoredText("Registration successful", TextColor::GREEN) << std::endl;
     }
     else {

@@ -87,9 +87,9 @@ class RosSubscriberNode : public BT::ConditionNode
      * By default, this function calls RosSubscriberNode::onMessageReceived if a new message was received, otherwise it
      * immediately returns FAILURE.
      *
-     * @param last_msg the latest message received, since the last tick. Will be `nullptr` if no new message was
+     * @param last_msg_ptr The latest message received, since the last tick. Will be `nullptr` if no new message was
      * received.
-     * @return Status of the node, based on @p last_msg.
+     * @return Status of the node, based on @p last_msg_ptr.
      */
     virtual BT::NodeStatus onTick(const std::shared_ptr<TopicT>& last_msg_ptr);
 

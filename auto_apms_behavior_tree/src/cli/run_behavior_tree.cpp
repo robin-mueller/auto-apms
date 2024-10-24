@@ -16,7 +16,7 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/behavior_tree.hpp"
+#include "auto_apms_behavior_tree/creator.hpp"
 #include "behaviortree_cpp/loggers/bt_cout_logger.h"
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "rclcpp/rclcpp.hpp"
@@ -53,41 +53,53 @@ int main(int argc, char** argv)
     try {
         tree_resource_ptr = std::make_unique<BTResource>(BTResource::SelectByFileName(tree_file_name, package_name));
     } catch (const std::exception& e) {
-        RCLCPP_ERROR(node->get_logger(), "ERROR searching for corresponding behavior tree resource: %s", e.what());
-        return EXIT_FAILURE;
-    }
-
-    std::unique_ptr<BTCreator> tree_creator_ptr;
-    try {
-        tree_creator_ptr = std::make_unique<BTCreator>(*tree_resource_ptr);
-        tree_creator_ptr->SetMainTreeID(tree_id);
-    } catch (const std::exception& e) {
-        RCLCPP_ERROR(node->get_logger(), "ERROR initializing BTCreator: %s", e.what());
-        return EXIT_FAILURE;
-    }
-
-    try {
-        BT::Tree tree = tree_creator_ptr->Create(node);
-        BT::Groot2Publisher publisher(tree);
-        BT::StdCoutLogger logger(tree);
-        logger.enableTransitionToIdle(false);
-
-        auto status = BT::NodeStatus::IDLE;
-        while (!shutdown_requested && status <= BT::NodeStatus::RUNNING) {
-            status = tree.tickOnce();
-            tree.sleep(1ms);
-        }
-        std::cout << "Finished tree with status: " << BT::toStr(status) << std::endl;
-
-    } catch (const std::exception& e) {
         RCLCPP_ERROR(node->get_logger(),
-                     "ERROR running tree '%s::%s' from file '%s': %s",
-                     tree_resource_ptr->package_name.c_str(),
-                     tree_creator_ptr->GetMainTreeID().c_str(),
-                     tree_resource_ptr->tree_path.c_str(),
+                     "ERROR searching for corresponding behavior tree resource with arguments tree_file_name: '%s', "
+                     "package_name: '%s': %s",
+                     tree_file_name.c_str(),
+                     package_name.c_str(),
                      e.what());
         return EXIT_FAILURE;
     }
+
+    BT::Tree tree;
+    std::string main_tree_id;
+    try {
+        auto tree_creator_ptr = BTCreator::FromResource(node, *tree_resource_ptr);
+        tree_creator_ptr->SetMainTreeName(tree_id);
+        main_tree_id = tree_creator_ptr->GetMainTreeName();
+        tree = tree_creator_ptr->CreateMainTree();
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(node->get_logger(),
+                     "ERROR creating behavior tree '%s' from path %s: %s",
+                     tree_id.c_str(),
+                     tree_resource_ptr->tree_file_path.c_str(),
+                     e.what());
+        return EXIT_FAILURE;
+    }
+
+    // Prepare execution
+    BT::Groot2Publisher publisher(tree);
+    BT::StdCoutLogger logger(tree);
+    logger.enableTransitionToIdle(false);
+    auto status = BT::NodeStatus::IDLE;
+
+    RCLCPP_INFO(node->get_logger(),
+                "Running tree '%s::%s' ...",
+                tree_resource_ptr->package_name.c_str(),
+                main_tree_id.c_str());
+
+    try {
+        while (!shutdown_requested && status <= BT::NodeStatus::RUNNING) {
+            status = tree.tickOnce();
+            tree.sleep(100ms);
+        }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(node->get_logger(), "ERROR during behavior tree tick: %s", e.what());
+        return EXIT_FAILURE;
+    }
+
+    RCLCPP_INFO(node->get_logger(), "Finished with status %s", BT::toStr(status).c_str());
 
     rclcpp::shutdown();
 

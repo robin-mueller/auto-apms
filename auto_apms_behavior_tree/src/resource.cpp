@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/behavior_tree.hpp"
+#include "auto_apms_behavior_tree/resource.hpp"
+
+#include <tinyxml2.h>
+
+#include <filesystem>
 
 #include "ament_index_cpp/get_resource.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node/plugin_loader.hpp"
 #include "auto_apms_core/resources.hpp"
+#include "auto_apms_core/util/split.hpp"
 #include "rcpputils/split.hpp"
 
 namespace auto_apms_behavior_tree {
@@ -40,18 +44,18 @@ std::vector<BTResource> BTResource::CollectFromPackage(const std::string& packag
             }
             BTResource r;
             r.tree_file_stem = parts[0];
-            r.tree_path = make_absolute_path(parts[1]);
+            r.tree_file_path = make_absolute_path(parts[1]);
             r.package_name = package_name;
-            r.node_manifest_path = make_absolute_path(parts[2]);
+            r.node_manifest_file_path = make_absolute_path(parts[2]);
             std::vector<std::string> tree_ids_vec = rcpputils::split(parts[3], ';');
-            r.tree_ids = {tree_ids_vec.begin(), tree_ids_vec.end()};
+            r.tree_names = {tree_ids_vec.begin(), tree_ids_vec.end()};
             resources.push_back(r);
         }
     }
     return resources;
 }
 
-BTResource BTResource::SelectByID(const std::string& tree_id, const std::string& package_name)
+BTResource BTResource::SelectByTreeName(const std::string& tree_name, const std::string& package_name)
 {
     std::set<std::string> search_packages;
     if (!package_name.empty()) { search_packages.insert(package_name); }
@@ -63,16 +67,16 @@ BTResource BTResource::SelectByID(const std::string& tree_id, const std::string&
     std::vector<BTResource> matching_resources;
     for (const auto& package_name : search_packages) {
         for (const auto& r : CollectFromPackage(package_name)) {
-            if (r.tree_ids.find(tree_id) != r.tree_ids.end()) { matching_resources.push_back(r); }
+            if (r.tree_names.find(tree_name) != r.tree_names.end()) { matching_resources.push_back(r); }
         }
     }
 
     if (matching_resources.empty()) {
-        throw exceptions::ResourceNotFoundError{"No behavior tree with ID '" + tree_id + "' was registered."};
+        throw exceptions::ResourceNotFoundError{"No behavior tree with name '" + tree_name + "' was registered."};
     }
     if (matching_resources.size() > 1) {
         throw exceptions::ResourceNotFoundError{
-            "The behavior tree ID '" + tree_id +
+            "The behavior tree name '" + tree_name +
             "' exists multiple times. Use the 'package_name' argument to narrow down the search."};
     }
 
@@ -109,72 +113,35 @@ BTResource BTResource::SelectByFileName(const std::string& file_name, const std:
     return matching_resources[0];
 }
 
-BTCreator::BTCreator(const std::string& file_path, const NodePluginManifest& node_plugin_manifest)
-    : node_plugin_manifest_{node_plugin_manifest}
+BTResource BTResource::FromString(const std::string& identifier)
 {
-    doc_.LoadFile(file_path.c_str());
+    const auto tokens = auto_apms_core::util::SplitString(identifier, "::");
+    if (tokens.size() != 3) {
+        throw exceptions::ResourceIdentityFormatError(
+            "Number of tokens in the behavior tree resource identity string must be 3.");
+    }
+    const std::string& package_name = tokens[0];
+    const std::string& tree_file_stem = tokens[1];
+    const std::string& tree_name = tokens[2];
+    if (tree_name.empty()) return SelectByFileName(tree_file_stem, package_name);
+    if (tree_file_stem.empty()) return SelectByTreeName(tree_name, package_name);
+
+    // Full signature: Verify that <tree_name> can be found in file with stem <tree_file_stem>
+    BTResource resource = SelectByFileName(tree_file_stem, package_name);
+    if (resource.tree_names.find(tree_name) == resource.tree_names.end()) {
+        throw exceptions::ResourceNotFoundError("Found behavior tree file '" + tree_file_stem + ".xml' in package '" +
+                                                resource.package_name + "' but no tree with name '" + tree_name +
+                                                "' exists in that file.");
+    }
+    return resource;
 }
 
-BTCreator::BTCreator(const BTResource& resource)
-    : BTCreator{resource.tree_path, NodePluginManifest::FromFile(resource.node_manifest_path)}
-{}
-
-BTCreator::SharedPtr BTCreator::FromTreeID(const std::string& tree_id, const std::string& package_name)
+std::string BTResource::WriteTreeToString() const
 {
-    SharedPtr ptr = std::make_shared<BTCreator>(BTResource::SelectByID(tree_id, package_name));
-    ptr->SetMainTreeID(tree_id);
-    return ptr;
-}
-
-BTCreator::SharedPtr BTCreator::FromTreeFileName(const std::string& file_name, const std::string& package_name)
-{
-    return std::make_shared<BTCreator>(BTResource::SelectByFileName(file_name, package_name));
-}
-
-BT::Tree BTCreator::Create(const std::string& tree_str,
-                           const std::string& main_id,
-                           BT::BehaviorTreeFactory& factory,
-                           BT::Blackboard::Ptr parent_blackboard_ptr)
-{
-    // Create empty blackboard if none was provided
-    if (!parent_blackboard_ptr) parent_blackboard_ptr = BT::Blackboard::create();
-
-    factory.registerBehaviorTreeFromText(tree_str);
-    return factory.createTree(main_id, parent_blackboard_ptr);
-}
-
-BT::Tree BTCreator::Create(rclcpp::Node::SharedPtr node_ptr,
-                           BT::BehaviorTreeFactory& factory,
-                           BT::Blackboard::Ptr parent_blackboard_ptr) const
-{
-    // Load behavior tree node plugins
-    BTNodePluginLoader{node_ptr}.Load(node_plugin_manifest_, factory);
-
-    // Create behavior tree using main tree attribute
-    return Create(WriteToString(), "", factory, parent_blackboard_ptr);
-}
-
-BT::Tree BTCreator::Create(rclcpp::Node::SharedPtr node_ptr, BT::Blackboard::Ptr parent_blackboard_ptr) const
-{
-    BT::BehaviorTreeFactory factory;
-    return Create(node_ptr, factory, parent_blackboard_ptr);
-}
-
-std::string BTCreator::GetMainTreeID() const
-{
-    if (const auto main_tree_id = doc_.RootElement()->Attribute(MAIN_TREE_ATTRIBUTE_NAME.c_str())) return main_tree_id;
-    return "";
-}
-
-void BTCreator::SetMainTreeID(const std::string& main_tree_id)
-{
-    if (!main_tree_id.empty()) doc_.RootElement()->SetAttribute(MAIN_TREE_ATTRIBUTE_NAME.c_str(), main_tree_id.c_str());
-}
-
-std::string BTCreator::WriteToString() const
-{
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(tree_file_path.c_str());
     tinyxml2::XMLPrinter printer;
-    doc_.Print(&printer);
+    doc.Print(&printer);
     return printer.CStr();
 }
 

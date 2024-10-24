@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/ros2_bt_observer.hpp"
+#include "auto_apms_behavior_tree/state_observer.hpp"
 
 #include <chrono>
 
@@ -20,14 +20,20 @@ namespace auto_apms_behavior_tree {
 
 BTStateObserver::BTStateObserver(const BT::Tree& tree,
                                  const rclcpp::Logger& node_logger,
-                                 std::chrono::seconds max_logging_interval)
+                                 std::chrono::seconds max_logging_rate)
     : StatusChangeLogger{tree.rootNode()},
       logger_{node_logger},
       root_tree_id_{tree.subtrees[0]->tree_ID},
-      max_logging_interval_{max_logging_interval}
+      max_logging_rate_{max_logging_rate}
 {}
 
 void BTStateObserver::flush() { running_action_history_.clear(); }
+
+void BTStateObserver::set_logging(bool active) { logging_active_ = active; }
+
+const std::vector<std::string>& BTStateObserver::running_action_history() { return running_action_history_; }
+
+const std::string& BTStateObserver::last_running_action_name() { return last_running_action_name_; }
 
 uint16_t BTStateObserver::CreateStateChangeBitmask(BT::NodeStatus prev_status, BT::NodeStatus curr_status)
 {
@@ -46,14 +52,14 @@ void BTStateObserver::callback(BT::Duration timestamp,
     }
 
     /**
-     * Write to logger but respect a maximum interval if a specific node triggers the same state
+     * Write to ROS2 logger but respect a maximum interval if a specific node triggers the same state
      * transitions (e.g. conditions in reactive control statements or loops).
      */
-    if (!state_change_logging_) { return; }
+    if (!logging_active_) return;
     const auto key = std::make_pair(node.UID(), CreateStateChangeBitmask(prev_status, status));
-    const bool first_log = last_log_map_.count(key) == 0;
+    const bool is_first_log = last_log_map_.count(key) == 0;
 
-    if (first_log || timestamp - last_log_map_[key] > max_logging_interval_) {
+    if (is_first_log || timestamp - last_log_map_[key] > max_logging_rate_) {
         if (node.registrationName() == node.name()) {
             RCLCPP_INFO(logger_,
                         "[%s] %s '%s' -- %s -> %s",
