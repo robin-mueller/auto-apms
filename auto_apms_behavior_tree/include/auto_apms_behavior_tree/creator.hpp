@@ -16,10 +16,12 @@
 
 #include <tinyxml2.h>
 
-#include "auto_apms_behavior_tree/node/plugin_loader.hpp"
-#include "auto_apms_behavior_tree/resource.hpp"
+#include "auto_apms_behavior_tree/node/plugin_base.hpp"
+#include "auto_apms_behavior_tree/node/plugin_manifest.hpp"
+#include "auto_apms_behavior_tree/resource/resource.hpp"
 #include "behaviortree_cpp/bt_factory.h"
-#include "rclcpp/rclcpp.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "rclcpp/node.hpp"
 
 /**
  * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
@@ -27,6 +29,18 @@
  */
 
 namespace auto_apms_behavior_tree {
+
+using BTNodePluginClassLoader = pluginlib::ClassLoader<BTNodePluginBase>;
+
+/**
+ * @brief Create an instance of pluginlib::ClassLoader specifically for loading installed behavior tree node plugin
+ * resources.
+ * @ingroup auto_apms_behavior_tree
+ * @param package_names Packages to consider when searching for behavior tree node plugin resources. Leave empty to
+ * search in all packages.
+ * @return pluginlib::ClassLoader object.
+ */
+std::shared_ptr<BTNodePluginClassLoader> MakeBTNodePluginClassLoader(const std::set<std::string>& package_names = {});
 
 /**
  * @brief Central entry point for creating instances of behavior trees.
@@ -45,23 +59,36 @@ class BTCreator
     static inline const std::string MAIN_TREE_ATTRIBUTE_NAME = "main_tree_to_execute";
 
    public:
-    using SharedPtr = std::shared_ptr<BTCreator>;
+    using Factory = BT::BehaviorTreeFactory;
 
-    BTCreator(const BTNodePluginLoader& node_plugin_loader = {});
+    /**
+     * @brief Manually create an instance of BTCreator.
+     * @param factory_ptr Shared pointer to the behavior tree factory that the trees and node plugins will register
+     * with.
+     * @param package_names Set of packages to consider when searching the installed behavior tree node plugin
+     * resources. Leave empty to search in all packages.
+     */
+    BTCreator(std::shared_ptr<Factory> factory_ptr = std::make_shared<Factory>(),
+              std::shared_ptr<BTNodePluginClassLoader> node_plugin_loader_ptr = MakeBTNodePluginClassLoader());
 
-    static SharedPtr FromResource(rclcpp::Node::SharedPtr node_ptr, const BTResource& resource);
+    /**
+     * @brief Load behavior tree node plugins and register with behavior tree factory.
+     *
+     * @param[in,out] node_ptr ROS2 node to pass to RosNodeParams.
+     * @param[in] node_plugin_manifest Parameters for locating and configuring the behavior tree node plugins.
+     * @throw exceptions::NodeRegistrationError if registration fails.
+     */
+    BTCreator& RegisterNodePlugins(rclcpp::Node::SharedPtr node_ptr, const BTNodePluginManifest& node_plugin_manifest);
 
-    void AddTreeFromString(const std::string& tree_str,
-                           const BTNodePluginManifest& node_plugin_manifest,
-                           rclcpp::Node::SharedPtr node_ptr);
+    static std::unordered_map<std::string, BT::NodeType> GetRegisteredNodes(const Factory& factory);
 
-    void AddTreeFromFile(const std::string& tree_file_path,
-                         const BTNodePluginManifest& node_plugin_manifest,
-                         rclcpp::Node::SharedPtr node_ptr);
+    BTCreator& AddTreeFromXMLDocument(const tinyxml2::XMLDocument& doc);
 
-    void AddTreeFromXMLDocument(const tinyxml2::XMLDocument& doc,
-                                const BTNodePluginManifest& node_plugin_manifest,
-                                rclcpp::Node::SharedPtr node_ptr);
+    BTCreator& AddTreeFromString(const std::string& tree_str);
+
+    BTCreator& AddTreeFromFile(const std::string& tree_file_path);
+
+    BTCreator& AddTreeFromResource(const BTResource& resource, rclcpp::Node::SharedPtr node_ptr);
 
     BT::Tree CreateTree(const std::string& main_tree_id,
                         BT::Blackboard::Ptr root_blackboard_ptr = BT::Blackboard::create());
@@ -70,20 +97,16 @@ class BTCreator
 
     std::string GetMainTreeName() const;
 
-    void SetMainTreeName(const std::string& main_id);
+    BTCreator& SetMainTreeName(const std::string& main_id);
 
     std::string WriteToString() const;
 
-   private:
+   protected:
     static std::string WriteXMLDocumentToString(const tinyxml2::XMLDocument& doc);
 
-   public:
-    BT::BehaviorTreeFactory& factory();
-
-   private:
     tinyxml2::XMLDocument doc_;
-    BTNodePluginLoader node_plugin_loader_;
-    BT::BehaviorTreeFactory factory_;
+    std::shared_ptr<Factory> factory_ptr_;
+    std::shared_ptr<BTNodePluginClassLoader> node_plugin_loader_ptr_;
 };
 
 }  // namespace auto_apms_behavior_tree

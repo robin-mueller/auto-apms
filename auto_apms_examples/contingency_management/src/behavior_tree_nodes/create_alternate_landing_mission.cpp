@@ -89,22 +89,25 @@ class CreateAlternateLandingMission : public BT::SyncActionNode
 
         // Read tree template and replace placeholders
         const std::string main_tree_id = "AlternateLandingMission";
-        auto tree = auto_apms_behavior_tree::BTCreator::FromResourceWithTreeID(main_tree_id, "auto_apms_examples")
-                        ->WriteTreeToString();
+        auto resource = auto_apms_behavior_tree::BTResource::SelectByTreeName(main_tree_id, "auto_apms_examples");
+        auto_apms_behavior_tree::BTCreator creator;
+        creator.AddTreeFromFile(resource.tree_file_path);
+        std::string tree_str = creator.WriteToString();
 
         // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -
         std::regex placeholder("\\$\\{([A-Za-z0-9_-]+)\\}");
-        for (std::smatch match; std::regex_search(tree, match, placeholder);) {
+        for (std::smatch match; std::regex_search(tree_str, match, placeholder);) {
             std::string full_match_str = match[0];
             std::string placeholder_name = match[1];
 
             // Replace the placeholder with an actual value or an empty string if not found in map
-            tree.replace(match.position(),
-                         full_match_str.length(),
-                         map.find(placeholder_name) != map.end() ? double_to_string(map[placeholder_name], 14) : "");
+            tree_str.replace(
+                match.position(),
+                full_match_str.length(),
+                map.find(placeholder_name) != map.end() ? double_to_string(map[placeholder_name], 14) : "");
         }
 
-        setOutput(OUTPUT_KEY_DATA, tree);
+        setOutput(OUTPUT_KEY_DATA, tree_str);
 
         // Currently there is no easy way to read the tree id from the xml without creating it
         setOutput<std::string>(OUTPUT_KEY_ID, main_tree_id);

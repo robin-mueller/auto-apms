@@ -17,7 +17,7 @@
 #include "auto_apms_behavior_tree/bt_executor_client.hpp"
 #include "auto_apms_core/util/console.hpp"
 
-sig_atomic_t volatile shutdown_requested = 0;
+sig_atomic_t volatile termination_requested = 0;
 
 using namespace auto_apms_core::util;
 using namespace auto_apms_behavior_tree;
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
     rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
     signal(SIGINT, [](int sig) {
         (void)sig;
-        shutdown_requested = 1;
+        termination_requested = 1;
     });
     auto node_ptr = std::make_shared<rclcpp::Node>(executor_name + "_run_executor_node", namespace_);
 
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     double last_running_node_timestamp = 0;
     while (rclcpp::spin_until_future_complete(node_ptr, execution_result_future, std::chrono::milliseconds(1)) !=
            rclcpp::FutureReturnCode::SUCCESS) {
-        if (shutdown_requested && !cancelation_requested) {
+        if (termination_requested && !cancelation_requested) {
             if (!bt_executor_client.RequestCancelation()) {
                 std::cerr << "Failed to cancel behavior tree\n";
                 rclcpp::shutdown();

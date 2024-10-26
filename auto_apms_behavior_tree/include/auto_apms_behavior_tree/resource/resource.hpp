@@ -18,7 +18,23 @@
 #include <string>
 #include <vector>
 
+#include "auto_apms_core/exceptions.hpp"
+
 namespace auto_apms_behavior_tree {
+
+namespace exceptions {
+
+struct ResourceIdentityFormatError : public auto_apms_core::exceptions::ExceptionBase
+{
+    using ExceptionBase::ExceptionBase;
+};
+
+struct TreeVerificationError : public auto_apms_core::exceptions::ExceptionBase
+{
+    using ExceptionBase::ExceptionBase;
+};
+
+}  // namespace exceptions
 
 /**
  * @brief Struct containing behavior tree resource data
@@ -77,7 +93,8 @@ struct BTResource
      * @param identity Identity string with formatting compliant to the signatures above.
      * @return Corresponding BTResource object.
      * @throws exceptions::ResourceIdentityFormatError if the identity string has wrong format.
-     * @throws exceptions::ResourceNotFoundError if the resource cannot be found using the given identity string.
+     * @throws auto_apms_core::exceptions::ResourceNotFoundError if the resource cannot be found using the given
+     * identity string.
      */
     static BTResource FromString(const std::string& identity);
 

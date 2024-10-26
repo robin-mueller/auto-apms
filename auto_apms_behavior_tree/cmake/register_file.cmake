@@ -153,6 +153,6 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
         DESTINATION "${_tree_rel_dir__install}")
 
     # Fill meta info
-    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_plugin_manifest_rel_path__install}|${_file_tree_names}|\n")
+    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_plugin_manifest_rel_path__install}|${_file_tree_names}\n")
 
 endmacro()

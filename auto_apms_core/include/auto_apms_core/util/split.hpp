@@ -20,16 +20,18 @@
 namespace auto_apms_core::util {
 
 /**
- * @brief Split a string at a specific delimiter string (Delimiter may consist of multiple characters).
+ * @brief Split a string into multiple tokens using a specific delimiter string (Delimiter may consist of multiple
+ * characters).
  *
- * Will preserve empty strings, so for example with the delimiter being `::` passing the string `::foo` will
- * output a vector with two elements {"", "foo"}.
+ * Will preserve empty strings if @p preserve_empty is `true` (Default), so for example with the delimiter being
+ * `::` passing the string `::foo` will output a vector with two elements {"", "foo"}.
  *
  * @ingroup auto_apms_core
  * @param str String to split into multiple tokens.
  * @param delimiter Delimiter string at which the string shall be split.
+ * @param preserve_empty Preserve empty string tokens in the result vector.
  * @return Vector of string representing the string's tokens without the delimiter.
  */
-std::vector<std::string> SplitString(const std::string& str, const std::string& delimiter);
+std::vector<std::string> SplitString(const std::string& str, const std::string& delimiter, bool preserve_empty = true);
 
 }  // namespace auto_apms_core::util

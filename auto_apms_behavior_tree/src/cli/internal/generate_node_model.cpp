@@ -16,10 +16,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "auto_apms_behavior_tree/node/plugin_loader.hpp"
+#include "auto_apms_behavior_tree/creator.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 #include "class_loader/multi_library_class_loader.hpp"
-#include "rcpputils/split.hpp"
 
 using namespace auto_apms_behavior_tree;
 
@@ -59,7 +58,7 @@ int main(int argc, char** argv)
 
         // Create manifest
         BT::BehaviorTreeFactory factory;
-        const auto manifest = BTNodePluginLoader::Manifest::FromFile(manifest_file);
+        const auto manifest = BTNodePluginManifest::FromFile(manifest_file);
 
         // We have to utilize the low level class loader here because the pluginlib::ClassLoader API doesn't allow
         // customizing the internal node/library allocation map

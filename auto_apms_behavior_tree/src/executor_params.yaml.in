@@ -1,9 +1,10 @@
-${PROJECT_NAME}::executor_params:
+auto_apms_behavior_tree::executor_params:
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE}:
     type: string
     description: Behavior tree identifier string formatted like '<package>::<tree_id>'.
     validation:
       not_empty<>: null
+      auto_apms_behavior_tree::validators::BehaviorTreeResourceFound: []
 
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}:
     type: double

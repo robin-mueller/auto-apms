@@ -176,6 +176,32 @@ BTNodePluginManifest& BTNodePluginManifest::Merge(const BTNodePluginManifest& m)
     return *this;
 }
 
+BTNodePluginManifest& BTNodePluginManifest::AutoComplete(pluginlib::ClassLoader<BTNodePluginBase>& class_loader)
+{
+    for (const auto& [node_name, params] : param_map_) {
+        const std::string node_package_name = class_loader.getClassPackage(params.class_name);
+        if (node_package_name.empty()) {
+            throw auto_apms_core::exceptions::ResourceNotFoundError(
+                "Cannot find class '" + params.class_name + "' required by node '" + node_name +
+                "', because no such resource is registered with this plugin loader instance.");
+        }
+        const std::string node_lib_path = class_loader.getClassLibraryPath(params.class_name);
+        if (!params.package.empty()) {
+            // Verify the plugin can be found in the package
+            if (params.package == node_package_name) {
+                throw auto_apms_core::exceptions::ResourceNotFoundError(
+                    "Cannot find class '" + params.class_name + "' required by node '" + node_name + "' in package '" +
+                    params.package + "'. Internally, the resource is registered by package '" + node_package_name +
+                    "' instead. This can occur if multiple packages register a node plugin with the same class name. "
+                    "To resolve this issue, introduce a unique package namespace to the respective class names.");
+            }
+        }
+        param_map_[node_name].package = node_package_name;
+        param_map_[node_name].library = node_lib_path;  // Any entry in library will be overwritten
+    }
+    return *this;
+}
+
 void BTNodePluginManifest::ToFile(const std::string& file_path) const
 {
     YAML::Node root;

@@ -16,10 +16,12 @@
 #include <iostream>
 #include <set>
 
-#include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node/plugin_loader.hpp"
+#include "auto_apms_behavior_tree/creator.hpp"
+#include "auto_apms_core/exceptions.hpp"
 #include "auto_apms_core/resources.hpp"
-#include "rcpputils/split.hpp"
+#include "auto_apms_core/util/split.hpp"
+
+using namespace auto_apms_behavior_tree;
 
 int main(int argc, char** argv)
 {
@@ -34,14 +36,12 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    using PluginLoader = auto_apms_behavior_tree::BTNodePluginLoader;
-
     try {
         std::vector<std::string> manifest_files;
-        for (const auto& path : rcpputils::split(argv[1], ';')) {
+        for (const auto& path : auto_apms_core::util::SplitString(argv[1], ";")) {
             manifest_files.push_back(std::filesystem::absolute(path).string());
         }
-        const std::vector<std::string> build_infos = rcpputils::split(argv[2], ';');
+        const std::vector<std::string> build_infos = auto_apms_core::util::SplitString(argv[2], ";");
         const std::string build_package_name = argv[3];
         const std::filesystem::path output_file{std::filesystem::absolute(argv[4])};
 
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
         // Retrieve plugin library paths from build info
         std::map<std::string, std::string> build_lib_paths;
         for (const auto& build_info : build_infos) {
-            std::vector<std::string> parts = rcpputils::split(build_info, '@');
+            std::vector<std::string> parts = auto_apms_core::util::SplitString(build_info, "@");
             if (parts.size() != 2) { throw std::runtime_error("Invalid build info entry ('" + build_info + "')."); }
             const std::string& class_name = parts[0];
             const std::string& build_path = parts[1];
@@ -68,17 +68,16 @@ int main(int argc, char** argv)
             build_lib_paths[class_name] = build_path;  // {class_name: build_path}
         }
 
-        auto output_manifest = PluginLoader::Manifest::FromFiles(manifest_files);
+        auto output_manifest = BTNodePluginManifest::FromFiles(manifest_files);
         auto all_but_build_package =
             auto_apms_core::GetAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
         all_but_build_package.erase(build_package_name);
-        auto loader = PluginLoader{all_but_build_package};
+        auto loader_ptr = MakeBTNodePluginClassLoader(all_but_build_package);
         for (const auto& [node_name, params] : output_manifest.map()) {
-            auto temp_manifest = PluginLoader::Manifest({{node_name, params}});
             try {
-                loader.AutoCompleteManifest(temp_manifest);
-                output_manifest[node_name] = temp_manifest[node_name];
-            } catch (const auto_apms_behavior_tree::exceptions::ResourceNotFoundError& e) {
+                output_manifest[node_name] =
+                    BTNodePluginManifest({{node_name, params}}).AutoComplete(*loader_ptr)[node_name];
+            } catch (const auto_apms_core::exceptions::ResourceNotFoundError& e) {
                 if (build_lib_paths.find(params.class_name) == build_lib_paths.end()) {
                     throw std::runtime_error("Node plugin '" + node_name + "' ('" + params.class_name +
                                              "') cannot be found. It doesn't exist in any installed package and is "

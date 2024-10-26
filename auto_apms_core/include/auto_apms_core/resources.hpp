@@ -21,9 +21,13 @@ namespace auto_apms_core {
 
 /**
  * @brief Collect all package names that register a certain type of `ament_index` resources.
+ *
+ * \note Resources are not available until the respective ROS2 package is installed.
+ *
  * @ingroup auto_apms_core
  * @param resource_type Name of the resource type.
  * @return Package names.
+ * @throws exceptions::ResourceNotFoundError if no resources of type @p resource_type were found.
  */
 std::set<std::string> GetAllPackagesWithResource(const std::string& resource_type);
 

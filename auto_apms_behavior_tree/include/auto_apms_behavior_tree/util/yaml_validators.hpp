@@ -14,19 +14,20 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/resource/resource.hpp"  // More error definitions
-#include "auto_apms_core/exceptions.hpp"
+#include "auto_apms_behavior_tree/resource/resource.hpp"
+#include "rclcpp/parameter.hpp"
+#include "tl_expected/expected.hpp"
 
-namespace auto_apms_behavior_tree::exceptions {
+namespace auto_apms_behavior_tree::validators {
 
-struct NodeRegistrationError : public auto_apms_core::exceptions::ExceptionBase
+inline tl::expected<void, std::string> BehaviorTreeResourceFound(rclcpp::Parameter const& parameter)
 {
-    using ExceptionBase::ExceptionBase;
-};
+    try {
+        BTResource::FromString(parameter.as_string());
+    } catch (const auto_apms_core::exceptions::ExceptionBase& e) {
+        return tl::make_unexpected(e.what());
+    }
+    return {};
+}
 
-struct RosNodeError : public auto_apms_core::exceptions::ExceptionBase
-{
-    using ExceptionBase::ExceptionBase;
-};
-
-}  // namespace auto_apms_behavior_tree::exceptions
+}  // namespace auto_apms_behavior_tree::validators

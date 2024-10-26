@@ -14,9 +14,11 @@
 
 #include "auto_apms_core/util/split.hpp"
 
+#include <algorithm>
+
 namespace auto_apms_core::util {
 
-std::vector<std::string> SplitString(const std::string& str, const std::string& delimiter)
+std::vector<std::string> SplitString(const std::string& str, const std::string& delimiter, bool preserve_empty)
 {
     std::vector<std::string> parts;
     size_t start = 0;
@@ -28,6 +30,10 @@ std::vector<std::string> SplitString(const std::string& str, const std::string& 
     }
     // Add the last part after the last delimiter (or the entire string if no delimiter was found)
     parts.push_back(str.substr(start));
+
+    // Remove empty strings if desired
+    if (!preserve_empty) parts.erase(std::remove(parts.begin(), parts.end(), ""), parts.end());
+
     return parts;
 }
 

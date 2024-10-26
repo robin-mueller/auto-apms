@@ -8,7 +8,6 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
-find_package(rcpputils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(auto_apms_interfaces REQUIRED)
@@ -46,25 +45,39 @@ set(_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE "auto_apms_behavior_tree")
 # ------------ Library --------------
 #
 
+add_library(behavior_tree_resource_isolated SHARED
+    "src/resource/resource.cpp"
+)
+target_include_directories(behavior_tree_resource_isolated PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/resource>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}/resource>
+)
+target_link_libraries(behavior_tree_resource_isolated
+    auto_apms_core::auto_apms_core_lib
+)
+target_compile_definitions(behavior_tree_resource_isolated PRIVATE
+    _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE}"
+)
+
 # Generate parameter headers employing https://github.com/PickNikRobotics/generate_parameter_library
 configure_file("src/executor_params.yaml.in" "${CMAKE_CURRENT_BINARY_DIR}/executor_params.yaml")
 configure_file("src/node/plugin_manifest_params.yaml.in" "${CMAKE_CURRENT_BINARY_DIR}/node_plugin_manifest_params.yaml")
+configure_file("include/auto_apms_behavior_tree/util/yaml_validators.hpp" "yaml_validators.hpp" COPYONLY)
 set(_temp ${CMAKE_CURRENT_SOURCE_DIR})  # WORKAROUND: temporarily change CMAKE_CURRENT_SOURCE_DIR since the function doesn't allow to load the parameter definition file from a different directory
 set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
-generate_parameter_library(executor_params "executor_params.yaml")
+generate_parameter_library(executor_params "executor_params.yaml" "yaml_validators.hpp")
+target_link_libraries(executor_params INTERFACE behavior_tree_resource_isolated)
 generate_parameter_library(node_plugin_manifest_params "node_plugin_manifest_params.yaml")
 set(CMAKE_CURRENT_SOURCE_DIR ${_temp})
 
 add_library(auto_apms_behavior_tree SHARED
-    src/node/plugin_manifest.cpp
-    src/node/plugin_loader.cpp
-    src/resource.cpp
-    src/creator.cpp
-    src/state_observer.cpp
-    src/executor_base.cpp
+    "src/node/plugin_manifest.cpp"
+    "src/creator.cpp"
+    "src/state_observer.cpp"
+    "src/executor_base.cpp"
 
-    src/bt_executor.cpp
-    src/bt_executor_client.cpp
+    "src/bt_executor.cpp"
+    "src/bt_executor_client.cpp"
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -72,7 +85,6 @@ target_include_directories(auto_apms_behavior_tree PUBLIC
 )
 target_compile_definitions(auto_apms_behavior_tree PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE}"
-    _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES="${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_CLASS="${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_CLASS}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_PACKAGE="${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_PACKAGE}"
@@ -84,7 +96,6 @@ target_compile_definitions(auto_apms_behavior_tree PRIVATE
 ament_target_dependencies(auto_apms_behavior_tree
     rclcpp
     rclcpp_action
-    rcpputils
     pluginlib
     behaviortree_cpp
     yaml_cpp_vendor
@@ -93,6 +104,7 @@ ament_target_dependencies(auto_apms_behavior_tree
     auto_apms_interfaces
 )
 target_link_libraries(auto_apms_behavior_tree
+    behavior_tree_resource_isolated
     executor_params
     node_plugin_manifest_params
 )
@@ -164,6 +176,7 @@ if(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
     target_compile_definitions(auto_apms_behavior_tree PRIVATE _AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
     target_compile_definitions(create_node_plugin_manifest PRIVATE _AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
     target_compile_definitions(generate_node_model PRIVATE _AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
+    target_compile_definitions(run_behavior_tree PRIVATE _AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
     target_compile_definitions(upload_tree PRIVATE _AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
     target_compile_definitions(run_executor PRIVATE _AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
 endif()
@@ -171,9 +184,10 @@ endif()
 ###### Export libraries ######
 install(
     TARGETS
-    auto_apms_behavior_tree
+    behavior_tree_resource_isolated
     executor_params
     node_plugin_manifest_params
+    auto_apms_behavior_tree
     EXPORT export_${PROJECT_NAME}
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -183,7 +197,6 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
     rclcpp
     rclcpp_action
-    rcpputils
     pluginlib
     behaviortree_cpp
     yaml_cpp_vendor

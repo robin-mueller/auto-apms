@@ -31,14 +31,13 @@ class BTExecutorBase
     enum class ExecutionState : uint8_t { IDLE, RUNNING, PAUSED, HALTED, TERMINATED };
     enum class ControlCommand : uint8_t { RUN, PAUSE, HALT, TERMINATE };
     enum class TreeExitBehavior : uint8_t { CLOSE, RESTART };
-    enum class ClosureResult : uint8_t { TREE_SUCCEEDED, TREE_FAILED, TERMINATED_EARLY, ERROR };
+    enum class ClosureResult : uint8_t { TREE_SUCCEEDED, TREE_FAILED, TERMINATED_PREMATURELY, ERROR };
 
    private:
     using CloseExecutionCallback = std::function<void(ClosureResult, const std::string&)>;
 
    public:
     using ExecutorParams = executor_params::Params;
-    using NodePluginsParams = node_plugin_manifest_params::Params;
 
     BTExecutorBase(rclcpp::Node::SharedPtr node_ptr);
 
@@ -50,11 +49,7 @@ class BTExecutorBase
 
     ExecutionState GetExecutionState();
 
-    bool SetControlCommand(ControlCommand cmd);
-
    private:
-    void Reset();
-
     void ExecutionRoutine(CloseExecutionCallback close_callback);
 
     /* Virtual member functions */
@@ -62,13 +57,19 @@ class BTExecutorBase
    private:
     virtual bool OnFirstTick();
 
-    virtual void OnTick();
+    virtual bool OnTick();
 
     virtual TreeExitBehavior OnTreeExit(bool success);
 
     virtual void OnClose();
 
    public:
+    /* Setter functions */
+
+    void set_control_command(ControlCommand cmd);
+
+    void set_executor_parameters(const ExecutorParams& p);
+
     /* Getter functions */
 
     /// Get a pointer to the internal ROS2 node instance.
@@ -87,14 +88,11 @@ class BTExecutorBase
 
     ExecutorParams executor_parameters();
 
-    NodePluginsParams node_plugins_parameters();
-
     const BTStateObserver& state_observer();
 
    private:
     rclcpp::Node::SharedPtr node_ptr_;
-    executor_params::ParamListener executor_param_listener_;
-    node_plugin_manifest_params::ParamListener nodes_param_listener_;
+    ExecutorParams executor_params_;
     BT::Blackboard::Ptr global_blackboard_ptr_;
     std::unique_ptr<BT::Tree> tree_ptr_;
     std::unique_ptr<BT::Groot2Publisher> groot2_publisher_ptr_;
@@ -102,10 +100,15 @@ class BTExecutorBase
     rclcpp::TimerBase::SharedPtr execution_timer_ptr_;
     ControlCommand control_command_;
     bool execution_stopped_;
+    std::string termination_reason_;
 };
 
 std::string to_string(BTExecutorBase::ExecutionState state);
 
 std::string to_string(BTExecutorBase::ControlCommand cmd);
+
+std::string to_string(BTExecutorBase::TreeExitBehavior behavior);
+
+std::string to_string(BTExecutorBase::ClosureResult result);
 
 }  // namespace auto_apms_behavior_tree

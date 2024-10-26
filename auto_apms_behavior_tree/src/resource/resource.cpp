@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/resource.hpp"
+#include "resource.hpp"
 
 #include <tinyxml2.h>
 
 #include <filesystem>
 
 #include "ament_index_cpp/get_resource.hpp"
-#include "auto_apms_behavior_tree/exceptions.hpp"
+#include "auto_apms_core/exceptions.hpp"
 #include "auto_apms_core/resources.hpp"
 #include "auto_apms_core/util/split.hpp"
-#include "rcpputils/split.hpp"
 
 namespace auto_apms_behavior_tree {
 
@@ -35,10 +34,10 @@ std::vector<BTResource> BTResource::CollectFromPackage(const std::string& packag
                                       package_name,
                                       content,
                                       &base_path)) {
-        std::vector<std::string> lines = rcpputils::split(content, '\n', true);
+        std::vector<std::string> lines = auto_apms_core::util::SplitString(content, "\n", false);
         auto make_absolute_path = [base_path](const std::string& s) { return base_path + "/" + s; };
         for (const auto& line : lines) {
-            std::vector<std::string> parts = rcpputils::split(line, '|', false);
+            std::vector<std::string> parts = auto_apms_core::util::SplitString(line, "|");
             if (parts.size() != 4) {
                 throw std::runtime_error("Invalid behavior tree resource file (Package: '" + package_name + "').");
             }
@@ -47,7 +46,7 @@ std::vector<BTResource> BTResource::CollectFromPackage(const std::string& packag
             r.tree_file_path = make_absolute_path(parts[1]);
             r.package_name = package_name;
             r.node_manifest_file_path = make_absolute_path(parts[2]);
-            std::vector<std::string> tree_ids_vec = rcpputils::split(parts[3], ';');
+            std::vector<std::string> tree_ids_vec = auto_apms_core::util::SplitString(parts[3], ";");
             r.tree_names = {tree_ids_vec.begin(), tree_ids_vec.end()};
             resources.push_back(r);
         }
@@ -72,10 +71,11 @@ BTResource BTResource::SelectByTreeName(const std::string& tree_name, const std:
     }
 
     if (matching_resources.empty()) {
-        throw exceptions::ResourceNotFoundError{"No behavior tree with name '" + tree_name + "' was registered."};
+        throw auto_apms_core::exceptions::ResourceNotFoundError{"No behavior tree with name '" + tree_name +
+                                                                "' was registered."};
     }
     if (matching_resources.size() > 1) {
-        throw exceptions::ResourceNotFoundError{
+        throw auto_apms_core::exceptions::ResourceNotFoundError{
             "The behavior tree name '" + tree_name +
             "' exists multiple times. Use the 'package_name' argument to narrow down the search."};
     }
@@ -101,11 +101,11 @@ BTResource BTResource::SelectByFileName(const std::string& file_name, const std:
     }
 
     if (matching_resources.empty()) {
-        throw exceptions::ResourceNotFoundError{"No behavior tree file with name '" + file_stem +
-                                                ".xml' was registered."};
+        throw auto_apms_core::exceptions::ResourceNotFoundError{"No behavior tree file with name '" + file_stem +
+                                                                ".xml' was registered."};
     }
     if (matching_resources.size() > 1) {
-        throw exceptions::ResourceNotFoundError{
+        throw auto_apms_core::exceptions::ResourceNotFoundError{
             "Multiple behavior tree files with name '" + file_stem +
             ".xml' are registered. Use the 'package_name' argument to narrow down the search."};
     }
@@ -113,12 +113,13 @@ BTResource BTResource::SelectByFileName(const std::string& file_name, const std:
     return matching_resources[0];
 }
 
-BTResource BTResource::FromString(const std::string& identifier)
+BTResource BTResource::FromString(const std::string& identity)
 {
-    const auto tokens = auto_apms_core::util::SplitString(identifier, "::");
+    const auto tokens = auto_apms_core::util::SplitString(identity, "::");
     if (tokens.size() != 3) {
         throw exceptions::ResourceIdentityFormatError(
-            "Number of tokens in the behavior tree resource identity string must be 3.");
+            "Identity string '" + identity +
+            "' has wrong format. Number of string tokens separated by '::' must be 3.");
     }
     const std::string& package_name = tokens[0];
     const std::string& tree_file_stem = tokens[1];
@@ -129,9 +130,9 @@ BTResource BTResource::FromString(const std::string& identifier)
     // Full signature: Verify that <tree_name> can be found in file with stem <tree_file_stem>
     BTResource resource = SelectByFileName(tree_file_stem, package_name);
     if (resource.tree_names.find(tree_name) == resource.tree_names.end()) {
-        throw exceptions::ResourceNotFoundError("Found behavior tree file '" + tree_file_stem + ".xml' in package '" +
-                                                resource.package_name + "' but no tree with name '" + tree_name +
-                                                "' exists in that file.");
+        throw auto_apms_core::exceptions::ResourceNotFoundError(
+            "Found behavior tree file '" + tree_file_stem + ".xml' in package '" + resource.package_name +
+            "' but no tree with name '" + tree_name + "' exists in that file.");
     }
     return resource;
 }
@@ -139,7 +140,10 @@ BTResource BTResource::FromString(const std::string& identifier)
 std::string BTResource::WriteTreeToString() const
 {
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(tree_file_path.c_str());
+    if (doc.LoadFile(tree_file_path.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+        throw exceptions::TreeVerificationError("Invalid tree xml in resource file " + tree_file_path + ": " +
+                                                doc.ErrorStr());
+    }
     tinyxml2::XMLPrinter printer;
     doc.Print(&printer);
     return printer.CStr();

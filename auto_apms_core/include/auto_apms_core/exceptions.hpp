@@ -27,4 +27,9 @@ class ExceptionBase : public std::runtime_error
     explicit inline ExceptionBase(const std::string& msg) : std::runtime_error(msg) {}
 };
 
+struct ResourceNotFoundError : public ExceptionBase
+{
+    using ExceptionBase::ExceptionBase;
+};
+
 }  // namespace auto_apms_core::exceptions

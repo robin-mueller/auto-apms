@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree/node/plugin.hpp"
-#include "auto_apms_behavior_tree/resource.hpp"
+#include "auto_apms_behavior_tree/resource/resource.hpp"
+#include "auto_apms_core/exceptions.hpp"
 
 #define INPUT_KEY_PACKAGE "package_name"
 #define INPUT_KEY_FILENAME "filename"
@@ -44,7 +44,7 @@ class LoadBehaviorTreeAction : public BT::SyncActionNode
         std::unique_ptr<BTResource> tree_resource_ptr;
         try {
             tree_resource_ptr = std::make_unique<BTResource>(BTResource::SelectByFileName(filename, package_name));
-        } catch (const exceptions::ResourceNotFoundError& e) {
+        } catch (const auto_apms_core::exceptions::ResourceNotFoundError& e) {
             return BT::NodeStatus::FAILURE;
         }
 

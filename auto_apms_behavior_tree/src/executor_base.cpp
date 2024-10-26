@@ -16,14 +16,10 @@
 
 #include <chrono>
 
-#include "rcpputils/split.hpp"
-
 namespace auto_apms_behavior_tree {
 
 BTExecutorBase::BTExecutorBase(rclcpp::Node::SharedPtr node_ptr)
     : node_ptr_{node_ptr},
-      executor_param_listener_{node_ptr},
-      nodes_param_listener_{node_ptr, "nodes."},
       global_blackboard_ptr_{BT::Blackboard::create()},
       control_command_{ControlCommand::RUN},
       execution_stopped_{true}
@@ -40,29 +36,32 @@ std::shared_future<BTExecutorBase::ClosureResult> BTExecutorBase::Start()
 {
     if (!tree_ptr_) throw std::logic_error("Cannot start execution because tree hasn't been created yet.");
 
-    auto executor_params = executor_param_listener_.get_params();
     groot2_publisher_ptr_.reset();
-    groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, executor_params.groot2_port);
+    groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, executor_params_.groot2_port);
     state_observer_ptr_.reset();
     state_observer_ptr_ = std::make_unique<BTStateObserver>(*tree_ptr_, node_ptr_->get_logger());
     state_observer_ptr_->enableTransitionToIdle(false);
 
     /* Start execution timer */
 
-    Reset();
+    // Reset state variables
+    control_command_ = ControlCommand::RUN;
+    termination_reason_ = "";
+
+    // Create promise for asnychronous execution
     auto promise_ptr = std::make_shared<std::promise<ClosureResult>>();
     CloseExecutionCallback cb = [this, promise_ptr](ClosureResult result, const std::string &msg) {
         RCLCPP_DEBUG(node_ptr_->get_logger(),
-                     "Closing behavior tree execution from state %s: %s.",
+                     "Closing behavior tree execution from state %s. Reason: %s.",
                      to_string(GetExecutionState()).c_str(),
                      msg.c_str());
         execution_timer_ptr_->cancel();
         promise_ptr->set_value(result);
         OnClose();
     };
-    execution_timer_ptr_ = node_ptr_->create_wall_timer(
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(executor_params.tick_rate)),
-        [this, cb]() { ExecutionRoutine(cb); });
+    execution_timer_ptr_ =
+        node_ptr_->create_wall_timer(std::chrono::duration<double, std::milli>(executor_params_.tick_rate),
+                                     [this, cb]() { ExecutionRoutine(cb); });
 
     return promise_ptr->get_future();
 }
@@ -82,39 +81,38 @@ BTExecutorBase::ExecutionState BTExecutorBase::GetExecutionState()
     return ExecutionState::TERMINATED;
 }
 
-bool BTExecutorBase::SetControlCommand(ControlCommand cmd)
-{
-    control_command_ = cmd;
-    return true;
-}
-
-void BTExecutorBase::Reset()
-{
-    execution_stopped_ = true;
-    SetControlCommand(ControlCommand::RUN);
-}
-
 void BTExecutorBase::ExecutionRoutine(CloseExecutionCallback close_callback)
 {
-    /* Evaluate OnTick callback */
-
-    OnTick();
-
     /* Evaluate control command */
 
     const ExecutionState execution_state_before = GetExecutionState();  // Freeze current execution state
     execution_stopped_ = false;
     switch (control_command_) {
-        case ControlCommand::RUN:
-            break;
         case ControlCommand::PAUSE:
             execution_stopped_ = true;
             return;
+        case ControlCommand::RUN:
+            // Evaluate OnFirstTick callback before executor ticks tree for the first time
+            if (execution_state_before == ExecutionState::IDLE && OnFirstTick()) {
+                termination_reason_ = "OnFirstTick returned false";
+                break;
+            }
+
+            // Evaluate OnTick callback
+            if (OnTick()) {
+                termination_reason_ = "OnTick returned false";
+                break;
+            }
+
+            // Fall through if any of the callbacks returned false to terminate
+            [[fallthrough]];
         case ControlCommand::TERMINATE:
             if (execution_state_before == ExecutionState::HALTED) {
-                close_callback(ClosureResult::TERMINATED_EARLY, "Terminated by control command");
+                close_callback(ClosureResult::TERMINATED_PREMATURELY,
+                               termination_reason_.empty() ? "Terminated by control command" : termination_reason_);
                 return;
             }
+
             // Fall through to halt tree before termination
             [[fallthrough]];
         case ControlCommand::HALT:
@@ -134,16 +132,9 @@ void BTExecutorBase::ExecutionRoutine(CloseExecutionCallback close_callback)
                                    " '" + to_string(control_command_) + "' is not implemented.");
     }
 
-    /* Evaluate OnFirstTick callback before executor ticks tree for the first time */
-
-    if (execution_state_before == ExecutionState::IDLE && !OnFirstTick()) {
-        close_callback(ClosureResult::TERMINATED_EARLY, "OnFirstTick returned false");
-        return;
-    }
-
     /* Tick the BT::Tree instance */
 
-    state_observer_ptr_->set_logging(executor_param_listener_.get_params().state_change_logger);
+    state_observer_ptr_->set_logging(executor_params_.state_change_logger);
     BT::NodeStatus bt_status = BT::NodeStatus::IDLE;
     try {
         // It is important to tick EXACTLY once to prevent loops induced by BT nodes from blocking
@@ -176,7 +167,7 @@ void BTExecutorBase::ExecutionRoutine(CloseExecutionCallback close_callback)
                            "Closed on tree result " + BT::toStr(bt_status));
             return;
         case TreeExitBehavior::RESTART:
-            Reset();
+            control_command_ = ControlCommand::RUN;
             return;
     }
 
@@ -185,11 +176,15 @@ void BTExecutorBase::ExecutionRoutine(CloseExecutionCallback close_callback)
 
 bool BTExecutorBase::OnFirstTick() { return true; }
 
-void BTExecutorBase::OnTick() {}
+bool BTExecutorBase::OnTick() { return true; }
 
 BTExecutorBase::TreeExitBehavior BTExecutorBase::OnTreeExit(bool /*success*/) { return TreeExitBehavior::CLOSE; }
 
 void BTExecutorBase::OnClose() {}
+
+void BTExecutorBase::set_control_command(ControlCommand cmd) { control_command_ = cmd; }
+
+void BTExecutorBase::set_executor_parameters(const ExecutorParams &p) { executor_params_ = p; }
 
 rclcpp::Node::SharedPtr BTExecutorBase::node() { return node_ptr_; }
 
@@ -200,12 +195,7 @@ rclcpp::node_interfaces::NodeBaseInterface::SharedPtr BTExecutorBase::get_node_b
 
 BT::Blackboard::Ptr BTExecutorBase::global_blackboard() { return global_blackboard_ptr_; }
 
-BTExecutorBase::ExecutorParams BTExecutorBase::executor_parameters() { return executor_param_listener_.get_params(); }
-
-BTExecutorBase::NodePluginsParams BTExecutorBase::node_plugins_parameters()
-{
-    return nodes_param_listener_.get_params();
-}
+BTExecutorBase::ExecutorParams BTExecutorBase::executor_parameters() { return executor_params_; }
 
 const BTStateObserver &BTExecutorBase::state_observer() { return *state_observer_ptr_; }
 
@@ -237,6 +227,32 @@ std::string to_string(BTExecutorBase::ControlCommand cmd)
             return "HALT";
         case BTExecutorBase::ControlCommand::TERMINATE:
             return "TERMINATE";
+    }
+    return "undefined";
+}
+
+std::string to_string(BTExecutorBase::TreeExitBehavior behavior)
+{
+    switch (behavior) {
+        case BTExecutorBase::TreeExitBehavior::CLOSE:
+            return "CLOSE";
+        case BTExecutorBase::TreeExitBehavior::RESTART:
+            return "RESTART";
+    }
+    return "undefined";
+}
+
+std::string to_string(BTExecutorBase::ClosureResult result)
+{
+    switch (result) {
+        case BTExecutorBase::ClosureResult::TREE_SUCCEEDED:
+            return "TREE_SUCCEEDED";
+        case BTExecutorBase::ClosureResult::TREE_FAILED:
+            return "TREE_FAILED";
+        case BTExecutorBase::ClosureResult::TERMINATED_PREMATURELY:
+            return "TERMINATED_PREMATURELY";
+        case BTExecutorBase::ClosureResult::ERROR:
+            return "ERROR";
     }
     return "undefined";
 }

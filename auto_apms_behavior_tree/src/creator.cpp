@@ -15,81 +15,167 @@
 #include "auto_apms_behavior_tree/creator.hpp"
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
+#include "auto_apms_core/resources.hpp"
+#include "auto_apms_core/util/split.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 
 namespace auto_apms_behavior_tree {
 
-BTCreator::BTCreator(const BTNodePluginLoader& node_plugin_loader) : node_plugin_loader_{node_plugin_loader}
+std::shared_ptr<BTNodePluginClassLoader> MakeBTNodePluginClassLoader(const std::set<std::string>& package_names)
+{
+    std::vector<std::string> xml_paths;
+    for (const auto& package_name : package_names.empty() ? auto_apms_core::GetAllPackagesWithResource(
+                                                                _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE)
+                                                          : package_names) {
+        std::string content;
+        std::string base_path;
+        if (ament_index_cpp::get_resource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE,
+                                          package_name,
+                                          content,
+                                          &base_path)) {
+            std::vector<std::string> paths = auto_apms_core::util::SplitString(content, "\n", false);
+            if (paths.size() != 1) {
+                throw std::runtime_error("Invalid behavior tree node plugin resource file (Package: '" + package_name +
+                                         "').");
+            }
+            xml_paths.push_back(base_path + '/' + paths[0]);
+        }
+    }
+    return std::make_shared<BTNodePluginClassLoader>("auto_apms_behavior_tree",
+                                                     "auto_apms_behavior_tree::BTNodePluginBase",
+                                                     "",
+                                                     xml_paths);
+}
+
+BTCreator::BTCreator(std::shared_ptr<Factory> factory_ptr,
+                     std::shared_ptr<BTNodePluginClassLoader> node_plugin_loader_ptr)
+    : factory_ptr_{factory_ptr}, node_plugin_loader_ptr_{node_plugin_loader_ptr}
 {
     doc_.Parse("<root BTCPP_format=\"4\"></root>");
-    BT::VerifyXML(WriteToString(), {});
 }
 
-BTCreator::SharedPtr BTCreator::FromResource(rclcpp::Node::SharedPtr node_ptr, const BTResource& resource)
+BTCreator& BTCreator::RegisterNodePlugins(rclcpp::Node::SharedPtr node_ptr,
+                                          const BTNodePluginManifest& node_plugin_manifest)
 {
-    SharedPtr ptr = std::make_shared<BTCreator>();
-    ptr->AddTreeFromFile(resource.tree_file_path,
-                         BTNodePluginManifest::FromFile(resource.node_manifest_file_path),
-                         node_ptr);
-    return ptr;
-}
+    const auto registered_nodes = GetRegisteredNodes(*factory_ptr_);
+    for (const auto& [node_name, params] : node_plugin_manifest.map()) {
+        // Skip node if it is already registered
+        if (registered_nodes.find(node_name) != registered_nodes.end()) continue;
 
-void BTCreator::AddTreeFromString(const std::string& tree_str,
-                                  const BTNodePluginManifest& node_plugin_manifest,
-                                  rclcpp::Node::SharedPtr node_ptr)
-{
-    tinyxml2::XMLDocument new_doc;
-    if (new_doc.Parse(tree_str.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-        throw exceptions::BTCreatorError("Cannot add tree: " + std::string(new_doc.ErrorStr()));
+        // Check if the class we search for is actually available with the loader.
+        if (!node_plugin_loader_ptr_->isClassAvailable(params.class_name)) {
+            throw exceptions::NodeRegistrationError{
+                "Node plugin '" + node_name + " (" + params.class_name +
+                ")' cannot be loaded, because it's not registered by the packages searched by the plugin loader. It's "
+                "also possible that you misspelled the class name in CMake when registering it in the CMakeLists.txt "
+                "using auto_apms_behavior_tree_register_nodes()."};
+        }
+
+        RCLCPP_DEBUG(node_ptr->get_logger(),
+                     "Registering behavior tree node plugin '%s (%s)' from library %s.",
+                     node_name.c_str(),
+                     params.class_name.c_str(),
+                     node_plugin_loader_ptr_->getClassLibraryPath(params.class_name).c_str());
+
+        pluginlib::UniquePtr<BTNodePluginBase> plugin_instance;
+        try {
+            plugin_instance = node_plugin_loader_ptr_->createUniqueInstance(params.class_name);
+        } catch (const std::exception& e) {
+            throw exceptions::NodeRegistrationError(
+                "Failed to create an instance of node '" + node_name + " (" + params.class_name +
+                ")' from plugin. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE macro must be called in the "
+                "source file for the plugin to be discoverable. Error message: " +
+                e.what() + ".");
+        }
+
+        try {
+            if (plugin_instance->RequiresROSNodeParams()) {
+                RosNodeParams ros_params;
+                ros_params.nh = node_ptr;
+                ros_params.default_port_name = params.port;
+                ros_params.wait_for_server_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::duration<double>(params.wait_timeout));
+                ros_params.request_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::duration<double>(params.request_timeout));
+                plugin_instance->RegisterWithBehaviorTreeFactory(*factory_ptr_, node_name, &ros_params);
+            }
+            else {
+                plugin_instance->RegisterWithBehaviorTreeFactory(*factory_ptr_, node_name);
+            }
+        } catch (const std::exception& e) {
+            throw exceptions::NodeRegistrationError("Failed to register node '" + node_name + " (" + params.class_name +
+                                                    ")' with factory: " + e.what() + ".");
+        }
     }
-    AddTreeFromXMLDocument(new_doc, node_plugin_manifest, node_ptr);
+    return *this;
 }
 
-void BTCreator::AddTreeFromFile(const std::string& tree_file_path,
-                                const BTNodePluginManifest& node_plugin_manifest,
-                                rclcpp::Node::SharedPtr node_ptr)
+std::unordered_map<std::string, BT::NodeType> BTCreator::GetRegisteredNodes(const Factory& factory)
 {
-    tinyxml2::XMLDocument new_doc;
-    if (new_doc.LoadFile(tree_file_path.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-        throw exceptions::BTCreatorError("Cannot add tree: " + std::string(new_doc.ErrorStr()));
-    }
-    AddTreeFromXMLDocument(new_doc, node_plugin_manifest, node_ptr);
+    std::unordered_map<std::string, BT::NodeType> registered_nodes;
+    for (const auto& it : factory.manifests()) registered_nodes.insert({it.first, it.second.type});
+    return registered_nodes;
 }
 
-void BTCreator::AddTreeFromXMLDocument(const tinyxml2::XMLDocument& doc,
-                                       const BTNodePluginManifest& node_plugin_manifest,
-                                       rclcpp::Node::SharedPtr node_ptr)
+BTCreator& BTCreator::AddTreeFromXMLDocument(const tinyxml2::XMLDocument& doc)
 {
-    auto original_root = doc_.RootElement();
-    auto new_root = doc.RootElement();
-    if (!new_root) throw exceptions::BTCreatorError("Cannot merge new XMLDocument: new_root is nullptr.");
+    // Overwrite main tree in current document
+    auto other_root = doc.RootElement();
+    if (const auto name = other_root->Attribute(MAIN_TREE_ATTRIBUTE_NAME.c_str())) SetMainTreeName(name);
+
+    auto this_root = doc_.RootElement();
+    if (!other_root) throw exceptions::TreeVerificationError("Cannot merge new XMLDocument: other_root is nullptr.");
 
     // Iterate over all the children of the new document's root element
-    for (const tinyxml2::XMLElement* child = new_root->FirstChildElement(); child != nullptr;
+    for (const tinyxml2::XMLElement* child = other_root->FirstChildElement(); child != nullptr;
          child = child->NextSiblingElement()) {
         // Clone the child element to the original document
         auto copied_child = child->DeepClone(&doc_);
         // Append the copied child to the original document's root
-        original_root->InsertEndChild(copied_child);
+        this_root->InsertEndChild(copied_child);
     }
 
-    // Add node plugins to factory
-    node_plugin_loader_.Load(node_plugin_manifest, node_ptr, factory_);
+    try {
+        // Verify the structure of the new tree document and that all mentioned nodes are registered with the factory
+        BT::VerifyXML(WriteToString(), GetRegisteredNodes(*factory_ptr_));
+    } catch (const BT::RuntimeError& e) {
+        throw exceptions::TreeVerificationError(e.what());
+    }
+    return *this;
+}
 
-    // Collect the names of all nodes registered with the behavior tree factory
-    std::unordered_map<std::string, BT::NodeType> registered_nodes;
-    for (const auto& it : factory_.manifests()) registered_nodes.insert({it.first, it.second.type});
+BTCreator& BTCreator::AddTreeFromString(const std::string& tree_str)
+{
+    tinyxml2::XMLDocument new_doc;
+    if (new_doc.Parse(tree_str.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+        throw exceptions::TreeVerificationError("Cannot add tree: " + std::string(new_doc.ErrorStr()));
+    }
+    return AddTreeFromXMLDocument(new_doc);
+}
 
-    // Verify the new XML document
-    BT::VerifyXML(WriteToString(), registered_nodes);
+BTCreator& BTCreator::AddTreeFromFile(const std::string& tree_file_path)
+{
+    tinyxml2::XMLDocument new_doc;
+    if (new_doc.LoadFile(tree_file_path.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+        throw exceptions::TreeVerificationError("Cannot add tree: " + std::string(new_doc.ErrorStr()));
+    }
+    return AddTreeFromXMLDocument(new_doc);
+}
+
+BTCreator& BTCreator::AddTreeFromResource(const BTResource& resource, rclcpp::Node::SharedPtr node_ptr)
+{
+    RegisterNodePlugins(node_ptr, BTNodePluginManifest::FromFile(resource.node_manifest_file_path));
+    return AddTreeFromFile(resource.tree_file_path);
 }
 
 BT::Tree BTCreator::CreateTree(const std::string& main_tree_id, BT::Blackboard::Ptr root_blackboard_ptr)
 {
-    factory_.registerBehaviorTreeFromText(WriteToString());
-    BT::Tree tree = factory_.createTree(main_tree_id, root_blackboard_ptr);
-    factory_.clearRegisteredBehaviorTrees();
-    return tree;
+    try {
+        factory_ptr_->registerBehaviorTreeFromText(WriteToString());
+        return factory_ptr_->createTree(main_tree_id, root_blackboard_ptr);
+    } catch (const BT::RuntimeError& e) {
+        throw exceptions::TreeVerificationError(e.what());
+    }
 }
 
 BT::Tree BTCreator::CreateMainTree(BT::Blackboard::Ptr root_blackboard_ptr)
@@ -103,9 +189,10 @@ std::string BTCreator::GetMainTreeName() const
     return "";
 }
 
-void BTCreator::SetMainTreeName(const std::string& main_tree_id)
+BTCreator& BTCreator::SetMainTreeName(const std::string& main_tree_id)
 {
     if (!main_tree_id.empty()) doc_.RootElement()->SetAttribute(MAIN_TREE_ATTRIBUTE_NAME.c_str(), main_tree_id.c_str());
+    return *this;
 }
 
 std::string BTCreator::WriteToString() const { return WriteXMLDocumentToString(doc_); }
@@ -116,7 +203,5 @@ std::string BTCreator::WriteXMLDocumentToString(const tinyxml2::XMLDocument& doc
     doc.Print(&printer);
     return printer.CStr();
 }
-
-BT::BehaviorTreeFactory& BTCreator::factory() { return factory_; }
 
 }  // namespace auto_apms_behavior_tree
