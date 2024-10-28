@@ -13,44 +13,47 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/node/plugin.hpp"
-#include "auto_apms_behavior_tree/resource/resource.hpp"
+#include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 #include "auto_apms_core/exceptions.hpp"
 
 #define INPUT_KEY_PACKAGE "package_name"
 #define INPUT_KEY_FILENAME "filename"
 #define OUTPUT_KEY_DATA "xml_data"
 
-namespace auto_apms_behavior_tree {
+namespace auto_apms_behavior_tree
+{
 
 class LoadBehaviorTreeAction : public BT::SyncActionNode
 {
-   public:
-    using SyncActionNode::SyncActionNode;
+public:
+  using SyncActionNode::SyncActionNode;
 
-    static BT::PortsList providedPorts()
+  static BT::PortsList providedPorts()
+  {
+    return { BT::InputPort<std::string>(INPUT_KEY_PACKAGE, "Name of the ROS2 package containing the trees file"),
+             BT::InputPort<std::string>(INPUT_KEY_FILENAME, "Name of the trees file (Extension may be omitted)"),
+             BT::OutputPort<std::string>(OUTPUT_KEY_DATA, "{xml_data}",
+                                         "XML string containing the data for the behavior trees") };
+  }
+
+  BT::NodeStatus tick() final
+  {
+    auto package_name = getInput<std::string>(INPUT_KEY_PACKAGE).value();
+    auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
+
+    std::unique_ptr<TreeResource> tree_resource_ptr;
+    try
     {
-        return {BT::InputPort<std::string>(INPUT_KEY_PACKAGE, "Name of the ROS2 package containing the trees file"),
-                BT::InputPort<std::string>(INPUT_KEY_FILENAME, "Name of the trees file (Extension may be omitted)"),
-                BT::OutputPort<std::string>(OUTPUT_KEY_DATA,
-                                            "{xml_data}",
-                                            "XML string containing the data for the behavior trees")};
+      tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::SelectByFileName(filename, package_name));
+    }
+    catch (const auto_apms_core::exceptions::ResourceNotFoundError& e)
+    {
+      return BT::NodeStatus::FAILURE;
     }
 
-    BT::NodeStatus tick() final
-    {
-        auto package_name = getInput<std::string>(INPUT_KEY_PACKAGE).value();
-        auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
-
-        std::unique_ptr<BTResource> tree_resource_ptr;
-        try {
-            tree_resource_ptr = std::make_unique<BTResource>(BTResource::SelectByFileName(filename, package_name));
-        } catch (const auto_apms_core::exceptions::ResourceNotFoundError& e) {
-            return BT::NodeStatus::FAILURE;
-        }
-
-        setOutput<std::string>(OUTPUT_KEY_DATA, tree_resource_ptr->WriteTreeToString());
-        return BT::NodeStatus::SUCCESS;
-    }
+    setOutput<std::string>(OUTPUT_KEY_DATA, tree_resource_ptr->WriteTreeToString());
+    return BT::NodeStatus::SUCCESS;
+  }
 };
 
 }  // namespace auto_apms_behavior_tree

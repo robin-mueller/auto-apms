@@ -19,26 +19,27 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-namespace auto_apms_behavior_tree {
+namespace auto_apms_behavior_tree
+{
 
 struct RosNodeParams
 {
-    /// Handle for the ROS2 node.
-    std::weak_ptr<rclcpp::Node> nh;
-    /**
-     * @brief Default port name of the corresponding ROS 2 communication interface.
-     *
-     * This has different meaning based on the context:
-     * - RosActionNode: Name of the action server
-     * - RosServiceNode: Name of the service
-     * - RosPublisherNode: Name of the topic to publish to
-     * - RosSubscriberNode: Name of the topic to subscribe to
-     */
-    std::string default_port_name;
-    /// Timeout [s] for initially discovering the associated ROS2 node.
-    std::chrono::milliseconds wait_for_server_timeout = std::chrono::milliseconds{3000};
-    /// Timeout [s] for waiting for a response for the requested service or goal.
-    std::chrono::milliseconds request_timeout = std::chrono::milliseconds(1500);
+  /// Handle for the ROS2 node.
+  std::weak_ptr<rclcpp::Node> nh;
+  /**
+   * @brief Default port name of the corresponding ROS 2 communication interface.
+   *
+   * This has different meaning based on the context:
+   * - RosActionNode: Name of the action server
+   * - RosServiceNode: Name of the service
+   * - RosPublisherNode: Name of the topic to publish to
+   * - RosSubscriberNode: Name of the topic to subscribe to
+   */
+  std::string default_port_name;
+  /// Timeout [s] for initially discovering the associated ROS2 node.
+  std::chrono::milliseconds wait_for_server_timeout = std::chrono::milliseconds{ 3000 };
+  /// Timeout [s] for waiting for a response for the requested service or goal.
+  std::chrono::milliseconds request_timeout = std::chrono::milliseconds(1500);
 };
 
 }  // namespace auto_apms_behavior_tree

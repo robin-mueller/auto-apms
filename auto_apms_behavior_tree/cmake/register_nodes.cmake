@@ -12,20 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Macro that registers a library target for a behavior tree node plugin
-macro(auto_apms_behavior_tree_register_nodes plugin_lib_target)
-    if(NOT TARGET ${plugin_lib_target})
+# Macro that registers behavior tree node plugins from a specific target
+macro(auto_apms_behavior_tree_register_nodes target)
+    if(NOT TARGET ${target})
         message(
         FATAL_ERROR
-        "auto_apms_behavior_tree_register_nodes(): '${plugin_lib_target}' is not a target.")
+        "auto_apms_behavior_tree_register_nodes(): '${target}' is not a target.")
     endif()
 
     # Check target type
-    get_target_property(_target_type ${plugin_lib_target} TYPE)
+    get_target_property(_target_type ${target} TYPE)
     if(NOT _target_type STREQUAL "SHARED_LIBRARY")
         message(
         FATAL_ERROR
-        "auto_apms_behavior_tree_register_nodes(): '${plugin_lib_target}' is not a shared library target.")
+        "auto_apms_behavior_tree_register_nodes(): '${target}' is not a shared library target.")
     endif()
 
     cmake_parse_arguments(ARGS "" "" "" ${ARGN})
@@ -42,10 +42,10 @@ macro(auto_apms_behavior_tree_register_nodes plugin_lib_target)
         list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_CLASS_NAMES ${_class_name})
 
         # Append to the variable that holds the build information of the behavior tree node plugins (<class_name>@<library_path>)
-        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_BUILD_INFO "${_class_name}@$<TARGET_FILE:${plugin_lib_target}>")
+        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_BUILD_INFO "${_class_name}@$<TARGET_FILE:${target}>")
 
         # Append to the variable that holds the content of the pluginlib xml file
-        set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT}<library path=\"${plugin_lib_target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::BTNodePlugin<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::BTNodePluginBase\" /></library>\n")
+        set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::BTNodePlugin<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::BTNodePluginBase\" /></library>\n")
     endforeach()
 
 endmacro()

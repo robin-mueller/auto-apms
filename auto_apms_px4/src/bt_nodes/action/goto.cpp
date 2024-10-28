@@ -19,28 +19,29 @@
 #define INPUT_KEY_LONGITUDE "lon"
 #define INPUT_KEY_ALTITUDE "alt"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class GoToAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::GoTo>
 {
-   public:
-    using RosActionNode::RosActionNode;
+public:
+  using RosActionNode::RosActionNode;
 
-    static BT::PortsList providedPorts()
-    {
-        return providedBasicPorts({BT::InputPort<double>(INPUT_KEY_LATITUDE, "Target latitude"),
-                                   BT::InputPort<double>(INPUT_KEY_LONGITUDE, "Target longitude"),
-                                   BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target altitude in meter (AMSL)")});
-    }
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({ BT::InputPort<double>(INPUT_KEY_LATITUDE, "Target latitude"),
+                                BT::InputPort<double>(INPUT_KEY_LONGITUDE, "Target longitude"),
+                                BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target altitude in meter (AMSL)") });
+  }
 
-    bool setGoal(Goal& goal)
-    {
-        goal.lat = getInput<double>(INPUT_KEY_LATITUDE).value();
-        goal.lon = getInput<double>(INPUT_KEY_LONGITUDE).value();
-        goal.alt = getInput<double>(INPUT_KEY_ALTITUDE).value();
-        goal.head_towards_destination = true;
-        return true;
-    }
+  bool setGoal(Goal& goal)
+  {
+    goal.lat = getInput<double>(INPUT_KEY_LATITUDE).value();
+    goal.lon = getInput<double>(INPUT_KEY_LONGITUDE).value();
+    goal.alt = getInput<double>(INPUT_KEY_ALTITUDE).value();
+    goal.head_towards_destination = true;
+    return true;
+  }
 };
 
 }  // namespace auto_apms_px4

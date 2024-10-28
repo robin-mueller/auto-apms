@@ -14,7 +14,8 @@
 
 #pragma once
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 // Task names (ROS 2 actions)
 const char ARM_DISARM_TASK_NAME[] = "arm_disarm";

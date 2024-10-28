@@ -16,20 +16,23 @@
 
 #include <stdexcept>
 
-namespace auto_apms_core::exceptions {
+namespace auto_apms_core::exceptions
+{
 
 /**
  * @brief Base class for all exceptions of AutoAPMS
  */
 class ExceptionBase : public std::runtime_error
 {
-   public:
-    explicit inline ExceptionBase(const std::string& msg) : std::runtime_error(msg) {}
+public:
+  explicit inline ExceptionBase(const std::string& msg) : std::runtime_error(msg)
+  {
+  }
 };
 
 struct ResourceNotFoundError : public ExceptionBase
 {
-    using ExceptionBase::ExceptionBase;
+  using ExceptionBase::ExceptionBase;
 };
 
 }  // namespace auto_apms_core::exceptions

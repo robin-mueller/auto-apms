@@ -14,20 +14,18 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/resource/resource.hpp"
-#include "rclcpp/parameter.hpp"
-#include "tl_expected/expected.hpp"
+#include "auto_apms_behavior_tree/builder/tree_build_director_base.hpp"
 
-namespace auto_apms_behavior_tree::validators {
-
-inline tl::expected<void, std::string> BehaviorTreeResourceFound(rclcpp::Parameter const& parameter)
+namespace auto_apms_behavior_tree
 {
-    try {
-        BTResource::FromString(parameter.as_string());
-    } catch (const auto_apms_core::exceptions::ExceptionBase& e) {
-        return tl::make_unexpected(e.what());
-    }
-    return {};
-}
 
-}  // namespace auto_apms_behavior_tree::validators
+class TreeBuildDirectorFactory
+{
+public:
+  TreeBuildDirectorFactory() = default;
+  virtual ~TreeBuildDirectorFactory() = default;
+
+  virtual std::shared_ptr<TreeBuildDirectorBase> createBuildDirector(const rclcpp::Node::SharedPtr node_ptr) = 0;
+};
+
+}  // namespace auto_apms_behavior_tree

@@ -15,20 +15,24 @@
 #include "auto_apms_behavior_tree/node/plugin.hpp"
 #include "auto_apms_interfaces/action/arm_disarm.hpp"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class DisarmAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::ArmDisarm>
 {
-   public:
-    using RosActionNode::RosActionNode;
+public:
+  using RosActionNode::RosActionNode;
 
-    static BT::PortsList providedPorts() { return providedBasicPorts({}); }
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({});
+  }
 
-    bool setGoal(Goal& goal)
-    {
-        goal.arming_state = Goal::ARMING_STATE_DISARM;
-        return true;
-    }
+  bool setGoal(Goal& goal)
+  {
+    goal.arming_state = Goal::ARMING_STATE_DISARM;
+    return true;
+  }
 };
 
 }  // namespace auto_apms_px4

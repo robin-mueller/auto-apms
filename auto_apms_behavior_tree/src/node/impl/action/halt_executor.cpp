@@ -15,18 +15,19 @@
 #include "auto_apms_behavior_tree/node/plugin.hpp"
 #include "auto_apms_interfaces/action/bt_executor_command.hpp"
 
-namespace auto_apms_behavior_tree {
+namespace auto_apms_behavior_tree
+{
 
 class HaltExecutorAction : public RosActionNode<auto_apms_interfaces::action::BTExecutorCommand>
 {
-   public:
-    using RosActionNode::RosActionNode;
+public:
+  using RosActionNode::RosActionNode;
 
-    bool setGoal(Goal& goal)
-    {
-        goal.command = Goal::COMMAND_HALT;
-        return true;
-    }
+  bool setGoal(Goal& goal)
+  {
+    goal.command = Goal::COMMAND_HALT;
+    return true;
+  }
 };
 
 }  // namespace auto_apms_behavior_tree

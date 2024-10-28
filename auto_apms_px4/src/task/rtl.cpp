@@ -17,20 +17,23 @@
 #include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/mode_executor.hpp"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class RTLTask : public ModeExecutor<auto_apms_interfaces::action::RTL>
 {
-   public:
-    explicit RTLTask(const rclcpp::NodeOptions& options) : ModeExecutor{RTL_TASK_NAME, options, FlightMode::RTL} {}
+public:
+  explicit RTLTask(const rclcpp::NodeOptions& options) : ModeExecutor{ RTL_TASK_NAME, options, FlightMode::RTL }
+  {
+  }
 
-   private:
-    // PX4 seems to not always give a completed signal for RTL, so check for disarmed as a fallback completed state
-    bool IsCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status)
-    {
-        return ModeExecutor::IsCompleted(goal_ptr, vehicle_status) ||
-               vehicle_status.arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_DISARMED;
-    }
+private:
+  // PX4 seems to not always give a completed signal for RTL, so check for disarmed as a fallback completed state
+  bool IsCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status)
+  {
+    return ModeExecutor::IsCompleted(goal_ptr, vehicle_status) ||
+           vehicle_status.arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_DISARMED;
+  }
 };
 
 }  // namespace auto_apms_px4

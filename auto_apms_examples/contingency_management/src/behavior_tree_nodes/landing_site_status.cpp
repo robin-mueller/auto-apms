@@ -21,39 +21,41 @@
 
 using LandingSiteStatusMsg = auto_apms_examples::msg::LandingSiteStatus;
 
-namespace auto_apms::ops_engine {
+namespace auto_apms::ops_engine
+{
 
 class IsLandingSiteClear : public auto_apms_behavior_tree::RosSubscriberNode<LandingSiteStatusMsg>
 {
-   public:
-    using RosSubscriberNode::RosSubscriberNode;
+public:
+  using RosSubscriberNode::RosSubscriberNode;
 
-    static BT::PortsList providedPorts()
-    {
-        return providedBasicPorts(
-            {BT::InputPort<uint8_t>(INPUT_KEY_SITE_ID, "ID of the landing site to inspect"),
-             BT::OutputPort<uint8_t>(OUTPUT_KEY_SITE_STATUS, "{landing_site_status}", "The landing status flag")});
-    }
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts(
+        { BT::InputPort<uint8_t>(INPUT_KEY_SITE_ID, "ID of the landing site to inspect"),
+          BT::OutputPort<uint8_t>(OUTPUT_KEY_SITE_STATUS, "{landing_site_status}", "The landing status flag") });
+  }
 
-    BT::NodeStatus onMessageReceived(const LandingSiteStatusMsg& msg) override final
+  BT::NodeStatus onMessageReceived(const LandingSiteStatusMsg& msg) override final
+  {
+    auto return_status = BT::NodeStatus::FAILURE;
+    auto status = msg.status[getInput<uint8_t>(INPUT_KEY_SITE_ID).value()];
+    switch (status)
     {
-        auto return_status = BT::NodeStatus::FAILURE;
-        auto status = msg.status[getInput<uint8_t>(INPUT_KEY_SITE_ID).value()];
-        switch (status) {
-            case LandingSiteStatusMsg::STATUS_CLEAR_FOR_LANDING:
-                return_status = BT::NodeStatus::SUCCESS;
-                break;
-            case LandingSiteStatusMsg::STATUS_TEMPORARILY_BLOCKED:
-                break;
-            case LandingSiteStatusMsg::STATUS_PERMANENTLY_BLOCKED:
-                break;
-            default:
-                RCLCPP_WARN(logger(), "%s: Landing status is unkown", name().c_str());
-                break;
-        }
-        setOutput(OUTPUT_KEY_SITE_STATUS, status);
-        return return_status;
+      case LandingSiteStatusMsg::STATUS_CLEAR_FOR_LANDING:
+        return_status = BT::NodeStatus::SUCCESS;
+        break;
+      case LandingSiteStatusMsg::STATUS_TEMPORARILY_BLOCKED:
+        break;
+      case LandingSiteStatusMsg::STATUS_PERMANENTLY_BLOCKED:
+        break;
+      default:
+        RCLCPP_WARN(logger(), "%s: Landing status is unkown", name().c_str());
+        break;
     }
+    setOutput(OUTPUT_KEY_SITE_STATUS, status);
+    return return_status;
+  }
 };
 
 }  // namespace auto_apms::ops_engine

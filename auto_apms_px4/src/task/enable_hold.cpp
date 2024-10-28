@@ -17,23 +17,25 @@
 #include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/mode_executor.hpp"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class EnableHoldTask : public ModeExecutor<auto_apms_interfaces::action::EnableHold>
 {
-   public:
-    explicit EnableHoldTask(const rclcpp::NodeOptions& options)
-        : ModeExecutor{ENABLE_HOLD_TASK_NAME, options, FlightMode::Hold, false}
-    {}
+public:
+  explicit EnableHoldTask(const rclcpp::NodeOptions& options)
+    : ModeExecutor{ ENABLE_HOLD_TASK_NAME, options, FlightMode::Hold, false }
+  {
+  }
 
-   private:
-    bool IsCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status) final
-    {
-        (void)goal_ptr;
-        (void)vehicle_status;
-        // For HOLD mode there is no completion signal. Once activated it is considered complete.
-        return true;
-    }
+private:
+  bool IsCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status) final
+  {
+    (void)goal_ptr;
+    (void)vehicle_status;
+    // For HOLD mode there is no completion signal. Once activated it is considered complete.
+    return true;
+  }
 };
 
 }  // namespace auto_apms_px4

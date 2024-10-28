@@ -16,15 +16,20 @@
 
 using namespace auto_apms_behavior_tree;
 
-namespace auto_apms::ops_engine {
+namespace auto_apms::ops_engine
+{
 
 class FlightOrchestratorExecutor : public BTExecutor
 {
-   public:
-    FlightOrchestratorExecutor(const rclcpp::NodeOptions& options) : BTExecutor{"flight_orchestrator", options, 7777} {}
+public:
+  FlightOrchestratorExecutor(const rclcpp::NodeOptions& options) : BTExecutor{ "flight_orchestrator", options, 7777 }
+  {
+  }
 
-   private:
-    void SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory& factory) final {}
+private:
+  void SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory& factory) final
+  {
+  }
 };
 
 }  // namespace auto_apms::ops_engine

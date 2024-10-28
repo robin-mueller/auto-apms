@@ -17,19 +17,22 @@
 #include "ament_index_cpp/get_resources.hpp"
 #include "auto_apms_core/exceptions.hpp"
 
-namespace auto_apms_core {
+namespace auto_apms_core
+{
 
 std::set<std::string> GetAllPackagesWithResource(const std::string& resource_type)
 {
-    std::set<std::string> all_packages;
-    for (const auto& [package_name, _] : ament_index_cpp::get_resources(resource_type)) {
-        all_packages.insert(package_name);
-    }
-    if (all_packages.empty()) {
-        throw exceptions::ResourceNotFoundError("No resources of type '" + resource_type +
-                                                "' were found in the installed packages.");
-    }
-    return all_packages;
+  std::set<std::string> all_packages;
+  for (const auto& [package_name, _] : ament_index_cpp::get_resources(resource_type))
+  {
+    all_packages.insert(package_name);
+  }
+  if (all_packages.empty())
+  {
+    throw exceptions::ResourceNotFoundError("No resources of type '" + resource_type +
+                                            "' were found in the installed packages.");
+  }
+  return all_packages;
 }
 
 }  // namespace auto_apms_core

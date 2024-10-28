@@ -16,9 +16,18 @@
 
 #include <string>
 
-namespace auto_apms_core::util {
+namespace auto_apms_core::util
+{
 
-enum class TextColor { GREEN, RED, YELLOW, BLUE, MAGENTA, CYAN };
+enum class TextColor
+{
+  GREEN,
+  RED,
+  YELLOW,
+  BLUE,
+  MAGENTA,
+  CYAN
+};
 
 /**
  * @brief Add ANSI color escape sequences to display the text in color when printed to console.

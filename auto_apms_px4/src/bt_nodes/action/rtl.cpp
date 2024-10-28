@@ -16,14 +16,18 @@
 
 #include "auto_apms_behavior_tree/node/plugin.hpp"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class RTLAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::RTL>
 {
-   public:
-    using RosActionNode::RosActionNode;
+public:
+  using RosActionNode::RosActionNode;
 
-    static BT::PortsList providedPorts() { return providedBasicPorts({}); }
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({});
+  }
 };
 
 }  // namespace auto_apms_px4

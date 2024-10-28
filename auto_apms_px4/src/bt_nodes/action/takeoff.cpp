@@ -18,24 +18,24 @@
 
 #define INPUT_KEY_ALTITUDE "alt"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class TakeoffAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::Takeoff>
 {
-   public:
-    using RosActionNode::RosActionNode;
+public:
+  using RosActionNode::RosActionNode;
 
-    static BT::PortsList providedPorts()
-    {
-        return providedBasicPorts(
-            {BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target takeoff altitude in meter (AMSL)")});
-    }
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({ BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target takeoff altitude in meter (AMSL)") });
+  }
 
-    bool setGoal(Goal& goal)
-    {
-        goal.altitude_amsl_m = getInput<double>(INPUT_KEY_ALTITUDE).value();
-        return true;
-    }
+  bool setGoal(Goal& goal)
+  {
+    goal.altitude_amsl_m = getInput<double>(INPUT_KEY_ALTITUDE).value();
+    return true;
+  }
 };
 
 }  // namespace auto_apms_px4

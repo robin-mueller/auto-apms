@@ -16,25 +16,28 @@
 
 #include <algorithm>
 
-namespace auto_apms_core::util {
+namespace auto_apms_core::util
+{
 
 std::vector<std::string> SplitString(const std::string& str, const std::string& delimiter, bool preserve_empty)
 {
-    std::vector<std::string> parts;
-    size_t start = 0;
-    size_t end = str.find(delimiter);
-    while (end != std::string::npos) {
-        parts.push_back(str.substr(start, end - start));  // Add the part before the delimiter
-        start = end + delimiter.length();                 // Move start to after the delimiter
-        end = str.find(delimiter, start);                 // Find the next occurrence of the delimiter
-    }
-    // Add the last part after the last delimiter (or the entire string if no delimiter was found)
-    parts.push_back(str.substr(start));
+  std::vector<std::string> parts;
+  size_t start = 0;
+  size_t end = str.find(delimiter);
+  while (end != std::string::npos)
+  {
+    parts.push_back(str.substr(start, end - start));  // Add the part before the delimiter
+    start = end + delimiter.length();                 // Move start to after the delimiter
+    end = str.find(delimiter, start);                 // Find the next occurrence of the delimiter
+  }
+  // Add the last part after the last delimiter (or the entire string if no delimiter was found)
+  parts.push_back(str.substr(start));
 
-    // Remove empty strings if desired
-    if (!preserve_empty) parts.erase(std::remove(parts.begin(), parts.end(), ""), parts.end());
+  // Remove empty strings if desired
+  if (!preserve_empty)
+    parts.erase(std::remove(parts.begin(), parts.end(), ""), parts.end());
 
-    return parts;
+  return parts;
 }
 
 }  // namespace auto_apms_core::util

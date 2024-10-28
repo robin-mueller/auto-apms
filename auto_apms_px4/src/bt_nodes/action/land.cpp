@@ -16,12 +16,13 @@
 
 #include "auto_apms_behavior_tree/node/plugin.hpp"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class LandAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::Land>
 {
-   public:
-    using RosActionNode::RosActionNode;
+public:
+  using RosActionNode::RosActionNode;
 };
 
 }  // namespace auto_apms_px4

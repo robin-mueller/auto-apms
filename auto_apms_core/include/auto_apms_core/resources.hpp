@@ -17,7 +17,8 @@
 #include <set>
 #include <string>
 
-namespace auto_apms_core {
+namespace auto_apms_core
+{
 
 /**
  * @brief Collect all package names that register a certain type of `ament_index` resources.

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 project(auto_apms_px4)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -19,6 +19,9 @@ find_package(rclcpp_components REQUIRED)
 find_package(tf2_eigen REQUIRED)
 
 option(AUTO_APMS_PX4_DEBUG_LOGGING "Enable debug logging severity" ON)
+if(AUTO_APMS_PX4_DEBUG_LOGGING)
+    add_compile_definitions(_AUTO_APMS_DEBUG_LOGGING)
+endif()
 
 #
 # ------------ Library --------------
@@ -108,10 +111,6 @@ auto_apms_behavior_tree_register_nodes(bt_nodes
 #
 # ------------ Packaging --------------
 #
-
-if(AUTO_APMS_PX4_DEBUG_LOGGING)
-    target_compile_definitions(auto_apms_px4 PRIVATE _AUTO_APMS_PX4_DEBUG_LOGGING)
-endif()
 
 ###### Export libraries ######
 install(

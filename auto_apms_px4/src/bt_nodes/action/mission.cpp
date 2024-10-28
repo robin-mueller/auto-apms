@@ -18,25 +18,25 @@
 
 #define INPUT_KEY_DO_RESTART "do_restart"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class MissionAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interfaces::action::Mission>
 {
-   public:
-    using RosActionNode::RosActionNode;
+public:
+  using RosActionNode::RosActionNode;
 
-    static BT::PortsList providedPorts()
-    {
-        return providedBasicPorts({BT::InputPort<bool>(INPUT_KEY_DO_RESTART,
-                                                       false,
-                                                       "Wether to restart (true) or resume (false) the mission.")});
-    }
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({ BT::InputPort<bool>(INPUT_KEY_DO_RESTART, false,
+                                                    "Wether to restart (true) or resume (false) the mission.") });
+  }
 
-    bool setGoal(Goal& goal)
-    {
-        goal.do_restart = getInput<bool>(INPUT_KEY_DO_RESTART).value();
-        return true;
-    }
+  bool setGoal(Goal& goal)
+  {
+    goal.do_restart = getInput<bool>(INPUT_KEY_DO_RESTART).value();
+    return true;
+  }
 };
 
 }  // namespace auto_apms_px4

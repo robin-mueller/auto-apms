@@ -17,18 +17,19 @@
 #include "auto_apms_behavior_tree/node/ros_params.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 
-namespace auto_apms_behavior_tree {
+namespace auto_apms_behavior_tree
+{
 
 class BTNodePluginBase
 {
-   public:
-    BTNodePluginBase() = default;
-    virtual ~BTNodePluginBase() = default;
+public:
+  BTNodePluginBase() = default;
+  virtual ~BTNodePluginBase() = default;
 
-    virtual bool RequiresROSNodeParams() const = 0;
-    virtual void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
-                                                 const std::string &registration_name,
-                                                 const RosNodeParams *const params_ptr = nullptr) const = 0;
+  virtual bool RequiresROSNodeParams() const = 0;
+
+  virtual void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory, const std::string& registration_name,
+                                               const RosNodeParams* const params_ptr = nullptr) const = 0;
 };
 
 }  // namespace auto_apms_behavior_tree

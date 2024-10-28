@@ -20,32 +20,33 @@
 
 using LandingApproachMsg = auto_apms_examples::msg::LandingApproach;
 
-namespace auto_apms::ops_engine {
+namespace auto_apms::ops_engine
+{
 
 class IsApproachingLanding : public auto_apms_behavior_tree::RosSubscriberNode<LandingApproachMsg>
 {
-   public:
-    using RosSubscriberNode::RosSubscriberNode;
+public:
+  using RosSubscriberNode::RosSubscriberNode;
 
-    static BT::PortsList providedPorts()
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({ BT::OutputPort<uint8_t>(OUTPUT_KEY_SITE_ID, "{next_landing_site_id}",
+                                                        "ID of the next landing site to be approached") });
+  }
+
+  BT::NodeStatus onTick(const std::shared_ptr<LandingApproachMsg>& last_msg_ptr) override final
+  {
+    // Check if a new message was received
+    if (!last_msg_ptr)
     {
-        return providedBasicPorts({BT::OutputPort<uint8_t>(OUTPUT_KEY_SITE_ID,
-                                                           "{next_landing_site_id}",
-                                                           "ID of the next landing site to be approached")});
+      RCLCPP_WARN(logger(), "%s - No new landing approach message was received", name().c_str());
+      return BT::NodeStatus::FAILURE;
     }
 
-    BT::NodeStatus onTick(const std::shared_ptr<LandingApproachMsg>& last_msg_ptr) override final
-    {
-        // Check if a new message was received
-        if (!last_msg_ptr) {
-            RCLCPP_WARN(logger(), "%s - No new landing approach message was received", name().c_str());
-            return BT::NodeStatus::FAILURE;
-        }
+    setOutput(OUTPUT_KEY_SITE_ID, last_msg_ptr->next_landing_site_id);
 
-        setOutput(OUTPUT_KEY_SITE_ID, last_msg_ptr->next_landing_site_id);
-
-        return last_msg_ptr->is_approaching ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
-    }
+    return last_msg_ptr->is_approaching ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
+  }
 };
 
 }  // namespace auto_apms::ops_engine

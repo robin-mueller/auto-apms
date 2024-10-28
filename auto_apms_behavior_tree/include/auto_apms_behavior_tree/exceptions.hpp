@@ -14,19 +14,29 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/resource/resource.hpp"  // More error definitions
 #include "auto_apms_core/exceptions.hpp"
 
-namespace auto_apms_behavior_tree::exceptions {
-
-struct NodeRegistrationError : public auto_apms_core::exceptions::ExceptionBase
+namespace auto_apms_behavior_tree::exceptions
 {
-    using ExceptionBase::ExceptionBase;
+
+struct ResourceIdentityFormatError : public auto_apms_core::exceptions::ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
+};
+
+struct TreeXMLFormatError : public auto_apms_core::exceptions::ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
+};
+
+struct TreeBuildError : public auto_apms_core::exceptions::ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
 };
 
 struct RosNodeError : public auto_apms_core::exceptions::ExceptionBase
 {
-    using ExceptionBase::ExceptionBase;
+  using ExceptionBase::ExceptionBase;
 };
 
 }  // namespace auto_apms_behavior_tree::exceptions

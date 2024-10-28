@@ -14,11 +14,17 @@
 
 #pragma once
 
-namespace auto_apms_behavior_tree {
+/**
+ * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
+ * @brief Useful tooling for Behavior Tree development.
+ */
+
+namespace auto_apms_behavior_tree
+{
 
 // BT Executor definitions
-const char BT_EXECUTOR_UPLOAD_SERVICE_NAME_SUFFIX[] = "/upload";
-const char BT_EXECUTOR_LAUNCH_ACTION_NAME_SUFFIX[] = "/run";
+const char BT_EXECUTOR_UPLOAD_TREE_SERVICE_NAME_SUFFIX[] = "/upload";
+const char BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX[] = "/run";
 const char BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX[] = "/command";
 
 }  // namespace auto_apms_behavior_tree

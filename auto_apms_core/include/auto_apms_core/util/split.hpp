@@ -17,7 +17,8 @@
 #include <string>
 #include <vector>
 
-namespace auto_apms_core::util {
+namespace auto_apms_core::util
+{
 
 /**
  * @brief Split a string into multiple tokens using a specific delimiter string (Delimiter may consist of multiple

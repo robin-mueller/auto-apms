@@ -17,19 +17,22 @@
 #include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/mode_executor.hpp"
 
-namespace auto_apms_px4 {
+namespace auto_apms_px4
+{
 
 class LandTask : public ModeExecutor<auto_apms_interfaces::action::Land>
 {
-   public:
-    explicit LandTask(const rclcpp::NodeOptions& options) : ModeExecutor{LAND_TASK_NAME, options, FlightMode::Land} {}
+public:
+  explicit LandTask(const rclcpp::NodeOptions& options) : ModeExecutor{ LAND_TASK_NAME, options, FlightMode::Land }
+  {
+  }
 
-   private:
-    bool SendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr)
-    {
-        (void)goal_ptr;
-        return client.Land();
-    }
+private:
+  bool SendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr)
+  {
+    (void)goal_ptr;
+    return client.Land();
+  }
 };
 
 }  // namespace auto_apms_px4

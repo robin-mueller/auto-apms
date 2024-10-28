@@ -9,22 +9,29 @@ find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+set(TEST_SOURCES
+    "action/TaskTestAction.action"
+)
+
 set(ACTION_SOURCES
-    action/ArmDisarm.action
-    action/EnableHold.action
-    action/GoTo.action
-    action/Land.action
-    action/RTL.action
-    action/Takeoff.action
-    action/Mission.action
-    action/LaunchBTExecutor.action
-    action/BTExecutorCommand.action)
+    "action/ArmDisarm.action"
+    "action/EnableHold.action"
+    "action/GoTo.action"
+    "action/Land.action"
+    "action/RTL.action"
+    "action/Takeoff.action"
+    "action/Mission.action"
+    "action/RunBehaviorTree.action"
+    "action/LaunchBTExecutor.action"
+    "action/BTExecutorCommand.action"
+)
 set(MESSAGE_SOURCES
     )
 set(SERVICE_SOURCES
-    srv/UploadBehaviorTree.srv)
+    "srv/UploadBehaviorTree.srv"
+)
 
-rosidl_generate_interfaces(${PROJECT_NAME} ${ACTION_SOURCES} ${SERVICE_SOURCES} ${MESSAGE_SOURCES}
+rosidl_generate_interfaces(${PROJECT_NAME} ${TEST_SOURCES} ${ACTION_SOURCES} ${SERVICE_SOURCES} ${MESSAGE_SOURCES}
     DEPENDENCIES geometry_msgs)
 
 ament_package()

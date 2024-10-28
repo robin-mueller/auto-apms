@@ -14,9 +14,8 @@
 
 #pragma once
 
-#include <boost/core/demangle.hpp>
-
 #include "auto_apms_behavior_tree/node/plugin_base.hpp"
+#include <boost/core/demangle.hpp>
 
 // Include base classes for inheritance in downstream source files
 #include "auto_apms_behavior_tree/node/ros_action_node.hpp"
@@ -24,36 +23,40 @@
 #include "auto_apms_behavior_tree/node/ros_service_node.hpp"
 #include "auto_apms_behavior_tree/node/ros_subscriber_node.hpp"
 
-namespace auto_apms_behavior_tree {
+namespace auto_apms_behavior_tree
+{
 
-template <
-    typename BTNodeType,
-    bool requires_ros_node_params =
-        std::is_constructible<BTNodeType, const std::string &, const BT::NodeConfig &, const RosNodeParams &>::value>
+template <typename T,
+          bool requires_ros_node_params =
+              std::is_constructible<T, const std::string&, const BT::NodeConfig&, const RosNodeParams&>::value>
 class BTNodePlugin : public BTNodePluginBase
 {
-   public:
-    BTNodePlugin() = default;
-    virtual ~BTNodePlugin() = default;
+public:
+  BTNodePlugin() = default;
+  virtual ~BTNodePlugin() = default;
 
-    bool RequiresROSNodeParams() const override { return requires_ros_node_params; }
+  bool RequiresROSNodeParams() const override
+  {
+    return requires_ros_node_params;
+  }
 
-    void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory &factory,
-                                         const std::string &registration_name,
-                                         const RosNodeParams *const params_ptr = nullptr) const override
+  void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory, const std::string& registration_name,
+                                       const RosNodeParams* const params_ptr = nullptr) const override
+  {
+    if constexpr (requires_ros_node_params)
     {
-        if constexpr (requires_ros_node_params) {
-            if (!params_ptr) {
-                throw std::runtime_error(
-                    boost::core::demangle(typeid(BTNodeType).name()) +
-                    " requires a valid RosNodeParams object to be passed via argument 'params_ptr'.");
-            }
-            factory.registerNodeType<BTNodeType>(registration_name, *params_ptr);
-        }
-        else {
-            factory.registerNodeType<BTNodeType>(registration_name);
-        }
+      if (!params_ptr)
+      {
+        throw std::runtime_error(boost::core::demangle(typeid(T).name()) +
+                                 " requires a valid RosNodeParams object to be passed via argument 'params_ptr'.");
+      }
+      factory.registerNodeType<T>(registration_name, *params_ptr);
     }
+    else
+    {
+      factory.registerNodeType<T>(registration_name);
+    }
+  }
 };
 
 }  // namespace auto_apms_behavior_tree
@@ -63,7 +66,7 @@ class BTNodePlugin : public BTNodePluginBase
 /**
  * @ingroup auto_apms_behavior_tree
  * @brief Macro for registering a behavior tree node plugin.
- * @param class_type The fully qualified class name.
+ * @param type Fully qualified name of the class.
  */
-#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(class_type) \
-    PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::BTNodePlugin<class_type>, auto_apms_behavior_tree::BTNodePluginBase)
+#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(type)                                                                    \
+  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::BTNodePlugin<type>, auto_apms_behavior_tree::BTNodePluginBase)

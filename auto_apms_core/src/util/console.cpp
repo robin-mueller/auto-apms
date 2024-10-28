@@ -14,25 +14,27 @@
 
 #include "auto_apms_core/util/console.hpp"
 
-namespace auto_apms_core::util {
+namespace auto_apms_core::util
+{
 
 std::string ColoredText(const std::string& text, TextColor color)
 {
-    switch (color) {
-        case TextColor::GREEN:
-            return "\x1b[32m" + text + "\x1b[0m";
-        case TextColor::RED:
-            return "\x1b[31m" + text + "\x1b[0m";
-        case TextColor::YELLOW:
-            return "\x1b[33m" + text + "\x1b[0m";
-        case TextColor::BLUE:
-            return "\x1b[34m" + text + "\x1b[0m";
-        case TextColor::MAGENTA:
-            return "\x1b[35m" + text + "\x1b[0m";
-        case TextColor::CYAN:
-            return "\x1b[36m" + text + "\x1b[0m";
-    }
-    return text;
+  switch (color)
+  {
+    case TextColor::GREEN:
+      return "\x1b[32m" + text + "\x1b[0m";
+    case TextColor::RED:
+      return "\x1b[31m" + text + "\x1b[0m";
+    case TextColor::YELLOW:
+      return "\x1b[33m" + text + "\x1b[0m";
+    case TextColor::BLUE:
+      return "\x1b[34m" + text + "\x1b[0m";
+    case TextColor::MAGENTA:
+      return "\x1b[35m" + text + "\x1b[0m";
+    case TextColor::CYAN:
+      return "\x1b[36m" + text + "\x1b[0m";
+  }
+  return text;
 }
 
 }  // namespace auto_apms_core::util

@@ -66,26 +66,26 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     set(_tree_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE}")
-    set(_node_plugin_manifest_rel_path__install "")
+    set(_node_manifest_rel_path__install "")
 
     if(NOT ${ARGS_NODE_PLUGIN_MANIFEST} STREQUAL "")
         file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}")
         list(REMOVE_DUPLICATES ARGS_NODE_PLUGIN_MANIFEST) # Disregard duplicates
-        set(_node_plugin_manifest_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__NODE}")
-        set(_node_plugin_manifest_created_file_name "${_tree_file_stem}_node_plugin_manifest.yaml")
+        set(_node_manifest_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_RESOURCES_DIR_RELATIVE}")
+        set(_node_manifest_created_file_name "node_manifest_${_tree_file_stem}.yaml")
         set(_node_model_rel_dir__install "${_tree_rel_dir__install}")
 
         ##############################################################################
         #### Generate node model according to the behavior tree's plugin configuration
 
         # Create a valid suffix for the custom target
-        string(REPLACE " " "_" _node_mode_custom_target_suffix "${_tree_file_stem}")
-        string(TOLOWER "${_node_mode_custom_target_suffix}" _node_mode_custom_target_suffix)
+        string(REPLACE " " "_" _node_model_custom_target_suffix "${_tree_file_stem}")
+        string(TOLOWER "${_node_model_custom_target_suffix}" _node_model_custom_target_suffix)
 
         # Create the complete manifest for model generation.
         # However, this command is mainly relevant for defining a variable containing the library paths and generator expressions
         # for direct node plugin dependencies of the registered behavior tree
-        set(_node_plugin_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/${_node_plugin_manifest_created_file_name}")
+        set(_node_plugin_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/${_node_manifest_created_file_name}")
         execute_process(
             COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/create_node_plugin_manifest"
                 "${ARGS_NODE_PLUGIN_MANIFEST}" # Paths of the manifest source files
@@ -109,10 +109,10 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
         # Create a command to evaluate the generator expressions inculded in the manifest file after the CMake configuration stage.
         # NOTE: The file isn't fully processed right after the invocation of the file(GENERATE ...) macro.
         file(GENERATE OUTPUT "${_node_plugin_manifest_abs_path__build}" INPUT "${_node_plugin_manifest_abs_path__build}")
-        set(_node_plugin_manifest_rel_path__install "${_node_plugin_manifest_rel_dir__install}/${_node_plugin_manifest_created_file_name}")
+        set(_node_manifest_rel_path__install "${_node_manifest_rel_dir__install}/${_node_manifest_created_file_name}")
 
         # Use the above created manifest for generating the node model
-        set(_node_model_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/${_tree_file_stem}_node_model.xml")
+        set(_node_model_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/node_model_${_tree_file_stem}.xml")
         add_custom_command(OUTPUT "${_node_model_abs_path__build}"
             COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/generate_node_model"
                 "\"${_node_plugin_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
@@ -128,7 +128,7 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             DEPENDS ${ARGS_NODE_PLUGIN_MANIFEST} ${_node_plugin_library_paths}
             COMMENT "Generate behavior tree node model for tree file '${_tree_file_stem}' with libraries [${_node_plugin_library_paths}].")
-        add_custom_target(_target_generate_node_model__${_node_mode_custom_target_suffix} ALL
+        add_custom_target(_target_generate_node_model__${_node_model_custom_target_suffix} ALL
             DEPENDS "${_node_model_abs_path__build}")
 
         ##############################################################################
@@ -142,7 +142,7 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
         # Install the generated node plugin manifest file
         install(
             FILES "${_node_plugin_manifest_abs_path__build}"
-            DESTINATION "${_node_plugin_manifest_rel_dir__install}"
+            DESTINATION "${_node_manifest_rel_dir__install}"
         )
 
     endif()
@@ -153,6 +153,6 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
         DESTINATION "${_tree_rel_dir__install}")
 
     # Fill meta info
-    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_plugin_manifest_rel_path__install}|${_file_tree_names}\n")
+    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_manifest_rel_path__install}|${_file_tree_names}\n")
 
 endmacro()
