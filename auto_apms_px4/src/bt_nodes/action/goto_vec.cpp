@@ -14,7 +14,7 @@
 
 #include <Eigen/Geometry>
 
-#include "auto_apms_behavior_tree/node/plugin.hpp"
+#include "auto_apms_behavior_tree/node.hpp"
 #include "auto_apms_interfaces/action/go_to.hpp"
 
 #define INPUT_KEY_VEC "vector"

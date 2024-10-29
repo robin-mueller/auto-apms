@@ -30,7 +30,7 @@ public:
   {
     static_assert(std::is_convertible_v<T*, TreeBuildDirectorBase*>,
                   "Cannot convert T* to TreeBuildDirectorBase*. Did you forget to specify the public keyword when "
-                  "inheriting? (class T : public TreeBuildDirectorBase)");
+                  "inheriting? --> class T : public TreeBuildDirectorBase");
     return std::make_shared<T>(node_ptr);
   }
 };

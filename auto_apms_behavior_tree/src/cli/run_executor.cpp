@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
   const std::string namespace_{ argv[1] };
   const std::string executor_name{ argv[2] };
 
-  std::cout << "Starting Behavior Tree Executor '" << ColoredText(executor_name, TextColor::CYAN) << "' in namespace '"
-            << ColoredText(namespace_, TextColor::CYAN) << "'" << std::endl;
+  std::cout << "Starting Behavior Tree Executor '" << makeColoredText(executor_name, TextColor::CYAN)
+            << "' in namespace '" << makeColoredText(namespace_, TextColor::CYAN) << "'" << std::endl;
 
   // Ensure that rclcpp is not shut down before the tree has terminated
   rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  std::cout << " --> " << ColoredText("Behavior tree is executing", TextColor::GREEN) << std::endl;
+  std::cout << " --> " << makeColoredText("Behavior tree is executing", TextColor::GREEN) << std::endl;
   std::cout << "\nBehavior tree execution log:" << std::endl;
 
   // Spin node as long as tree has not terminated while checking for ctrl+c signal
@@ -110,38 +110,41 @@ int main(int argc, char* argv[])
       {
         case BTExecutorClient::LaunchExecutorAction::Result::TREE_RESULT_SUCCESS:
           std::cout << "\n --> "
-                    << ColoredText("Behavior tree with ID '", TextColor::GREEN) +
-                           ColoredText(terminated_tree_id, TextColor::CYAN) +
-                           ColoredText("' succeeded", TextColor::GREEN)
+                    << makeColoredText("Behavior tree with ID '", TextColor::GREEN) +
+                           makeColoredText(terminated_tree_id, TextColor::CYAN) +
+                           makeColoredText("' succeeded", TextColor::GREEN)
                     << std::endl;
           break;
         case BTExecutorClient::LaunchExecutorAction::Result::TREE_RESULT_FAILURE:
           std::cout << "\n --> "
-                    << ColoredText("Behavior tree with ID '", TextColor::RED) +
-                           ColoredText(terminated_tree_id, TextColor::CYAN) + ColoredText("' failed", TextColor::RED)
+                    << makeColoredText("Behavior tree with ID '", TextColor::RED) +
+                           makeColoredText(terminated_tree_id, TextColor::CYAN) +
+                           makeColoredText("' failed", TextColor::RED)
                     << std::endl;
           break;
         case BTExecutorClient::LaunchExecutorAction::Result::TREE_RESULT_NOT_SET:
           std::cout << "\n --> "
-                    << ColoredText("Execution of behavior tree with ID '", TextColor::YELLOW) +
-                           ColoredText(terminated_tree_id, TextColor::CYAN) +
-                           ColoredText("' succeeded, but no result was specified", TextColor::YELLOW)
+                    << makeColoredText("Execution of behavior tree with ID '", TextColor::YELLOW) +
+                           makeColoredText(terminated_tree_id, TextColor::CYAN) +
+                           makeColoredText("' succeeded, but no result was specified", TextColor::YELLOW)
                     << std::endl;
           break;
       }
       break;
     case rclcpp_action::ResultCode::CANCELED:
       std::cout << "\n --> "
-                << ColoredText("Behavior tree with ID '", TextColor::YELLOW) +
-                       ColoredText(terminated_tree_id, TextColor::CYAN) + ColoredText("' was halted", TextColor::YELLOW)
+                << makeColoredText("Behavior tree with ID '", TextColor::YELLOW) +
+                       makeColoredText(terminated_tree_id, TextColor::CYAN) +
+                       makeColoredText("' was halted", TextColor::YELLOW)
                 << std::endl;
       break;
     case rclcpp_action::ResultCode::ABORTED:
       std::cout << "\n --> "
-                << ColoredText("Execution of behavior tree with ID '", TextColor::RED) +
-                       ColoredText(terminated_tree_id, TextColor::CYAN) +
-                       ColoredText("' terminated unexpectedly!\n\n" + execution_result_ptr->result->termination_message,
-                                   TextColor::RED)
+                << makeColoredText("Execution of behavior tree with ID '", TextColor::RED) +
+                       makeColoredText(terminated_tree_id, TextColor::CYAN) +
+                       makeColoredText("' terminated unexpectedly!\n\n" +
+                                           execution_result_ptr->result->termination_message,
+                                       TextColor::RED)
                 << std::endl;
       break;
     default:

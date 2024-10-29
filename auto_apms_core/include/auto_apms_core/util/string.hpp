@@ -33,6 +33,6 @@ namespace auto_apms_core::util
  * @param preserve_empty Preserve empty string tokens in the result vector.
  * @return Vector of string representing the string's tokens without the delimiter.
  */
-std::vector<std::string> SplitString(const std::string& str, const std::string& delimiter, bool preserve_empty = true);
+std::vector<std::string> splitString(const std::string& str, const std::string& delimiter, bool preserve_empty = true);
 
 }  // namespace auto_apms_core::util

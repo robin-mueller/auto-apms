@@ -20,7 +20,7 @@
 namespace auto_apms_core
 {
 
-std::set<std::string> GetAllPackagesWithResource(const std::string& resource_type)
+std::set<std::string> getAllPackagesWithResource(const std::string& resource_type)
 {
   std::set<std::string> all_packages;
   for (const auto& [package_name, _] : ament_index_cpp::get_resources(resource_type))

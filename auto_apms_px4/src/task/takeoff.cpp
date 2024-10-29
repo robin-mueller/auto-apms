@@ -29,7 +29,7 @@ public:
   }
 
 private:
-  bool SendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr)
+  bool sendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr)
   {
     return client.Takeoff(goal_ptr->altitude_amsl_m, goal_ptr->heading_rad);
   }

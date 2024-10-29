@@ -93,7 +93,7 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
                 # General build information for node plugins compiled by this package.
                 # Generator expressions cannot be evaluated yet since execute_process is handled at configuration time.
                 # However, we don't require the correct library paths yet.
-                "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_BUILD_INFO}"
+                "${_AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO}"
 
                 "${PROJECT_NAME}"  # Name of the package that builds the behavior tree model
                 "${_node_plugin_manifest_abs_path__build}"  # File to write the behavior tree node plugin manifest to
@@ -118,12 +118,12 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
                 "\"${_node_plugin_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
                 "\"${_node_model_abs_path__build}\"" # File to write the behavior tree node model to
 
-                # IMPORTANT: Since we have the manifest, passing this variable to COMMAND isn't strictly necessary,
+                # IMPORTANT: Since we already have the complete manifest, passing this variable to COMMAND isn't strictly necessary,
                 # but because this adds target-level dependencies to the custom command, it is required.
                 # All targets in _node_plugin_library_paths (generator expression or not) ar added as dependencies to the command.
                 # If this would be omitted, there would be an error saying 'there is no rule to make target ...'.
-                # Additionally, this variable needs to be passed to DEPENDS as well to create a file-level dependency
-                # to the shared libraries (Ensuring the command is executed when they are recompiled).
+                # Additionally, this variable needs to be passed to DEPENDS to create a file-level dependency
+                # to the shared libraries which makes sure that the command is executed when they are recompiled.
                 "\"${_node_plugin_library_paths}\""
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             DEPENDS ${ARGS_NODE_PLUGIN_MANIFEST} ${_node_plugin_library_paths}

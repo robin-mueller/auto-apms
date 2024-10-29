@@ -16,7 +16,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "auto_apms_behavior_tree/node/plugin_manifest.hpp"
+#include "auto_apms_behavior_tree/node/node_manifest.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 #include "class_loader/multi_library_class_loader.hpp"
 
@@ -68,12 +68,15 @@ int main(int argc, char** argv)
 
     // Create manifest
     BT::BehaviorTreeFactory factory;
-    const auto manifest = BTNodePluginManifest::FromFile(manifest_file);
+    const auto manifest = NodeManifest::fromFile(manifest_file);
 
-    // We have to utilize the low level class loader here because the pluginlib::ClassLoader API doesn't allow
-    // customizing the internal node/library allocation map
+    /**
+     * NOTE: We have to use the low level class loader here because the pluginlib::ClassLoader API doesn't allow
+     * customizing the internal node/library allocation map.
+     */
+
     auto class_loader = class_loader::MultiLibraryClassLoader{ false };
-    for (const auto& [node_name, params] : manifest.map())
+    for (const auto& [node_name, params] : manifest.getInternalMap())
     {
       if (params.library.empty())
       {
@@ -96,8 +99,9 @@ int main(int argc, char** argv)
       }
 
       // Look if the class we search for is actually present in the library.
-      const std::string factory_classname = "auto_apms_behavior_tree::BTNodePlugin<" + params.class_name + ">";
-      const auto classes = class_loader.getAvailableClassesForLibrary<BTNodePluginBase>(library_path);
+      const std::string factory_classname =
+          "auto_apms_behavior_tree::NodeRegistrationFactory<" + params.class_name + ">";
+      const auto classes = class_loader.getAvailableClassesForLibrary<NodeRegistrationInterface>(library_path);
       if (std::find(classes.begin(), classes.end(), factory_classname) == classes.end())
       {
         throw std::runtime_error{ "Node '" + node_name + " (" + params.class_name +
@@ -114,8 +118,8 @@ int main(int argc, char** argv)
 
       try
       {
-        const auto plugin_instance = class_loader.createUniqueInstance<BTNodePluginBase>(factory_classname);
-        if (plugin_instance->RequiresROSNodeParams())
+        const auto plugin_instance = class_loader.createUniqueInstance<NodeRegistrationInterface>(factory_classname);
+        if (plugin_instance->requiresROSNodeParams())
         {
           RosNodeParams ros_params;
           ros_params.nh = node_ptr;
@@ -124,11 +128,11 @@ int main(int argc, char** argv)
               std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(params.wait_timeout));
           ros_params.request_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
               std::chrono::duration<double>(params.request_timeout));
-          plugin_instance->RegisterWithBehaviorTreeFactory(factory, node_name, &ros_params);
+          plugin_instance->registerWithBehaviorTreeFactory(factory, node_name, &ros_params);
         }
         else
         {
-          plugin_instance->RegisterWithBehaviorTreeFactory(factory, node_name);
+          plugin_instance->registerWithBehaviorTreeFactory(factory, node_name);
         }
       }
       catch (const std::exception& e)

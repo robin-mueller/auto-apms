@@ -14,14 +14,8 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/node/plugin_base.hpp"
+#include "auto_apms_behavior_tree/node/node_registration_interface.hpp"
 #include <boost/core/demangle.hpp>
-
-// Include base classes for inheritance in downstream source files
-#include "auto_apms_behavior_tree/node/ros_action_node.hpp"
-#include "auto_apms_behavior_tree/node/ros_publisher_node.hpp"
-#include "auto_apms_behavior_tree/node/ros_service_node.hpp"
-#include "auto_apms_behavior_tree/node/ros_subscriber_node.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -29,18 +23,18 @@ namespace auto_apms_behavior_tree
 template <typename T,
           bool requires_ros_node_params =
               std::is_constructible<T, const std::string&, const BT::NodeConfig&, const RosNodeParams&>::value>
-class BTNodePlugin : public BTNodePluginBase
+class NodeRegistrationFactory : public NodeRegistrationInterface
 {
 public:
-  BTNodePlugin() = default;
-  virtual ~BTNodePlugin() = default;
+  NodeRegistrationFactory() = default;
+  virtual ~NodeRegistrationFactory() = default;
 
-  bool RequiresROSNodeParams() const override
+  bool requiresROSNodeParams() const override
   {
     return requires_ros_node_params;
   }
 
-  void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory, const std::string& registration_name,
+  void registerWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory, const std::string& registration_name,
                                        const RosNodeParams* const params_ptr = nullptr) const override
   {
     if constexpr (requires_ros_node_params)
@@ -60,13 +54,3 @@ public:
 };
 
 }  // namespace auto_apms_behavior_tree
-
-#include "pluginlib/class_list_macros.hpp"
-
-/**
- * @ingroup auto_apms_behavior_tree
- * @brief Macro for registering a behavior tree node plugin.
- * @param type Fully qualified name of the class.
- */
-#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(type)                                                                    \
-  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::BTNodePlugin<type>, auto_apms_behavior_tree::BTNodePluginBase)

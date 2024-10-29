@@ -89,10 +89,10 @@ int main(int argc, char** argv)
 
   BTExecutorBase executor{ node };
   auto future =
-      executor.Start([&builder, &tree_name](BT::Blackboard::Ptr bb) { return builder.getTree(tree_name, bb); });
+      executor.start([&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.getTree(tree_name, bb); });
 
   RCLCPP_INFO(node->get_logger(), "Executing tree with identity '%s::%s::%s'.",
-              tree_resource_ptr->tree_file_stem.c_str(), builder.GetMainTreeName().c_str(),
+              tree_resource_ptr->tree_file_stem.c_str(), builder.getMainTreeName().c_str(),
               tree_resource_ptr->package_name.c_str());
 
   const auto termination_timeout = std::chrono::duration<int, std::milli>(1500);
@@ -114,7 +114,7 @@ int main(int argc, char** argv)
       else if (termination_requested)
       {
         termination_start = std::chrono::steady_clock::now();
-        executor.set_control_command(BTExecutorBase::ControlCommand::TERMINATE);
+        executor.setControlCommand(BTExecutorBase::ControlCommand::TERMINATE);
         termination_started = true;
         RCLCPP_INFO(node->get_logger(), "Terminating tree execution...");
       }

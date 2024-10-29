@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node/plugin.hpp"
+#include "auto_apms_behavior_tree/node.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 #include "auto_apms_core/exceptions.hpp"
 

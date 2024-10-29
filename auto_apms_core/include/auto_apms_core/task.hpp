@@ -77,11 +77,15 @@ private:
    *  Implementation specific callbacks
    */
 
-  virtual bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr);
-  virtual void SetInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
-  virtual bool OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
-  virtual Status CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
-  virtual Status ExecuteGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+  virtual bool onGoalRequest(std::shared_ptr<const Goal> goal_ptr);
+
+  virtual void setInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
+
+  virtual bool onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
+
+  virtual Status cancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
+
+  virtual Status executeGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
                              std::shared_ptr<Result> result_ptr) = 0;
 
   /**
@@ -160,7 +164,7 @@ rclcpp::node_interfaces::NodeBaseInterface::SharedPtr Task<ActionT>::get_node_ba
 }
 
 template <class ActionT>
-bool Task<ActionT>::OnGoalRequest(std::shared_ptr<const Goal> goal_ptr)
+bool Task<ActionT>::onGoalRequest(std::shared_ptr<const Goal> goal_ptr)
 {
   (void)goal_ptr;
   // Always accept goal by default
@@ -168,7 +172,7 @@ bool Task<ActionT>::OnGoalRequest(std::shared_ptr<const Goal> goal_ptr)
 }
 
 template <class ActionT>
-void Task<ActionT>::SetInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
+void Task<ActionT>::setInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
 {
   // By default, the result is initialized using the default values specified in the action message definition.
   (void)goal_ptr;
@@ -176,7 +180,7 @@ void Task<ActionT>::SetInitialResult(std::shared_ptr<const Goal> goal_ptr, std::
 }
 
 template <class ActionT>
-bool Task<ActionT>::OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
+bool Task<ActionT>::onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
 {
   (void)goal_ptr;
   (void)result_ptr;
@@ -185,7 +189,7 @@ bool Task<ActionT>::OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::s
 }
 
 template <class ActionT>
-TaskStatus Task<ActionT>::CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
+TaskStatus Task<ActionT>::cancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
 {
   (void)goal_ptr;
   (void)result_ptr;
@@ -197,21 +201,21 @@ template <class ActionT>
 rclcpp_action::GoalResponse Task<ActionT>::handle_goal_(const rclcpp_action::GoalUUID& uuid,
                                                         std::shared_ptr<const Goal> goal_ptr)
 {
-  if (action_context_ptr_->is_valid() && action_context_ptr_->goal_handle()->is_active())
+  if (action_context_ptr_->isValid() && action_context_ptr_->getGoalHandle()->is_active())
   {
     RCLCPP_DEBUG(node_ptr_->get_logger(),
                  "Goal %s was REJECTED because another one is still executing. ID of the executing goal: %s",
                  rclcpp_action::to_string(uuid).c_str(),
-                 rclcpp_action::to_string(action_context_ptr_->goal_handle()->get_goal_id()).c_str());
+                 rclcpp_action::to_string(action_context_ptr_->getGoalHandle()->get_goal_id()).c_str());
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (OnGoalRequest(goal_ptr))
+  if (onGoalRequest(goal_ptr))
   {
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
 
-  RCLCPP_DEBUG(node_ptr_->get_logger(), "Goal %s was REJECTED because OnGoalRequest() returned false",
+  RCLCPP_DEBUG(node_ptr_->get_logger(), "Goal %s was REJECTED because onGoalRequest() returned false",
                rclcpp_action::to_string(uuid).c_str());
   return rclcpp_action::GoalResponse::REJECT;
 }
@@ -221,7 +225,7 @@ rclcpp_action::CancelResponse Task<ActionT>::handle_cancel_(std::shared_ptr<Goal
 {
   (void)goal_handle_ptr;
 
-  return OnCancelRequest(action_context_ptr_->goal_handle()->get_goal(), action_context_ptr_->result()) ?
+  return onCancelRequest(action_context_ptr_->getGoalHandle()->get_goal(), action_context_ptr_->getResultPtr()) ?
              rclcpp_action::CancelResponse::ACCEPT :
              rclcpp_action::CancelResponse::REJECT;
 }
@@ -229,9 +233,9 @@ rclcpp_action::CancelResponse Task<ActionT>::handle_cancel_(std::shared_ptr<Goal
 template <class ActionT>
 void Task<ActionT>::handle_accepted_(std::shared_ptr<GoalHandle> goal_handle_ptr)
 {
-  action_context_ptr_->SetUp(goal_handle_ptr);
-  const auto goal_ptr = action_context_ptr_->goal_handle()->get_goal();
-  SetInitialResult(goal_ptr, action_context_ptr_->result());
+  action_context_ptr_->setUp(goal_handle_ptr);
+  const auto goal_ptr = action_context_ptr_->getGoalHandle()->get_goal();
+  setInitialResult(goal_ptr, action_context_ptr_->getResultPtr());
   (void)goal_handle_ptr;  // action_context_ptr_ takes ownership of goal handle from now on
 
   // Create the timer that triggers the execution routine
@@ -247,30 +251,30 @@ template <class ActionT>
 void Task<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> goal_ptr)
 {
   // Cancel timer when goal has terminated
-  if (!action_context_ptr_->goal_handle()->is_active())
+  if (!action_context_ptr_->getGoalHandle()->is_active())
   {
     execution_timer_ptr_->cancel();
     return;
   }
 
   // Check if canceling
-  if (action_context_ptr_->goal_handle()->is_canceling())
+  if (action_context_ptr_->getGoalHandle()->is_canceling())
   {
-    switch (CancelGoal(goal_ptr, action_context_ptr_->result()))
+    switch (cancelGoal(goal_ptr, action_context_ptr_->getResultPtr()))
     {
       case TaskStatus::RUNNING:
         return;
       case TaskStatus::SUCCESS:
-        action_context_ptr_->Cancel();
+        action_context_ptr_->cancel();
         return;
       case TaskStatus::FAILURE:
-        action_context_ptr_->Abort();
+        action_context_ptr_->abort();
         return;
     }
   }
   else
   {
-    const auto ret = ExecuteGoal(goal_ptr, action_context_ptr_->feedback(), action_context_ptr_->result());
+    const auto ret = executeGoal(goal_ptr, action_context_ptr_->getFeedbackPtr(), action_context_ptr_->getResultPtr());
 
     // Publish feedback
     const std::chrono::milliseconds feedback_interval{
@@ -278,7 +282,7 @@ void Task<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> goal_p
     };
     if (feedback_interval <= (std::chrono::steady_clock::now() - last_feedback_ts_))
     {
-      action_context_ptr_->PublishFeedback();
+      action_context_ptr_->publishFeedback();
       last_feedback_ts_ = std::chrono::steady_clock::now();
     }
 
@@ -287,10 +291,10 @@ void Task<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> goal_p
       case TaskStatus::RUNNING:
         break;
       case TaskStatus::SUCCESS:
-        action_context_ptr_->Succeed();
+        action_context_ptr_->succeed();
         return;
       case TaskStatus::FAILURE:
-        action_context_ptr_->Abort();
+        action_context_ptr_->abort();
         return;
     }
   }

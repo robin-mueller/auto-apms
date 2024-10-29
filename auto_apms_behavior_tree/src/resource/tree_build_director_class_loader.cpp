@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-/**
- * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
- * @brief Useful tooling for Behavior Tree development.
- */
+#include "auto_apms_behavior_tree/resource/tree_build_director_class_loader.hpp"
+#include "auto_apms_core/resources.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-// BT Executor definitions
-const char BT_EXECUTOR_UPLOAD_TREE_SERVICE_NAME_SUFFIX[] = "/upload";
-const char BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX[] = "/run";
-const char BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX[] = "/command";
+TreeBuildDirectorClassLoader makeTreeBuildDirectorClassLoader(const std::set<std::string>& search_packages)
+{
+  return auto_apms_core::makePluginClassLoader<TreeBuildDirectorFactory>(
+      "auto_apms_behavior_tree", "auto_apms_behavior_tree::TreBuildDirectorFactory",
+      _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILD_DIRECTOR, search_packages);
+}
 
 }  // namespace auto_apms_behavior_tree

@@ -29,7 +29,7 @@ public:
   }
 
 private:
-  bool SendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr) final
+  bool sendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr) final
   {
     if (goal_ptr->do_restart)
     {

@@ -66,14 +66,14 @@ void ModeBase<ActionT>::OnActivateWithGoal(std::shared_ptr<const Goal> goal_ptr)
 template <class ActionT>
 void ModeBase<ActionT>::onActivate()
 {
-  OnActivateWithGoal(action_context_ptr_->goal_handle()->get_goal());
+  OnActivateWithGoal(action_context_ptr_->getGoalHandle()->get_goal());
 }
 
 template <class ActionT>
 void ModeBase<ActionT>::updateSetpoint(float dt_s)
 {
-  UpdateSetpointWithGoal(dt_s, action_context_ptr_->goal_handle()->get_goal(), action_context_ptr_->feedback(),
-                         action_context_ptr_->result());
+  UpdateSetpointWithGoal(dt_s, action_context_ptr_->getGoalHandle()->get_goal(), action_context_ptr_->getFeedbackPtr(),
+                         action_context_ptr_->getResultPtr());
 }
 
 template <class ActionT>

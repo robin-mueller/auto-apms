@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_core/util/split.hpp"
+#include "auto_apms_core/util/string.hpp"
 
 #include <algorithm>
 
 namespace auto_apms_core::util
 {
 
-std::vector<std::string> SplitString(const std::string& str, const std::string& delimiter, bool preserve_empty)
+std::vector<std::string> splitString(const std::string& str, const std::string& delimiter, bool preserve_empty)
 {
   std::vector<std::string> parts;
   size_t start = 0;

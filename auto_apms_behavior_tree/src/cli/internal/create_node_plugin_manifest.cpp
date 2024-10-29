@@ -16,10 +16,11 @@
 #include <iostream>
 #include <set>
 
-#include "auto_apms_behavior_tree/node/plugin_manifest.hpp"
 #include "auto_apms_core/exceptions.hpp"
 #include "auto_apms_core/resources.hpp"
-#include "auto_apms_core/util/split.hpp"
+#include "auto_apms_core/util/string.hpp"
+#include "auto_apms_behavior_tree/node/node_manifest.hpp"
+#include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
 
 using namespace auto_apms_behavior_tree;
 
@@ -40,11 +41,11 @@ int main(int argc, char** argv)
   try
   {
     std::vector<std::string> manifest_files;
-    for (const auto& path : auto_apms_core::util::SplitString(argv[1], ";"))
+    for (const auto& path : auto_apms_core::util::splitString(argv[1], ";"))
     {
       manifest_files.push_back(std::filesystem::absolute(path).string());
     }
-    const std::vector<std::string> build_infos = auto_apms_core::util::SplitString(argv[2], ";");
+    const std::vector<std::string> build_infos = auto_apms_core::util::splitString(argv[2], ";");
     const std::string build_package_name = argv[3];
     const std::filesystem::path output_file{ std::filesystem::absolute(argv[4]) };
 
@@ -68,7 +69,7 @@ int main(int argc, char** argv)
     std::map<std::string, std::string> build_lib_paths;
     for (const auto& build_info : build_infos)
     {
-      std::vector<std::string> parts = auto_apms_core::util::SplitString(build_info, "@");
+      std::vector<std::string> parts = auto_apms_core::util::splitString(build_info, "@");
       if (parts.size() != 2)
       {
         throw std::runtime_error("Invalid build info entry ('" + build_info + "').");
@@ -82,17 +83,23 @@ int main(int argc, char** argv)
       build_lib_paths[class_name] = build_path;  // {class_name: build_path}
     }
 
-    auto output_manifest = BTNodePluginManifest::FromFiles(manifest_files);
+    auto output_manifest = NodeManifest::fromFiles(manifest_files);
     auto all_but_build_package =
-        auto_apms_core::GetAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
+        auto_apms_core::getAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
     all_but_build_package.erase(build_package_name);
-    auto loader_ptr = MakeBTNodePluginClassLoader(all_but_build_package);
-    for (const auto& [node_name, params] : output_manifest.map())
+
+    /**
+     * Trying to run makeNodeClassLoader() will work completely fine during build time for all packages EXCEPT the
+     * original auto_apms_behavior_tree package. Will throw pluginlib::ClassLoaderException in this case, because the
+     * pluginlib::ClassLoader constructor initially checks wether the package containing the base class is installed.
+     * Therefore we MUST avoid triggering this script during build time of auto_apms_behavior_tree.
+     */
+    auto loader = makeNodeClassLoader(all_but_build_package);
+    for (const auto& [node_name, params] : output_manifest.getInternalMap())
     {
       try
       {
-        output_manifest[node_name] =
-            BTNodePluginManifest({ { node_name, params } }).AutoComplete(*loader_ptr)[node_name];
+        output_manifest[node_name] = NodeManifest({ { node_name, params } }).autoComplete(loader)[node_name];
       }
       catch (const auto_apms_core::exceptions::ResourceNotFoundError& e)
       {
@@ -109,11 +116,11 @@ int main(int argc, char** argv)
     }
 
     // Save the manifest
-    output_manifest.ToFile(output_file);
+    output_manifest.toFile(output_file);
 
     // Print unique list of libraries to stdout
     std::set<std::string> paths;
-    for (const auto& [node_name, params] : output_manifest.map())
+    for (const auto& [node_name, params] : output_manifest.getInternalMap())
     {
       const auto& path = params.library;
       if (const auto& [_, success] = paths.insert(path); success)

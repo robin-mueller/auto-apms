@@ -1,4 +1,8 @@
 auto_apms_behavior_tree::executor_params:
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILD_DIRECTOR}:
+    type: string
+    default_value: auto_apms_behavior_tree::TreeResourceBuildDirector
+    description: Rate [ms] at which the behavior tree is being ticked.
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}:
     type: double
     default_value: 100

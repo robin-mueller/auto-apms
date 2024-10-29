@@ -14,10 +14,12 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "auto_apms_core/action_context.hpp"
 #include "auto_apms_interfaces/action/bt_executor_command.hpp"
 #include "auto_apms_interfaces/action/run_behavior_tree.hpp"
+#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/node/node_manifest.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -28,10 +30,18 @@ public:
   using RunActionContext = auto_apms_core::ActionContext<auto_apms_interfaces::action::RunBehaviorTree>;
   using CommandActionContext = auto_apms_core::ActionContext<auto_apms_interfaces::action::BTExecutorCommand>;
 
+  static const std::string PARAM_NAME_BUILD_DIRECTOR;
+  static const std::string PARAM_NAME_TICK_RATE;
+  static const std::string PARAM_NAME_GROOT2_PORT;
+  static const std::string PARAM_NAME_STATE_CHANGE_LOGGER;
+
   BTExecutorServer(const std::string& name, rclcpp::NodeOptions options);
 
 private:
   /// @cond
+  rcl_interfaces::msg::SetParametersResult
+  on_set_parameters_callback_(const std::vector<rclcpp::Parameter>& parameters);
+
   rclcpp_action::GoalResponse handle_run_goal_(const rclcpp_action::GoalUUID& uuid,
                                                std::shared_ptr<const RunActionContext::Goal> goal_ptr);
   rclcpp_action::CancelResponse handle_run_cancel_(std::shared_ptr<RunActionContext::GoalHandle> goal_handle_ptr);
@@ -45,6 +55,9 @@ private:
   /// @endcond
 
   const rclcpp::Logger logger_;
+  const executor_params::ParamListener executor_param_listener_;
+  const NodeManifest::ParamListener node_manifest_param_listener_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
   rclcpp_action::Server<RunActionContext::Type>::SharedPtr run_action_ptr_;
   RunActionContext run_action_context_;
   rclcpp_action::Server<CommandActionContext::Type>::SharedPtr command_action_ptr_;

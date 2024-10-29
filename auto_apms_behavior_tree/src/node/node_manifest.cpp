@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node/plugin_manifest.hpp"
+#include "auto_apms_behavior_tree/node/node_manifest.hpp"
 
 #include <fstream>
 #include "auto_apms_behavior_tree/exceptions.hpp"
@@ -22,9 +22,9 @@
 namespace YAML
 {
 template <>
-struct convert<auto_apms_behavior_tree::BTNodePluginManifest::ParamMap>
+struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
 {
-  using Manifest = auto_apms_behavior_tree::BTNodePluginManifest;
+  using Manifest = auto_apms_behavior_tree::NodeManifest;
   static Node encode(const Manifest::ParamMap& rhs)
   {
     Node node;
@@ -106,74 +106,72 @@ struct convert<auto_apms_behavior_tree::BTNodePluginManifest::ParamMap>
 namespace auto_apms_behavior_tree
 {
 
-const std::string BTNodePluginManifest::PARAM_NAME_NAMES = _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_NAMES;
-const std::string BTNodePluginManifest::PARAM_NAME_CLASS = _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_CLASS;
-const std::string BTNodePluginManifest::PARAM_NAME_PACKAGE =
-    _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_PACKAGE;
-const std::string BTNodePluginManifest::PARAM_NAME_LIBRARY =
-    _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_LIBRARY;
-const std::string BTNodePluginManifest::PARAM_NAME_PORT = _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_PORT;
-const std::string BTNodePluginManifest::PARAM_NAME_REQUEST_TIMEOUT =
-    _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_REQUEST_TIMEOUT;
-const std::string BTNodePluginManifest::PARAM_NAME_WAIT_TIMEOUT =
-    _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_MANIFEST_PARAM_WAIT_TIMEOUT;
+// clang-format off
+const std::string NodeManifest::PARAM_NAME_NAMES = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_NAMES;
+const std::string NodeManifest::PARAM_NAME_CLASS = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS;
+const std::string NodeManifest::PARAM_NAME_PACKAGE = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE;
+const std::string NodeManifest::PARAM_NAME_LIBRARY = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY;
+const std::string NodeManifest::PARAM_NAME_PORT = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PORT;
+const std::string NodeManifest::PARAM_NAME_REQUEST_TIMEOUT = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT;
+const std::string NodeManifest::PARAM_NAME_WAIT_TIMEOUT = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT;
+// clang-format on
 
-BTNodePluginManifest::BTNodePluginManifest(const ParamMap& param_map) : param_map_{ param_map }
+NodeManifest::NodeManifest(const ParamMap& param_map) : param_map_{ param_map }
 {
 }
 
-BTNodePluginManifest BTNodePluginManifest::FromFiles(const std::vector<std::string>& file_paths)
+NodeManifest NodeManifest::fromFiles(const std::vector<std::string>& file_paths)
 {
-  BTNodePluginManifest manifest;
+  NodeManifest manifest;
   if (file_paths.empty())
     return manifest;
-  manifest = FromFile(file_paths[0]);
+  manifest = fromFile(file_paths[0]);
   for (size_t i = 1; i < file_paths.size(); ++i)
   {
-    manifest.Merge(FromFile(file_paths[i]));
+    manifest.merge(fromFile(file_paths[i]));
   }
   return manifest;
 }
 
-BTNodePluginManifest BTNodePluginManifest::FromFile(const std::string& file_path)
+NodeManifest NodeManifest::fromFile(const std::string& file_path)
 {
   return { YAML::LoadFile(file_path).as<ParamMap>() };
 }
 
-BTNodePluginManifest BTNodePluginManifest::Parse(const std::string& manifest_str)
+NodeManifest NodeManifest::parse(const std::string& manifest_str)
 {
   return { YAML::Load(manifest_str).as<ParamMap>() };
 }
 
-BTNodePluginManifest BTNodePluginManifest::FromParamListener(const ParamListener& param_listener)
+NodeManifest NodeManifest::fromParamListener(const ParamListener& param_listener)
 {
   return param_listener.get_params().names_map;
 }
 
-bool BTNodePluginManifest::Contains(const std::string& node_name) const
+bool NodeManifest::contains(const std::string& node_name) const
 {
   return param_map_.find(node_name) != param_map_.end();
 }
 
-BTNodePluginManifest::Params& BTNodePluginManifest::operator[](const std::string& node_name)
+NodeManifest::Params& NodeManifest::operator[](const std::string& node_name)
 {
-  if (Contains(node_name))
+  if (contains(node_name))
     return param_map_[node_name];
   throw std::out_of_range{ "Node '" + node_name + "' doesn't exist in manifest (Size: " +
                            std::to_string(param_map_.size()) + "). Use the Add() method to add an entry." };
 }
 
-const BTNodePluginManifest::Params& BTNodePluginManifest::operator[](const std::string& node_name) const
+const NodeManifest::Params& NodeManifest::operator[](const std::string& node_name) const
 {
-  if (Contains(node_name))
+  if (contains(node_name))
     return param_map_.at(node_name);
   throw std::out_of_range{ "Node '" + node_name +
                            "' doesn't exist in manifest (Size: " + std::to_string(param_map_.size()) + ")." };
 }
 
-BTNodePluginManifest& BTNodePluginManifest::Add(const std::string& node_name, const Params& p)
+NodeManifest& NodeManifest::add(const std::string& node_name, const Params& p)
 {
-  if (Contains(node_name))
+  if (contains(node_name))
   {
     throw std::logic_error{ "Node '" + node_name +
                             "' already exists in manifest (Size: " + std::to_string(param_map_.size()) + ")." };
@@ -182,9 +180,9 @@ BTNodePluginManifest& BTNodePluginManifest::Add(const std::string& node_name, co
   return *this;
 }
 
-BTNodePluginManifest& BTNodePluginManifest::Remove(const std::string& node_name)
+NodeManifest& NodeManifest::remove(const std::string& node_name)
 {
-  if (!Contains(node_name))
+  if (!contains(node_name))
   {
     throw std::logic_error{ "Node '" + node_name +
                             "' doesn't exist in manifest, so the corresponding entry cannot be removed." };
@@ -193,14 +191,14 @@ BTNodePluginManifest& BTNodePluginManifest::Remove(const std::string& node_name)
   return *this;
 }
 
-BTNodePluginManifest& BTNodePluginManifest::Merge(const BTNodePluginManifest& m)
+NodeManifest& NodeManifest::merge(const NodeManifest& m)
 {
-  for (const auto& [node_name, params] : m.map())
-    Add(node_name, params);
+  for (const auto& [node_name, params] : m.getInternalMap())
+    add(node_name, params);
   return *this;
 }
 
-BTNodePluginManifest& BTNodePluginManifest::AutoComplete(BTNodePluginClassLoader& class_loader)
+NodeManifest& NodeManifest::autoComplete(NodePluginClassLoader& class_loader)
 {
   for (const auto& [node_name, params] : param_map_)
   {
@@ -231,7 +229,7 @@ BTNodePluginManifest& BTNodePluginManifest::AutoComplete(BTNodePluginClassLoader
   return *this;
 }
 
-void BTNodePluginManifest::ToFile(const std::string& file_path) const
+void NodeManifest::toFile(const std::string& file_path) const
 {
   YAML::Node root;
   root = param_map_;
@@ -247,7 +245,7 @@ void BTNodePluginManifest::ToFile(const std::string& file_path) const
   }
 }
 
-std::string BTNodePluginManifest::ToString() const
+std::string NodeManifest::toString() const
 {
   YAML::Node root;
   root = param_map_;
@@ -256,8 +254,8 @@ std::string BTNodePluginManifest::ToString() const
   return out.c_str();
 }
 
-rcl_interfaces::msg::SetParametersResult BTNodePluginManifest::ToROSParameters(rclcpp::Node::SharedPtr node_ptr,
-                                                                               const std::string& prefix) const
+rcl_interfaces::msg::SetParametersResult NodeManifest::toROSParameters(rclcpp::Node::SharedPtr node_ptr,
+                                                                       const std::string& prefix) const
 {
   std::string dot_prefix = prefix;
   if (!dot_prefix.empty() && dot_prefix.back() != '.')
@@ -278,7 +276,7 @@ rcl_interfaces::msg::SetParametersResult BTNodePluginManifest::ToROSParameters(r
   return node_ptr->set_parameters_atomically(param_vec);
 }
 
-const BTNodePluginManifest::ParamMap& BTNodePluginManifest::map() const
+const NodeManifest::ParamMap& NodeManifest::getInternalMap() const
 {
   return param_map_;
 }

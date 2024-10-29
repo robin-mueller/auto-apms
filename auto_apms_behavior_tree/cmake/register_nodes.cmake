@@ -42,10 +42,10 @@ macro(auto_apms_behavior_tree_register_nodes target)
         list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_CLASS_NAMES ${_class_name})
 
         # Append to the variable that holds the build information of the behavior tree node plugins (<class_name>@<library_path>)
-        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_BUILD_INFO "${_class_name}@$<TARGET_FILE:${target}>")
+        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO "${_class_name}@$<TARGET_FILE:${target}>")
 
         # Append to the variable that holds the content of the pluginlib xml file
-        set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::BTNodePlugin<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::BTNodePluginBase\" /></library>\n")
+        set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::NodeRegistrationFactory<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::NodeRegistrationInterface\" /></library>\n")
     endforeach()
 
 endmacro()

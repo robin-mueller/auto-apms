@@ -32,7 +32,7 @@ public:
   {
   }
 
-  bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr) override
+  bool onGoalRequest(std::shared_ptr<const Goal> goal_ptr) override
   {
     if (goal_ptr->request == 1)
     {
@@ -41,7 +41,7 @@ public:
     return true;
   }
 
-  void SetInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
+  void setInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
   {
     if (goal_ptr->request == 2)
     {
@@ -52,7 +52,7 @@ public:
       result_ptr->result = 10;
     }
   }
-  bool OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
+  bool onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
   {
     if (goal_ptr->request == 5)
     {
@@ -64,7 +64,7 @@ public:
     }
     return true;
   }
-  TaskStatus CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
+  TaskStatus cancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
   {
     switch (goal_ptr->request)
     {
@@ -83,10 +83,10 @@ public:
         result_ptr->result = 40;
         return TaskStatus::FAILURE;
       default:
-        throw std::logic_error("Unexpected goal request in CancelGoal: " + std::to_string(goal_ptr->request));
+        throw std::logic_error("Unexpected goal request in cancelGoal: " + std::to_string(goal_ptr->request));
     }
   }
-  TaskStatus ExecuteGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+  TaskStatus executeGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
                          std::shared_ptr<Result> result_ptr) override
   {
     switch (goal_ptr->request)
@@ -122,7 +122,7 @@ public:
         // CancelGoalAbort
         return TaskStatus::RUNNING;
       default:
-        throw std::logic_error("Unexpected goal request in ExecuteGoal: " + std::to_string(goal_ptr->request));
+        throw std::logic_error("Unexpected goal request in executeGoal: " + std::to_string(goal_ptr->request));
     }
   }
 
@@ -155,16 +155,16 @@ TEST_F(TestFixture, RejectGoal)
 {
   goal.request = 1;
 
-  auto response_future = task_client->SyncSendGoal(goal);
-  ASSERT_EQ(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was not rejected";
+  auto response_future = task_client->syncSendGoal(goal);
+  ASSERT_EQ(task_client->getGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was not rejected";
 }
 
 TEST_F(TestFixture, InitialResult)
 {
   goal.request = 2;
 
-  auto response_future = task_client->SyncSendGoal(goal);
-  ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+  auto response_future = task_client->syncSendGoal(goal);
+  ASSERT_NE(task_client->getGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS) << "spin_"
                                                                                                              "until_"
                                                                                                              "future_"
@@ -181,8 +181,8 @@ TEST_F(TestFixture, ExecuteGoal)
 {
   goal.request = 3;
 
-  auto response_future = task_client->SyncSendGoal(goal);
-  ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+  auto response_future = task_client->syncSendGoal(goal);
+  ASSERT_NE(task_client->getGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS) << "spin_"
                                                                                                              "until_"
                                                                                                              "future_"
@@ -205,8 +205,8 @@ TEST_F(TestFixture, SendFeedback)
         test_task->feeback_received = true;
       };
 
-  auto response_future = task_client->SyncSendGoal(goal, send_goal_options);
-  ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+  auto response_future = task_client->syncSendGoal(goal, send_goal_options);
+  ASSERT_NE(task_client->getGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS) << "spin_"
                                                                                                              "until_"
                                                                                                              "future_"
@@ -216,18 +216,18 @@ TEST_F(TestFixture, SendFeedback)
   auto result = response_future.get();
   ASSERT_TRUE(result) << "result is nullptr after completion";
   EXPECT_EQ(result->code, rclcpp_action::ResultCode::SUCCEEDED) << "Task did not succeed";
-  ASSERT_TRUE(task_client->feedback()) << "No feedback available";
-  ASSERT_EQ(task_client->feedback()->feedback, 1) << "Feedback has unexpected value";
+  ASSERT_TRUE(task_client->getFeedback()) << "No feedback available";
+  ASSERT_EQ(task_client->getFeedback()->feedback, 1) << "Feedback has unexpected value";
 }
 
 TEST_F(TestFixture, CancelGoalReject)
 {
   goal.request = 5;
 
-  auto response_future = task_client->SyncSendGoal(goal);
-  ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
-  ASSERT_FALSE(task_client->SyncCancelLastGoal()) << "Cancellation was not rejected";
-  ASSERT_EQ(task_client->GetGoalStatus(response_future), ActionGoalStatus::RUNNING) << "Goal is not running after "
+  auto response_future = task_client->syncSendGoal(goal);
+  ASSERT_NE(task_client->getGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+  ASSERT_FALSE(task_client->syncCancelLastGoal()) << "Cancellation was not rejected";
+  ASSERT_EQ(task_client->getGoalStatus(response_future), ActionGoalStatus::RUNNING) << "Goal is not running after "
                                                                                        "cancellation was rejected";
 }
 
@@ -235,9 +235,9 @@ TEST_F(TestFixture, CancelGoalAccept)
 {
   goal.request = 6;
 
-  auto response_future = task_client->SyncSendGoal(goal);
-  ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
-  ASSERT_TRUE(task_client->SyncCancelLastGoal()) << "Cancellation was rejected";
+  auto response_future = task_client->syncSendGoal(goal);
+  ASSERT_NE(task_client->getGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+  ASSERT_TRUE(task_client->syncCancelLastGoal()) << "Cancellation was rejected";
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS) << "spin_"
                                                                                                              "until_"
                                                                                                              "future_"
@@ -254,8 +254,8 @@ TEST_F(TestFixture, ExecuteGoalAbort)
 {
   goal.request = 7;
 
-  auto response_future = task_client->SyncSendGoal(goal);
-  ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+  auto response_future = task_client->syncSendGoal(goal);
+  ASSERT_NE(task_client->getGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS) << "spin_"
                                                                                                              "until_"
                                                                                                              "future_"
@@ -272,9 +272,9 @@ TEST_F(TestFixture, CancelGoalAbort)
 {
   goal.request = 8;
 
-  auto response_future = task_client->SyncSendGoal(goal);
-  ASSERT_NE(task_client->GetGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
-  ASSERT_TRUE(task_client->SyncCancelLastGoal()) << "Cancellation was rejected";
+  auto response_future = task_client->syncSendGoal(goal);
+  ASSERT_NE(task_client->getGoalStatus(response_future), ActionGoalStatus::REJECTED) << "Goal was rejected";
+  ASSERT_TRUE(task_client->syncCancelLastGoal()) << "Cancellation was rejected";
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, response_future), rclcpp::FutureReturnCode::SUCCESS) << "spin_"
                                                                                                              "until_"
                                                                                                              "future_"

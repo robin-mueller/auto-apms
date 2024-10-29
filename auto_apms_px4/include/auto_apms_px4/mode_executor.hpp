@@ -61,21 +61,22 @@ public:
                         std::chrono::milliseconds feedback_interval = DEFAULT_VALUE_FEEDBACK_INTERVAL);
 
 private:
-  void SetUp();
-  auto_apms_core::TaskStatus AsyncDeactivateFlightMode();
-  bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr) final;
-  bool OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) final;
-  auto_apms_core::TaskStatus CancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) final;
-  auto_apms_core::TaskStatus ExecuteGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
-                                         std::shared_ptr<Result> result_ptr) final;
+  void setUp();
+  auto_apms_core::TaskStatus asyncDeactivateFlightMode();
+  bool onGoalRequest(std::shared_ptr<const Goal> goal_ptr) override final;
+  bool onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override final;
+  auto_apms_core::TaskStatus cancelGoal(std::shared_ptr<const Goal> goal_ptr,
+                                        std::shared_ptr<Result> result_ptr) override final;
+  auto_apms_core::TaskStatus executeGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+                                         std::shared_ptr<Result> result_ptr) override final;
 
 protected:
-  bool IsCurrentNavState(uint8_t nav_state);
-  virtual bool SendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr);
-  virtual bool IsCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status);
-  virtual void SetFeedback(std::shared_ptr<Feedback> feedback_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status);
+  bool isCurrentNavState(uint8_t nav_state);
+  virtual bool sendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr);
+  virtual bool isCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status);
+  virtual void setFeedback(std::shared_ptr<Feedback> feedback_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status);
 
-  uint8_t mode_id() const;
+  uint8_t getModeID() const;
 
 private:
   const VehicleCommandClient vehicle_command_client_;
@@ -99,7 +100,7 @@ ModeExecutor<ActionT>::ModeExecutor(const std::string& name, rclcpp::Node::Share
   , mode_id_{ mode_id }
   , deactivate_before_completion_{ deactivate_before_completion }
 {
-  SetUp();
+  setUp();
 }
 
 template <class ActionT>
@@ -111,7 +112,7 @@ ModeExecutor<ActionT>::ModeExecutor(const std::string& name, const rclcpp::NodeO
   , mode_id_{ mode_id }
   , deactivate_before_completion_{ deactivate_before_completion }
 {
-  SetUp();
+  setUp();
 }
 
 template <class ActionT>
@@ -128,7 +129,7 @@ ModeExecutor<ActionT>::ModeExecutor(const std::string& name, const rclcpp::NodeO
 }
 
 template <class ActionT>
-void ModeExecutor<ActionT>::SetUp()
+void ModeExecutor<ActionT>::setUp()
 {
   vehicle_status_sub_ptr_ = this->node_ptr_->template create_subscription<px4_msgs::msg::VehicleStatus>(
       "/fmu/out/vehicle_status", rclcpp::QoS(1).best_effort(),
@@ -146,7 +147,7 @@ void ModeExecutor<ActionT>::SetUp()
           {
             RCLCPP_ERROR(this->node_ptr_->get_logger(), "Flight mode %i failed to execute. Aborting...",
                          this->mode_id_);
-            this->action_context_ptr_->Abort();
+            this->action_context_ptr_->abort();
           }
           return;
         }
@@ -154,12 +155,12 @@ void ModeExecutor<ActionT>::SetUp()
 }
 
 template <class ActionT>
-auto_apms_core::TaskStatus ModeExecutor<ActionT>::AsyncDeactivateFlightMode()
+auto_apms_core::TaskStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
 {
   // If currently waiting for flight mode activation and HOLD is active we need to wait for the nav state to change
   // before starting deactivation. Otherwise, we'll misinterpret the current nav state when in
   // WAIT_FOR_HOLDING_STATE_REACHED and return success immediately
-  bool is_holding = IsCurrentNavState(static_cast<uint8_t>(FlightMode::Hold));
+  bool is_holding = isCurrentNavState(static_cast<uint8_t>(FlightMode::Hold));
   if (state_ == State::WAIT_FOR_ACTIVATION)
   {
     if (is_holding)
@@ -200,7 +201,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::AsyncDeactivateFlightMode()
 }
 
 template <class ActionT>
-bool ModeExecutor<ActionT>::OnGoalRequest(const std::shared_ptr<const Goal> goal_ptr)
+bool ModeExecutor<ActionT>::onGoalRequest(const std::shared_ptr<const Goal> goal_ptr)
 {
   (void)goal_ptr;
   state_ = State::REQUEST_ACTIVATION;
@@ -210,7 +211,7 @@ bool ModeExecutor<ActionT>::OnGoalRequest(const std::shared_ptr<const Goal> goal
 }
 
 template <class ActionT>
-bool ModeExecutor<ActionT>::OnCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
+bool ModeExecutor<ActionT>::onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
 {
   (void)goal_ptr;
   (void)result_ptr;
@@ -228,20 +229,20 @@ bool ModeExecutor<ActionT>::OnCancelRequest(std::shared_ptr<const Goal> goal_ptr
 }
 
 template <class ActionT>
-auto_apms_core::TaskStatus ModeExecutor<ActionT>::CancelGoal(std::shared_ptr<const Goal> goal_ptr,
+auto_apms_core::TaskStatus ModeExecutor<ActionT>::cancelGoal(std::shared_ptr<const Goal> goal_ptr,
                                                              std::shared_ptr<Result> result_ptr)
 {
   (void)goal_ptr;
   (void)result_ptr;
   if (deactivate_before_completion_)
   {
-    return AsyncDeactivateFlightMode();
+    return asyncDeactivateFlightMode();
   }
   return TaskStatus::SUCCESS;
 }
 
 template <class ActionT>
-bool ModeExecutor<ActionT>::IsCurrentNavState(uint8_t nav_state)
+bool ModeExecutor<ActionT>::isCurrentNavState(uint8_t nav_state)
 {
   if (last_vehicle_status_ptr_ && last_vehicle_status_ptr_->nav_state == nav_state)
   {
@@ -251,7 +252,7 @@ bool ModeExecutor<ActionT>::IsCurrentNavState(uint8_t nav_state)
 }
 
 template <class ActionT>
-auto_apms_core::TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<const Goal> goal_ptr,
+auto_apms_core::TaskStatus ModeExecutor<ActionT>::executeGoal(std::shared_ptr<const Goal> goal_ptr,
                                                               std::shared_ptr<Feedback> feedback_ptr,
                                                               std::shared_ptr<Result> result_ptr)
 {
@@ -261,7 +262,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<co
   switch (state_)
   {
     case State::REQUEST_ACTIVATION:
-      if (!SendActivationCommand(vehicle_command_client_, goal_ptr))
+      if (!sendActivationCommand(vehicle_command_client_, goal_ptr))
       {
         RCLCPP_ERROR(this->node_ptr_->get_logger(), "Failed to send activation command for flight mode %i. Aborting...",
                      mode_id_);
@@ -275,7 +276,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<co
                    mode_id_);
       return TaskStatus::RUNNING;
     case State::WAIT_FOR_ACTIVATION:
-      if (IsCurrentNavState(mode_id_))
+      if (isCurrentNavState(mode_id_))
       {
         RCLCPP_DEBUG(this->node_ptr_->get_logger(), "Flight mode %i is active", mode_id_);
         state_ = State::WAIT_FOR_COMPLETION_SIGNAL;
@@ -283,10 +284,10 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<co
       return TaskStatus::RUNNING;
     case State::WAIT_FOR_COMPLETION_SIGNAL:
       // Populate feedback message
-      SetFeedback(feedback_ptr, *last_vehicle_status_ptr_);
+      setFeedback(feedback_ptr, *last_vehicle_status_ptr_);
 
       // Check if execution should be terminated
-      if (IsCompleted(goal_ptr, *last_vehicle_status_ptr_))
+      if (isCompleted(goal_ptr, *last_vehicle_status_ptr_))
       {
         state_ = State::COMPLETE;
         if (deactivate_before_completion_)
@@ -307,7 +308,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<co
         break;
       }
       // Check if nav state changed
-      if (!IsCurrentNavState(mode_id_))
+      if (!isCurrentNavState(mode_id_))
       {
         RCLCPP_WARN(this->node_ptr_->get_logger(), "Flight mode %i was deactivated externally. Aborting...", mode_id_);
         return TaskStatus::FAILURE;
@@ -319,7 +320,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<co
 
   if (deactivate_before_completion_)
   {
-    const auto deactivation_state = AsyncDeactivateFlightMode();
+    const auto deactivation_state = asyncDeactivateFlightMode();
     if (deactivation_state != TaskStatus::SUCCESS)
     {
       return deactivation_state;
@@ -332,7 +333,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::ExecuteGoal(std::shared_ptr<co
 }
 
 template <class ActionT>
-bool ModeExecutor<ActionT>::SendActivationCommand(const VehicleCommandClient& client,
+bool ModeExecutor<ActionT>::sendActivationCommand(const VehicleCommandClient& client,
                                                   std::shared_ptr<const Goal> goal_ptr)
 {
   (void)goal_ptr;
@@ -340,7 +341,7 @@ bool ModeExecutor<ActionT>::SendActivationCommand(const VehicleCommandClient& cl
 }
 
 template <class ActionT>
-bool ModeExecutor<ActionT>::IsCompleted(std::shared_ptr<const Goal> goal_ptr,
+bool ModeExecutor<ActionT>::isCompleted(std::shared_ptr<const Goal> goal_ptr,
                                         const px4_msgs::msg::VehicleStatus& vehicle_status)
 {
   (void)goal_ptr;
@@ -349,7 +350,7 @@ bool ModeExecutor<ActionT>::IsCompleted(std::shared_ptr<const Goal> goal_ptr,
 }
 
 template <class ActionT>
-void ModeExecutor<ActionT>::SetFeedback(std::shared_ptr<Feedback> feedback_ptr,
+void ModeExecutor<ActionT>::setFeedback(std::shared_ptr<Feedback> feedback_ptr,
                                         const px4_msgs::msg::VehicleStatus& vehicle_status)
 {
   (void)feedback_ptr;
@@ -358,7 +359,7 @@ void ModeExecutor<ActionT>::SetFeedback(std::shared_ptr<Feedback> feedback_ptr,
 }
 
 template <class ActionT>
-uint8_t ModeExecutor<ActionT>::mode_id() const
+uint8_t ModeExecutor<ActionT>::getModeID() const
 {
   return mode_id_;
 }

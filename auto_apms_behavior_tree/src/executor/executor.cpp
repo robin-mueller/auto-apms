@@ -21,16 +21,16 @@ namespace auto_apms_behavior_tree
 
 BTExecutorBase::BTExecutorBase(rclcpp::Node::SharedPtr node_ptr)
   : node_ptr_{ node_ptr }
-  , global_blackboard_ptr_{ BT::Blackboard::create() }
+  , global_blackboard_ptr_{ TreeBlackboard::create() }
   , control_command_{ ControlCommand::RUN }
   , execution_stopped_{ true }
 {
 }
 
-std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::Start(CreateTreeCallback create_tree_cb)
+std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::start(CreateTreeCallback create_tree_cb)
 {
   auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
-  if (IsStarted())
+  if (isStarted())
   {
     RCLCPP_WARN(node_ptr_->get_logger(), "Rejecting execution request, because executor is still busy.");
     promise_ptr->set_value(ExecutionResult::START_REJECTED);
@@ -39,7 +39,7 @@ std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::Start(Create
 
   try
   {
-    tree_ptr_ = std::make_unique<BT::Tree>(create_tree_cb(global_blackboard_ptr_));
+    tree_ptr_ = std::make_unique<Tree>(create_tree_cb(global_blackboard_ptr_));
   }
   catch (const std::exception& e)
   {
@@ -63,27 +63,27 @@ std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::Start(Create
   // Create promise for asnychronous execution
   CloseExecutionCallback close_execution_cb = [this, promise_ptr](ExecutionResult result, const std::string& msg) {
     RCLCPP_DEBUG(node_ptr_->get_logger(), "Closing behavior tree execution from state %s. Reason: %s.",
-                 to_string(GetExecutionState()).c_str(), msg.c_str());
+                 to_string(getExecutionState()).c_str(), msg.c_str());
     execution_timer_ptr_->cancel();
     promise_ptr->set_value(result);
-    OnClose(result);
+    onClose(result);
   };
 
   execution_timer_ptr_ =
       node_ptr_->create_wall_timer(std::chrono::duration<double, std::milli>(executor_params_.tick_rate),
-                                   [this, close_execution_cb]() { ExecutionRoutine(close_execution_cb); });
+                                   [this, close_execution_cb]() { execution_routine_(close_execution_cb); });
 
   return promise_ptr->get_future();
 }
 
-bool BTExecutorBase::IsStarted()
+bool BTExecutorBase::isStarted()
 {
   return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled();
 }
 
-BTExecutorBase::ExecutionState BTExecutorBase::GetExecutionState()
+BTExecutorBase::ExecutionState BTExecutorBase::getExecutionState()
 {
-  if (IsStarted())
+  if (isStarted())
   {
     if (!tree_ptr_)
       throw std::logic_error("tree_ptr_ cannot be nullptr when execution is started.");
@@ -97,18 +97,18 @@ BTExecutorBase::ExecutionState BTExecutorBase::GetExecutionState()
   return ExecutionState::IDLE;
 }
 
-std::string BTExecutorBase::GetTreeName()
+std::string BTExecutorBase::getTreeName()
 {
   if (tree_ptr_)
     return tree_ptr_->subtrees[0]->tree_ID;
   return "NO_TREE_NAME";
 }
 
-void BTExecutorBase::ExecutionRoutine(CloseExecutionCallback close_execution_cb)
+void BTExecutorBase::execution_routine_(CloseExecutionCallback close_execution_cb)
 {
   /* Evaluate control command */
 
-  const ExecutionState execution_state_before = GetExecutionState();  // Freeze current execution state
+  const ExecutionState execution_state_before = getExecutionState();  // Freeze current execution state
   execution_stopped_ = false;
   switch (control_command_)
   {
@@ -119,26 +119,26 @@ void BTExecutorBase::ExecutionRoutine(CloseExecutionCallback close_execution_cb)
       // ExecutionState::IDLE means that tree will be ticked for the first time in this iteration
       if (execution_state_before == ExecutionState::STARTING)
       {
-        // Evaluate OnFirstTick callback before executor ticks tree for the first time
-        if (OnFirstTick())
+        // Evaluate onFirstTick callback before executor ticks tree for the first time
+        if (onFirstTick())
         {
           break;
         }
         else
         {
-          termination_reason_ = "OnFirstTick() returned false";
+          termination_reason_ = "onFirstTick() returned false";
         }
       }
       else
       {
-        // Evaluate OnTick callback everytime before ticking except for the first time
-        if (OnTick())
+        // Evaluate onTick callback everytime before ticking except for the first time
+        if (onTick())
         {
           break;
         }
         else
         {
-          termination_reason_ = "OnTick() returned false";
+          termination_reason_ = "onTick() returned false";
         }
       }
 
@@ -211,7 +211,7 @@ void BTExecutorBase::ExecutionRoutine(CloseExecutionCallback close_execution_cb)
                            ". Must be one of SUCCESS or FAILURE at this point.");
   }
   const bool success = bt_status == BT::NodeStatus::SUCCESS;
-  switch (OnTreeExit(success))
+  switch (onTreeExit(success))
   {
     case TreeExitBehavior::CLOSE:
       close_execution_cb(success ? ExecutionResult::TREE_SUCCEEDED : ExecutionResult::TREE_FAILED,
@@ -222,39 +222,39 @@ void BTExecutorBase::ExecutionRoutine(CloseExecutionCallback close_execution_cb)
       return;
   }
 
-  throw std::logic_error("ExecutionRoutine is not intended to proceed to this statement.");
+  throw std::logic_error("Execution routine is not intended to proceed to this statement.");
 }
 
-bool BTExecutorBase::OnFirstTick()
+bool BTExecutorBase::onFirstTick()
 {
   return true;
 }
 
-bool BTExecutorBase::OnTick()
+bool BTExecutorBase::onTick()
 {
   return true;
 }
 
-BTExecutorBase::TreeExitBehavior BTExecutorBase::OnTreeExit(bool /*success*/)
+BTExecutorBase::TreeExitBehavior BTExecutorBase::onTreeExit(bool /*success*/)
 {
   return TreeExitBehavior::CLOSE;
 }
 
-void BTExecutorBase::OnClose(const ExecutionResult& /*result*/)
+void BTExecutorBase::onClose(const ExecutionResult& /*result*/)
 {
 }
 
-void BTExecutorBase::set_control_command(ControlCommand cmd)
+void BTExecutorBase::setControlCommand(ControlCommand cmd)
 {
   control_command_ = cmd;
 }
 
-void BTExecutorBase::set_executor_parameters(const ExecutorParams& p)
+void BTExecutorBase::setExecutorParameters(const ExecutorParams& p)
 {
   executor_params_ = p;
 }
 
-rclcpp::Node::SharedPtr BTExecutorBase::node()
+rclcpp::Node::SharedPtr BTExecutorBase::getNodePtr()
 {
   return node_ptr_;
 }
@@ -264,17 +264,17 @@ rclcpp::node_interfaces::NodeBaseInterface::SharedPtr BTExecutorBase::get_node_b
   return node_ptr_->get_node_base_interface();
 }
 
-BT::Blackboard::Ptr BTExecutorBase::global_blackboard()
+TreeBlackboardSharedPtr BTExecutorBase::getGlobalBlackboardPtr()
 {
   return global_blackboard_ptr_;
 }
 
-BTExecutorBase::ExecutorParams BTExecutorBase::executor_parameters()
+BTExecutorBase::ExecutorParams BTExecutorBase::getExecutorParameters()
 {
   return executor_params_;
 }
 
-const BTStateObserver& BTExecutorBase::state_observer()
+const BTStateObserver& BTExecutorBase::getStateObserver()
 {
   return *state_observer_ptr_;
 }

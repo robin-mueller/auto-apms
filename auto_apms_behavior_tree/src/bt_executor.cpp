@@ -17,7 +17,7 @@
 #include <chrono>
 #include <functional>
 
-#include "auto_apms_behavior_tree/constants.hpp"
+#include "auto_apms_behavior_tree/definitions.hpp"
 
 #define STATE_CHANGE_LOGGING_PARAM_NAME "state_change_logging"
 

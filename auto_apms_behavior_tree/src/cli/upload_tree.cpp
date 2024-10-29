@@ -35,12 +35,12 @@ int main(int argc, char* argv[])
   const std::string tree_file_name{ argv[4] };
   const std::string main_tree_id{ argc > 5 ? argv[5] : "" };
 
-  std::cout << "Uploading behavior tree to executor '" << ColoredText(executor_name, TextColor::CYAN)
-            << "' in namespace '" << ColoredText(namespace_, TextColor::CYAN) << "'"
-            << "\n\tpackage_name  \t'" << ColoredText(package_name, TextColor::CYAN) << "'"
-            << "\n\ttrees_filename\t'" << ColoredText(tree_file_name, TextColor::CYAN) << "'"
+  std::cout << "Uploading behavior tree to executor '" << makeColoredText(executor_name, TextColor::CYAN)
+            << "' in namespace '" << makeColoredText(namespace_, TextColor::CYAN) << "'"
+            << "\n\tpackage_name  \t'" << makeColoredText(package_name, TextColor::CYAN) << "'"
+            << "\n\ttrees_filename\t'" << makeColoredText(tree_file_name, TextColor::CYAN) << "'"
             << "\n\ttree_id       \t'"
-            << ColoredText(main_tree_id.empty() ? "[main_tree_to_execute]" : main_tree_id, TextColor::CYAN) << "'"
+            << makeColoredText(main_tree_id.empty() ? "[main_tree_to_execute]" : main_tree_id, TextColor::CYAN) << "'"
             << std::endl;
 
   rclcpp::init(argc, argv);
@@ -62,11 +62,11 @@ int main(int argc, char* argv[])
   if (bt_executor_client.UploadBehaviorTree(
           TreeResource::SelectByFileName(tree_file_name, package_name).WriteTreeToString(), main_tree_id))
   {
-    std::cout << " --> " << ColoredText("Registration successful", TextColor::GREEN) << std::endl;
+    std::cout << " --> " << makeColoredText("Registration successful", TextColor::GREEN) << std::endl;
   }
   else
   {
-    std::cout << " --> " << ColoredText("Registration failed", TextColor::RED) << std::endl;
+    std::cout << " --> " << makeColoredText("Registration failed", TextColor::RED) << std::endl;
   }
 
   rclcpp::shutdown();

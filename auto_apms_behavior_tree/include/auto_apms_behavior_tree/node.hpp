@@ -14,19 +14,19 @@
 
 #pragma once
 
+#include "auto_apms_behavior_tree/node/ros_action_node.hpp"
+#include "auto_apms_behavior_tree/node/ros_publisher_node.hpp"
+#include "auto_apms_behavior_tree/node/ros_service_node.hpp"
+#include "auto_apms_behavior_tree/node/ros_subscriber_node.hpp"
+
+#include "auto_apms_behavior_tree/node/node_registration_factory.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "auto_apms_behavior_tree/builder/tree_build_director_factory_template.hpp"
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief Macro for registering a behavior tree build director plugin which may be loaded at runtime to create a
- * behavior tree according to the implementation.
- *
- * Build directors are created by deriving from auto_apms_behavior_tree::TreeBuildDirectorBase and implementing the
- * virtual methods.
- *
+ * @brief Macro for registering a behavior tree node plugin.
  * @param type Fully qualified name of the class.
  */
-#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_DIRECTOR(type)                                                          \
-  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::TreeBuildDirectorFactoryTemplate<type>,                              \
-                         auto_apms_behavior_tree::TreeBuildDirectorFactory)
+#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(type)                                                                    \
+  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::NodeRegistrationFactory<type>,                                       \
+                         auto_apms_behavior_tree::NodeRegistrationInterface)

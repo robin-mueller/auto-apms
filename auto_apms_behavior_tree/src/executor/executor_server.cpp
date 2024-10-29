@@ -12,43 +12,74 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/executor/server.hpp"
+#include "auto_apms_behavior_tree/executor/executor_server.hpp"
 
 #include <functional>
 
-#include "auto_apms_behavior_tree/constants.hpp"
+#include "auto_apms_behavior_tree/definitions.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
+// clang-format off
+const std::string BTExecutorServer::PARAM_NAME_BUILD_DIRECTOR = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILD_DIRECTOR;
+const std::string BTExecutorServer::PARAM_NAME_TICK_RATE = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE;
+const std::string BTExecutorServer::PARAM_NAME_GROOT2_PORT = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT;
+const std::string BTExecutorServer::PARAM_NAME_STATE_CHANGE_LOGGER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER;
+// clang-format off
+
 BTExecutorServer::BTExecutorServer(const std::string& name, rclcpp::NodeOptions options)
-  : BTExecutorBase{ std::make_shared<rclcpp::Node>(name, options) }
-  , logger_{ node()->get_logger() }
-  , run_action_context_{ logger_ }
-  , command_action_context_{ logger_ }
+  : BTExecutorBase(std::make_shared<rclcpp::Node>(name, options))
+  , logger_(getNodePtr()->get_logger())
+  , executor_param_listener_(getNodePtr())
+  , node_manifest_param_listener_(getNodePtr())
+  , run_action_context_(logger_)
+  , command_action_context_(logger_)
 {
   using namespace std::placeholders;
-  run_action_ptr_ = rclcpp_action::create_server<RunActionContext::Type>(
-      node(), name + BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX, std::bind(&BTExecutorServer::handle_run_goal_, this, _1, _2),
-      std::bind(&BTExecutorServer::handle_run_cancel_, this, _1),
-      std::bind(&BTExecutorServer::handle_run_accept_, this, _1));
+  run_action_ptr_ =
+      rclcpp_action::create_server<RunActionContext::Type>(getNodePtr(), name + BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX,
+                                                           std::bind(&BTExecutorServer::handle_run_goal_, this, _1, _2),
+                                                           std::bind(&BTExecutorServer::handle_run_cancel_, this, _1),
+                                                           std::bind(&BTExecutorServer::handle_run_accept_, this, _1));
 
   command_action_ptr_ = rclcpp_action::create_server<CommandActionContext::Type>(
-      node(), name + BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
+      getNodePtr(), name + BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
       std::bind(&BTExecutorServer::handle_command_goal_, this, _1, _2),
       std::bind(&BTExecutorServer::handle_command_cancel_, this, _1),
       std::bind(&BTExecutorServer::handle_command_accept_, this, _1));
+
+  on_set_parameters_callback_handle_ =
+      getNodePtr()->add_on_set_parameters_callback([this](const std::vector<rclcpp::Parameter>& parameters) {
+        return this->on_set_parameters_callback_(parameters);
+      });
+}
+
+rcl_interfaces::msg::SetParametersResult
+BTExecutorServer::on_set_parameters_callback_(const std::vector<rclcpp::Parameter>& parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto& p : parameters)
+  {
+    // if (!some_condition)
+    // {
+    //   result.successful = false;
+    //   result.reason = "the reason it could not be allowed";
+    // }
+  }
+  return result;
 }
 
 rclcpp_action::GoalResponse BTExecutorServer::handle_run_goal_(const rclcpp_action::GoalUUID& uuid,
                                                                std::shared_ptr<const RunActionContext::Goal> goal_ptr)
 {
   // Reject if a tree is already executing
-  if (GetExecutionState() != ExecutionState::IDLE)
+  if (getExecutionState() != ExecutionState::IDLE)
   {
     RCLCPP_WARN(logger_, "Goal %s was REJECTED because a tree with ID '%s' is already running.",
-                rclcpp_action::to_string(uuid).c_str(), GetTreeName().c_str());
+                rclcpp_action::to_string(uuid).c_str(), getTreeName().c_str());
     return rclcpp_action::GoalResponse::REJECT;
   }
 
@@ -69,13 +100,13 @@ rclcpp_action::GoalResponse BTExecutorServer::handle_run_goal_(const rclcpp_acti
 rclcpp_action::CancelResponse
 BTExecutorServer::handle_run_cancel_(std::shared_ptr<RunActionContext::GoalHandle> /*goal_handle_ptr*/)
 {
-  set_control_command(ControlCommand::HALT);
+  setControlCommand(ControlCommand::HALT);
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void BTExecutorServer::handle_run_accept_(std::shared_ptr<RunActionContext::GoalHandle> goal_handle_ptr)
 {
-  run_action_context_.SetUp(goal_handle_ptr);
+  run_action_context_.setUp(goal_handle_ptr);
 }
 
 rclcpp_action::GoalResponse BTExecutorServer::handle_command_goal_(
@@ -92,7 +123,7 @@ BTExecutorServer::handle_command_cancel_(std::shared_ptr<CommandActionContext::G
 
 void BTExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr)
 {
-  command_action_context_.SetUp(goal_handle_ptr);
+  command_action_context_.setUp(goal_handle_ptr);
 }
 
 }  // namespace auto_apms_behavior_tree

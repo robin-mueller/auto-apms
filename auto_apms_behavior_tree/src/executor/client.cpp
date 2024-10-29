@@ -17,7 +17,7 @@
 #include <functional>
 
 #include "action_msgs/srv/cancel_goal.hpp"
-#include "auto_apms_behavior_tree/constants.hpp"
+#include "auto_apms_behavior_tree/definitions.hpp"
 
 namespace auto_apms_behavior_tree
 {

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/builder/tree_build_director.hpp"
+#include "auto_apms_behavior_tree/tree_build_director.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class StaticTreeResourceBuilder : public TreeBuildDirectorBase
+class TreeResourceBuildDirector : public TreeBuildDirectorBase
 {
 public:
   using TreeBuildDirectorBase::TreeBuildDirectorBase;
@@ -42,4 +42,4 @@ private:
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_DIRECTOR(auto_apms_behavior_tree::StaticTreeResourceBuilder)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_DIRECTOR(auto_apms_behavior_tree::TreeResourceBuildDirector)

@@ -17,7 +17,7 @@
 namespace auto_apms_core::util
 {
 
-std::string ColoredText(const std::string& text, TextColor color)
+std::string makeColoredText(const std::string& text, TextColor color)
 {
   switch (color)
   {

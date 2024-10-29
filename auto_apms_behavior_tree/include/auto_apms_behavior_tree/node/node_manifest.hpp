@@ -15,7 +15,7 @@
 #pragma once
 
 #include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
-#include "node_plugin_manifest_params.hpp"
+#include "node_manifest_params.hpp"
 #include "pluginlib/class_loader.hpp"
 
 namespace auto_apms_behavior_tree
@@ -24,9 +24,9 @@ namespace auto_apms_behavior_tree
 /**
  * @ingroup auto_apms_behavior_tree
  * @brief Data structure for resource lookup data and configuration parameters required for loading and
- * registering a behavior tree node plugin.
+ * registering multiple behavior tree node plugins.
  */
-class BTNodePluginManifest
+class NodeManifest
 {
 public:
   /// Generated ROS2 parameter struct holding the core load information.
@@ -46,34 +46,34 @@ public:
   static const std::string PARAM_NAME_WAIT_TIMEOUT;
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
 
-  BTNodePluginManifest(const ParamMap& param_map = {});
+  NodeManifest(const ParamMap& param_map = {});
 
   /**
    * @brief Create a node plugin manifest from multiple files. They are loaded in the given order.
    * @param file_paths Paths to the manifest files.
    */
-  static BTNodePluginManifest FromFiles(const std::vector<std::string>& file_paths);
+  static NodeManifest fromFiles(const std::vector<std::string>& file_paths);
 
   /**
    * @brief Create a node plugin manifest from a file.
    * @param file_path Path to the manifest file.
    */
-  static BTNodePluginManifest FromFile(const std::string& file_path);
+  static NodeManifest fromFile(const std::string& file_path);
 
-  static BTNodePluginManifest Parse(const std::string& manifest_str);
+  static NodeManifest parse(const std::string& manifest_str);
 
-  static BTNodePluginManifest FromParamListener(const ParamListener& param_listener);
+  static NodeManifest fromParamListener(const ParamListener& param_listener);
 
-  bool Contains(const std::string& node_name) const;
+  bool contains(const std::string& node_name) const;
 
   Params& operator[](const std::string& node_name);
   const Params& operator[](const std::string& node_name) const;
 
-  BTNodePluginManifest& Add(const std::string& node_name, const Params& p);
+  NodeManifest& add(const std::string& node_name, const Params& p);
 
-  BTNodePluginManifest& Remove(const std::string& node_name);
+  NodeManifest& remove(const std::string& node_name);
 
-  BTNodePluginManifest& Merge(const BTNodePluginManifest& m);
+  NodeManifest& merge(const NodeManifest& m);
 
   /**
    * @brief Automatically fill node plugin resource information in @p manifest.
@@ -96,16 +96,16 @@ public:
    * @throw auto_apms_core::exceptions::ResourceNotFoundError if no unique resource for a node can be found, thus the
    * library path cannot be filled automatically.
    */
-  BTNodePluginManifest& AutoComplete(BTNodePluginClassLoader& class_loader);
+  NodeManifest& autoComplete(NodePluginClassLoader& class_loader);
 
-  void ToFile(const std::string& file_path) const;
+  void toFile(const std::string& file_path) const;
 
-  std::string ToString() const;
+  std::string toString() const;
 
-  rcl_interfaces::msg::SetParametersResult ToROSParameters(rclcpp::Node::SharedPtr node_ptr,
+  rcl_interfaces::msg::SetParametersResult toROSParameters(rclcpp::Node::SharedPtr node_ptr,
                                                            const std::string& prefix = "") const;
 
-  const ParamMap& map() const;
+  const ParamMap& getInternalMap() const;
 
 private:
   ParamMap param_map_;

@@ -15,20 +15,23 @@
 #pragma once
 
 #include "pluginlib/class_loader.hpp"
-#include "auto_apms_behavior_tree/node/plugin_base.hpp"
+#include "auto_apms_behavior_tree/node/node_registration_interface.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-using BTNodePluginClassLoader = pluginlib::ClassLoader<BTNodePluginBase>;
+using NodePluginClassLoader = pluginlib::ClassLoader<NodeRegistrationInterface>;
 
 /**
- * @brief Create an instance of pluginlib::ClassLoader specifically for loading installed behavior tree node plugin
- * resources.
  * @ingroup auto_apms_behavior_tree
- * @param package_names Packages to consider when searching for resources. Leave empty to search in all packages.
- * @return pluginlib::ClassLoader object.
+ * @brief Create an instance of pluginlib::ClassLoader specifically for loading installed behavior tree build director
+ * plugins.
+ * @param search_packages Packages to consider when searching for plugin resources. Leave empty to search in all
+ * packages.
+ * @return Initialized class loader.
+ * @throws auto_apms_core::exceptions::ResourceNotFoundError if failed to find a pluginlib plugin
+ * manifest file in a package specified in @p search_packages or if a `ament_index` resource marker file is invalid.
  */
-std::shared_ptr<BTNodePluginClassLoader> MakeBTNodePluginClassLoader(const std::set<std::string>& package_names = {});
+NodePluginClassLoader makeNodeClassLoader(const std::set<std::string>& search_packages = {});
 
 }  // namespace auto_apms_behavior_tree

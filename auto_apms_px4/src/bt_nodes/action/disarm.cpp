@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node/plugin.hpp"
+#include "auto_apms_behavior_tree/node.hpp"
 #include "auto_apms_interfaces/action/arm_disarm.hpp"
 
 namespace auto_apms_px4

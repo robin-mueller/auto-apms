@@ -24,11 +24,14 @@ using TreeBuildDirectorClassLoader = pluginlib::ClassLoader<TreeBuildDirectorFac
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief Create an instance of pluginlib::ClassLoader specifically for loading installed behavior tree build directors.
- * @param package_names Packages to consider when searching for resources. Leave empty to search in all packages.
- * @return pluginlib::ClassLoader object.
+ * @brief Create an instance of pluginlib::ClassLoader specifically for loading installed behavior tree build director
+ * plugins.
+ * @param search_packages Packages to consider when searching for plugin resources. Leave empty to search in all
+ * packages.
+ * @return Initialized class loader.
+ * @throws auto_apms_core::exceptions::ResourceNotFoundError if failed to find a pluginlib plugin
+ * manifest file in a package specified in @p search_packages or if a `ament_index` resource marker file is invalid.
  */
-std::shared_ptr<TreeBuildDirectorClassLoader>
-MakeTreeBuildDirectorClassLoader(const std::set<std::string>& package_names = {});
+TreeBuildDirectorClassLoader makeTreeBuildDirectorClassLoader(const std::string& search_packages = {});
 
 }  // namespace auto_apms_behavior_tree

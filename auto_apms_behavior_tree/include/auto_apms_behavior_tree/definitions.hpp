@@ -14,22 +14,23 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/node/ros_params.hpp"
 #include "behaviortree_cpp/bt_factory.h"
+
+/**
+ * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
+ * @brief Useful tooling for Behavior Tree development.
+ */
 
 namespace auto_apms_behavior_tree
 {
 
-class BTNodePluginBase
-{
-public:
-  BTNodePluginBase() = default;
-  virtual ~BTNodePluginBase() = default;
+using Tree = BT::Tree;
+using TreeBlackboard = BT::Blackboard;
+using TreeBlackboardSharedPtr = std::shared_ptr<TreeBlackboard>;
 
-  virtual bool RequiresROSNodeParams() const = 0;
-
-  virtual void RegisterWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory, const std::string& registration_name,
-                                               const RosNodeParams* const params_ptr = nullptr) const = 0;
-};
+// BT Executor definitions
+const char BT_EXECUTOR_UPLOAD_TREE_SERVICE_NAME_SUFFIX[] = "/upload";
+const char BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX[] = "/run";
+const char BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX[] = "/command";
 
 }  // namespace auto_apms_behavior_tree

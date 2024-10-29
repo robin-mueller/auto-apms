@@ -29,9 +29,9 @@ public:
 
 private:
   // PX4 seems to not always give a completed signal for RTL, so check for disarmed as a fallback completed state
-  bool IsCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status)
+  bool isCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus& vehicle_status)
   {
-    return ModeExecutor::IsCompleted(goal_ptr, vehicle_status) ||
+    return ModeExecutor::isCompleted(goal_ptr, vehicle_status) ||
            vehicle_status.arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_DISARMED;
   }
 };

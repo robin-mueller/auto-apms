@@ -14,7 +14,7 @@
 
 #include "auto_apms_interfaces/action/land.hpp"
 
-#include "auto_apms_behavior_tree/node/plugin.hpp"
+#include "auto_apms_behavior_tree/node.hpp"
 
 namespace auto_apms_px4
 {

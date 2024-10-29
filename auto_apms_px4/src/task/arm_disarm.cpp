@@ -51,7 +51,7 @@ public:
   }
 
 private:
-  bool OnGoalRequest(std::shared_ptr<const Goal> goal_ptr) final
+  bool onGoalRequest(std::shared_ptr<const Goal> goal_ptr) override final
   {
     // Reject goal if goal wants to arm, but UAV is not ready to arm and it is not requested to wait for ready to
     // arm
@@ -87,8 +87,8 @@ private:
     return true;
   }
 
-  Status ExecuteGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
-                     std::shared_ptr<Result> result_ptr) final
+  Status executeGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+                     std::shared_ptr<Result> result_ptr) override final
   {
     (void)goal_ptr;
     (void)feedback_ptr;

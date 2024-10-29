@@ -71,7 +71,7 @@ public:
    * the goal was rejected.
    * @throw std::runtime_error if sending the goal fails.
    */
-  ResultFuture SyncSendGoal(const Goal& goal = Goal{}, const SendGoalOptions& options = SendGoalOptions{},
+  ResultFuture syncSendGoal(const Goal& goal = Goal{}, const SendGoalOptions& options = SendGoalOptions{},
                             const std::chrono::seconds server_timeout = std::chrono::seconds{ 3 },
                             const std::chrono::seconds response_timeout = std::chrono::seconds{ 3 });
 
@@ -84,7 +84,7 @@ public:
    * @return `true` if the last goal was cancelled successfully, `false` if request was denied.
    * @throw std::runtime_error if cancelation failed.
    */
-  bool SyncCancelLastGoal(const std::chrono::seconds response_timeout = std::chrono::seconds{ 3 });
+  bool syncCancelLastGoal(const std::chrono::seconds response_timeout = std::chrono::seconds{ 3 });
 
   /**
    * @brief Determine the status of a specific goal by evaluating the corresponding ActionClientWrapper::ResultFuture.
@@ -93,20 +93,20 @@ public:
    * being processed or has completed.
    * @throw std::runtime_error if @p future is invalid.
    */
-  static ActionGoalStatus GetGoalStatus(const ResultFuture& future);
+  static ActionGoalStatus getGoalStatus(const ResultFuture& future);
 
   /**
    * @brief Get the goal handle of the currently active goal.
    *
    * @return Shared pointer of the active goal handle or `nullptr`, if there is no active goal.
    */
-  typename ClientGoalHandle::SharedPtr active_goal_handle();
+  typename ClientGoalHandle::SharedPtr getActiveGoalHandle();
 
   /**
    * @brief Get the most recent feedback.
    * @return Shared pointer of the feeback.
    */
-  std::shared_ptr<const Feedback> feedback();
+  std::shared_ptr<const Feedback> getFeedback();
 
 private:
   const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface_ptr_;
@@ -128,7 +128,7 @@ ActionClientWrapper<ActionT>::ActionClientWrapper(rclcpp::Node& node, const std:
 
 template <typename ActionT>
 typename ActionClientWrapper<ActionT>::ResultFuture
-ActionClientWrapper<ActionT>::SyncSendGoal(const Goal& goal, const SendGoalOptions& options,
+ActionClientWrapper<ActionT>::syncSendGoal(const Goal& goal, const SendGoalOptions& options,
                                            const std::chrono::seconds server_timeout,
                                            const std::chrono::seconds response_timeout)
 {
@@ -183,7 +183,7 @@ ActionClientWrapper<ActionT>::SyncSendGoal(const Goal& goal, const SendGoalOptio
 }
 
 template <typename ActionT>
-bool ActionClientWrapper<ActionT>::SyncCancelLastGoal(const std::chrono::seconds response_timeout)
+bool ActionClientWrapper<ActionT>::syncCancelLastGoal(const std::chrono::seconds response_timeout)
 {
   if (!goal_handle_ptr_)
   {
@@ -220,7 +220,7 @@ bool ActionClientWrapper<ActionT>::SyncCancelLastGoal(const std::chrono::seconds
 }
 
 template <typename ActionT>
-ActionGoalStatus ActionClientWrapper<ActionT>::GetGoalStatus(const ResultFuture& future)
+ActionGoalStatus ActionClientWrapper<ActionT>::getGoalStatus(const ResultFuture& future)
 {
   if (!future.valid())
   {
@@ -238,13 +238,13 @@ ActionGoalStatus ActionClientWrapper<ActionT>::GetGoalStatus(const ResultFuture&
 }
 
 template <typename ActionT>
-typename ActionClientWrapper<ActionT>::ClientGoalHandle::SharedPtr ActionClientWrapper<ActionT>::active_goal_handle()
+typename ActionClientWrapper<ActionT>::ClientGoalHandle::SharedPtr ActionClientWrapper<ActionT>::getActiveGoalHandle()
 {
   return goal_handle_ptr_;
 }
 
 template <typename ActionT>
-std::shared_ptr<const typename ActionClientWrapper<ActionT>::Feedback> ActionClientWrapper<ActionT>::feedback()
+std::shared_ptr<const typename ActionClientWrapper<ActionT>::Feedback> ActionClientWrapper<ActionT>::getFeedback()
 {
   return feedback_ptr_;
 }

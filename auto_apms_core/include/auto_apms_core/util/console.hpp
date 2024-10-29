@@ -39,6 +39,6 @@ enum class TextColor
  * @param color Desired color of the text.
  * @return String including corresponding ANSI color escape sequences.
  */
-std::string ColoredText(const std::string& text, TextColor color);
+std::string makeColoredText(const std::string& text, TextColor color);
 
 }  // namespace auto_apms_core::util

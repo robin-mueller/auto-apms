@@ -31,22 +31,27 @@ public:
 
   ActionContext(const rclcpp::Logger& logger);
 
-  void SetUp(std::shared_ptr<GoalHandle> goal_handle_ptr);
-  void PublishFeedback();
-  void Succeed();
-  void Cancel();
-  void Abort();
+  void setUp(std::shared_ptr<GoalHandle> goal_handle_ptr);
 
-  std::shared_ptr<GoalHandle> goal_handle();
-  bool is_valid()
+  void publishFeedback();
+
+  void succeed();
+
+  void cancel();
+
+  void abort();
+
+  std::shared_ptr<GoalHandle> getGoalHandle();
+
+  bool isValid()
   {
     return (bool)goal_handle_ptr_;
   }
-  std::shared_ptr<Feedback> feedback()
+  std::shared_ptr<Feedback> getFeedbackPtr()
   {
     return feedback_ptr_;
   }
-  std::shared_ptr<Result> result()
+  std::shared_ptr<Result> getResultPtr()
   {
     return result_ptr_;
   }
@@ -64,7 +69,7 @@ ActionContext<ActionT>::ActionContext(const rclcpp::Logger& logger) : logger_{ l
 }
 
 template <class ActionT>
-void ActionContext<ActionT>::SetUp(std::shared_ptr<GoalHandle> goal_handle_ptr)
+void ActionContext<ActionT>::setUp(std::shared_ptr<GoalHandle> goal_handle_ptr)
 {
   goal_handle_ptr_ = goal_handle_ptr;
   *feedback_ptr_ = Feedback{};
@@ -72,7 +77,7 @@ void ActionContext<ActionT>::SetUp(std::shared_ptr<GoalHandle> goal_handle_ptr)
 }
 
 template <class ActionT>
-void ActionContext<ActionT>::PublishFeedback()
+void ActionContext<ActionT>::publishFeedback()
 {
   if (!goal_handle_ptr_)
   {
@@ -91,7 +96,7 @@ void ActionContext<ActionT>::PublishFeedback()
 }
 
 template <class ActionT>
-void ActionContext<ActionT>::Succeed()
+void ActionContext<ActionT>::succeed()
 {
   if (!goal_handle_ptr_)
   {
@@ -103,7 +108,7 @@ void ActionContext<ActionT>::Succeed()
 }
 
 template <class ActionT>
-void ActionContext<ActionT>::Cancel()
+void ActionContext<ActionT>::cancel()
 {
   if (!goal_handle_ptr_)
   {
@@ -115,7 +120,7 @@ void ActionContext<ActionT>::Cancel()
 }
 
 template <class ActionT>
-void ActionContext<ActionT>::Abort()
+void ActionContext<ActionT>::abort()
 {
   if (!goal_handle_ptr_)
   {
@@ -127,7 +132,7 @@ void ActionContext<ActionT>::Abort()
 }
 
 template <class ActionT>
-std::shared_ptr<typename ActionContext<ActionT>::GoalHandle> ActionContext<ActionT>::goal_handle()
+std::shared_ptr<typename ActionContext<ActionT>::GoalHandle> ActionContext<ActionT>::getGoalHandle()
 {
   if (!goal_handle_ptr_)
   {

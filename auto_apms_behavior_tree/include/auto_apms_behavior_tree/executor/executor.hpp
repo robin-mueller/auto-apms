@@ -17,10 +17,12 @@
 #include <functional>
 #include <future>
 
-#include "auto_apms_behavior_tree/executor/state_observer.hpp"
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
+#include "rclcpp/node.hpp"
+
 #include "executor_params.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "auto_apms_behavior_tree/executor/state_observer.hpp"
+#include "auto_apms_behavior_tree/definitions.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -61,45 +63,45 @@ private:
   using CloseExecutionCallback = std::function<void(ExecutionResult, const std::string&)>;
 
 public:
-  using CreateTreeCallback = std::function<BT::Tree(BT::Blackboard::Ptr)>;
+  using CreateTreeCallback = std::function<Tree(TreeBlackboardSharedPtr)>;
   using ExecutorParams = executor_params::Params;
 
   BTExecutorBase(rclcpp::Node::SharedPtr node_ptr);
 
-  std::shared_future<ExecutionResult> Start(CreateTreeCallback create_tree_cb);
+  std::shared_future<ExecutionResult> start(CreateTreeCallback create_tree_cb);
 
-  bool IsStarted();
+  bool isStarted();
 
-  ExecutionState GetExecutionState();
+  ExecutionState getExecutionState();
 
-  std::string GetTreeName();
+  std::string getTreeName();
 
 private:
-  void ExecutionRoutine(CloseExecutionCallback close_execution_cb);
+  void execution_routine_(CloseExecutionCallback close_execution_cb);
 
   /* Virtual member functions */
 
-  virtual bool OnFirstTick();
+  virtual bool onFirstTick();
 
-  virtual bool OnTick();
+  virtual bool onTick();
 
-  virtual TreeExitBehavior OnTreeExit(bool success);
+  virtual TreeExitBehavior onTreeExit(bool success);
 
-  virtual void OnClose(const ExecutionResult& result);
+  virtual void onClose(const ExecutionResult& result);
 
 public:
   /* Setter functions */
 
-  void set_control_command(ControlCommand cmd);
+  void setControlCommand(ControlCommand cmd);
 
-  void set_executor_parameters(const ExecutorParams& p);
+  void setExecutorParameters(const ExecutorParams& p);
 
   /* Getter functions */
 
   /// Get a pointer to the internal ROS2 node instance.
-  rclcpp::Node::SharedPtr node();
+  rclcpp::Node::SharedPtr getNodePtr();
 
-  /// Get the node's base interface.
+  /// Get the node's base interface. Is required to be able to register derived classes as ROS2 components.
   rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface();
 
   /**
@@ -108,17 +110,17 @@ public:
    * The global blackboard is used as a root blackboard on every tree that is being created. This means, that all
    * entries of the global blackboard are publicly available to the trees at runtime.
    */
-  BT::Blackboard::Ptr global_blackboard();
+  TreeBlackboardSharedPtr getGlobalBlackboardPtr();
 
-  ExecutorParams executor_parameters();
+  ExecutorParams getExecutorParameters();
 
-  const BTStateObserver& state_observer();
+  const BTStateObserver& getStateObserver();
 
 private:
   rclcpp::Node::SharedPtr node_ptr_;
   ExecutorParams executor_params_;
-  BT::Blackboard::Ptr global_blackboard_ptr_;
-  std::unique_ptr<BT::Tree> tree_ptr_;
+  TreeBlackboardSharedPtr global_blackboard_ptr_;
+  std::unique_ptr<Tree> tree_ptr_;
   std::unique_ptr<BT::Groot2Publisher> groot2_publisher_ptr_;
   std::unique_ptr<BTStateObserver> state_observer_ptr_;
   rclcpp::TimerBase::SharedPtr execution_timer_ptr_;
