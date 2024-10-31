@@ -12,6 +12,8 @@
   <depend>ament_index_cpp</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
+  <depend>pluginlib</depend>
   <depend>behaviortree_cpp</depend>
   <depend>auto_apms_interfaces</depend>
   <depend>yaml_cpp_vendor</depend>

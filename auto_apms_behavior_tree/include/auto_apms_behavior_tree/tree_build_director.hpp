@@ -29,4 +29,4 @@
  */
 #define AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_DIRECTOR(type)                                                          \
   PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::TreeBuildDirectorFactoryTemplate<type>,                              \
-                         auto_apms_behavior_tree::TreeBuildDirectorFactory)
+                         auto_apms_behavior_tree::TreeBuildDirectorFactoryInterface)

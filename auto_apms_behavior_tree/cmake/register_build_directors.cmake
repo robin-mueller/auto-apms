@@ -42,7 +42,7 @@ macro(auto_apms_behavior_tree_register_build_directors target)
         list(APPEND _AUTO_APMS_BEHAVIOR_TREE__BUILD_DIRECTOR_CLASS_NAMES ${_class_name})
 
         # Append to the variable that holds the content of the pluginlib xml file
-        set(_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIRECTOR_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIRECTOR_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::TreeBuildDirectorFactoryTemplate<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::TreeBuildDirectorFactory\" /></library>\n")
+        set(_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIRECTOR_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIRECTOR_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::TreeBuildDirectorFactoryTemplate<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::TreeBuildDirectorFactoryInterface\" /></library>\n")
     endforeach()
 
 endmacro()

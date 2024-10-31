@@ -83,6 +83,6 @@ private:
   const std::chrono::milliseconds command_timeout_;
 };
 
-std::string to_string(VehicleCommandClient::SendCommandResult result);
+std::string toStr(VehicleCommandClient::SendCommandResult result);
 
 }  // namespace auto_apms_px4

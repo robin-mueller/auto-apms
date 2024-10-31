@@ -44,14 +44,14 @@ public:
     std::unique_ptr<TreeResource> tree_resource_ptr;
     try
     {
-      tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::SelectByFileName(filename, package_name));
+      tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::selectByFileName(filename, package_name));
     }
     catch (const auto_apms_core::exceptions::ResourceNotFoundError& e)
     {
       return BT::NodeStatus::FAILURE;
     }
 
-    setOutput<std::string>(OUTPUT_KEY_DATA, tree_resource_ptr->WriteTreeToString());
+    setOutput<std::string>(OUTPUT_KEY_DATA, tree_resource_ptr->writeTreeToString());
     return BT::NodeStatus::SUCCESS;
   }
 };

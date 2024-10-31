@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_core/resources.hpp"
-#include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
+#pragma once
 
-namespace auto_apms_behavior_tree
+#include "rclcpp/logger.hpp"
+
+namespace auto_apms_core
 {
 
-NodePluginClassLoader::NodePluginClassLoader(const std::set<std::string>& search_packages)
-  : ClassLoader(
-        "auto_apms_behavior_tree", "auto_apms_behavior_tree::NodeRegistrationInterface", "",
-        auto_apms_core::collectPluginXMLPaths(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE, search_packages))
-{
-}
+void exposeToDebugLogging(const rclcpp::Logger& logger);
 
-}  // namespace auto_apms_behavior_tree
+}  // namespace auto_apms_core

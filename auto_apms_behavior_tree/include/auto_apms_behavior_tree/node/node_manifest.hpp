@@ -16,7 +16,6 @@
 
 #include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
 #include "node_manifest_params.hpp"
-#include "pluginlib/class_loader.hpp"
 
 namespace auto_apms_behavior_tree
 {

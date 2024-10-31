@@ -56,7 +56,7 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                                        "using auto_apms_behavior_tree_register_nodes().");
     }
 
-    RCLCPP_DEBUG(node_ptr->get_logger(), "Registering behavior tree node plugin '%s (%s)' from library %s.",
+    RCLCPP_DEBUG(node_ptr->get_logger(), "Loading behavior tree node plugin '%s (%s)' from library %s.",
                  node_name.c_str(), params.class_name.c_str(),
                  tree_node_loader.getClassLibraryPath(params.class_name).c_str());
 
@@ -104,7 +104,7 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
 TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                                               const NodeManifest& node_plugin_manifest, bool override)
 {
-  auto loader = makeNodeClassLoader();
+  NodePluginClassLoader loader;
   return registerNodePlugins(node_ptr, node_plugin_manifest, loader, override);
 }
 

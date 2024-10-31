@@ -68,9 +68,9 @@ public:
 
   BTExecutorBase(rclcpp::Node::SharedPtr node_ptr);
 
-  std::shared_future<ExecutionResult> start(CreateTreeCallback create_tree_cb);
+  std::shared_future<ExecutionResult> startExecution(CreateTreeCallback create_tree_cb);
 
-  bool isStarted();
+  bool isBusy();
 
   ExecutionState getExecutionState();
 
@@ -81,7 +81,7 @@ private:
 
   /* Virtual member functions */
 
-  virtual bool onFirstTick();
+  virtual bool onInitialTick();
 
   virtual bool onTick();
 
@@ -114,7 +114,7 @@ public:
 
   ExecutorParams getExecutorParameters();
 
-  const BTStateObserver& getStateObserver();
+  BTStateObserver& getStateObserver();
 
 private:
   rclcpp::Node::SharedPtr node_ptr_;
@@ -129,12 +129,12 @@ private:
   std::string termination_reason_;
 };
 
-std::string to_string(BTExecutorBase::ExecutionState state);
+std::string toStr(BTExecutorBase::ExecutionState state);
 
-std::string to_string(BTExecutorBase::ControlCommand cmd);
+std::string toStr(BTExecutorBase::ControlCommand cmd);
 
-std::string to_string(BTExecutorBase::TreeExitBehavior behavior);
+std::string toStr(BTExecutorBase::TreeExitBehavior behavior);
 
-std::string to_string(BTExecutorBase::ExecutionResult result);
+std::string toStr(BTExecutorBase::ExecutionResult result);
 
 }  // namespace auto_apms_behavior_tree

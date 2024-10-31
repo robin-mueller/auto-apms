@@ -15,6 +15,8 @@
 #include "auto_apms_core/util/string.hpp"
 
 #include <algorithm>
+#include <sstream>
+#include <iterator>
 
 namespace auto_apms_core::util
 {
@@ -38,6 +40,26 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
     parts.erase(std::remove(parts.begin(), parts.end(), ""), parts.end());
 
   return parts;
+}
+
+std::string makeColoredText(const std::string& text, TextColor color)
+{
+  switch (color)
+  {
+    case TextColor::GREEN:
+      return "\x1b[32m" + text + "\x1b[0m";
+    case TextColor::RED:
+      return "\x1b[31m" + text + "\x1b[0m";
+    case TextColor::YELLOW:
+      return "\x1b[33m" + text + "\x1b[0m";
+    case TextColor::BLUE:
+      return "\x1b[34m" + text + "\x1b[0m";
+    case TextColor::MAGENTA:
+      return "\x1b[35m" + text + "\x1b[0m";
+    case TextColor::CYAN:
+      return "\x1b[36m" + text + "\x1b[0m";
+  }
+  return text;
 }
 
 }  // namespace auto_apms_core::util

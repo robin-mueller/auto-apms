@@ -18,7 +18,8 @@
 namespace auto_apms_behavior_tree
 {
 
-TreeBuildDirectorBase::TreeBuildDirectorBase(rclcpp::Node::SharedPtr node_ptr) : node_ptr_(node_ptr)
+TreeBuildDirectorBase::TreeBuildDirectorBase(rclcpp::Node::SharedPtr node_ptr)
+  : node_ptr_(node_ptr), logger_{ node_ptr->get_logger() }
 {
 }
 
@@ -31,9 +32,14 @@ Tree TreeBuildDirectorBase::makeTree(TreeBlackboardSharedPtr root_bb_ptr)
   return builder_.getTree(root_bb_ptr);
 }
 
-rclcpp::Node::SharedPtr TreeBuildDirectorBase::getNode()
+rclcpp::Node::SharedPtr TreeBuildDirectorBase::getNodePtr()
 {
   return node_ptr_;
+}
+
+const rclcpp::Logger& TreeBuildDirectorBase::getLogger()
+{
+  return logger_;
 }
 
 }  // namespace auto_apms_behavior_tree

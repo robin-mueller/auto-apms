@@ -12,20 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "auto_apms_core/logging.hpp"
 
-#include "auto_apms_behavior_tree/builder/tree_build_director_base.hpp"
+#include "rclcpp/logging.hpp"
 
-namespace auto_apms_behavior_tree
+namespace auto_apms_core
 {
 
-class TreeBuildDirectorFactory
+void exposeToDebugLogging(const rclcpp::Logger& logger)
 {
-public:
-  TreeBuildDirectorFactory() = default;
-  virtual ~TreeBuildDirectorFactory() = default;
+#ifdef _AUTO_APMS_DEBUG_LOGGING
+  auto ret = rcutils_logging_set_logger_level(logger.get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
+  if (ret != RCUTILS_RET_OK)
+  {
+    RCLCPP_ERROR(logger, "Error setting severity: %s", rcutils_get_error_string().str);
+    rcutils_reset_error();
+  }
+#endif
+}
 
-  virtual std::shared_ptr<TreeBuildDirectorBase> createBuildDirector(const rclcpp::Node::SharedPtr node_ptr) = 0;
-};
-
-}  // namespace auto_apms_behavior_tree
+}  // namespace auto_apms_core

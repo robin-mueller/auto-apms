@@ -47,7 +47,7 @@ ContingencyManagerExecutor::ContingencyManagerExecutor(const rclcpp::NodeOptions
       CONTINGENCY_EVENT_TOPIC_NAME, 10, [this](std::unique_ptr<ContingencyEventMsg> msg) {
         // Publish event information to tree
         global_blackboard()->set<uint8_t>(KEY_EVENT_ID, msg->event_id);
-        global_blackboard()->set<std::string>(KEY_EVENT_NAME, to_string(*msg));
+        global_blackboard()->set<std::string>(KEY_EVENT_NAME, toStr(*msg));
 
         // Set flag to wake up the contingency manager if a critical event has been detected
         critical_event_detected_ = false;

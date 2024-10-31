@@ -26,7 +26,7 @@
 namespace auto_apms_behavior_tree
 {
 
-std::vector<TreeResource> TreeResource::CollectFromPackage(const std::string& package_name)
+std::vector<TreeResource> TreeResource::collectFromPackage(const std::string& package_name)
 {
   std::string content;
   std::string base_path;
@@ -56,7 +56,7 @@ std::vector<TreeResource> TreeResource::CollectFromPackage(const std::string& pa
   return resources;
 }
 
-TreeResource TreeResource::SelectByTreeName(const std::string& tree_name, const std::string& package_name)
+TreeResource TreeResource::selectByTreeName(const std::string& tree_name, const std::string& package_name)
 {
   std::set<std::string> search_packages;
   if (!package_name.empty())
@@ -71,7 +71,7 @@ TreeResource TreeResource::SelectByTreeName(const std::string& tree_name, const 
   std::vector<TreeResource> matching_resources;
   for (const auto& package_name : search_packages)
   {
-    for (const auto& r : CollectFromPackage(package_name))
+    for (const auto& r : collectFromPackage(package_name))
     {
       if (r.tree_names.find(tree_name) != r.tree_names.end())
       {
@@ -95,7 +95,7 @@ TreeResource TreeResource::SelectByTreeName(const std::string& tree_name, const 
   return matching_resources[0];
 }
 
-TreeResource TreeResource::SelectByFileName(const std::string& file_name, const std::string& package_name)
+TreeResource TreeResource::selectByFileName(const std::string& file_name, const std::string& package_name)
 {
   const std::string file_stem = std::filesystem::path{ file_name }.stem().string();
   std::set<std::string> search_packages;
@@ -111,7 +111,7 @@ TreeResource TreeResource::SelectByFileName(const std::string& file_name, const 
   std::vector<TreeResource> matching_resources;
   for (const auto& package_name : search_packages)
   {
-    for (const auto& r : CollectFromPackage(package_name))
+    for (const auto& r : collectFromPackage(package_name))
     {
       if (r.tree_file_stem == file_stem)
       {
@@ -135,7 +135,7 @@ TreeResource TreeResource::SelectByFileName(const std::string& file_name, const 
   return matching_resources[0];
 }
 
-TreeResource TreeResource::FromString(const std::string& identity)
+TreeResource TreeResource::fromString(const std::string& identity)
 {
   const auto tokens = auto_apms_core::util::splitString(identity, "::");
   if (tokens.size() != 3)
@@ -148,12 +148,12 @@ TreeResource TreeResource::FromString(const std::string& identity)
   const std::string& tree_name = tokens[1];
   const std::string& package_name = tokens[2];
   if (tree_name.empty())
-    return SelectByFileName(tree_file_stem, package_name);
+    return selectByFileName(tree_file_stem, package_name);
   if (tree_file_stem.empty())
-    return SelectByTreeName(tree_name, package_name);
+    return selectByTreeName(tree_name, package_name);
 
   // Full signature: Verify that <tree_name> can be found in file with stem <tree_file_stem>
-  TreeResource resource = SelectByFileName(tree_file_stem, package_name);
+  TreeResource resource = selectByFileName(tree_file_stem, package_name);
   if (resource.tree_names.find(tree_name) == resource.tree_names.end())
   {
     throw auto_apms_core::exceptions::ResourceNotFoundError(
@@ -163,7 +163,7 @@ TreeResource TreeResource::FromString(const std::string& identity)
   return resource;
 }
 
-std::string TreeResource::WriteTreeToString() const
+std::string TreeResource::writeTreeToString() const
 {
   tinyxml2::XMLDocument doc;
   if (doc.LoadFile(tree_file_path.c_str()) != tinyxml2::XMLError::XML_SUCCESS)

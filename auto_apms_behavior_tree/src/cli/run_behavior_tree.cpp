@@ -16,11 +16,12 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/executor/executor.hpp"
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "behaviortree_cpp/loggers/bt_cout_logger.h"
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "rclcpp/rclcpp.hpp"
+#include "auto_apms_core/logging.hpp"
+#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 
 sig_atomic_t volatile termination_requested = 0;
 
@@ -49,26 +50,17 @@ int main(int argc, char** argv)
     (void)sig;
     termination_requested = 1;
   });
-  auto node = std::make_shared<rclcpp::Node>("run_behavior_tree");
-
-#ifdef _AUTO_APMS_DEBUG_LOGGING
-  auto ret = rcutils_logging_set_logger_level(node->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
-  if (ret != RCUTILS_RET_OK)
-  {
-    std::cerr << "Error setting ROS2 logging severity: " << rcutils_get_error_string().str << '\n';
-    rclcpp::shutdown();
-    return EXIT_FAILURE;
-  }
-#endif
+  auto node_ptr = std::make_shared<rclcpp::Node>("run_behavior_tree");
+  auto_apms_core::exposeToDebugLogging(node_ptr->get_logger());
 
   std::unique_ptr<TreeResource> tree_resource_ptr;
   try
   {
-    tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::SelectByFileName(tree_file_name, package_name));
+    tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::selectByFileName(tree_file_name, package_name));
   }
   catch (const std::exception& e)
   {
-    RCLCPP_ERROR(node->get_logger(),
+    RCLCPP_ERROR(node_ptr->get_logger(),
                  "ERROR searching for corresponding behavior tree resource with arguments tree_file_name: '%s', "
                  "package_name: '%s': %s",
                  tree_file_name.c_str(), package_name.c_str(), e.what());
@@ -78,20 +70,20 @@ int main(int argc, char** argv)
   TreeBuilder builder;
   try
   {
-    builder.addTreeFromResource(*tree_resource_ptr, node);
+    builder.addTreeFromResource(*tree_resource_ptr, node_ptr);
   }
   catch (const std::exception& e)
   {
-    RCLCPP_ERROR(node->get_logger(), "ERROR loading behavior tree '%s' from resource %s: %s", tree_name.c_str(),
+    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR loading behavior tree '%s' from resource %s: %s", tree_name.c_str(),
                  tree_resource_ptr->tree_file_path.c_str(), e.what());
     return EXIT_FAILURE;
   }
 
-  BTExecutorBase executor{ node };
-  auto future =
-      executor.start([&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.getTree(tree_name, bb); });
+  BTExecutorBase executor{ node_ptr };
+  auto future = executor.startExecution(
+      [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.getTree(tree_name, bb); });
 
-  RCLCPP_INFO(node->get_logger(), "Executing tree with identity '%s::%s::%s'.",
+  RCLCPP_INFO(node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.",
               tree_resource_ptr->tree_file_stem.c_str(), builder.getMainTreeName().c_str(),
               tree_resource_ptr->package_name.c_str());
 
@@ -100,14 +92,14 @@ int main(int argc, char** argv)
   bool termination_started = false;
   try
   {
-    while (rclcpp::spin_until_future_complete(node, future, std::chrono::milliseconds(250)) !=
+    while (rclcpp::spin_until_future_complete(node_ptr, future, std::chrono::milliseconds(250)) !=
            rclcpp::FutureReturnCode::SUCCESS)
     {
       if (termination_started)
       {
         if (std::chrono::steady_clock::now() - termination_start > termination_timeout)
         {
-          RCLCPP_WARN(node->get_logger(), "Termination took too long. Aborted.");
+          RCLCPP_WARN(node_ptr->get_logger(), "Termination took too long. Aborted.");
           return EXIT_FAILURE;
         }
       }
@@ -116,13 +108,13 @@ int main(int argc, char** argv)
         termination_start = std::chrono::steady_clock::now();
         executor.setControlCommand(BTExecutorBase::ControlCommand::TERMINATE);
         termination_started = true;
-        RCLCPP_INFO(node->get_logger(), "Terminating tree execution...");
+        RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");
       }
     }
   }
   catch (const std::exception& e)
   {
-    RCLCPP_ERROR(node->get_logger(), "ERROR during behavior tree execution: %s", e.what());
+    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR during behavior tree execution: %s", e.what());
     return EXIT_FAILURE;
   }
 
@@ -132,7 +124,7 @@ int main(int argc, char** argv)
     throw std::logic_error("Future object is not ready.");
   }
 
-  RCLCPP_INFO(node->get_logger(), "Finished with status %s.", to_string(future.get()).c_str());
+  RCLCPP_INFO(node_ptr->get_logger(), "Finished with status %s.", toStr(future.get()).c_str());
   rclcpp::shutdown();
 
   return EXIT_SUCCESS;

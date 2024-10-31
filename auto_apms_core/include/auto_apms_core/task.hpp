@@ -16,9 +16,10 @@
 
 #include <chrono>
 
-#include "auto_apms_core/action_context.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "auto_apms_core/action_context.hpp"
+#include "auto_apms_core/logging.hpp"
 
 namespace auto_apms_core
 {
@@ -118,15 +119,7 @@ Task<ActionT>::Task(const std::string& name, rclcpp::Node::SharedPtr node_ptr,
                     std::chrono::milliseconds feedback_interval)
   : node_ptr_{ node_ptr }, action_context_ptr_{ action_context_ptr }, execution_timer_interval_{ execution_interval }
 {
-#ifdef _AUTO_APMS_DEBUG_LOGGING
-  // Set logging severity
-  auto ret = rcutils_logging_set_logger_level(node_ptr_->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
-  if (ret != RCUTILS_RET_OK)
-  {
-    RCLCPP_ERROR(node_ptr_->get_logger(), "Error setting severity: %s", rcutils_get_error_string().str);
-    rcutils_reset_error();
-  }
-#endif
+  exposeToDebugLogging(node_ptr_->get_logger());
 
   using namespace std::placeholders;
   action_server_ptr_ = rclcpp_action::create_server<ActionT>(
@@ -201,12 +194,12 @@ template <class ActionT>
 rclcpp_action::GoalResponse Task<ActionT>::handle_goal_(const rclcpp_action::GoalUUID& uuid,
                                                         std::shared_ptr<const Goal> goal_ptr)
 {
-  if (action_context_ptr_->isValid() && action_context_ptr_->getGoalHandle()->is_active())
+  if (action_context_ptr_->isValid() && action_context_ptr_->getGoalHandlePtr()->is_active())
   {
     RCLCPP_DEBUG(node_ptr_->get_logger(),
                  "Goal %s was REJECTED because another one is still executing. ID of the executing goal: %s",
                  rclcpp_action::to_string(uuid).c_str(),
-                 rclcpp_action::to_string(action_context_ptr_->getGoalHandle()->get_goal_id()).c_str());
+                 rclcpp_action::to_string(action_context_ptr_->getGoalHandlePtr()->get_goal_id()).c_str());
     return rclcpp_action::GoalResponse::REJECT;
   }
 
@@ -225,7 +218,7 @@ rclcpp_action::CancelResponse Task<ActionT>::handle_cancel_(std::shared_ptr<Goal
 {
   (void)goal_handle_ptr;
 
-  return onCancelRequest(action_context_ptr_->getGoalHandle()->get_goal(), action_context_ptr_->getResultPtr()) ?
+  return onCancelRequest(action_context_ptr_->getGoalHandlePtr()->get_goal(), action_context_ptr_->getResultPtr()) ?
              rclcpp_action::CancelResponse::ACCEPT :
              rclcpp_action::CancelResponse::REJECT;
 }
@@ -234,7 +227,7 @@ template <class ActionT>
 void Task<ActionT>::handle_accepted_(std::shared_ptr<GoalHandle> goal_handle_ptr)
 {
   action_context_ptr_->setUp(goal_handle_ptr);
-  const auto goal_ptr = action_context_ptr_->getGoalHandle()->get_goal();
+  const auto goal_ptr = action_context_ptr_->getGoalHandlePtr()->get_goal();
   setInitialResult(goal_ptr, action_context_ptr_->getResultPtr());
   (void)goal_handle_ptr;  // action_context_ptr_ takes ownership of goal handle from now on
 
@@ -251,14 +244,14 @@ template <class ActionT>
 void Task<ActionT>::execution_timer_callback_(std::shared_ptr<const Goal> goal_ptr)
 {
   // Cancel timer when goal has terminated
-  if (!action_context_ptr_->getGoalHandle()->is_active())
+  if (!action_context_ptr_->getGoalHandlePtr()->is_active())
   {
     execution_timer_ptr_->cancel();
     return;
   }
 
   // Check if canceling
-  if (action_context_ptr_->getGoalHandle()->is_canceling())
+  if (action_context_ptr_->getGoalHandlePtr()->is_canceling())
   {
     switch (cancelGoal(goal_ptr, action_context_ptr_->getResultPtr()))
     {

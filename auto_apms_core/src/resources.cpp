@@ -15,6 +15,8 @@
 #include "auto_apms_core/resources.hpp"
 
 #include "ament_index_cpp/get_resources.hpp"
+#include "ament_index_cpp/get_resource.hpp"
+#include "auto_apms_core/util/string.hpp"
 #include "auto_apms_core/exceptions.hpp"
 
 namespace auto_apms_core
@@ -33,6 +35,35 @@ std::set<std::string> getAllPackagesWithResource(const std::string& resource_typ
                                             "' were found in the installed packages.");
   }
   return all_packages;
+}
+
+std::vector<std::string> collectPluginXMLPaths(const std::string& resource_type,
+                                               const std::set<std::string>& search_packages)
+{
+  std::vector<std::string> xml_paths;
+  for (const auto& name : search_packages.empty() ? getAllPackagesWithResource(resource_type) : search_packages)
+  {
+    std::string content;
+    std::string base_path;
+    if (ament_index_cpp::get_resource(resource_type, name, content, &base_path))
+    {
+      std::vector<std::string> paths = util::splitString(content, "\n", false);
+      if (paths.size() != 1)
+      {
+        throw exceptions::ResourceNotFoundError("Invalid resource marker file installed by package: '" + name +
+                                                "' for resource type '" + resource_type +
+                                                "'. Must contain a single line with a path to the plugins.xml "
+                                                "manifest file relative to the package's install prefix.");
+      }
+      xml_paths.push_back(base_path + '/' + paths[0]);
+    }
+    else
+    {
+      throw exceptions::ResourceNotFoundError("Cannot find any resources for type '" + resource_type +
+                                              "' in install directory of package '" + name + "'.");
+    }
+  }
+  return xml_paths;
 }
 
 }  // namespace auto_apms_core

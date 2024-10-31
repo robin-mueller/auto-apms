@@ -28,7 +28,7 @@ const char SYSTEM_STATE_TOPIC_NAME[] = "system_state";
 const char LANDING_SITE_STATUS_TOPIC_NAME[] = "landing_site_status";
 const char LANDING_APPROCH_TOPIC_NAME[] = "landing_approach";
 
-inline std::string to_string(ContingencyEventMsg msg)
+inline std::string toStr(ContingencyEventMsg msg)
 {
   switch (msg.event_id)
   {
@@ -54,7 +54,7 @@ inline void RegisterContingencyEventEnum(BT::BehaviorTreeFactory& factory)
   for (int i = 0; i <= UINT8_MAX; i++)
   {
     event_msg.event_id = i;
-    if (auto str = to_string(event_msg); str != "undefined")
+    if (auto str = toStr(event_msg); str != "undefined")
     {
       factory.registerScriptingEnum(str, event_msg.event_id);
     }

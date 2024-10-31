@@ -9,7 +9,7 @@ uint8 TREE_RESULT_FAILURE=2
 
 uint8 tree_result 0
 string terminated_tree_identity
-string termination_message
+string message
 ---
 # Feedback
 string execution_state_str

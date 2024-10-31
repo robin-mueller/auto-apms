@@ -92,7 +92,7 @@ public:
 
     // Read tree template and replace placeholders
     const std::string main_tree_id = "AlternateLandingMission";
-    auto resource = auto_apms_behavior_tree::TreeResource::SelectByTreeName(main_tree_id, "auto_apms_examples");
+    auto resource = auto_apms_behavior_tree::TreeResource::selectByTreeName(main_tree_id, "auto_apms_examples");
     std::string tree_str =
         auto_apms_behavior_tree::TreeBuilder().addTreeFromFile(resource.tree_file_path).writeTreeBufferToString();
 

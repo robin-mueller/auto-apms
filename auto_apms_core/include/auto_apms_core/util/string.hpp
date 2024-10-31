@@ -19,6 +19,18 @@
 
 namespace auto_apms_core::util
 {
+/// @ingroup auto_apms_core
+/// @{
+
+enum class TextColor
+{
+  GREEN,
+  RED,
+  YELLOW,
+  BLUE,
+  MAGENTA,
+  CYAN
+};
 
 /**
  * @brief Split a string into multiple tokens using a specific delimiter string (Delimiter may consist of multiple
@@ -27,12 +39,24 @@ namespace auto_apms_core::util
  * Will preserve empty strings if @p preserve_empty is `true` (Default), so for example with the delimiter being
  * `::` passing the string `::foo` will output a vector with two elements {"", "foo"}.
  *
- * @ingroup auto_apms_core
- * @param str String to split into multiple tokens.
- * @param delimiter Delimiter string at which the string shall be split.
- * @param preserve_empty Preserve empty string tokens in the result vector.
+ * @param[in] str String to split into multiple tokens.
+ * @param[in] delimiter Delimiter string at which the string shall be split.
+ * @param[in] preserve_empty Preserve empty string tokens in the result vector.
  * @return Vector of string representing the string's tokens without the delimiter.
  */
 std::vector<std::string> splitString(const std::string& str, const std::string& delimiter, bool preserve_empty = true);
 
+/**
+ * @brief Add ANSI color escape sequences to display the text in color when printed to console.
+ *
+ * The text color will be reset to default after the text ends.
+ *
+ * @ingroup auto_apms_core
+ * @param text Text to be displayed.
+ * @param color Desired color of the text.
+ * @return String including corresponding ANSI color escape sequences.
+ */
+std::string makeColoredText(const std::string& text, TextColor color);
+
+/// @}
 }  // namespace auto_apms_core::util

@@ -27,16 +27,19 @@ public:
 
   virtual ~TreeBuildDirectorBase() = default;
 
-  virtual void setTreeIdentity(const std::string& identity) = 0;
+  virtual bool setRequestedTreeIdentity(const std::string& identity) = 0;
 
   virtual Tree makeTree(TreeBlackboardSharedPtr root_bb_ptr);
 
-  rclcpp::Node::SharedPtr getNode();
+  rclcpp::Node::SharedPtr getNodePtr();
+
+  const rclcpp::Logger& getLogger();
 
 private:
   virtual bool executeBuildSteps(TreeBuilder& builder) = 0;
 
   rclcpp::Node::SharedPtr node_ptr_;
+  const rclcpp::Logger logger_;
   TreeBuilder builder_;
 };
 

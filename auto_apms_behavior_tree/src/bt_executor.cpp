@@ -24,7 +24,7 @@
 namespace auto_apms_behavior_tree
 {
 
-std::string to_string(BTExecutorState state)
+std::string toStr(BTExecutorState state)
 {
   switch (state)
   {
@@ -42,7 +42,7 @@ std::string to_string(BTExecutorState state)
   return "undefined";
 }
 
-std::string to_string(BTExecutorCommand cmd)
+std::string toStr(BTExecutorCommand cmd)
 {
   switch (cmd)
   {
@@ -87,7 +87,7 @@ BTExecutor::BTExecutor(const std::string& name, const rclcpp::NodeOptions& optio
   auto cb = [this](const rclcpp::Parameter& p) {
     if (this->bt_state_observer_ptr_)
     {
-      this->bt_state_observer_ptr_->set_logging(p.as_bool());
+      this->bt_state_observer_ptr_->setLogging(p.as_bool());
     }
   };
   state_change_logging_param_handle_ptr_ =
@@ -239,7 +239,7 @@ void BTExecutor::LaunchHandleAccepted(
 
         auto abort_goal = [this, goal_handle_ptr, action_result_ptr](const std::string& msg) {
           action_result_ptr->termination_message =
-              msg + "\nProcess terminates from state " + to_string(GetExecutionState());
+              msg + "\nProcess terminates from state " + toStr(GetExecutionState());
           RCLCPP_ERROR(node_ptr_->get_logger(), "Behavior tree execution aborted with message: %s",
                        action_result_ptr->termination_message.c_str());
           goal_handle_ptr->abort(action_result_ptr);
@@ -255,7 +255,7 @@ void BTExecutor::LaunchHandleAccepted(
           return;
         }
 
-        auto running_action_history = bt_state_observer_ptr_->running_action_history();
+        auto running_action_history = bt_state_observer_ptr_->getRunningActionHistory();
         if (!running_action_history.empty())
         {
           // If there are multiple nodes running, join the IDs to a single string
@@ -276,7 +276,7 @@ void BTExecutor::LaunchHandleAccepted(
 
         // Publish feedback before control command is evaluated
         auto feedback_ptr = std::make_shared<LaunchExecutorAction::Feedback>();
-        feedback_ptr->execution_state_str = to_string(execution_state_before);
+        feedback_ptr->execution_state_str = toStr(execution_state_before);
         feedback_ptr->root_tree_id = current_tree_id;
         feedback_ptr->running_action_name = last_feedback_.running_action_name;
         feedback_ptr->running_action_timestamp = last_feedback_.running_action_timestamp;
@@ -311,14 +311,14 @@ void BTExecutor::LaunchHandleAccepted(
             }
             catch (const std::exception& e)
             {
-              abort_goal("Error during haltTree() on command " + to_string(control_command_) + ": " +
+              abort_goal("Error during haltTree() on command " + toStr(control_command_) + ": " +
                          std::string(e.what()));
               return;
             }
             break;
           default:
             throw std::logic_error("Handling of control command " + std::to_string(static_cast<int>(control_command_)) +
-                                   " '" + to_string(control_command_) + "' is not implemented");
+                                   " '" + toStr(control_command_) + "' is not implemented");
         }
 
         // Evaluate callback before executor ticks tree for the first time
@@ -417,7 +417,7 @@ rclcpp_action::GoalResponse BTExecutor::CommandHandleGoal(const rclcpp_action::G
       else
       {
         RCLCPP_INFO(node_ptr_->get_logger(), "Requested to RESUME while executor is in state %s. Will do anyways",
-                    to_string(execution_state).c_str());
+                    toStr(execution_state).c_str());
       }
       break;
     case CommandAction::Goal::COMMAND_PAUSE:
@@ -428,7 +428,7 @@ rclcpp_action::GoalResponse BTExecutor::CommandHandleGoal(const rclcpp_action::G
       else
       {
         RCLCPP_INFO(node_ptr_->get_logger(), "Requested to PAUSE while executor is in state %s. Will do anyways",
-                    to_string(execution_state).c_str());
+                    toStr(execution_state).c_str());
       }
       break;
     case CommandAction::Goal::COMMAND_HALT:
@@ -439,7 +439,7 @@ rclcpp_action::GoalResponse BTExecutor::CommandHandleGoal(const rclcpp_action::G
       else
       {
         RCLCPP_INFO(node_ptr_->get_logger(), "Requested to HALT while executor is in state %s. Will do anyways",
-                    to_string(execution_state).c_str());
+                    toStr(execution_state).c_str());
       }
       break;
     case CommandAction::Goal::COMMAND_TERMINATE:
@@ -506,7 +506,7 @@ void BTExecutor::CommandHandleAccepted(std::shared_ptr<rclcpp_action::ServerGoal
         if (control_command_ != BTExecutorCommand::TERMINATE && execution_timer_ptr_->is_canceled())
         {
           RCLCPP_ERROR(node_ptr_->get_logger(), "Command %s failed due to cancelation of executon timer. Aborting...",
-                       to_string(control_command_).c_str());
+                       toStr(control_command_).c_str());
           goal_handle_ptr->abort(action_result_ptr);
           command_request_timer_ptr_->cancel();
           return;

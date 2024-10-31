@@ -13,16 +13,17 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/resource/tree_build_director_class_loader.hpp"
+
 #include "auto_apms_core/resources.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-TreeBuildDirectorClassLoader makeTreeBuildDirectorClassLoader(const std::set<std::string>& search_packages)
+TreeBuildDirectorClassLoader::TreeBuildDirectorClassLoader(const std::set<std::string>& search_packages)
+  : ClassLoader("auto_apms_behavior_tree", "auto_apms_behavior_tree::TreeBuildDirectorFactoryInterface", "",
+                auto_apms_core::collectPluginXMLPaths(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILD_DIRECTOR,
+                                                      search_packages))
 {
-  return auto_apms_core::makePluginClassLoader<TreeBuildDirectorFactory>(
-      "auto_apms_behavior_tree", "auto_apms_behavior_tree::TreBuildDirectorFactory",
-      _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILD_DIRECTOR, search_packages);
 }
 
 }  // namespace auto_apms_behavior_tree

@@ -14,6 +14,7 @@
 
 #include "auto_apms_behavior_tree/tree_build_director.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
+#include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -23,16 +24,30 @@ class TreeResourceBuildDirector : public TreeBuildDirectorBase
 public:
   using TreeBuildDirectorBase::TreeBuildDirectorBase;
 
-  void setTreeIdentity(const std::string& identity) override final
+  bool setRequestedTreeIdentity(const std::string& identity) override final
   {
-    resource_ptr_ = std::make_unique<TreeResource>(TreeResource::FromString(identity));
+    try
+    {
+      resource_ptr_ = std::make_unique<TreeResource>(TreeResource::fromString(identity));
+    }
+    catch (const exceptions::ResourceIdentityFormatError& e)
+    {
+      RCLCPP_ERROR(getLogger(), "%s", e.what());
+      return false;
+    }
+    catch (const auto_apms_core::exceptions::ResourceNotFoundError& e)
+    {
+      RCLCPP_ERROR(getLogger(), "%s", e.what());
+      return false;
+    }
+    return true;
   }
 
   bool executeBuildSteps(TreeBuilder& builder) override final
   {
     if (!resource_ptr_)
       return false;
-    builder.addTreeFromResource(*resource_ptr_, getNode());
+    builder.addTreeFromResource(*resource_ptr_, getNodePtr());
     return true;
   }
 

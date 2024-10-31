@@ -30,14 +30,14 @@ public:
 
   virtual void flush() override;
 
-  void set_logging(bool active);
+  void setLogging(bool active);
 
-  const std::vector<std::string>& running_action_history();
-  const std::string& last_running_action_name();
+  const std::vector<std::string>& getRunningActionHistory() const;
+  const std::string& getLastRunningActionName() const;
 
 private:
   // Creates a bitmask that uniquely identifies a node's state change
-  uint16_t CreateStateChangeBitmask(BT::NodeStatus prev_status, BT::NodeStatus curr_status);
+  uint16_t createStateChangeBitmask(BT::NodeStatus prev_status, BT::NodeStatus curr_status);
 
   virtual void callback(BT::Duration timestamp, const BT::TreeNode& node, BT::NodeStatus prev_status,
                         BT::NodeStatus status) override;

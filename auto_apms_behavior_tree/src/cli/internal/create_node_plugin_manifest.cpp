@@ -89,12 +89,12 @@ int main(int argc, char** argv)
     all_but_build_package.erase(build_package_name);
 
     /**
-     * Trying to run makeNodeClassLoader() will work completely fine during build time for all packages EXCEPT the
+     * Trying to construct NodePluginClassLoader will work completely fine during build time for all packages EXCEPT the
      * original auto_apms_behavior_tree package. Will throw pluginlib::ClassLoaderException in this case, because the
      * pluginlib::ClassLoader constructor initially checks wether the package containing the base class is installed.
      * Therefore we MUST avoid triggering this script during build time of auto_apms_behavior_tree.
      */
-    auto loader = makeNodeClassLoader(all_but_build_package);
+    NodePluginClassLoader loader(all_but_build_package);
     for (const auto& [node_name, params] : output_manifest.getInternalMap())
     {
       try

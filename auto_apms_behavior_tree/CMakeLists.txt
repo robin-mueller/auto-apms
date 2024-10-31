@@ -8,6 +8,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(auto_apms_interfaces REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
@@ -93,6 +95,7 @@ target_compile_definitions(auto_apms_behavior_tree PRIVATE
 ament_target_dependencies(auto_apms_behavior_tree
     rclcpp
     rclcpp_action
+    rclcpp_components
     pluginlib
     behaviortree_cpp
     yaml_cpp_vendor
@@ -158,6 +161,12 @@ auto_apms_behavior_tree_register_build_directors(build_directors
 # ------------ Utility Executables --------------
 #
 
+# Executable to run a default tree executor server node
+rclcpp_components_register_node(auto_apms_behavior_tree
+    PLUGIN "auto_apms_behavior_tree::BTExecutorServer"
+    EXECUTABLE "tree_executor"
+)
+
 # Create a file containing a complete behavior tree node plugin load manifest
 add_executable(create_node_plugin_manifest "src/cli/internal/create_node_plugin_manifest.cpp")
 target_link_libraries(create_node_plugin_manifest auto_apms_behavior_tree)
@@ -200,6 +209,7 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
     rclcpp
     rclcpp_action
+    rclcpp_components
     pluginlib
     behaviortree_cpp
     yaml_cpp_vendor

@@ -19,7 +19,7 @@
 namespace auto_apms_px4
 {
 
-std::string to_string(VehicleCommandClient::SendCommandResult result)
+std::string toStr(VehicleCommandClient::SendCommandResult result)
 {
   switch (result)
   {
@@ -118,7 +118,7 @@ VehicleCommandClient::SyncSendVehicleCommand(const px4_msgs::msg::VehicleCommand
     RCLCPP_WARN(logger_, "SyncSendVehicleCommand: Command %i - timeout, no ack received", cmd.command);
   }
 
-  RCLCPP_DEBUG(logger_, "SyncSendVehicleCommand: Command %i - returned %s", cmd.command, to_string(result).c_str());
+  RCLCPP_DEBUG(logger_, "SyncSendVehicleCommand: Command %i - returned %s", cmd.command, toStr(result).c_str());
 
   return result;
 }

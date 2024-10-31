@@ -16,9 +16,10 @@
 #include <fstream>
 #include <iostream>
 
-#include "auto_apms_behavior_tree/node/node_manifest.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 #include "class_loader/multi_library_class_loader.hpp"
+#include "auto_apms_core/logging.hpp"
+#include "auto_apms_behavior_tree/node/node_manifest.hpp"
 
 using namespace auto_apms_behavior_tree;
 
@@ -55,16 +56,7 @@ int main(int argc, char** argv)
 
     rclcpp::init(argc, argv);
     auto node_ptr = std::make_shared<rclcpp::Node>("_generate_node_model_temp_node");
-
-#ifdef _AUTO_APMS_DEBUG_LOGGING
-    // Set logging severity
-    auto ret = rcutils_logging_set_logger_level(node_ptr->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
-    if (ret != RCUTILS_RET_OK)
-    {
-      RCLCPP_ERROR(node_ptr->get_logger(), "Error setting severity: %s", rcutils_get_error_string().str);
-      rcutils_reset_error();
-    }
-#endif
+    auto_apms_core::exposeToDebugLogging(node_ptr->get_logger());
 
     // Create manifest
     BT::BehaviorTreeFactory factory;

@@ -15,7 +15,7 @@
 #include <signal.h>
 
 #include "auto_apms_behavior_tree/executor/client.hpp"
-#include "auto_apms_core/util/console.hpp"
+#include "auto_apms_core/util/string.hpp"
 
 sig_atomic_t volatile termination_requested = 0;
 

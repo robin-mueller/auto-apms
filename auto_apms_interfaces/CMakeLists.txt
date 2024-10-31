@@ -21,7 +21,9 @@ set(ACTION_SOURCES
     "action/RTL.action"
     "action/Takeoff.action"
     "action/Mission.action"
-    "action/RunBehaviorTree.action"
+    "action/StartTreeExecutor.action"
+    "action/CommandTreeExecutor.action"
+
     "action/LaunchBTExecutor.action"
     "action/BTExecutorCommand.action"
 )

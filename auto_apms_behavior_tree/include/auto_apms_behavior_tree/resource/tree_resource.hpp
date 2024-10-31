@@ -30,7 +30,7 @@ namespace auto_apms_behavior_tree
 struct TreeResource
 {
 private:
-  // The default constructor is private. To create an instance, use one of the static construction methods instead.
+  // The default constructor is private. To create an instance, use one of the static factory methods instead.
   TreeResource() = default;
 
 public:
@@ -45,11 +45,11 @@ public:
    * @param package_name Name of the package to search for resources.
    * @return Collection of all resources found in @p package_name.
    */
-  static std::vector<TreeResource> CollectFromPackage(const std::string& package_name);
+  static std::vector<TreeResource> collectFromPackage(const std::string& package_name);
 
-  static TreeResource SelectByTreeName(const std::string& tree_name, const std::string& package_name = "");
+  static TreeResource selectByTreeName(const std::string& tree_name, const std::string& package_name = "");
 
-  static TreeResource SelectByFileName(const std::string& file_name, const std::string& package_name = "");
+  static TreeResource selectByFileName(const std::string& file_name, const std::string& package_name = "");
 
   /**
    * @brief Find a behavior tree resource using an identity string.
@@ -84,9 +84,9 @@ public:
    * @throws auto_apms_core::exceptions::ResourceNotFoundError if the resource cannot be found using the given
    * identity string.
    */
-  static TreeResource FromString(const std::string& identity);
+  static TreeResource fromString(const std::string& identity);
 
-  std::string WriteTreeToString() const;
+  std::string writeTreeToString() const;
 };
 
 }  // namespace auto_apms_behavior_tree

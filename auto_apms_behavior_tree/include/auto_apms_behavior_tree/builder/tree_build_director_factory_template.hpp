@@ -14,13 +14,13 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_build_director_factory.hpp"
+#include "auto_apms_behavior_tree/builder/tree_build_director_factory_interface.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 template <typename T>
-class TreeBuildDirectorFactoryTemplate : public TreeBuildDirectorFactory
+class TreeBuildDirectorFactoryTemplate : public TreeBuildDirectorFactoryInterface
 {
 public:
   TreeBuildDirectorFactoryTemplate() = default;
@@ -29,7 +29,7 @@ public:
   std::shared_ptr<TreeBuildDirectorBase> createBuildDirector(const rclcpp::Node::SharedPtr node_ptr)
   {
     static_assert(std::is_convertible_v<T*, TreeBuildDirectorBase*>,
-                  "Cannot convert T* to TreeBuildDirectorBase*. Did you forget to specify the public keyword when "
+                  "Cannot convert T* to TreeBuildDirectorBase*. Did you forget to specify the keyword 'public' when "
                   "inheriting? --> class T : public TreeBuildDirectorBase");
     return std::make_shared<T>(node_ptr);
   }

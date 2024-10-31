@@ -16,6 +16,8 @@
 
 #include <chrono>
 
+#include "auto_apms_core/logging.hpp"
+
 namespace auto_apms_behavior_tree
 {
 
@@ -25,12 +27,13 @@ BTExecutorBase::BTExecutorBase(rclcpp::Node::SharedPtr node_ptr)
   , control_command_{ ControlCommand::RUN }
   , execution_stopped_{ true }
 {
+  auto_apms_core::exposeToDebugLogging(node_ptr_->get_logger());
 }
 
-std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::start(CreateTreeCallback create_tree_cb)
+std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::startExecution(CreateTreeCallback create_tree_cb)
 {
   auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
-  if (isStarted())
+  if (isBusy())
   {
     RCLCPP_WARN(node_ptr_->get_logger(), "Rejecting execution request, because executor is still busy.");
     promise_ptr->set_value(ExecutionResult::START_REJECTED);
@@ -63,10 +66,11 @@ std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::start(Create
   // Create promise for asnychronous execution
   CloseExecutionCallback close_execution_cb = [this, promise_ptr](ExecutionResult result, const std::string& msg) {
     RCLCPP_DEBUG(node_ptr_->get_logger(), "Closing behavior tree execution from state %s. Reason: %s.",
-                 to_string(getExecutionState()).c_str(), msg.c_str());
-    execution_timer_ptr_->cancel();
+                 toStr(getExecutionState()).c_str(), msg.c_str());
+    onClose(result);  // is evaluated before the timer is cancelled, which means the execution state has not changed yet
+                      // during the callback and can be evaluated to inspect the terminal state.
     promise_ptr->set_value(result);
-    onClose(result);
+    execution_timer_ptr_->cancel();
   };
 
   execution_timer_ptr_ =
@@ -76,14 +80,14 @@ std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::start(Create
   return promise_ptr->get_future();
 }
 
-bool BTExecutorBase::isStarted()
+bool BTExecutorBase::isBusy()
 {
   return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled();
 }
 
 BTExecutorBase::ExecutionState BTExecutorBase::getExecutionState()
 {
-  if (isStarted())
+  if (isBusy())
   {
     if (!tree_ptr_)
       throw std::logic_error("tree_ptr_ cannot be nullptr when execution is started.");
@@ -106,32 +110,31 @@ std::string BTExecutorBase::getTreeName()
 
 void BTExecutorBase::execution_routine_(CloseExecutionCallback close_execution_cb)
 {
+  const ExecutionState execution_state_before = getExecutionState();  // Freeze execution state before anything else
+
   /* Evaluate control command */
 
-  const ExecutionState execution_state_before = getExecutionState();  // Freeze current execution state
   execution_stopped_ = false;
+  bool do_on_tick = true;
   switch (control_command_)
   {
     case ControlCommand::PAUSE:
       execution_stopped_ = true;
       return;
     case ControlCommand::RUN:
-      // ExecutionState::IDLE means that tree will be ticked for the first time in this iteration
       if (execution_state_before == ExecutionState::STARTING)
       {
-        // Evaluate onFirstTick callback before executor ticks tree for the first time
-        if (onFirstTick())
+        // Evaluate initial tick callback before ticking for the first time since the timer has been created
+        if (!onInitialTick())
         {
-          break;
-        }
-        else
-        {
-          termination_reason_ = "onFirstTick() returned false";
+          do_on_tick = false;
+          termination_reason_ = "onInitialTick() returned false";
         }
       }
-      else
+      // Evaluate tick callback everytime before actually ticking.
+      // This also happens the first time except if onInitialTick() returned false
+      if (do_on_tick)
       {
-        // Evaluate onTick callback everytime before ticking except for the first time
         if (onTick())
         {
           break;
@@ -164,19 +167,19 @@ void BTExecutorBase::execution_routine_(CloseExecutionCallback close_execution_c
         }
         catch (const std::exception& e)
         {
-          close_execution_cb(ExecutionResult::ERROR, "Error during haltTree() on command " +
-                                                         to_string(control_command_) + ": " + std::string(e.what()));
+          close_execution_cb(ExecutionResult::ERROR, "Error during haltTree() on command " + toStr(control_command_) +
+                                                         ": " + std::string(e.what()));
         }
       }
       return;
     default:
       throw std::logic_error("Handling of control command " + std::to_string(static_cast<int>(control_command_)) +
-                             " '" + to_string(control_command_) + "' is not implemented.");
+                             " '" + toStr(control_command_) + "' is not implemented.");
   }
 
-  /* Tick the BT::Tree instance */
+  /* Tick the tree instance */
 
-  state_observer_ptr_->set_logging(executor_params_.state_change_logger);
+  state_observer_ptr_->setLogging(executor_params_.state_change_logger);
   BT::NodeStatus bt_status = BT::NodeStatus::IDLE;
   try
   {
@@ -225,7 +228,7 @@ void BTExecutorBase::execution_routine_(CloseExecutionCallback close_execution_c
   throw std::logic_error("Execution routine is not intended to proceed to this statement.");
 }
 
-bool BTExecutorBase::onFirstTick()
+bool BTExecutorBase::onInitialTick()
 {
   return true;
 }
@@ -274,12 +277,12 @@ BTExecutorBase::ExecutorParams BTExecutorBase::getExecutorParameters()
   return executor_params_;
 }
 
-const BTStateObserver& BTExecutorBase::getStateObserver()
+BTStateObserver& BTExecutorBase::getStateObserver()
 {
   return *state_observer_ptr_;
 }
 
-std::string to_string(BTExecutorBase::ExecutionState state)
+std::string toStr(BTExecutorBase::ExecutionState state)
 {
   switch (state)
   {
@@ -297,7 +300,7 @@ std::string to_string(BTExecutorBase::ExecutionState state)
   return "undefined";
 }
 
-std::string to_string(BTExecutorBase::ControlCommand cmd)
+std::string toStr(BTExecutorBase::ControlCommand cmd)
 {
   switch (cmd)
   {
@@ -313,7 +316,7 @@ std::string to_string(BTExecutorBase::ControlCommand cmd)
   return "undefined";
 }
 
-std::string to_string(BTExecutorBase::TreeExitBehavior behavior)
+std::string toStr(BTExecutorBase::TreeExitBehavior behavior)
 {
   switch (behavior)
   {
@@ -325,7 +328,7 @@ std::string to_string(BTExecutorBase::TreeExitBehavior behavior)
   return "undefined";
 }
 
-std::string to_string(BTExecutorBase::ExecutionResult result)
+std::string toStr(BTExecutorBase::ExecutionResult result)
 {
   switch (result)
   {

@@ -14,31 +14,5 @@
 
 #pragma once
 
-#include <string>
-
-namespace auto_apms_core::util
-{
-
-enum class TextColor
-{
-  GREEN,
-  RED,
-  YELLOW,
-  BLUE,
-  MAGENTA,
-  CYAN
-};
-
-/**
- * @brief Add ANSI color escape sequences to display the text in color when printed to console.
- *
- * The text color will be reset to default after the text ends.
- *
- * @ingroup auto_apms_core
- * @param text Text to be displayed.
- * @param color Desired color of the text.
- * @return String including corresponding ANSI color escape sequences.
- */
-std::string makeColoredText(const std::string& text, TextColor color);
-
-}  // namespace auto_apms_core::util
+#include "rcpputils/join.hpp"
+#include "auto_apms_core/util/string.hpp"

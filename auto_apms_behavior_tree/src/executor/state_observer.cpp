@@ -33,22 +33,22 @@ void BTStateObserver::flush()
   running_action_history_.clear();
 }
 
-void BTStateObserver::set_logging(bool active)
+void BTStateObserver::setLogging(bool active)
 {
   logging_active_ = active;
 }
 
-const std::vector<std::string>& BTStateObserver::running_action_history()
+const std::vector<std::string>& BTStateObserver::getRunningActionHistory() const
 {
   return running_action_history_;
 }
 
-const std::string& BTStateObserver::last_running_action_name()
+const std::string& BTStateObserver::getLastRunningActionName() const
 {
   return last_running_action_name_;
 }
 
-uint16_t BTStateObserver::CreateStateChangeBitmask(BT::NodeStatus prev_status, BT::NodeStatus curr_status)
+uint16_t BTStateObserver::createStateChangeBitmask(BT::NodeStatus prev_status, BT::NodeStatus curr_status)
 {
   return static_cast<uint16_t>(prev_status) << 8 | static_cast<uint16_t>(curr_status);
 }
@@ -69,7 +69,7 @@ void BTStateObserver::callback(BT::Duration timestamp, const BT::TreeNode& node,
    */
   if (!logging_active_)
     return;
-  const auto key = std::make_pair(node.UID(), CreateStateChangeBitmask(prev_status, status));
+  const auto key = std::make_pair(node.UID(), createStateChangeBitmask(prev_status, status));
   const bool is_first_log = last_log_map_.count(key) == 0;
 
   if (is_first_log || timestamp - last_log_map_[key] > max_logging_rate_)

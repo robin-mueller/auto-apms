@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/executor/client.hpp"
-#include "auto_apms_core/util/console.hpp"
+#include "auto_apms_core/util/string.hpp"
 
 using namespace auto_apms_core::util;
 using namespace auto_apms_behavior_tree;
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 
   // Register all behavior trees that are defined in the file with the executor
   if (bt_executor_client.UploadBehaviorTree(
-          TreeResource::SelectByFileName(tree_file_name, package_name).WriteTreeToString(), main_tree_id))
+          TreeResource::selectByFileName(tree_file_name, package_name).writeTreeToString(), main_tree_id))
   {
     std::cout << " --> " << makeColoredText("Registration successful", TextColor::GREEN) << std::endl;
   }
