@@ -22,7 +22,7 @@ namespace auto_apms_behavior_tree
 
 template <typename T,
           bool requires_ros_node_params =
-              std::is_constructible<T, const std::string&, const BT::NodeConfig&, const RosNodeParams&>::value>
+              std::is_constructible<T, const std::string&, const BT::NodeConfig&, const RosNodeContext&>::value>
 class NodeRegistrationFactory : public NodeRegistrationInterface
 {
 public:
@@ -35,14 +35,14 @@ public:
   }
 
   void registerWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory, const std::string& registration_name,
-                                       const RosNodeParams* const params_ptr = nullptr) const override
+                                       const RosNodeContext* const params_ptr = nullptr) const override
   {
     if constexpr (requires_ros_node_params)
     {
       if (!params_ptr)
       {
         throw std::runtime_error(boost::core::demangle(typeid(T).name()) +
-                                 " requires a valid RosNodeParams object to be passed via argument 'params_ptr'.");
+                                 " requires a valid RosNodeContext object to be passed via argument 'params_ptr'.");
       }
       factory.registerNodeType<T>(registration_name, *params_ptr);
     }

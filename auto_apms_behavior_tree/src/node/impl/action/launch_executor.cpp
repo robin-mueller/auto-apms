@@ -39,7 +39,7 @@ public:
       case ActionType::Result::TREE_RESULT_FAILURE:
         return BT::NodeStatus::FAILURE;
       default:
-        throw exceptions::RosNodeError(name() + ": Received illegal tree result " +
+        throw exceptions::RosNodeError(getFullName() + " - Received illegal tree result " +
                                        std::to_string(wr.result->tree_result));
     }
   }
@@ -49,7 +49,7 @@ public:
     if (feedback->running_action_timestamp > last_running_node_timestamp_)
     {
       last_running_node_timestamp_ = feedback->running_action_timestamp;
-      RCLCPP_DEBUG(logger(), "%s - Tree %s is running '%s'", name().c_str(), feedback->root_tree_id.c_str(),
+      RCLCPP_DEBUG(logger_, "%s - Tree %s is running '%s'", getFullName().c_str(), feedback->root_tree_id.c_str(),
                    feedback->running_action_name.c_str());
     }
     return BT::NodeStatus::RUNNING;

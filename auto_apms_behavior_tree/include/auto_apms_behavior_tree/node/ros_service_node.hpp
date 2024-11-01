@@ -15,12 +15,13 @@
 #pragma once
 
 #include <memory>
-#include <rclcpp/allocator/allocator_common.hpp>
-#include <rclcpp/executors.hpp>
 #include <string>
 
+#include "rclcpp/executors.hpp"
+#include "behaviortree_cpp/action_node.h"
+
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node/ros_params.hpp"
+#include "auto_apms_behavior_tree/node/ros_node_context.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -65,22 +66,33 @@ inline const char* toStr(const ServiceNodeErrorCode& err)
  * The name of the service will be determined as follows:
  *
  * 1. If a value is passes in the BT::InputPort "service_name", use that
- * 2. Otherwise, use the value in RosNodeParams::default_port_name.
+ * 2. Otherwise, use the value in RosNodeContext::default_port_name.
  */
 template <class ServiceT>
 class RosServiceNode : public BT::ActionNodeBase
 {
-public:
   using ServiceClient = typename rclcpp::Client<ServiceT>;
   using ServiceClientPtr = std::shared_ptr<ServiceClient>;
+
+  struct ServiceClientInstance
+  {
+    ServiceClientInstance(std::shared_ptr<rclcpp::Node> node, const std::string& service_name);
+
+    ServiceClientPtr service_client;
+    rclcpp::CallbackGroup::SharedPtr callback_group;
+    rclcpp::executors::SingleThreadedExecutor callback_executor;
+  };
+
+  using ClientsRegistry = std::unordered_map<std::string, std::weak_ptr<ServiceClientInstance>>;
+
+public:
+  using ServiceType = ServiceT;
   using Request = typename ServiceT::Request;
   using Response = typename ServiceT::Response;
+  using Config = BT::NodeConfig;
+  using Context = RosNodeContext;
 
-  /** To register this class into the factory, use:
-   *
-   *    factory.registerNodeType<>(node_name, params);
-   */
-  explicit RosServiceNode(const std::string& instance_name, const BT::NodeConfig& conf, const RosNodeParams& params);
+  explicit RosServiceNode(const std::string& instance_name, const Config& config, const Context& context);
 
   virtual ~RosServiceNode() = default;
 
@@ -132,61 +144,27 @@ public:
    */
   virtual BT::NodeStatus onFailure(ServiceNodeErrorCode error);
 
+  std::string getFullName() const;
+
 protected:
-  struct ServiceClientInstance
-  {
-    ServiceClientInstance(std::shared_ptr<rclcpp::Node> node, const std::string& service_name);
+  const Context& getRosContext();
 
-    ServiceClientPtr service_client;
-    rclcpp::CallbackGroup::SharedPtr callback_group;
-    rclcpp::executors::SingleThreadedExecutor callback_executor;
-  };
-
-  static std::mutex& getMutex()
-  {
-    static std::mutex action_client_mutex;
-    return action_client_mutex;
-  }
+  static std::mutex& getMutex();
 
   // method to set the service name programmatically
   void setServiceName(const std::string& service_name);
 
-  rclcpp::Logger logger()
-  {
-    if (auto node = node_.lock())
-    {
-      return node->get_logger();
-    }
-    return rclcpp::get_logger("RosServiceNode");
-  }
-
-  rclcpp::Time now()
-  {
-    if (auto node = node_.lock())
-    {
-      return node->now();
-    }
-    return rclcpp::Clock(RCL_ROS_TIME).now();
-  }
-
-  using ClientsRegistry = std::unordered_map<std::string, std::weak_ptr<ServiceClientInstance>>;
   // contains the fully-qualified name of the node and the name of the client
-  static ClientsRegistry& getRegistry()
-  {
-    static ClientsRegistry clients_registry;
-    return clients_registry;
-  }
+  static ClientsRegistry& getRegistry();
 
-  std::weak_ptr<rclcpp::Node> node_;
-  std::string service_name_;
-  bool service_name_should_be_checked_ = false;
-  const std::chrono::milliseconds service_timeout_;
-  const std::chrono::milliseconds wait_for_service_timeout_;
+  const rclcpp::Logger logger_;
 
 private:
+  const Context context_;
+  std::string service_name_;
+  bool service_name_should_be_checked_ = false;
   std::shared_ptr<ServiceClientInstance> srv_instance_;
   std::shared_future<typename Response::SharedPtr> future_response_;
-
   rclcpp::Time time_request_sent_;
   BT::NodeStatus on_feedback_state_change_;
   bool response_received_;
@@ -199,27 +177,24 @@ private:
 //---------------------- DEFINITIONS -----------------------------
 //----------------------------------------------------------------
 
-template <class T>
-inline RosServiceNode<T>::ServiceClientInstance::ServiceClientInstance(std::shared_ptr<rclcpp::Node> node,
-                                                                       const std::string& service_name)
+template <class ServiceT>
+inline RosServiceNode<ServiceT>::ServiceClientInstance::ServiceClientInstance(std::shared_ptr<rclcpp::Node> node,
+                                                                              const std::string& service_name)
 {
   callback_group = node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
   callback_executor.add_callback_group(callback_group, node->get_node_base_interface());
 
-  service_client = node->create_client<T>(service_name, rmw_qos_profile_services_default, callback_group);
+  service_client = node->create_client<ServiceT>(service_name, rmw_qos_profile_services_default, callback_group);
 }
 
-template <class T>
-inline RosServiceNode<T>::RosServiceNode(const std::string& instance_name, const BT::NodeConfig& conf,
-                                         const RosNodeParams& params)
-  : BT::ActionNodeBase(instance_name, conf)
-  , node_(params.nh)
-  , service_timeout_(params.request_timeout)
-  , wait_for_service_timeout_(params.wait_for_server_timeout)
+template <class ServiceT>
+inline RosServiceNode<ServiceT>::RosServiceNode(const std::string& instance_name, const Config& config,
+                                                const Context& context)
+  : BT::ActionNodeBase(instance_name, config), logger_(context.getLogger()), context_(context)
 {
   // check port remapping
-  auto portIt = config().input_ports.find("service_name");
-  if (portIt != config().input_ports.end())
+  auto portIt = config.input_ports.find("service_name");
+  if (portIt != config.input_ports.end())
   {
     const std::string& bb_service_name = portIt->second;
 
@@ -235,27 +210,27 @@ inline RosServiceNode<T>::RosServiceNode(const std::string& instance_name, const
     }
   }
   // no port value or it is empty. Use the default port value
-  if (!srv_instance_ && !params.default_port_name.empty())
+  if (!srv_instance_ && !context.default_port_name.empty())
   {
-    createClient(params.default_port_name);
+    createClient(context.default_port_name);
   }
 }
 
-template <class T>
-inline bool RosServiceNode<T>::createClient(const std::string& service_name)
+template <class ServiceT>
+inline bool RosServiceNode<ServiceT>::createClient(const std::string& service_name)
 {
-  if (service_name.empty() || service_name == "__default__placeholder__")
+  if (service_name.empty())
   {
-    throw exceptions::RosNodeError("service_name is empty or invalid");
+    throw exceptions::RosNodeError(getFullName() + " - Argument service_name is empty when trying to create a client.");
   }
 
   std::unique_lock lk(getMutex());
-  auto node = node_.lock();
+  auto node = getRosContext().nh.lock();
   if (!node)
   {
-    throw exceptions::RosNodeError(
-        "The ROS node went out of scope. RosNodeParams doesn't take the "
-        "ownership of the node.");
+    throw exceptions::RosNodeError(getFullName() +
+                                   " - The shared pointer to the ROS node went out of scope. The tree node doesn't "
+                                   "take the ownership of the node.");
   }
   auto client_key = std::string(node->get_fully_qualified_name()) + "/" + service_name;
 
@@ -265,8 +240,7 @@ inline bool RosServiceNode<T>::createClient(const std::string& service_name)
   {
     srv_instance_ = std::make_shared<ServiceClientInstance>(node, service_name);
     registry.insert({ client_key, srv_instance_ });
-
-    RCLCPP_INFO(logger(), "Node [%s] created service client [%s]", name().c_str(), service_name.c_str());
+    RCLCPP_DEBUG(logger_, "%s - Created client for service '%s'.", getFullName().c_str(), service_name.c_str());
   }
   else
   {
@@ -274,23 +248,16 @@ inline bool RosServiceNode<T>::createClient(const std::string& service_name)
   }
   service_name_ = service_name;
 
-  bool found = srv_instance_->service_client->wait_for_service(wait_for_service_timeout_);
+  bool found = srv_instance_->service_client->wait_for_service(getRosContext().wait_for_server_timeout);
   if (!found)
   {
-    RCLCPP_ERROR(logger(), "%s: Service with name '%s' is not reachable.", name().c_str(), service_name_.c_str());
+    RCLCPP_WARN(logger_, "%s - Service with name '%s' is not reachable.", getFullName().c_str(), service_name_.c_str());
   }
   return found;
 }
 
-template <class T>
-inline void RosServiceNode<T>::setServiceName(const std::string& service_name)
-{
-  service_name_ = service_name;
-  createClient(service_name);
-}
-
-template <class T>
-inline BT::NodeStatus RosServiceNode<T>::tick()
+template <class ServiceT>
+inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
 {
   if (!rclcpp::ok())
   {
@@ -313,17 +280,15 @@ inline BT::NodeStatus RosServiceNode<T>::tick()
 
   if (!srv_instance_)
   {
-    throw exceptions::RosNodeError(
-        "RosServiceNode: no service client was specified neither as "
-        "default or in the ports");
+    throw exceptions::RosNodeError(getFullName() +
+                                   " - You must specify a service name either by using a default value or by "
+                                   "passing a value to the corresponding dynamic input port.");
   }
 
-  auto CheckStatus = [](BT::NodeStatus status) {
+  auto check_status = [this](BT::NodeStatus status) {
     if (!isStatusCompleted(status))
     {
-      throw exceptions::RosNodeError(
-          "RosServiceNode: the callback must return either SUCCESS nor "
-          "FAILURE");
+      throw exceptions::RosNodeError(getFullName() + " - The callback must return either SUCCESS or FAILURE.");
     }
     return status;
   };
@@ -342,7 +307,7 @@ inline BT::NodeStatus RosServiceNode<T>::tick()
 
     if (!setRequest(request))
     {
-      return CheckStatus(onFailure(INVALID_REQUEST));
+      return check_status(onFailure(INVALID_REQUEST));
     }
 
     // Check if server is ready
@@ -352,7 +317,7 @@ inline BT::NodeStatus RosServiceNode<T>::tick()
     }
 
     future_response_ = srv_instance_->service_client->async_send_request(request).share();
-    time_request_sent_ = now();
+    time_request_sent_ = getRosContext().getCurrentTime();
 
     return BT::NodeStatus::RUNNING;
   }
@@ -365,15 +330,15 @@ inline BT::NodeStatus RosServiceNode<T>::tick()
     if (!response_received_)
     {
       auto const nodelay = std::chrono::milliseconds(0);
-      auto const timeout = rclcpp::Duration::from_seconds(double(service_timeout_.count()) / 1000);
+      auto const timeout = rclcpp::Duration::from_seconds(double(getRosContext().request_timeout.count()) / 1000);
 
       auto ret = srv_instance_->callback_executor.spin_until_future_complete(future_response_, nodelay);
 
       if (ret != rclcpp::FutureReturnCode::SUCCESS)
       {
-        if ((now() - time_request_sent_) > timeout)
+        if ((getRosContext().getCurrentTime() - time_request_sent_) > timeout)
         {
-          return CheckStatus(onFailure(SERVICE_TIMEOUT));
+          return check_status(onFailure(SERVICE_TIMEOUT));
         }
         else
         {
@@ -388,19 +353,19 @@ inline BT::NodeStatus RosServiceNode<T>::tick()
 
         if (!response_)
         {
-          throw exceptions::RosNodeError("Request was rejected by the service");
+          throw exceptions::RosNodeError(getFullName() + " - Request was rejected by the service.");
         }
       }
     }
 
     // SECOND case: response received
-    return CheckStatus(onResponseReceived(response_));
+    return check_status(onResponseReceived(response_));
   }
   return BT::NodeStatus::RUNNING;
 }
 
-template <class T>
-inline void RosServiceNode<T>::halt()
+template <class ServiceT>
+inline void RosServiceNode<ServiceT>::halt()
 {
   if (status() == BT::NodeStatus::RUNNING)
   {
@@ -423,10 +388,47 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::onResponseReceived(const typenam
 template <class ServiceT>
 inline BT::NodeStatus RosServiceNode<ServiceT>::onFailure(ServiceNodeErrorCode error)
 {
-  const std::string node_name =
-      name() == registrationName() ? registrationName() : name() + "(" + registrationName() + ")";
-  RCLCPP_ERROR(logger(), "%s - Error %d: %s", node_name.c_str(), error, toStr(error));
+  RCLCPP_ERROR(logger_, "%s - Error %d: %s", getFullName().c_str(), error, toStr(error));
   return BT::NodeStatus::FAILURE;
+}
+
+template <class ServiceT>
+inline std::string RosServiceNode<ServiceT>::getFullName() const
+{
+  // NOTE: registrationName() is empty during construction as this member is first set after the factory constructed the
+  // object
+  if (registrationName().empty())
+    return name();
+  if (this->name() == this->registrationName())
+    return this->name();
+  return this->name() + " (Type: " + this->registrationName() + ")";
+}
+
+template <class ServiceT>
+inline const typename RosServiceNode<ServiceT>::Context& RosServiceNode<ServiceT>::getRosContext()
+{
+  return context_;
+}
+
+template <class ServiceT>
+inline std::mutex& RosServiceNode<ServiceT>::getMutex()
+{
+  static std::mutex action_client_mutex;
+  return action_client_mutex;
+}
+
+template <class ServiceT>
+inline void RosServiceNode<ServiceT>::setServiceName(const std::string& service_name)
+{
+  service_name_ = service_name;
+  createClient(service_name);
+}
+
+template <class ServiceT>
+inline typename RosServiceNode<ServiceT>::ClientsRegistry& RosServiceNode<ServiceT>::getRegistry()
+{
+  static ClientsRegistry clients_registry;
+  return clients_registry;
 }
 
 }  // namespace auto_apms_behavior_tree

@@ -50,7 +50,7 @@ public:
   /**
    * @brief Load behavior tree node plugins and register with behavior tree factory.
    *
-   * @param[in] node_ptr ROS2 node to pass to RosNodeParams.
+   * @param[in] node_ptr ROS2 node to pass to RosNodeContext.
    * @param[in] node_plugin_manifest Parameters for locating and configuring the behavior tree node plugins.
    * @param[in] tree_node_loader Reference to loader for behavior tree node plugin classes.
    * @param[in] override If @p node_plugin_manifest specifies nodes that have already been registered, unregister the

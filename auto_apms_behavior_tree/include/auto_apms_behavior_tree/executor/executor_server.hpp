@@ -18,14 +18,14 @@
 #include "auto_apms_core/action_context.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
-#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/executor/executor_base.hpp"
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
 #include "auto_apms_behavior_tree/resource/tree_build_director_class_loader.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class BTExecutorServer : public BTExecutorBase
+class TreeExecutorServer : public TreeExecutorBase
 {
 public:
   using StartActionContext = auto_apms_core::ActionContext<auto_apms_interfaces::action::StartTreeExecutor>;
@@ -39,17 +39,17 @@ public:
   inline static const std::string DEFAULT_NODE_NAME = "tree_executor";
 
   /**
-   * @brief Constructor for BTExecutorServer with custom name.
+   * @brief Constructor for TreeExecutorServer with custom name.
    * @param[in] name Name of the rclcpp::Node instance.
    * @param[in] options Options forwarded to rclcpp::Node constructor.
    */
-  BTExecutorServer(const std::string& name, const rclcpp::NodeOptions& options);
+  TreeExecutorServer(const std::string& name, const rclcpp::NodeOptions& options);
 
   /**
-   * @brief Constructor for BTExecutorServer with default name BTExecutorServer::DEFAULT_NODE_NAME.
+   * @brief Constructor for TreeExecutorServer with default name TreeExecutorServer::DEFAULT_NODE_NAME.
    * @param[in] options Options forwarded to rclcpp::Node constructor.
    */
-  BTExecutorServer(const rclcpp::NodeOptions& options);
+  TreeExecutorServer(const rclcpp::NodeOptions& options);
 
   CreateTreeCallback makeCreateTreeCallback(const std::string& tree_identity);
 

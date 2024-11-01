@@ -3,7 +3,8 @@
       main_tree_to_execute="RelativeGoTo">
   <BehaviorTree ID="RelativeGoTo">
     <Sequence>
-      <Arm wait_until_ready_to_arm="true"
+      <Arm name="ArmInstance"
+           wait_until_ready_to_arm="true"
            action_name=""/>
       <Takeoff alt="190"
                action_name=""/>
@@ -11,7 +12,6 @@
                           alt="{alt}"
                           lat="{lat}"
                           lon="{lon}"
-                          topic_name="__default__placeholder__"
                           _onSuccess="new_lon := lon + 0.0001"/>
       <GoTo lat="{lat}"
             lon="{new_lon}"

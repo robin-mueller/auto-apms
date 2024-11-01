@@ -27,7 +27,7 @@
 namespace auto_apms_behavior_tree
 {
 
-class BTExecutorBase
+class TreeExecutorBase
 {
 public:
   enum class ExecutionState : uint8_t
@@ -66,7 +66,7 @@ public:
   using CreateTreeCallback = std::function<Tree(TreeBlackboardSharedPtr)>;
   using ExecutorParams = executor_params::Params;
 
-  BTExecutorBase(rclcpp::Node::SharedPtr node_ptr);
+  TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr);
 
   std::shared_future<ExecutionResult> startExecution(CreateTreeCallback create_tree_cb);
 
@@ -129,12 +129,12 @@ private:
   std::string termination_reason_;
 };
 
-std::string toStr(BTExecutorBase::ExecutionState state);
+std::string toStr(TreeExecutorBase::ExecutionState state);
 
-std::string toStr(BTExecutorBase::ControlCommand cmd);
+std::string toStr(TreeExecutorBase::ControlCommand cmd);
 
-std::string toStr(BTExecutorBase::TreeExitBehavior behavior);
+std::string toStr(TreeExecutorBase::TreeExitBehavior behavior);
 
-std::string toStr(BTExecutorBase::ExecutionResult result);
+std::string toStr(TreeExecutorBase::ExecutionResult result);
 
 }  // namespace auto_apms_behavior_tree

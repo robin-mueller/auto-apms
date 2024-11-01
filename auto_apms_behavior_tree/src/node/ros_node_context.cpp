@@ -12,24 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
 #include "auto_apms_behavior_tree/node/ros_node_context.hpp"
-#include "behaviortree_cpp/bt_factory.h"
 
 namespace auto_apms_behavior_tree
 {
 
-class NodeRegistrationInterface
+rclcpp::Logger RosNodeContext::getLogger() const
 {
-public:
-  NodeRegistrationInterface() = default;
-  virtual ~NodeRegistrationInterface() = default;
+  if (const auto node = nh.lock())
+  {
+    return node->get_logger();
+  }
+  return rclcpp::get_logger("RosTreeNode");
+}
 
-  virtual bool requiresROSNodeParams() const = 0;
-
-  virtual void registerWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory, const std::string& registration_name,
-                                               const RosNodeContext* const params_ptr = nullptr) const = 0;
-};
+rclcpp::Time RosNodeContext::getCurrentTime() const
+{
+  if (const auto node = nh.lock())
+  {
+    return node->now();
+  }
+  return rclcpp::Clock(RCL_ROS_TIME).now();
+}
 
 }  // namespace auto_apms_behavior_tree

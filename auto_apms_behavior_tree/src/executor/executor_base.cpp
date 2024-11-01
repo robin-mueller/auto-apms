@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/executor/executor_base.hpp"
 
 #include <chrono>
 
@@ -21,7 +21,7 @@
 namespace auto_apms_behavior_tree
 {
 
-BTExecutorBase::BTExecutorBase(rclcpp::Node::SharedPtr node_ptr)
+TreeExecutorBase::TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr)
   : node_ptr_{ node_ptr }
   , global_blackboard_ptr_{ TreeBlackboard::create() }
   , control_command_{ ControlCommand::RUN }
@@ -30,7 +30,8 @@ BTExecutorBase::BTExecutorBase(rclcpp::Node::SharedPtr node_ptr)
   auto_apms_core::exposeToDebugLogging(node_ptr_->get_logger());
 }
 
-std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::startExecution(CreateTreeCallback create_tree_cb)
+std::shared_future<TreeExecutorBase::ExecutionResult>
+TreeExecutorBase::startExecution(CreateTreeCallback create_tree_cb)
 {
   auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
   if (isBusy())
@@ -80,12 +81,12 @@ std::shared_future<BTExecutorBase::ExecutionResult> BTExecutorBase::startExecuti
   return promise_ptr->get_future();
 }
 
-bool BTExecutorBase::isBusy()
+bool TreeExecutorBase::isBusy()
 {
   return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled();
 }
 
-BTExecutorBase::ExecutionState BTExecutorBase::getExecutionState()
+TreeExecutorBase::ExecutionState TreeExecutorBase::getExecutionState()
 {
   if (isBusy())
   {
@@ -101,14 +102,14 @@ BTExecutorBase::ExecutionState BTExecutorBase::getExecutionState()
   return ExecutionState::IDLE;
 }
 
-std::string BTExecutorBase::getTreeName()
+std::string TreeExecutorBase::getTreeName()
 {
   if (tree_ptr_)
     return tree_ptr_->subtrees[0]->tree_ID;
   return "NO_TREE_NAME";
 }
 
-void BTExecutorBase::execution_routine_(CloseExecutionCallback close_execution_cb)
+void TreeExecutorBase::execution_routine_(CloseExecutionCallback close_execution_cb)
 {
   const ExecutionState execution_state_before = getExecutionState();  // Freeze execution state before anything else
 
@@ -228,119 +229,119 @@ void BTExecutorBase::execution_routine_(CloseExecutionCallback close_execution_c
   throw std::logic_error("Execution routine is not intended to proceed to this statement.");
 }
 
-bool BTExecutorBase::onInitialTick()
+bool TreeExecutorBase::onInitialTick()
 {
   return true;
 }
 
-bool BTExecutorBase::onTick()
+bool TreeExecutorBase::onTick()
 {
   return true;
 }
 
-BTExecutorBase::TreeExitBehavior BTExecutorBase::onTreeExit(bool /*success*/)
+TreeExecutorBase::TreeExitBehavior TreeExecutorBase::onTreeExit(bool /*success*/)
 {
   return TreeExitBehavior::CLOSE;
 }
 
-void BTExecutorBase::onClose(const ExecutionResult& /*result*/)
+void TreeExecutorBase::onClose(const ExecutionResult& /*result*/)
 {
 }
 
-void BTExecutorBase::setControlCommand(ControlCommand cmd)
+void TreeExecutorBase::setControlCommand(ControlCommand cmd)
 {
   control_command_ = cmd;
 }
 
-void BTExecutorBase::setExecutorParameters(const ExecutorParams& p)
+void TreeExecutorBase::setExecutorParameters(const ExecutorParams& p)
 {
   executor_params_ = p;
 }
 
-rclcpp::Node::SharedPtr BTExecutorBase::getNodePtr()
+rclcpp::Node::SharedPtr TreeExecutorBase::getNodePtr()
 {
   return node_ptr_;
 }
 
-rclcpp::node_interfaces::NodeBaseInterface::SharedPtr BTExecutorBase::get_node_base_interface()
+rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutorBase::get_node_base_interface()
 {
   return node_ptr_->get_node_base_interface();
 }
 
-TreeBlackboardSharedPtr BTExecutorBase::getGlobalBlackboardPtr()
+TreeBlackboardSharedPtr TreeExecutorBase::getGlobalBlackboardPtr()
 {
   return global_blackboard_ptr_;
 }
 
-BTExecutorBase::ExecutorParams BTExecutorBase::getExecutorParameters()
+TreeExecutorBase::ExecutorParams TreeExecutorBase::getExecutorParameters()
 {
   return executor_params_;
 }
 
-BTStateObserver& BTExecutorBase::getStateObserver()
+BTStateObserver& TreeExecutorBase::getStateObserver()
 {
   return *state_observer_ptr_;
 }
 
-std::string toStr(BTExecutorBase::ExecutionState state)
+std::string toStr(TreeExecutorBase::ExecutionState state)
 {
   switch (state)
   {
-    case BTExecutorBase::ExecutionState::IDLE:
+    case TreeExecutorBase::ExecutionState::IDLE:
       return "IDLE";
-    case BTExecutorBase::ExecutionState::STARTING:
+    case TreeExecutorBase::ExecutionState::STARTING:
       return "IDLE";
-    case BTExecutorBase::ExecutionState::RUNNING:
+    case TreeExecutorBase::ExecutionState::RUNNING:
       return "RUNNING";
-    case BTExecutorBase::ExecutionState::PAUSED:
+    case TreeExecutorBase::ExecutionState::PAUSED:
       return "PAUSED";
-    case BTExecutorBase::ExecutionState::HALTED:
+    case TreeExecutorBase::ExecutionState::HALTED:
       return "HALTED";
   }
   return "undefined";
 }
 
-std::string toStr(BTExecutorBase::ControlCommand cmd)
+std::string toStr(TreeExecutorBase::ControlCommand cmd)
 {
   switch (cmd)
   {
-    case BTExecutorBase::ControlCommand::RUN:
+    case TreeExecutorBase::ControlCommand::RUN:
       return "RUN";
-    case BTExecutorBase::ControlCommand::PAUSE:
+    case TreeExecutorBase::ControlCommand::PAUSE:
       return "PAUSE";
-    case BTExecutorBase::ControlCommand::HALT:
+    case TreeExecutorBase::ControlCommand::HALT:
       return "HALT";
-    case BTExecutorBase::ControlCommand::TERMINATE:
+    case TreeExecutorBase::ControlCommand::TERMINATE:
       return "TERMINATE";
   }
   return "undefined";
 }
 
-std::string toStr(BTExecutorBase::TreeExitBehavior behavior)
+std::string toStr(TreeExecutorBase::TreeExitBehavior behavior)
 {
   switch (behavior)
   {
-    case BTExecutorBase::TreeExitBehavior::CLOSE:
+    case TreeExecutorBase::TreeExitBehavior::CLOSE:
       return "CLOSE";
-    case BTExecutorBase::TreeExitBehavior::RESTART:
+    case TreeExecutorBase::TreeExitBehavior::RESTART:
       return "RESTART";
   }
   return "undefined";
 }
 
-std::string toStr(BTExecutorBase::ExecutionResult result)
+std::string toStr(TreeExecutorBase::ExecutionResult result)
 {
   switch (result)
   {
-    case BTExecutorBase::ExecutionResult::TREE_SUCCEEDED:
+    case TreeExecutorBase::ExecutionResult::TREE_SUCCEEDED:
       return "TREE_SUCCEEDED";
-    case BTExecutorBase::ExecutionResult::TREE_FAILED:
+    case TreeExecutorBase::ExecutionResult::TREE_FAILED:
       return "TREE_FAILED";
-    case BTExecutorBase::ExecutionResult::TERMINATED_PREMATURELY:
+    case TreeExecutorBase::ExecutionResult::TERMINATED_PREMATURELY:
       return "TERMINATED_PREMATURELY";
-    case BTExecutorBase::ExecutionResult::START_REJECTED:
+    case TreeExecutorBase::ExecutionResult::START_REJECTED:
       return "START_REJECTED";
-    case BTExecutorBase::ExecutionResult::ERROR:
+    case TreeExecutorBase::ExecutionResult::ERROR:
       return "ERROR";
   }
   return "undefined";

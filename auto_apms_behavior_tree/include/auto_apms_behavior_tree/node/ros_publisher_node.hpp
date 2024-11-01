@@ -15,13 +15,12 @@
 #pragma once
 
 #include <memory>
-#include <rclcpp/allocator/allocator_common.hpp>
-#include <rclcpp/executors.hpp>
 #include <string>
 
-#include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/node/ros_params.hpp"
+#include "rclcpp/qos.hpp"
 #include "behaviortree_cpp/condition_node.h"
+#include "auto_apms_behavior_tree/exceptions.hpp"
+#include "auto_apms_behavior_tree/node/ros_node_context.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -30,20 +29,17 @@ namespace auto_apms_behavior_tree
  * @brief Abstract class to wrap a ROS publisher
  *
  */
-template <class TopicT>
+template <class MessageT>
 class RosPublisherNode : public BT::ConditionNode
 {
-public:
-  using Publisher = typename rclcpp::Publisher<TopicT>;
+  using Publisher = typename rclcpp::Publisher<MessageT>;
 
-  /** You are not supposed to instantiate this class directly, the factory will do it.
-   * To register this class into the factory, use:
-   *
-   *    RegisterRosAction<DerivedClass>(factory, params)
-   *
-   * Note that if the external_action_client is not set, the constructor will build its own.
-   * */
-  explicit RosPublisherNode(const std::string& instance_name, const BT::NodeConfig& conf, const RosNodeParams& params,
+public:
+  using MessageType = MessageT;
+  using Config = BT::NodeConfig;
+  using Context = RosNodeContext;
+
+  explicit RosPublisherNode(const std::string& instance_name, const Config& config, const Context& context,
                             const rclcpp::QoS& qos = { 10 });
 
   virtual ~RosPublisherNode() = default;
@@ -81,15 +77,20 @@ public:
    * @return  return false if anything is wrong and we must not send the message.
    * the Condition will return FAILURE.
    */
-  virtual bool setMessage(TopicT& msg);
+  virtual bool setMessage(MessageT& msg);
+
+  std::string getFullName() const;
 
 protected:
-  std::shared_ptr<rclcpp::Node> node_;
-  const rclcpp::QoS qos_;
-  std::string prev_topic_name_;
-  bool topic_name_may_change_ = false;
+  const Context& getRosContext();
+
+  const rclcpp::Logger logger_;
 
 private:
+  const Context context_;
+  const rclcpp::QoS qos_;
+  std::string topic_name_;
+  bool topic_name_should_be_checked_ = false;
   std::shared_ptr<Publisher> publisher_;
 
   bool createPublisher(const std::string& topic_name);
@@ -99,88 +100,81 @@ private:
 //---------------------- DEFINITIONS -----------------------------
 //----------------------------------------------------------------
 
-template <class T>
-inline RosPublisherNode<T>::RosPublisherNode(const std::string& instance_name, const BT::NodeConfig& conf,
-                                             const RosNodeParams& params, const rclcpp::QoS& qos)
-  : BT::ConditionNode(instance_name, conf), node_(params.nh), qos_{ qos }
+template <class MessageT>
+inline RosPublisherNode<MessageT>::RosPublisherNode(const std::string& instance_name, const Config& config,
+                                                    const Context& context, const rclcpp::QoS& qos)
+  : BT::ConditionNode(instance_name, config), logger_(context.getLogger()), context_(context), qos_{ qos }
 {
   // check port remapping
-  auto portIt = config().input_ports.find("topic_name");
-  if (portIt != config().input_ports.end())
+  auto portIt = config.input_ports.find("topic_name");
+  if (portIt != config.input_ports.end())
   {
     const std::string& bb_topic_name = portIt->second;
 
-    if (bb_topic_name.empty() || bb_topic_name == "__default__placeholder__")
+    if (isBlackboardPointer(bb_topic_name))
     {
-      if (params.default_port_name.empty())
-      {
-        throw std::logic_error(
-            "Both [topic_name] in the BT::InputPort and the RosNodeParams "
-            "are empty.");
-      }
-      else
-      {
-        createPublisher(params.default_port_name);
-      }
+      // unknown value at construction time. postpone to tick
+      topic_name_should_be_checked_ = true;
     }
-    else if (!isBlackboardPointer(bb_topic_name))
+    else if (!bb_topic_name.empty())
     {
-      // If the content of the port "topic_name" is not
-      // a pointer to the blackboard, but a static string, we can
-      // create the client in the constructor.
+      // "hard-coded" name in the bb_topic_name. Use it.
       createPublisher(bb_topic_name);
     }
-    else
-    {
-      topic_name_may_change_ = true;
-      // createPublisher will be invoked in the first tick().
-    }
   }
-  else
+  // no port value or it is empty. Use the default port value
+  if (!publisher_ && !context.default_port_name.empty())
   {
-    if (params.default_port_name.empty())
-    {
-      throw std::logic_error(
-          "Both [topic_name] in the BT::InputPort and the RosNodeParams "
-          "are empty.");
-    }
-    else
-    {
-      createPublisher(params.default_port_name);
-    }
+    createPublisher(context.default_port_name);
   }
 }
 
-template <class T>
-inline bool RosPublisherNode<T>::createPublisher(const std::string& topic_name)
+template <class MessageT>
+inline bool RosPublisherNode<MessageT>::createPublisher(const std::string& topic_name)
 {
   if (topic_name.empty())
   {
-    throw exceptions::RosNodeError("topic_name is empty");
+    throw exceptions::RosNodeError(getFullName() + " - Argument topic_name is empty when trying to create a client.");
   }
 
-  publisher_ = node_->create_publisher<T>(topic_name, qos_);
-  prev_topic_name_ = topic_name;
+  auto node = getRosContext().nh.lock();
+  if (!node)
+  {
+    throw exceptions::RosNodeError(getFullName() +
+                                   " - The shared pointer to the ROS node went out of scope. The tree node doesn't "
+                                   "take the ownership of the node.");
+  }
+
+  publisher_ = node->template create_publisher<MessageT>(topic_name, qos_);
+  topic_name_ = topic_name;
+  RCLCPP_DEBUG(logger_, "%s - Created publisher for topic '%s'.", getFullName().c_str(), topic_name.c_str());
   return true;
 }
 
-template <class T>
-inline BT::NodeStatus RosPublisherNode<T>::tick()
+template <class MessageT>
+inline BT::NodeStatus RosPublisherNode<MessageT>::tick()
 {
   // First, check if the subscriber_ is valid and that the name of the
   // topic_name in the port didn't change.
   // otherwise, create a new subscriber
-  if (!publisher_ || (status() == BT::NodeStatus::IDLE && topic_name_may_change_))
+  if (!publisher_ || (status() == BT::NodeStatus::IDLE && topic_name_should_be_checked_))
   {
     std::string topic_name;
     getInput("topic_name", topic_name);
-    if (prev_topic_name_ != topic_name)
+    if (topic_name_ != topic_name)
     {
       createPublisher(topic_name);
     }
   }
 
-  T msg;
+  if (!publisher_)
+  {
+    throw exceptions::RosNodeError(getFullName() +
+                                   " - You must specify a service name either by using a default value or by "
+                                   "passing a value to the corresponding dynamic input port.");
+  }
+
+  MessageT msg;
   if (!setMessage(msg))
   {
     return BT::NodeStatus::FAILURE;
@@ -189,10 +183,28 @@ inline BT::NodeStatus RosPublisherNode<T>::tick()
   return BT::NodeStatus::SUCCESS;
 }
 
-template <class TopicT>
-inline bool RosPublisherNode<TopicT>::setMessage(TopicT& /*msg*/)
+template <class MessageT>
+inline bool RosPublisherNode<MessageT>::setMessage(MessageT& /*msg*/)
 {
   return true;
+}
+
+template <class MessageT>
+inline std::string RosPublisherNode<MessageT>::getFullName() const
+{
+  // NOTE: registrationName() is empty during construction as this member is frist set after the factory constructed the
+  // object
+  if (registrationName().empty())
+    return name();
+  if (this->name() == this->registrationName())
+    return this->name();
+  return this->name() + " (Type: " + this->registrationName() + ")";
+}
+
+template <class MessageT>
+inline const typename RosPublisherNode<MessageT>::Context& RosPublisherNode<MessageT>::getRosContext()
+{
+  return context_;
 }
 
 }  // namespace auto_apms_behavior_tree

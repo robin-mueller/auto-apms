@@ -60,10 +60,11 @@ set(CMAKE_CURRENT_SOURCE_DIR ${_temp})
 
 add_library(auto_apms_behavior_tree SHARED
     "src/node/node_manifest.cpp"
+    "src/node/ros_node_context.cpp"
     "src/builder/tree_builder.cpp"
     "src/builder/tree_build_director_base.cpp"
     "src/executor/state_observer.cpp"
-    "src/executor/executor.cpp"
+    "src/executor/executor_base.cpp"
     "src/executor/executor_server.cpp"
     "src/executor/client.cpp"
     "src/resource/tree_resource.cpp"
@@ -161,9 +162,9 @@ auto_apms_behavior_tree_register_build_directors(build_directors
 # ------------ Utility Executables --------------
 #
 
-# Executable to run a default tree executor server node
+# Executable to run a default tree executor server node. Also available as a typical ROS node component.
 rclcpp_components_register_node(auto_apms_behavior_tree
-    PLUGIN "auto_apms_behavior_tree::BTExecutorServer"
+    PLUGIN "auto_apms_behavior_tree::TreeExecutorServer"
     EXECUTABLE "tree_executor"
 )
 

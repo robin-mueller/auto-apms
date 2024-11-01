@@ -14,5 +14,7 @@
 
 #pragma once
 
-#include "rcpputils/join.hpp"
 #include "auto_apms_core/util/string.hpp"
+
+// Additionally include some utils from rcpputils
+#include "rcpputils/join.hpp"

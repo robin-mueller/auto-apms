@@ -39,7 +39,7 @@ public:
     {
       if (any_locked->empty())
       {
-        RCLCPP_ERROR(logger(), "%s - Value at blackboard entry {%s} is empty", name().c_str(), INPUT_KEY_VEC);
+        RCLCPP_ERROR(logger_, "%s - Value at blackboard entry {%s} is empty", name().c_str(), INPUT_KEY_VEC);
         return false;
       }
       else if (Eigen::Vector3d* vec_ptr = any_locked->castPtr<Eigen::Vector3d>())
@@ -52,11 +52,11 @@ public:
       }
       else
       {
-        RCLCPP_ERROR(logger(), "%s - Failed to cast pointer {%s}", name().c_str(), INPUT_KEY_VEC);
+        RCLCPP_ERROR(logger_, "%s - Failed to cast pointer {%s}", name().c_str(), INPUT_KEY_VEC);
         return false;
       }
     }
-    RCLCPP_ERROR(logger(), "%s - getLockedPortContent() failed for argument %s", name().c_str(), INPUT_KEY_VEC);
+    RCLCPP_ERROR(logger_, "%s - getLockedPortContent() failed for argument %s", name().c_str(), INPUT_KEY_VEC);
     return false;
   }
 };

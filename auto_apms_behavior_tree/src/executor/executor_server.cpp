@@ -24,14 +24,14 @@ namespace auto_apms_behavior_tree
 {
 
 // clang-format off
-const std::string BTExecutorServer::PARAM_NAME_BUILD_DIRECTOR = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILD_DIRECTOR;
-const std::string BTExecutorServer::PARAM_NAME_TICK_RATE = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE;
-const std::string BTExecutorServer::PARAM_NAME_GROOT2_PORT = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT;
-const std::string BTExecutorServer::PARAM_NAME_STATE_CHANGE_LOGGER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER;
+const std::string TreeExecutorServer::PARAM_NAME_BUILD_DIRECTOR = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILD_DIRECTOR;
+const std::string TreeExecutorServer::PARAM_NAME_TICK_RATE = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE;
+const std::string TreeExecutorServer::PARAM_NAME_GROOT2_PORT = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT;
+const std::string TreeExecutorServer::PARAM_NAME_STATE_CHANGE_LOGGER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER;
 // clang-format on
 
-BTExecutorServer::BTExecutorServer(const std::string& name, const rclcpp::NodeOptions& options)
-  : BTExecutorBase(std::make_shared<rclcpp::Node>(name, options))
+TreeExecutorServer::TreeExecutorServer(const std::string& name, const rclcpp::NodeOptions& options)
+  : TreeExecutorBase(std::make_shared<rclcpp::Node>(name, options))
   , logger_(getNodePtr()->get_logger())
   , executor_param_listener_(getNodePtr())
   , node_override_param_listener_(getNodePtr(), NODE_OVERRIDE_PARAMETERS_NAMESPACE + ".")
@@ -41,15 +41,15 @@ BTExecutorServer::BTExecutorServer(const std::string& name, const rclcpp::NodeOp
   using namespace std::placeholders;
   start_action_ptr_ = rclcpp_action::create_server<StartActionContext::Type>(
       getNodePtr(), name + BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX,
-      std::bind(&BTExecutorServer::handle_start_goal_, this, _1, _2),
-      std::bind(&BTExecutorServer::handle_start_cancel_, this, _1),
-      std::bind(&BTExecutorServer::handle_start_accept_, this, _1));
+      std::bind(&TreeExecutorServer::handle_start_goal_, this, _1, _2),
+      std::bind(&TreeExecutorServer::handle_start_cancel_, this, _1),
+      std::bind(&TreeExecutorServer::handle_start_accept_, this, _1));
 
   command_action_ptr_ = rclcpp_action::create_server<CommandActionContext::Type>(
       getNodePtr(), name + BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
-      std::bind(&BTExecutorServer::handle_command_goal_, this, _1, _2),
-      std::bind(&BTExecutorServer::handle_command_cancel_, this, _1),
-      std::bind(&BTExecutorServer::handle_command_accept_, this, _1));
+      std::bind(&TreeExecutorServer::handle_command_goal_, this, _1, _2),
+      std::bind(&TreeExecutorServer::handle_command_cancel_, this, _1),
+      std::bind(&TreeExecutorServer::handle_command_accept_, this, _1));
 
   // Adding the local on_set_parameters_callback after the parameter listeners from generate_parameters_library
   // are created makes sure that this callback will be evaluated before the listener callbacks.
@@ -67,11 +67,12 @@ BTExecutorServer::BTExecutorServer(const std::string& name, const rclcpp::NodeOp
     startExecution(makeCreateTreeCallback(args[1]));
 }
 
-BTExecutorServer::BTExecutorServer(const rclcpp::NodeOptions& options) : BTExecutorServer(DEFAULT_NODE_NAME, options)
+TreeExecutorServer::TreeExecutorServer(const rclcpp::NodeOptions& options)
+  : TreeExecutorServer(DEFAULT_NODE_NAME, options)
 {
 }
 
-BTExecutorServer::CreateTreeCallback BTExecutorServer::makeCreateTreeCallback(const std::string& tree_identity)
+TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallback(const std::string& tree_identity)
 {
   // Get executor parameters
   const auto executor_params = executor_param_listener_.get_params();
@@ -116,7 +117,7 @@ BTExecutorServer::CreateTreeCallback BTExecutorServer::makeCreateTreeCallback(co
 }
 
 rcl_interfaces::msg::SetParametersResult
-BTExecutorServer::on_set_parameters_callback_(const std::vector<rclcpp::Parameter>& parameters)
+TreeExecutorServer::on_set_parameters_callback_(const std::vector<rclcpp::Parameter>& parameters)
 {
   // Parameters allowed to be set while busy
   const std::set<std::string> allowed_while_busy{ PARAM_NAME_STATE_CHANGE_LOGGER };
@@ -167,7 +168,7 @@ BTExecutorServer::on_set_parameters_callback_(const std::vector<rclcpp::Paramete
   return result;
 }
 
-rclcpp_action::GoalResponse BTExecutorServer::handle_start_goal_(
+rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
     const rclcpp_action::GoalUUID& uuid, std::shared_ptr<const StartActionContext::Goal> goal_ptr)
 {
   // Reject if a tree is already executing
@@ -190,19 +191,19 @@ rclcpp_action::GoalResponse BTExecutorServer::handle_start_goal_(
 }
 
 rclcpp_action::CancelResponse
-BTExecutorServer::handle_start_cancel_(std::shared_ptr<StartActionContext::GoalHandle> /*goal_handle_ptr*/)
+TreeExecutorServer::handle_start_cancel_(std::shared_ptr<StartActionContext::GoalHandle> /*goal_handle_ptr*/)
 {
   setControlCommand(ControlCommand::HALT);
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void BTExecutorServer::handle_start_accept_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr)
+void TreeExecutorServer::handle_start_accept_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr)
 {
   start_action_context_.setUp(goal_handle_ptr);
   startExecution(create_tree_callback_);
 }
 
-rclcpp_action::GoalResponse BTExecutorServer::handle_command_goal_(
+rclcpp_action::GoalResponse TreeExecutorServer::handle_command_goal_(
     const rclcpp_action::GoalUUID& /*uuid*/, std::shared_ptr<const CommandActionContext::Goal> goal_ptr)
 {
   if (command_timer_ptr_ && !command_timer_ptr_->is_canceled())
@@ -274,12 +275,12 @@ rclcpp_action::GoalResponse BTExecutorServer::handle_command_goal_(
 }
 
 rclcpp_action::CancelResponse
-BTExecutorServer::handle_command_cancel_(std::shared_ptr<CommandActionContext::GoalHandle> /*goal_handle_ptr*/)
+TreeExecutorServer::handle_command_cancel_(std::shared_ptr<CommandActionContext::GoalHandle> /*goal_handle_ptr*/)
 {
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void BTExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr)
+void TreeExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr)
 {
   const auto command_request = goal_handle_ptr->get_goal()->command;
   switch (command_request)
@@ -348,7 +349,7 @@ void BTExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionConte
       });
 }
 
-bool BTExecutorServer::onTick()
+bool TreeExecutorServer::onTick()
 {
   /**
    * Update executor parameters
@@ -380,7 +381,7 @@ bool BTExecutorServer::onTick()
   return true;
 }
 
-void BTExecutorServer::onClose(const ExecutionResult& result)
+void TreeExecutorServer::onClose(const ExecutionResult& result)
 {
   if (!start_action_context_.isValid())  // Do nothing if started due to options argument from constructor
     return;
@@ -431,4 +432,4 @@ void BTExecutorServer::onClose(const ExecutionResult& result)
 }  // namespace auto_apms_behavior_tree
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_behavior_tree::BTExecutorServer)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_behavior_tree::TreeExecutorServer)

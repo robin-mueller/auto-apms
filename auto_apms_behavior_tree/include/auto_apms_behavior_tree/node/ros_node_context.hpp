@@ -18,11 +18,12 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
+#include "behaviortree_cpp/tree_node.h"
 
 namespace auto_apms_behavior_tree
 {
 
-struct RosNodeParams
+struct RosNodeContext
 {
   /// Handle for the ROS2 node.
   std::weak_ptr<rclcpp::Node> nh;
@@ -40,6 +41,10 @@ struct RosNodeParams
   std::chrono::milliseconds wait_for_server_timeout = std::chrono::milliseconds{ 3000 };
   /// Timeout [s] for waiting for a response for the requested service or goal.
   std::chrono::milliseconds request_timeout = std::chrono::milliseconds(1500);
+
+  rclcpp::Logger getLogger() const;
+
+  rclcpp::Time getCurrentTime() const;
 };
 
 }  // namespace auto_apms_behavior_tree

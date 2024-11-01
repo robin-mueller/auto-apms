@@ -32,9 +32,8 @@ class ReadGlobalPosition : public auto_apms_behavior_tree::RosSubscriberNode<Glo
   GlobalPositionMsg last_msg_;
 
 public:
-  ReadGlobalPosition(const std::string& instance_name, const BT::NodeConfig& conf,
-                     const auto_apms_behavior_tree::RosNodeParams& params)
-    : RosSubscriberNode{ instance_name, conf, params, rclcpp::SensorDataQoS{} }
+  ReadGlobalPosition(const std::string& instance_name, const Config& config, const Context& context)
+    : RosSubscriberNode{ instance_name, config, context, rclcpp::SensorDataQoS{} }
   {
   }
 
@@ -65,7 +64,7 @@ public:
       any_locked.assign(pos);
       return BT::NodeStatus::SUCCESS;
     }
-    RCLCPP_ERROR(logger(), "%s - getLockedPortContent() failed for argument %s", name().c_str(), OUTPUT_KEY_POS);
+    RCLCPP_ERROR(logger_, "%s - getLockedPortContent() failed for argument %s", name().c_str(), OUTPUT_KEY_POS);
     return BT::NodeStatus::FAILURE;
   }
 };

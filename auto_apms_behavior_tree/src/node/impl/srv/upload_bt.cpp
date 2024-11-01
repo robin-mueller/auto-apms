@@ -51,7 +51,7 @@ public:
     {
       return BT::NodeStatus::SUCCESS;
     }
-    RCLCPP_ERROR(logger(), "%s - Error: %s", name().c_str(), response->error_message.c_str());
+    RCLCPP_ERROR(logger_, "%s - Error: %s", name().c_str(), response->error_message.c_str());
     return BT::NodeStatus::FAILURE;
   }
 };

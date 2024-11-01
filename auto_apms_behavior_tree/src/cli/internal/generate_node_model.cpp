@@ -113,7 +113,7 @@ int main(int argc, char** argv)
         const auto plugin_instance = class_loader.createUniqueInstance<NodeRegistrationInterface>(factory_classname);
         if (plugin_instance->requiresROSNodeParams())
         {
-          RosNodeParams ros_params;
+          RosNodeContext ros_params;
           ros_params.nh = node_ptr;
           ros_params.default_port_name = params.port;
           ros_params.wait_for_server_timeout =
