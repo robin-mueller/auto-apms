@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/node.hpp"
-#include "auto_apms_interfaces/action/bt_executor_command.hpp"
+#include "auto_apms_interfaces/action/command_tree_executor.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class HaltExecutorAction : public RosActionNode<auto_apms_interfaces::action::BTExecutorCommand>
+class HaltExecutorAction : public RosActionNode<auto_apms_interfaces::action::CommandTreeExecutor>
 {
 public:
   using RosActionNode::RosActionNode;

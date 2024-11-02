@@ -15,11 +15,11 @@
   <depend>rclcpp_components</depend>
   <depend>pluginlib</depend>
   <depend>behaviortree_cpp</depend>
-  <depend>auto_apms_interfaces</depend>
   <depend>yaml_cpp_vendor</depend>
   <depend>tinyxml2_vendor</depend>
   <depend>generate_parameter_library</depend>
   <depend>auto_apms_core</depend>
+  <depend>auto_apms_interfaces</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

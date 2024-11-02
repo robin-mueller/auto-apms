@@ -12,24 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node.hpp"
-#include "auto_apms_interfaces/action/command_tree_executor.hpp"
+#pragma once
+
+#include "auto_apms_behavior_tree/builder/tree_builder_base.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class PauseExecutorAction : public RosActionNode<auto_apms_interfaces::action::CommandTreeExecutor>
+class TreeBuilderFactoryInterface
 {
 public:
-  using RosActionNode::RosActionNode;
+  TreeBuilderFactoryInterface() = default;
+  virtual ~TreeBuilderFactoryInterface() = default;
 
-  bool setGoal(Goal& goal)
-  {
-    goal.command = Goal::COMMAND_PAUSE;
-    return true;
-  }
+  virtual std::shared_ptr<TreeBuilderBase> instantiateBuilder(const rclcpp::Node::SharedPtr node_ptr) = 0;
 };
 
 }  // namespace auto_apms_behavior_tree
-
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::PauseExecutorAction)

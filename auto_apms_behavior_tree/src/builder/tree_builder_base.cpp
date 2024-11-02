@@ -12,32 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/builder/tree_build_director_base.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder_base.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-TreeBuildDirectorBase::TreeBuildDirectorBase(rclcpp::Node::SharedPtr node_ptr)
+TreeBuilderBase::TreeBuilderBase(rclcpp::Node::SharedPtr node_ptr)
   : node_ptr_(node_ptr), logger_{ node_ptr->get_logger() }
 {
 }
 
-Tree TreeBuildDirectorBase::makeTree(TreeBlackboardSharedPtr root_bb_ptr)
-{
-  if (!executeBuildSteps(builder_))
-  {
-    throw exceptions::TreeBuildError("Build director failed to make tree: executeBuildSteps() returned false.");
-  }
-  return builder_.getTree(root_bb_ptr);
-}
-
-rclcpp::Node::SharedPtr TreeBuildDirectorBase::getNodePtr()
+rclcpp::Node::SharedPtr TreeBuilderBase::getNodePtr()
 {
   return node_ptr_;
 }
 
-const rclcpp::Logger& TreeBuildDirectorBase::getLogger()
+const rclcpp::Logger& TreeBuilderBase::getLogger()
 {
   return logger_;
 }

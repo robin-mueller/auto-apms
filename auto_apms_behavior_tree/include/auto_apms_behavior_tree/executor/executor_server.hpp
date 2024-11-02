@@ -18,24 +18,22 @@
 #include "auto_apms_core/action_context.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
-#include "auto_apms_behavior_tree/executor/executor_base.hpp"
-#include "auto_apms_behavior_tree/node/node_manifest.hpp"
-#include "auto_apms_behavior_tree/resource/tree_build_director_class_loader.hpp"
+#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/resource/tree_builder_class_loader.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class TreeExecutorServer : public TreeExecutorBase
+class TreeExecutorServer : public TreeExecutor
 {
 public:
   using StartActionContext = auto_apms_core::ActionContext<auto_apms_interfaces::action::StartTreeExecutor>;
   using CommandActionContext = auto_apms_core::ActionContext<auto_apms_interfaces::action::CommandTreeExecutor>;
 
-  static const std::string PARAM_NAME_BUILD_DIRECTOR;
+  static const std::string PARAM_NAME_TREE_BUILDER;
   static const std::string PARAM_NAME_TICK_RATE;
   static const std::string PARAM_NAME_GROOT2_PORT;
   static const std::string PARAM_NAME_STATE_CHANGE_LOGGER;
-  inline static const std::string NODE_OVERRIDE_PARAMETERS_NAMESPACE = "node_override";
   inline static const std::string DEFAULT_NODE_NAME = "tree_executor";
 
   /**
@@ -51,7 +49,8 @@ public:
    */
   TreeExecutorServer(const rclcpp::NodeOptions& options);
 
-  CreateTreeCallback makeCreateTreeCallback(const std::string& tree_identity);
+  CreateTreeCallback makeCreateTreeCallback(const std::string& tree_builder_name, const std::string& tree_build_request,
+                                            const NodeManifest& node_overrides = {});
 
 private:
   rcl_interfaces::msg::SetParametersResult
@@ -74,9 +73,8 @@ private:
 
   const rclcpp::Logger logger_;
   const executor_params::ParamListener executor_param_listener_;
-  const NodeManifest::ParamListener node_override_param_listener_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
-  TreeBuildDirectorClassLoader tree_build_director_loader_;
+  TreeBuilderClassLoader tree_build_director_loader_;
   CreateTreeCallback create_tree_callback_;
   rclcpp_action::Server<StartActionContext::Type>::SharedPtr start_action_ptr_;
   StartActionContext start_action_context_;

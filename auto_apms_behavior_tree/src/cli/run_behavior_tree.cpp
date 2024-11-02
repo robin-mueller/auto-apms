@@ -20,7 +20,7 @@
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "rclcpp/rclcpp.hpp"
 #include "auto_apms_core/logging.hpp"
-#include "auto_apms_behavior_tree/executor/executor_base.hpp"
+#include "auto_apms_behavior_tree/executor/executor.hpp"
 #include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 
 sig_atomic_t volatile termination_requested = 0;
@@ -79,9 +79,9 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  TreeExecutorBase executor{ node_ptr };
+  TreeExecutor executor{ node_ptr };
   auto future = executor.startExecution(
-      [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.getTree(tree_name, bb); });
+      [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.buildTree(tree_name, bb); });
 
   RCLCPP_INFO(node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.",
               tree_resource_ptr->tree_file_stem.c_str(), builder.getMainTreeName().c_str(),
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
       else if (termination_requested)
       {
         termination_start = std::chrono::steady_clock::now();
-        executor.setControlCommand(TreeExecutorBase::ControlCommand::TERMINATE);
+        executor.setControlCommand(TreeExecutor::ControlCommand::TERMINATE);
         termination_started = true;
         RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");
       }

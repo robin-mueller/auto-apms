@@ -45,7 +45,7 @@ struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
   {
     if (!node.IsMap())
       throw std::runtime_error("Root YAML::Node must be map.");
-    Manifest::ParamMap map;
+
     for (YAML::const_iterator it = node.begin(); it != node.end(); ++it)
     {
       const auto& name = it->first.as<std::string>();
@@ -94,9 +94,8 @@ struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
         // Unkown parameter
         throw std::runtime_error("Unkown parameter '" + param_key + "'.");
       }
-      map[name] = params;
+      lhs[name] = params;
     }
-    lhs = map;
     return true;
   }
 };
@@ -107,7 +106,6 @@ namespace auto_apms_behavior_tree
 {
 
 // clang-format off
-const std::string NodeManifest::PARAM_NAME_NAMES = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_NAMES;
 const std::string NodeManifest::PARAM_NAME_CLASS = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS;
 const std::string NodeManifest::PARAM_NAME_PACKAGE = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE;
 const std::string NodeManifest::PARAM_NAME_LIBRARY = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY;
@@ -135,17 +133,12 @@ NodeManifest NodeManifest::fromFiles(const std::vector<std::string>& file_paths)
 
 NodeManifest NodeManifest::fromFile(const std::string& file_path)
 {
-  return { YAML::LoadFile(file_path).as<ParamMap>() };
+  return YAML::LoadFile(file_path).as<ParamMap>();
 }
 
-NodeManifest NodeManifest::parse(const std::string& manifest_str)
+NodeManifest NodeManifest::fromString(const std::string& manifest_str)
 {
-  return { YAML::Load(manifest_str).as<ParamMap>() };
-}
-
-NodeManifest NodeManifest::fromParamListener(const ParamListener& param_listener)
-{
-  return param_listener.get_params().names_map;
+  return manifest_str.empty() ? ParamMap() : YAML::Load(manifest_str).as<ParamMap>();
 }
 
 bool NodeManifest::contains(const std::string& node_name) const
@@ -252,28 +245,6 @@ std::string NodeManifest::toString() const
   YAML::Emitter out;
   out << root;
   return out.c_str();
-}
-
-rcl_interfaces::msg::SetParametersResult NodeManifest::toROSParameters(rclcpp::Node::SharedPtr node_ptr,
-                                                                       const std::string& prefix) const
-{
-  std::string dot_prefix = prefix;
-  if (!dot_prefix.empty() && dot_prefix.back() != '.')
-    dot_prefix += ".";
-
-  std::vector<rclcpp::Parameter> param_vec;
-  for (const auto& [node_name, params] : param_map_)
-  {
-    auto full_param_name = [&](const std::string& s) { return fmt::format("{}{}.{}", dot_prefix, node_name, s); };
-    param_vec.push_back({ dot_prefix + PARAM_NAME_NAMES, node_name });
-    param_vec.push_back({ full_param_name(PARAM_NAME_CLASS), params.class_name });
-    param_vec.push_back({ full_param_name(PARAM_NAME_LIBRARY), params.library });
-    param_vec.push_back({ full_param_name(PARAM_NAME_PACKAGE), params.package });
-    param_vec.push_back({ full_param_name(PARAM_NAME_PORT), params.port });
-    param_vec.push_back({ full_param_name(PARAM_NAME_WAIT_TIMEOUT), params.wait_timeout });
-    param_vec.push_back({ full_param_name(PARAM_NAME_REQUEST_TIMEOUT), params.request_timeout });
-  }
-  return node_ptr->set_parameters_atomically(param_vec);
 }
 
 const NodeManifest::ParamMap& NodeManifest::getInternalMap() const

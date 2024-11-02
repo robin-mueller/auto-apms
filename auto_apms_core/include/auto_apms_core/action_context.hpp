@@ -41,11 +41,11 @@ public:
 
   void abort();
 
-  void releaseGoalHandle();
-
-  std::shared_ptr<GoalHandle> getGoalHandlePtr();
+  void invalidate();
 
   bool isValid();
+
+  std::shared_ptr<GoalHandle> getGoalHandlePtr();
 
   std::shared_ptr<Feedback> getFeedbackPtr();
 
@@ -131,9 +131,15 @@ void ActionContext<ActionT>::abort()
 }
 
 template <typename ActionT>
-inline void ActionContext<ActionT>::releaseGoalHandle()
+inline void ActionContext<ActionT>::invalidate()
 {
   goal_handle_ptr_.reset();
+}
+
+template <typename ActionT>
+inline bool ActionContext<ActionT>::isValid()
+{
+  return !!goal_handle_ptr_;
 }
 
 template <class ActionT>
@@ -146,12 +152,6 @@ std::shared_ptr<typename ActionContext<ActionT>::GoalHandle> ActionContext<Actio
     throw std::runtime_error("goal_handle_ptr_ is nullptr.");
   }
   return goal_handle_ptr_;
-}
-
-template <typename ActionT>
-inline bool ActionContext<ActionT>::isValid()
-{
-  return !!goal_handle_ptr_;
 }
 
 template <typename ActionT>

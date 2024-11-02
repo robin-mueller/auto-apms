@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/node.hpp"
-#include "auto_apms_interfaces/action/launch_bt_executor.hpp"
+#include "auto_apms_interfaces/action/start_tree_executor.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class LaunchExecutorAction : public RosActionNode<auto_apms_interfaces::action::LaunchBTExecutor>
+class LaunchExecutorAction : public RosActionNode<auto_apms_interfaces::action::StartTreeExecutor>
 {
   double last_running_node_timestamp_ = 0;
 
@@ -36,11 +36,8 @@ public:
     {
       case ActionType::Result::TREE_RESULT_SUCCESS:
         return BT::NodeStatus::SUCCESS;
-      case ActionType::Result::TREE_RESULT_FAILURE:
-        return BT::NodeStatus::FAILURE;
       default:
-        throw exceptions::RosNodeError(getFullName() + " - Received illegal tree result " +
-                                       std::to_string(wr.result->tree_result));
+        return BT::NodeStatus::FAILURE;
     }
   }
 
@@ -49,8 +46,8 @@ public:
     if (feedback->running_action_timestamp > last_running_node_timestamp_)
     {
       last_running_node_timestamp_ = feedback->running_action_timestamp;
-      RCLCPP_DEBUG(logger_, "%s - Tree %s is running '%s'", getFullName().c_str(), feedback->root_tree_id.c_str(),
-                   feedback->running_action_name.c_str());
+      RCLCPP_DEBUG(logger_, "%s - Tree '%s' is ticking node '%s'", getFullName().c_str(),
+                   feedback->running_tree_identity.c_str(), feedback->running_action_name.c_str());
     }
     return BT::NodeStatus::RUNNING;
   }

@@ -14,18 +14,30 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_build_director_base.hpp"
+#include "rclcpp/node.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class TreeBuildDirectorFactoryInterface
+class TreeBuilderBase
 {
 public:
-  TreeBuildDirectorFactoryInterface() = default;
-  virtual ~TreeBuildDirectorFactoryInterface() = default;
+  TreeBuilderBase(rclcpp::Node::SharedPtr node_ptr);
 
-  virtual std::shared_ptr<TreeBuildDirectorBase> createBuildDirector(const rclcpp::Node::SharedPtr node_ptr) = 0;
+  virtual ~TreeBuilderBase() = default;
+
+  virtual bool setRequest(const std::string& request) = 0;
+
+  virtual void configureBuilder(TreeBuilder& builder) = 0;
+
+  rclcpp::Node::SharedPtr getNodePtr();
+
+  const rclcpp::Logger& getLogger();
+
+private:
+  rclcpp::Node::SharedPtr node_ptr_;
+  const rclcpp::Logger logger_;
 };
 
 }  // namespace auto_apms_behavior_tree

@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-macro(auto_apms_behavior_tree_register_file tree_filepath)
+macro(auto_apms_behavior_tree_register_trees xml_file_path)
 
     # Check if behavior tree file exists
-    get_filename_component(_tree_abs_path__source "${tree_filepath}" REALPATH)
+    get_filename_component(_tree_abs_path__source "${xml_file_path}" REALPATH)
     if(NOT EXISTS "${_tree_abs_path__source}")
         message(
             FATAL_ERROR
-            "auto_apms_behavior_tree_register_file(): Behavior tree file ${_tree_abs_path__source} does not exist"
+            "auto_apms_behavior_tree_register_trees(): Behavior tree file ${_tree_abs_path__source} does not exist"
         )
     endif()
 
@@ -30,7 +30,7 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
     if("${_tree_file_name}" IN_LIST _tree_file_names)
         message(
             FATAL_ERROR
-            "auto_apms_behavior_tree_register_file(): A behavior tree file with name '${_tree_file_name}' was already registered"
+            "auto_apms_behavior_tree_register_trees(): A behavior tree file with name '${_tree_file_name}' was already registered"
         )
     endif()
     list(APPEND _tree_file_names "${_tree_file_name}")
@@ -41,7 +41,7 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
     if(_matches STREQUAL "")
         message(
             FATAL_ERROR
-            "auto_apms_behavior_tree_register_file(): Behavior tree file ${_tree_abs_path__source} doesn't specify any valid behavior trees"
+            "auto_apms_behavior_tree_register_trees(): Behavior tree file ${_tree_abs_path__source} doesn't specify any valid behavior trees"
         )
     endif()
     set(_file_tree_names "")
@@ -52,7 +52,7 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
         if("${_tree_name}" IN_LIST _all_tree_names)
             message(
                 FATAL_ERROR
-                "auto_apms_behavior_tree_register_file(): Behavior tree with name '${_tree_name}' was already registered"
+                "auto_apms_behavior_tree_register_trees(): Behavior tree with name '${_tree_name}' was already registered"
             )
         endif()
         list(APPEND _all_tree_names "${_tree_name}")
@@ -62,15 +62,15 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
     # Parse arguments
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs NODE_PLUGIN_MANIFEST)
+    set(multiValueArgs NODE_MANIFEST)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     set(_tree_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE}")
     set(_node_manifest_rel_path__install "")
 
-    if(NOT ${ARGS_NODE_PLUGIN_MANIFEST} STREQUAL "")
+    if(NOT ${ARGS_NODE_MANIFEST} STREQUAL "")
         file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}")
-        list(REMOVE_DUPLICATES ARGS_NODE_PLUGIN_MANIFEST) # Disregard duplicates
+        list(REMOVE_DUPLICATES ARGS_NODE_MANIFEST) # Disregard duplicates
         set(_node_manifest_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_RESOURCES_DIR_RELATIVE}")
         set(_node_manifest_created_file_name "node_manifest_${_tree_file_stem}.yaml")
         set(_node_model_rel_dir__install "${_tree_rel_dir__install}")
@@ -85,10 +85,10 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
         # Create the complete manifest for model generation.
         # However, this command is mainly relevant for defining a variable containing the library paths and generator expressions
         # for direct node plugin dependencies of the registered behavior tree
-        set(_node_plugin_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/${_node_manifest_created_file_name}")
+        set(_node_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/${_node_manifest_created_file_name}")
         execute_process(
-            COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/create_node_plugin_manifest"
-                "${ARGS_NODE_PLUGIN_MANIFEST}" # Paths of the manifest source files
+            COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/create_node_manifest"
+                "${ARGS_NODE_MANIFEST}" # Paths of the manifest source files
 
                 # General build information for node plugins compiled by this package.
                 # Generator expressions cannot be evaluated yet since execute_process is handled at configuration time.
@@ -96,26 +96,26 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
                 "${_AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO}"
 
                 "${PROJECT_NAME}"  # Name of the package that builds the behavior tree model
-                "${_node_plugin_manifest_abs_path__build}"  # File to write the behavior tree node plugin manifest to
+                "${_node_manifest_abs_path__build}"  # File to write the behavior tree node plugin manifest to
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             OUTPUT_VARIABLE _node_plugin_library_paths
             RESULT_VARIABLE _return_code)
         if(_return_code EQUAL 1)
             message(
                 FATAL_ERROR
-                "Failed to create node plugin manifest for '${_tree_file_stem}' parsing [${ARGS_NODE_PLUGIN_MANIFEST}]"
+                "Failed to create node plugin manifest for '${_tree_file_stem}' parsing [${ARGS_NODE_MANIFEST}]"
             )
         endif()
         # Create a command to evaluate the generator expressions inculded in the manifest file after the CMake configuration stage.
         # NOTE: The file isn't fully processed right after the invocation of the file(GENERATE ...) macro.
-        file(GENERATE OUTPUT "${_node_plugin_manifest_abs_path__build}" INPUT "${_node_plugin_manifest_abs_path__build}")
+        file(GENERATE OUTPUT "${_node_manifest_abs_path__build}" INPUT "${_node_manifest_abs_path__build}")
         set(_node_manifest_rel_path__install "${_node_manifest_rel_dir__install}/${_node_manifest_created_file_name}")
 
         # Use the above created manifest for generating the node model
         set(_node_model_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/node_model_${_tree_file_stem}.xml")
         add_custom_command(OUTPUT "${_node_model_abs_path__build}"
             COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/generate_node_model"
-                "\"${_node_plugin_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
+                "\"${_node_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
                 "\"${_node_model_abs_path__build}\"" # File to write the behavior tree node model to
 
                 # IMPORTANT: Since we already have the complete manifest, passing this variable to COMMAND isn't strictly necessary,
@@ -126,7 +126,7 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
                 # to the shared libraries which makes sure that the command is executed when they are recompiled.
                 "\"${_node_plugin_library_paths}\""
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS ${ARGS_NODE_PLUGIN_MANIFEST} ${_node_plugin_library_paths}
+            DEPENDS ${ARGS_NODE_MANIFEST} ${_node_plugin_library_paths}
             COMMENT "Generate behavior tree node model for tree file '${_tree_file_stem}' with libraries [${_node_plugin_library_paths}].")
         add_custom_target(_target_generate_node_model__${_node_model_custom_target_suffix} ALL
             DEPENDS "${_node_model_abs_path__build}")
@@ -141,7 +141,7 @@ macro(auto_apms_behavior_tree_register_file tree_filepath)
 
         # Install the generated node plugin manifest file
         install(
-            FILES "${_node_plugin_manifest_abs_path__build}"
+            FILES "${_node_manifest_abs_path__build}"
             DESTINATION "${_node_manifest_rel_dir__install}"
         )
 

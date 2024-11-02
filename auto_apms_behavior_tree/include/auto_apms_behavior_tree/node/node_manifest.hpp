@@ -15,7 +15,6 @@
 #pragma once
 
 #include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
-#include "node_manifest_params.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -28,16 +27,21 @@ namespace auto_apms_behavior_tree
 class NodeManifest
 {
 public:
-  /// Generated ROS2 parameter struct holding the core load information.
-  using Params = node_plugin_manifest_params::Params::MapNames;
+  /// @cond
+  struct Params
+  {
+    std::string class_name;
+    std::string package;
+    std::string library;
+    std::string port;
+    double wait_timeout = 3.0;
+    double request_timeout = 1.5;
+  };
+  /// @endcond
 
   /// Mapping of a node's name and its load parameters.
   using ParamMap = std::map<std::string, Params>;
 
-  /// Listener for ROS2 node parameters.
-  using ParamListener = node_plugin_manifest_params::ParamListener;
-
-  static const std::string PARAM_NAME_NAMES;
   static const std::string PARAM_NAME_CLASS;
   static const std::string PARAM_NAME_PACKAGE;
   static const std::string PARAM_NAME_LIBRARY;
@@ -59,9 +63,7 @@ public:
    */
   static NodeManifest fromFile(const std::string& file_path);
 
-  static NodeManifest parse(const std::string& manifest_str);
-
-  static NodeManifest fromParamListener(const ParamListener& param_listener);
+  static NodeManifest fromString(const std::string& manifest_str);
 
   bool contains(const std::string& node_name) const;
 
@@ -100,9 +102,6 @@ public:
   void toFile(const std::string& file_path) const;
 
   std::string toString() const;
-
-  rcl_interfaces::msg::SetParametersResult toROSParameters(rclcpp::Node::SharedPtr node_ptr,
-                                                           const std::string& prefix = "") const;
 
   const ParamMap& getInternalMap() const;
 

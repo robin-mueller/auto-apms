@@ -14,33 +14,25 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
-#include "rclcpp/node.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder_factory_interface.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class TreeBuildDirectorBase
+template <typename T>
+class TreeBuilderFactoryTemplate : public TreeBuilderFactoryInterface
 {
 public:
-  TreeBuildDirectorBase(rclcpp::Node::SharedPtr node_ptr);
+  TreeBuilderFactoryTemplate() = default;
+  virtual ~TreeBuilderFactoryTemplate() = default;
 
-  virtual ~TreeBuildDirectorBase() = default;
-
-  virtual bool setRequestedTreeIdentity(const std::string& identity) = 0;
-
-  virtual Tree makeTree(TreeBlackboardSharedPtr root_bb_ptr);
-
-  rclcpp::Node::SharedPtr getNodePtr();
-
-  const rclcpp::Logger& getLogger();
-
-private:
-  virtual bool executeBuildSteps(TreeBuilder& builder) = 0;
-
-  rclcpp::Node::SharedPtr node_ptr_;
-  const rclcpp::Logger logger_;
-  TreeBuilder builder_;
+  std::shared_ptr<TreeBuilderBase> instantiateBuilder(const rclcpp::Node::SharedPtr node_ptr)
+  {
+    static_assert(std::is_convertible_v<T*, TreeBuilderBase*>,
+                  "Cannot convert T* to TreeBuilderBase*. Did you forget to specify the keyword 'public' when "
+                  "inheriting? --> class T : public TreeBuilderBase");
+    return std::make_shared<T>(node_ptr);
+  }
 };
 
 }  // namespace auto_apms_behavior_tree

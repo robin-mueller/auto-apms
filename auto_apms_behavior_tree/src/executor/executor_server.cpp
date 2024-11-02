@@ -15,26 +15,25 @@
 #include "auto_apms_behavior_tree/executor/executor_server.hpp"
 
 #include <functional>
-#include <regex>
 
 #include "auto_apms_core/utils.hpp"
 #include "auto_apms_behavior_tree/definitions.hpp"
+#include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 // clang-format off
-const std::string TreeExecutorServer::PARAM_NAME_BUILD_DIRECTOR = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILD_DIRECTOR;
+const std::string TreeExecutorServer::PARAM_NAME_TREE_BUILDER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILDER;
 const std::string TreeExecutorServer::PARAM_NAME_TICK_RATE = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE;
 const std::string TreeExecutorServer::PARAM_NAME_GROOT2_PORT = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT;
 const std::string TreeExecutorServer::PARAM_NAME_STATE_CHANGE_LOGGER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER;
 // clang-format on
 
 TreeExecutorServer::TreeExecutorServer(const std::string& name, const rclcpp::NodeOptions& options)
-  : TreeExecutorBase(std::make_shared<rclcpp::Node>(name, options))
+  : TreeExecutor(std::make_shared<rclcpp::Node>(name, options))
   , logger_(getNodePtr()->get_logger())
   , executor_param_listener_(getNodePtr())
-  , node_override_param_listener_(getNodePtr(), NODE_OVERRIDE_PARAMETERS_NAMESPACE + ".")
   , start_action_context_(logger_)
   , command_action_context_(logger_)
 {
@@ -62,9 +61,13 @@ TreeExecutorServer::TreeExecutorServer(const std::string& name, const rclcpp::No
 
   // Evaluate possible cli argument dictating to start executing a specific tree immediately
   auto& args = options.arguments();
-  RCLCPP_DEBUG(logger_, "Arguments in rclcpp::NodeOptions: %s", rcpputils::join(args, ", ").c_str());
-  if (args.size() > 1)
-    startExecution(makeCreateTreeCallback(args[1]));
+  if (args.size() > 1)  // First argument is always path of executable
+  {
+    std::vector<std::string> additional_args{ args.begin() + 1, args.end() };
+    RCLCPP_DEBUG(logger_, "Additional cli arguments in rclcpp::NodeOptions: %s",
+                 rcpputils::join(additional_args, ", ").c_str());
+    startExecution(makeCreateTreeCallback(executor_param_listener_.get_params().tree_builder_name, args[1]));
+  }
 }
 
 TreeExecutorServer::TreeExecutorServer(const rclcpp::NodeOptions& options)
@@ -72,48 +75,50 @@ TreeExecutorServer::TreeExecutorServer(const rclcpp::NodeOptions& options)
 {
 }
 
-TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallback(const std::string& tree_identity)
+TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallback(const std::string& tree_builder_name,
+                                                                                  const std::string& tree_build_request,
+                                                                                  const NodeManifest& node_overrides)
 {
-  // Get executor parameters
-  const auto executor_params = executor_param_listener_.get_params();
-
-  // Make sure build director is available
-  if (!tree_build_director_loader_.isClassAvailable(executor_params.tree_build_director))
+  // Make sure builder is available
+  if (!tree_build_director_loader_.isClassAvailable(tree_builder_name))
   {
-    throw exceptions::TreeBuildError("There is no tree build director class named '" +
-                                     executor_params.tree_build_director +
+    throw exceptions::TreeBuildError("There is no tree builder class named '" + tree_builder_name +
                                      "'. Make sure it is registered using the CMake macro "
-                                     "auto_apms_behavior_tree_register_build_directors().");
+                                     "auto_apms_behavior_tree_register_builders().");
   }
 
-  // Try to load and create the tree build director
-  std::shared_ptr<TreeBuildDirectorBase> build_director_ptr;
+  // Try to load and create the tree builder
+  std::shared_ptr<TreeBuilderBase> build_director_ptr;
   try
   {
-    build_director_ptr = tree_build_director_loader_.createUniqueInstance(executor_params.tree_build_director)
-                             ->createBuildDirector(getNodePtr());
+    build_director_ptr =
+        tree_build_director_loader_.createUniqueInstance(tree_builder_name)->instantiateBuilder(getNodePtr());
   }
   catch (const std::exception& e)
   {
-    throw exceptions::TreeBuildError("An error occured when trying to create an instance of build director class '" +
-                                     executor_params.tree_build_director +
+    throw exceptions::TreeBuildError("An error occured when trying to create an instance of tree builder '" +
+                                     tree_builder_name +
                                      "'. Remember that the "
-                                     "AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_DIRECTOR macro must be called in the "
+                                     "AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILDER macro must be called in the "
                                      "source file for the "
                                      "plugin to be discoverable. Error message: " +
                                      e.what());
   }
 
   // Request the tree identity
-  if (!build_director_ptr->setRequestedTreeIdentity(tree_identity))
+  if (!build_director_ptr->setRequest(tree_build_request))
   {
-    throw exceptions::TreeBuildError("Behavior tree identity '" + tree_identity + "' was denied by build director '" +
-                                     executor_params.tree_build_director +
-                                     "'(setRequestedTreeIdentity() returned false).");
+    throw exceptions::TreeBuildError("Request to build tree '" + tree_build_request + "' was denied by tree builder '" +
+                                     tree_builder_name + "'(setRequest() returned false).");
   }
 
-  // By passing the build director's shared pointer to the callback, it lives on and makeTree() can be called later.
-  return [build_director_ptr](TreeBlackboardSharedPtr bb) { return build_director_ptr->makeTree(bb); };
+  // By passing the builder's shared pointer to the callback, it lives on and the tree can be built later.
+  return [this, node_overrides, build_director_ptr](TreeBlackboardSharedPtr bb) {
+    TreeBuilder builder;
+    build_director_ptr->configureBuilder(builder);
+    builder.registerNodePlugins(getNodePtr(), node_overrides, true);
+    return builder.buildTree(bb);
+  };
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -140,26 +145,17 @@ TreeExecutorServer::on_set_parameters_callback_(const std::vector<rclcpp::Parame
       return create_rejected("Parameter cannot change when executor is busy");
     }
 
-    // Check if build director plugin name is valid
-    if (param_name == PARAM_NAME_BUILD_DIRECTOR)
+    // Check if builder plugin name is valid
+    if (param_name == PARAM_NAME_TREE_BUILDER)
     {
       const std::string class_name = p.as_string();
       if (!tree_build_director_loader_.isClassAvailable(class_name))
       {
-        return create_rejected("There is no tree build director class named '" + class_name +
+        return create_rejected("There is no tree builder class named '" + class_name +
                                "'. Make sure it is registered using the CMake macro "
-                               "auto_apms_behavior_tree_register_build_directors().");
+                               "auto_apms_behavior_tree_register_builders().");
       }
     }
-
-    // Make it possible to set node parameters by setting a parameter with a name formatted like:
-    // <namespace>.<node_name>.<key>
-    // If there are no values for the specific node <node_name>
-    // std::regex pattern("^" + NODE_OVERRIDE_PARAMETERS_NAMESPACE + "\\.([^.]+)$");
-    // if (std::smatch matches; std::regex_match(param_name, matches, pattern) && matches.size() > 1)
-    // {
-    //   const std::string node_name = matches[1].str();
-    // }
   }
 
   // If not returned yet, accept to set the parameter
@@ -179,13 +175,32 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
+  NodeManifest node_overrides;
   try
   {
-    create_tree_callback_ = makeCreateTreeCallback(goal_ptr->tree_identity);
+    node_overrides = NodeManifest::fromString(goal_ptr->node_overrides);
   }
   catch (const std::exception& e)
   {
-    RCLCPP_WARN(logger_, "Goal %s was REJECTED: %s", rclcpp_action::to_string(uuid).c_str(), e.what());
+    RCLCPP_WARN(logger_, "Goal %s was REJECTED because parsing the node override manifest failed: %s",
+                rclcpp_action::to_string(uuid).c_str(), e.what());
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
+  try
+  {
+    // Use the goal's information for determining the builder plugin to load if the string is non-empty.
+    // Otherwise use the current value of the parameter.
+    const std::string builder_name = goal_ptr->tree_builder_name.empty() ?
+                                         executor_param_listener_.get_params().tree_builder_name :
+                                         goal_ptr->tree_builder_name;
+    create_tree_callback_ = makeCreateTreeCallback(builder_name, goal_ptr->tree_build_request, node_overrides);
+  }
+  catch (const std::exception& e)
+  {
+    RCLCPP_WARN(logger_, "Goal %s was REJECTED due to an error during configuring the tree builder: %s",
+                rclcpp_action::to_string(uuid).c_str(), e.what());
+    return rclcpp_action::GoalResponse::REJECT;
   }
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -199,8 +214,35 @@ TreeExecutorServer::handle_start_cancel_(std::shared_ptr<StartActionContext::Goa
 
 void TreeExecutorServer::handle_start_accept_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr)
 {
-  start_action_context_.setUp(goal_handle_ptr);
-  startExecution(create_tree_callback_);
+  try
+  {
+    startExecution(create_tree_callback_);
+  }
+  catch (const std::exception& e)
+  {
+    auto result_ptr = std::make_shared<StartActionContext::Result>();
+    result_ptr->message = "An error occured when trying to start execution: " + std::string(e.what());
+    result_ptr->tree_result = StartActionContext::Result::TREE_RESULT_NOT_SET;
+    goal_handle_ptr->abort(result_ptr);
+    RCLCPP_ERROR_STREAM(logger_, result_ptr->message);
+    return;
+  }
+
+  // If attach is true, the goal's life time is synchronized with the execution. Otherwise we succeed immediately and
+  // leave the executor running (Detached mode).
+  if (goal_handle_ptr->get_goal()->attach)
+  {
+    start_action_context_.setUp(goal_handle_ptr);
+  }
+  else
+  {
+    auto result_ptr = std::make_shared<StartActionContext::Result>();
+    result_ptr->message = "Detached execution started successfully";
+    result_ptr->tree_result = StartActionContext::Result::TREE_RESULT_NOT_SET;
+    result_ptr->terminated_tree_identity = getTreeName();
+    goal_handle_ptr->succeed(result_ptr);
+    RCLCPP_DEBUG_STREAM(logger_, result_ptr->message);
+  }
 }
 
 rclcpp_action::GoalResponse TreeExecutorServer::handle_command_goal_(
@@ -212,7 +254,7 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_command_goal_(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (isBusy() && start_action_context_.getGoalHandlePtr()->is_canceling())
+  if (isBusy() && start_action_context_.isValid() && start_action_context_.getGoalHandlePtr()->is_canceling())
   {
     RCLCPP_WARN(logger_, "Request for setting tree executor command rejected, because tree executor is canceling.");
     return rclcpp_action::GoalResponse::REJECT;
@@ -298,10 +340,28 @@ void TreeExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionCon
       setControlCommand(ControlCommand::TERMINATE);
       break;
   }
+  ExecutionState requested_state;
+  switch (command_request)
+  {
+    case CommandActionContext::Goal::COMMAND_RESUME:
+      requested_state = ExecutionState::RUNNING;
+      break;
+    case CommandActionContext::Goal::COMMAND_PAUSE:
+      requested_state = ExecutionState::PAUSED;
+      break;
+    case CommandActionContext::Goal::COMMAND_HALT:
+      requested_state = ExecutionState::HALTED;
+      break;
+    case CommandActionContext::Goal::COMMAND_TERMINATE:
+      requested_state = ExecutionState::IDLE;
+      break;
+    default:
+      throw std::logic_error("command_request is unkown");
+  }
 
   command_timer_ptr_ = getNodePtr()->create_wall_timer(
       std::chrono::duration<double, std::milli>(executor_param_listener_.get_params().tick_rate),
-      [this, command_request, goal_handle_ptr, action_result_ptr = std::make_shared<CommandActionContext::Result>()]() {
+      [this, requested_state, goal_handle_ptr, action_result_ptr = std::make_shared<CommandActionContext::Result>()]() {
         // Check if canceling
         if (goal_handle_ptr->is_canceling())
         {
@@ -314,35 +374,18 @@ void TreeExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionCon
         const auto current_state = getExecutionState();
 
         // If the execution state has become IDLE in the mean time, request failed if termination was not desired
-        if (command_request != CommandActionContext::Goal::COMMAND_TERMINATE && current_state == ExecutionState::IDLE)
+        if (requested_state != ExecutionState::IDLE && current_state == ExecutionState::IDLE)
         {
-          RCLCPP_ERROR(logger_, "Executor command %i failed due to cancelation of executon timer. Aborting.",
-                       command_request);
+          RCLCPP_ERROR(logger_, "Failed to reach requested state %s due to cancelation of executon timer. Aborting.",
+                       toStr(requested_state).c_str());
           goal_handle_ptr->abort(action_result_ptr);
           command_timer_ptr_->cancel();
           return;
         }
 
         // Wait for the requested state to be reached
-        switch (command_request)
-        {
-          case CommandActionContext::Goal::COMMAND_RESUME:
-            if (current_state != ExecutionState::RUNNING)
-              return;
-            break;
-          case CommandActionContext::Goal::COMMAND_PAUSE:
-            if (current_state != ExecutionState::PAUSED)
-              return;
-            break;
-          case CommandActionContext::Goal::COMMAND_HALT:
-            if (current_state != ExecutionState::HALTED)
-              return;
-            break;
-          case CommandActionContext::Goal::COMMAND_TERMINATE:
-            if (current_state != ExecutionState::IDLE)
-              return;
-            break;
-        }
+        if (current_state != requested_state)
+          return;
 
         goal_handle_ptr->succeed(action_result_ptr);
         command_timer_ptr_->cancel();
@@ -356,7 +399,7 @@ bool TreeExecutorServer::onTick()
    */
   setExecutorParameters(executor_param_listener_.get_params());
 
-  if (!start_action_context_.isValid())  // Don't send feedback if started due to options argument from constructor
+  if (!start_action_context_.isValid())  // Don't send feedback if started in detached mode
     return true;
 
   /**
@@ -383,7 +426,7 @@ bool TreeExecutorServer::onTick()
 
 void TreeExecutorServer::onClose(const ExecutionResult& result)
 {
-  if (!start_action_context_.isValid())  // Do nothing if started due to options argument from constructor
+  if (!start_action_context_.isValid())  // Do nothing if started in detached mode
     return;
 
   auto result_ptr = start_action_context_.getResultPtr();
@@ -425,8 +468,8 @@ void TreeExecutorServer::onClose(const ExecutionResult& result)
       break;
   }
 
-  // Release goal handle
-  start_action_context_.releaseGoalHandle();
+  // Reset action context
+  start_action_context_.invalidate();
 }
 
 }  // namespace auto_apms_behavior_tree

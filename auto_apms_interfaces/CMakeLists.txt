@@ -13,6 +13,10 @@ set(TEST_SOURCES
     "action/TaskTestAction.action"
 )
 
+set(MESSAGE_SOURCES
+)
+set(SERVICE_SOURCES
+)
 set(ACTION_SOURCES
     "action/ArmDisarm.action"
     "action/EnableHold.action"
@@ -23,14 +27,6 @@ set(ACTION_SOURCES
     "action/Mission.action"
     "action/StartTreeExecutor.action"
     "action/CommandTreeExecutor.action"
-
-    "action/LaunchBTExecutor.action"
-    "action/BTExecutorCommand.action"
-)
-set(MESSAGE_SOURCES
-    )
-set(SERVICE_SOURCES
-    "srv/UploadBehaviorTree.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME} ${TEST_SOURCES} ${ACTION_SOURCES} ${SERVICE_SOURCES} ${MESSAGE_SOURCES}

@@ -11,11 +11,11 @@ find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
-find_package(auto_apms_interfaces REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
 find_package(generate_parameter_library REQUIRED)
 find_package(auto_apms_core)
+find_package(auto_apms_interfaces REQUIRED)
 
 option(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING "Enable debug logging severity" ON)
 if(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
@@ -25,13 +25,12 @@ endif()
 set(_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/internal")
 
 # Behavior tree executor parameter names
-set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILD_DIRECTOR "tree_build_director")
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILDER "tree_builder_name")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE "tick_rate")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT "groot2_port")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER "state_change_logger")
 
-# Node plugin manifest parameter names
-set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_NAMES "names")
+# Node manifest parameter names
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS "class_name")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE "package")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY "library")
@@ -42,7 +41,7 @@ set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT "request_timeo
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE "behavior_trees")
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE "auto_apms_behavior_tree__tree")
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE "auto_apms_behavior_tree__node")
-set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILD_DIRECTOR "auto_apms_behavior_tree__build_director")
+set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILDER "auto_apms_behavior_tree__builder")
 set(_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE "auto_apms_behavior_tree")
 
 #
@@ -51,27 +50,22 @@ set(_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE "auto_apms_behavior_tree")
 
 # Generate parameter headers employing https://github.com/PickNikRobotics/generate_parameter_library
 configure_file("src/executor/executor_params.yaml.in" "${CMAKE_CURRENT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/executor_params.yaml")
-configure_file("src/node/node_manifest_params.yaml.in" "${CMAKE_CURRENT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/node_manifest_params.yaml")
 set(_temp ${CMAKE_CURRENT_SOURCE_DIR})  # WORKAROUND: temporarily change CMAKE_CURRENT_SOURCE_DIR since the function doesn't allow to load the parameter definition file from a different directory
 set(CMAKE_CURRENT_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}")
 generate_parameter_library(executor_params "executor_params.yaml")
-generate_parameter_library(node_manifest_params "node_manifest_params.yaml")
 set(CMAKE_CURRENT_SOURCE_DIR ${_temp})
 
 add_library(auto_apms_behavior_tree SHARED
     "src/node/node_manifest.cpp"
     "src/node/ros_node_context.cpp"
     "src/builder/tree_builder.cpp"
-    "src/builder/tree_build_director_base.cpp"
+    "src/builder/tree_builder_base.cpp"
     "src/executor/state_observer.cpp"
-    "src/executor/executor_base.cpp"
+    "src/executor/executor.cpp"
     "src/executor/executor_server.cpp"
-    "src/executor/client.cpp"
     "src/resource/tree_resource.cpp"
     "src/resource/node_class_loader.cpp"
-    "src/resource/tree_build_director_class_loader.cpp"
-
-    "src/bt_executor.cpp"
+    "src/resource/tree_builder_class_loader.cpp"
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -80,15 +74,14 @@ target_include_directories(auto_apms_behavior_tree PUBLIC
 target_compile_definitions(auto_apms_behavior_tree PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE}"
     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE}"
-    _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILD_DIRECTOR="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILD_DIRECTOR}"
-    _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_NAMES="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_NAMES}"
+    _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILDER="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILDER}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PORT="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PORT}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT}"
-    _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILD_DIRECTOR="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILD_DIRECTOR}"
+    _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILDER="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILDER}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER}"
@@ -106,7 +99,6 @@ ament_target_dependencies(auto_apms_behavior_tree
 )
 target_link_libraries(auto_apms_behavior_tree
     executor_params
-    node_manifest_params
 )
 
 # Install the version header to the autogenerated headers dir also used by rosidl generators
@@ -116,8 +108,7 @@ ament_generate_version_header(auto_apms_behavior_tree HEADER_PATH "${PROJECT_NAM
 # ------------ Behavior Tree Nodes --------------
 #
 
-add_library(bt_nodes SHARED
-    "src/node/impl/srv/upload_bt.cpp"
+add_library(tree_nodes SHARED
     "src/node/impl/action/throw_exception.cpp"
     "src/node/impl/action/load_bt.cpp"
     "src/node/impl/action/launch_executor.cpp"
@@ -125,14 +116,13 @@ add_library(bt_nodes SHARED
     "src/node/impl/action/pause_executor.cpp"
     "src/node/impl/action/resume_executor.cpp"
 )
-target_link_libraries(bt_nodes auto_apms_behavior_tree)
+target_link_libraries(tree_nodes auto_apms_behavior_tree)
 
 # In the original package, we need to manually include this before being able to call the register_nodes macro.
 # However, it is automatically available for all downstream packages.
 include("cmake/register_nodes.cmake")
 
-auto_apms_behavior_tree_register_nodes(bt_nodes
-    "auto_apms_behavior_tree::UploadBehaviorTreeAction"
+auto_apms_behavior_tree_register_nodes(tree_nodes
     "auto_apms_behavior_tree::ThrowException"
     "auto_apms_behavior_tree::LoadBehaviorTreeAction"
     "auto_apms_behavior_tree::LaunchExecutorAction"
@@ -142,20 +132,20 @@ auto_apms_behavior_tree_register_nodes(bt_nodes
 )
 
 #
-# ------------ Build Directors --------------
+# ------------ Tree Builders --------------
 #
 
-add_library(build_directors SHARED
-    "src/builder/impl/tree_resource_build_director.cpp"
+add_library(tree_builders SHARED
+    "src/builder/impl/tree_resource_builder.cpp"
 )
-target_link_libraries(build_directors auto_apms_behavior_tree)
+target_link_libraries(tree_builders auto_apms_behavior_tree)
 
 # In the original package, we need to manually include this before being able to call the register_nodes macro.
 # However, it is automatically available for all downstream packages.
-include("cmake/register_build_directors.cmake")
+include("cmake/register_builders.cmake")
 
-auto_apms_behavior_tree_register_build_directors(build_directors
-    "auto_apms_behavior_tree::TreeResourceBuildDirector"
+auto_apms_behavior_tree_register_builders(tree_builders
+    "auto_apms_behavior_tree::TreeResourceBuilder"
 )
 
 #
@@ -169,9 +159,9 @@ rclcpp_components_register_node(auto_apms_behavior_tree
 )
 
 # Create a file containing a complete behavior tree node plugin load manifest
-add_executable(create_node_plugin_manifest "src/cli/internal/create_node_plugin_manifest.cpp")
-target_link_libraries(create_node_plugin_manifest auto_apms_behavior_tree)
-target_compile_definitions(create_node_plugin_manifest PRIVATE
+add_executable(create_node_manifest "src/cli/internal/create_node_manifest.cpp")
+target_link_libraries(create_node_manifest auto_apms_behavior_tree)
+target_compile_definitions(create_node_manifest PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE}"
 )
 
@@ -183,14 +173,6 @@ target_link_libraries(generate_node_model auto_apms_behavior_tree)
 add_executable(run_behavior_tree "src/cli/run_behavior_tree.cpp")
 target_link_libraries(run_behavior_tree auto_apms_behavior_tree)
 
-# Register a behavior tree with an executor
-add_executable(upload_tree "src/cli/upload_tree.cpp")
-target_link_libraries(upload_tree auto_apms_behavior_tree)
-
-# Run the executor of a behavior tree
-add_executable(run_executor "src/cli/run_executor.cpp")
-target_link_libraries(run_executor auto_apms_behavior_tree)
-
 #
 # ------------ Packaging --------------
 #
@@ -199,7 +181,6 @@ target_link_libraries(run_executor auto_apms_behavior_tree)
 install(
     TARGETS
     executor_params
-    node_manifest_params
     auto_apms_behavior_tree
     EXPORT export_${PROJECT_NAME}
     LIBRARY DESTINATION lib
@@ -223,8 +204,8 @@ ament_export_dependencies(
 ###### Non export libraries ######
 install(
     TARGETS
-    bt_nodes
-    build_directors
+    tree_nodes
+    tree_builders
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
@@ -234,22 +215,20 @@ install(
 install(
     TARGETS
     run_behavior_tree
-    upload_tree
-    run_executor
-    DESTINATION lib/${PROJECT_NAME}
+    DESTINATION "lib/${PROJECT_NAME}"
 )
 
 ###### Internal executables ######
 install(
     TARGETS
-    create_node_plugin_manifest
+    create_node_manifest
     generate_node_model
-    DESTINATION ${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}
+    DESTINATION "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}"
 )
 
 install(
-    DIRECTORY include/${PROJECT_NAME}
-    DESTINATION include
+    DIRECTORY "include/${PROJECT_NAME}"
+    DESTINATION "include"
 )
 
 # install(
@@ -258,15 +237,12 @@ install(
 # )
 
 install(
-    FILES
-    "cmake/register_nodes.cmake"
-    "cmake/register_file.cmake"
-    "cmake/register_resources_hook.cmake"
-    DESTINATION share/${PROJECT_NAME}/cmake
+    DIRECTORY "cmake"
+    DESTINATION "share/${PROJECT_NAME}/cmake"
 )
 
 # For downstream packages this is registered as an extension to ament_package,
 # but here we need to include this script manually to install the resource marker files
 include("cmake/register_resources_hook.cmake")
 
-ament_package(CONFIG_EXTRAS auto_apms_behavior_tree-extras.cmake.in)
+ament_package(CONFIG_EXTRAS "auto_apms_behavior_tree-extras.cmake.in")

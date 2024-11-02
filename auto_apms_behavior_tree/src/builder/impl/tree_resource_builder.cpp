@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/tree_build_director.hpp"
+#include "auto_apms_behavior_tree/builder.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class TreeResourceBuildDirector : public TreeBuildDirectorBase
+class TreeResourceBuilder : public TreeBuilderBase
 {
 public:
-  using TreeBuildDirectorBase::TreeBuildDirectorBase;
+  using TreeBuilderBase::TreeBuilderBase;
 
-  bool setRequestedTreeIdentity(const std::string& identity) override final
+  bool setRequest(const std::string& request) override final
   {
     try
     {
-      resource_ptr_ = std::make_unique<TreeResource>(TreeResource::fromString(identity));
+      resource_ptr_ = std::make_unique<TreeResource>(TreeResource::fromString(request));
     }
     catch (const exceptions::ResourceIdentityFormatError& e)
     {
@@ -43,12 +43,11 @@ public:
     return true;
   }
 
-  bool executeBuildSteps(TreeBuilder& builder) override final
+  void configureBuilder(TreeBuilder& builder) override final
   {
     if (!resource_ptr_)
-      return false;
+      throw exceptions::TreeBuildError("TreeResourceBuilder - resource_ptr_ is nullptr.");
     builder.addTreeFromResource(*resource_ptr_, getNodePtr());
-    return true;
   }
 
 private:
@@ -57,4 +56,4 @@ private:
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_DIRECTOR(auto_apms_behavior_tree::TreeResourceBuildDirector)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILDER(auto_apms_behavior_tree::TreeResourceBuilder)

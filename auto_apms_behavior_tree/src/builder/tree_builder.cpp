@@ -21,17 +21,16 @@
 namespace auto_apms_behavior_tree
 {
 
-TreeBuilder::TreeBuilder()
+TreeBuilder::TreeBuilder(std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr) : factory_ptr_(factory_ptr)
 {
   doc_.Parse("<root BTCPP_format=\"4\"></root>");
 }
 
-TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
-                                              const NodeManifest& node_plugin_manifest,
+TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
                                               NodePluginClassLoader& tree_node_loader, bool override)
 {
   const auto registered_nodes = getRegisteredNodes();
-  for (const auto& [node_name, params] : node_plugin_manifest.getInternalMap())
+  for (const auto& [node_name, params] : node_manifest.getInternalMap())
   {
     // If the node is already registered
     if (registered_nodes.find(node_name) != registered_nodes.end())
@@ -42,7 +41,7 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                                          "' is already registered. Set override = true to allow for "
                                          "overriding previously registered nodes.");
       }
-      impl_.unregisterBuilder(node_name);
+      factory_ptr_->unregisterBuilder(node_name);
     }
 
     // Check if the class we search for is actually available with the loader.
@@ -56,7 +55,7 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
                                        "using auto_apms_behavior_tree_register_nodes().");
     }
 
-    RCLCPP_DEBUG(node_ptr->get_logger(), "Loading behavior tree node plugin '%s (%s)' from library %s.",
+    RCLCPP_DEBUG(node_ptr->get_logger(), "Loading behavior tree node '%s' (Class: %s) from library %s.",
                  node_name.c_str(), params.class_name.c_str(),
                  tree_node_loader.getClassLibraryPath(params.class_name).c_str());
 
@@ -85,11 +84,11 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
             std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(params.wait_timeout));
         ros_params.request_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::duration<double>(params.request_timeout));
-        plugin_instance->registerWithBehaviorTreeFactory(impl_, node_name, &ros_params);
+        plugin_instance->registerWithBehaviorTreeFactory(*factory_ptr_, node_name, &ros_params);
       }
       else
       {
-        plugin_instance->registerWithBehaviorTreeFactory(impl_, node_name);
+        plugin_instance->registerWithBehaviorTreeFactory(*factory_ptr_, node_name);
       }
     }
     catch (const std::exception& e)
@@ -101,11 +100,11 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
   return *this;
 }
 
-TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr,
-                                              const NodeManifest& node_plugin_manifest, bool override)
+TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
+                                              bool override)
 {
   NodePluginClassLoader loader;
-  return registerNodePlugins(node_ptr, node_plugin_manifest, loader, override);
+  return registerNodePlugins(node_ptr, node_manifest, loader, override);
 }
 
 TreeBuilder& TreeBuilder::addTreeFromXMLDocument(const tinyxml2::XMLDocument& doc)
@@ -147,7 +146,7 @@ TreeBuilder& TreeBuilder::addTreeFromXMLDocument(const tinyxml2::XMLDocument& do
   try
   {
     // Verify the structure of the new tree document and that all mentioned nodes are registered with the factory
-    BT::VerifyXML(writeTreeBufferToString(), getRegisteredNodes());
+    BT::VerifyXML(writeTreeXMLToString(), getRegisteredNodes());
   }
   catch (const BT::RuntimeError& e)
   {
@@ -196,7 +195,7 @@ TreeBuilder& TreeBuilder::setMainTreeName(const std::string& main_tree_name)
   return *this;
 }
 
-std::string TreeBuilder::writeTreeBufferToString() const
+std::string TreeBuilder::writeTreeXMLToString() const
 {
   return writeXMLDocumentToString(doc_);
 }
@@ -204,20 +203,20 @@ std::string TreeBuilder::writeTreeBufferToString() const
 std::unordered_map<std::string, BT::NodeType> TreeBuilder::getRegisteredNodes()
 {
   std::unordered_map<std::string, BT::NodeType> registered_nodes;
-  for (const auto& it : impl_.manifests())
+  for (const auto& it : factory_ptr_->manifests())
     registered_nodes.insert({ it.first, it.second.type });
   return registered_nodes;
 }
 
-Tree TreeBuilder::getTree(const std::string main_tree_name, TreeBlackboardSharedPtr root_bb_ptr)
+Tree TreeBuilder::buildTree(const std::string main_tree_name, TreeBlackboardSharedPtr root_bb_ptr)
 {
   setMainTreeName(main_tree_name);
   Tree tree;
   try
   {
-    impl_.registerBehaviorTreeFromText(writeTreeBufferToString());
-    tree = impl_.createTree(getMainTreeName(), root_bb_ptr);
-    impl_.clearRegisteredBehaviorTrees();
+    factory_ptr_->registerBehaviorTreeFromText(writeTreeXMLToString());
+    tree = factory_ptr_->createTree(getMainTreeName(), root_bb_ptr);
+    factory_ptr_->clearRegisteredBehaviorTrees();
   }
   catch (const std::exception& e)
   {
@@ -226,9 +225,9 @@ Tree TreeBuilder::getTree(const std::string main_tree_name, TreeBlackboardShared
   return tree;
 }
 
-Tree TreeBuilder::getTree(TreeBlackboardSharedPtr root_bb_ptr)
+Tree TreeBuilder::buildTree(TreeBlackboardSharedPtr root_bb_ptr)
 {
-  return getTree("", root_bb_ptr);
+  return buildTree("", root_bb_ptr);
 }
 
 std::set<std::string> TreeBuilder::getTreeNames(const tinyxml2::XMLDocument& doc)

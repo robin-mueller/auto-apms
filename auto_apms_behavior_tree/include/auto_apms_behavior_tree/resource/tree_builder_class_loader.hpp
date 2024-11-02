@@ -15,26 +15,26 @@
 #pragma once
 
 #include "pluginlib/class_loader.hpp"
-#include "auto_apms_behavior_tree/builder/tree_build_director_factory_interface.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder_factory_interface.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief Version of pluginlib::ClassLoader specifically for loading installed behavior tree build director plugins.
+ * @brief Version of pluginlib::ClassLoader specifically for loading installed behavior tree builder plugins.
  */
-class TreeBuildDirectorClassLoader : public pluginlib::ClassLoader<TreeBuildDirectorFactoryInterface>
+class TreeBuilderClassLoader : public pluginlib::ClassLoader<TreeBuilderFactoryInterface>
 {
 public:
   /**
-   * @brief TreeBuildDirectorClassLoader constructor.
+   * @brief TreeBuilderClassLoader constructor.
    * @param search_packages Packages to consider when searching for plugin resources. Leave empty to search in all
    * packages.
    * @throws auto_apms_core::exceptions::ResourceNotFoundError if failed to find a pluginlib plugin
    * manifest file in a package specified in @p search_packages or if an `ament_index` resource marker file is invalid.
    */
-  TreeBuildDirectorClassLoader(const std::set<std::string>& search_packages = {});
+  TreeBuilderClassLoader(const std::set<std::string>& search_packages = {});
 };
 
 }  // namespace auto_apms_behavior_tree

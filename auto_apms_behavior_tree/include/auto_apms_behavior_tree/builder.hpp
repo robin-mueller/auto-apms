@@ -14,19 +14,19 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_build_director_factory_template.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder_factory_template.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief Macro for registering a behavior tree build director plugin which may be loaded at runtime to create a
+ * @brief Macro for registering a behavior tree builder plugin which may be loaded at runtime to create a
  * behavior tree according to the implementation.
  *
- * Build directors are created by deriving from auto_apms_behavior_tree::TreeBuildDirectorBase and implementing the
- * virtual methods.
+ * Builders are created by deriving from auto_apms_behavior_tree::TreeBuilderBase and implementing the
+ * virtual methods as desired.
  *
  * @param type Fully qualified name of the class.
  */
-#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_DIRECTOR(type)                                                          \
-  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::TreeBuildDirectorFactoryTemplate<type>,                              \
-                         auto_apms_behavior_tree::TreeBuildDirectorFactoryInterface)
+#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILDER(type)                                                                 \
+  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::TreeBuilderFactoryTemplate<type>,                                    \
+                         auto_apms_behavior_tree::TreeBuilderFactoryInterface)

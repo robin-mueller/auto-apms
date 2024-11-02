@@ -3,7 +3,7 @@
 <package format="3">
     <name>auto_apms_interfaces</name>
     <version>0.0.0</version>
-    <description>Interfaces for auto_apms package</description>
+    <description>Interfaces for the auto-apms repository</description>
     <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
     <license>Apache License 2.0</license>
 
@@ -12,8 +12,6 @@
 
     <depend>geometry_msgs</depend>
     <depend>action_msgs</depend>
-
-    <exec_depend>rosidl_default_runtime</exec_depend>
 
     <member_of_group>rosidl_interface_packages</member_of_group>
 

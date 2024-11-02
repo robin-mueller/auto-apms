@@ -28,12 +28,12 @@ int main(int argc, char** argv)
 {
   if (argc < 5)
   {
-    std::cerr << "create_node_plugin_manifest: Missing inputs! The program requires: \n\t1.) the yaml "
+    std::cerr << "create_node_manifest: Missing inputs! The program requires: \n\t1.) the yaml "
                  "node manifest files (separated by ';').\n\t2.) Build information for nodes supposed to be "
                  "registered during build time (List of '<class_name>@<library_build_path>' "
                  "separated by ';').\n\t3.) The name of the package that provides the build targets.\n\t4.) Output "
                  "file for the complete node plugin manifest.\n\t";
-    std::cerr << "Usage: create_node_plugin_manifest <manifest_files> <build_infos> <build_package_name> "
+    std::cerr << "Usage: create_node_manifest <manifest_files> <build_infos> <build_package_name> "
                  "<output_file>\n";
     return EXIT_FAILURE;
   }
@@ -131,7 +131,7 @@ int main(int argc, char** argv)
   }
   catch (const std::exception& e)
   {
-    std::cerr << "ERROR (create_node_plugin_manifest): " << e.what() << "\n";
+    std::cerr << "ERROR (create_node_manifest): " << e.what() << "\n";
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

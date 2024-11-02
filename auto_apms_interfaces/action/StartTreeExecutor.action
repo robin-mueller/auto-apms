@@ -1,5 +1,7 @@
 # Request
-string tree_identity
+string tree_builder_name
+string tree_build_request
+string node_overrides
 bool attach true
 ---
 # Result
