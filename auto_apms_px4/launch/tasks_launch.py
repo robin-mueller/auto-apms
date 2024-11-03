@@ -31,18 +31,13 @@ ALL_TASK_NAMES = [
 
 def generate_launch_description():
     namespace_launch_arg = DeclareLaunchArgument(
-        "namespace", description="namespace for the task nodes", default_value=""
+        "namespace", description="Namespace for the task nodes", default_value=""
     )
 
     namespace = LaunchConfiguration("namespace")
 
     composable_nodes = [
-        ComposableNode(
-            package="auto_apms_px4",
-            namespace=namespace,
-            plugin=name,
-        )
-        for name in ALL_TASK_NAMES
+        ComposableNode(package="auto_apms_px4", namespace=namespace, plugin=name) for name in ALL_TASK_NAMES
     ]
 
     container = ComposableNodeContainer(

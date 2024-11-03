@@ -47,7 +47,7 @@ public:
   };
   enum class TreeExitBehavior : uint8_t
   {
-    CLOSE,
+    TERMINATE,
     RESTART
   };
   enum class ExecutionResult : uint8_t
@@ -55,12 +55,11 @@ public:
     TREE_SUCCEEDED,
     TREE_FAILED,
     TERMINATED_PREMATURELY,
-    START_REJECTED,
     ERROR
   };
 
 private:
-  using CloseExecutionCallback = std::function<void(ExecutionResult, const std::string&)>;
+  using TerminationCallback = std::function<void(ExecutionResult, const std::string&)>;
 
 public:
   using CreateTreeCallback = std::function<Tree(TreeBlackboardSharedPtr)>;
@@ -77,7 +76,7 @@ public:
   std::string getTreeName();
 
 private:
-  void execution_routine_(CloseExecutionCallback close_execution_cb);
+  void execution_routine_(TerminationCallback termination_callback);
 
   /* Virtual member functions */
 
@@ -87,7 +86,7 @@ private:
 
   virtual TreeExitBehavior onTreeExit(bool success);
 
-  virtual void onClose(const ExecutionResult& result);
+  virtual void onTermination(const ExecutionResult& result);
 
 public:
   /* Setter functions */
@@ -124,6 +123,7 @@ private:
   std::unique_ptr<BT::Groot2Publisher> groot2_publisher_ptr_;
   std::unique_ptr<BTStateObserver> state_observer_ptr_;
   rclcpp::TimerBase::SharedPtr execution_timer_ptr_;
+  ExecutionState prev_execution_state_;
   ControlCommand control_command_;
   bool execution_stopped_;
   std::string termination_reason_;

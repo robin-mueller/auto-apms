@@ -231,14 +231,9 @@ install(
     DESTINATION "include"
 )
 
-# install(
-#     DIRECTORY launch
-#     DESTINATION share/${PROJECT_NAME}
-# )
-
 install(
     DIRECTORY "cmake"
-    DESTINATION "share/${PROJECT_NAME}/cmake"
+    DESTINATION "share/${PROJECT_NAME}"
 )
 
 # For downstream packages this is registered as an extension to ament_package,

@@ -15,6 +15,8 @@
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
 
 #include <fstream>
+#include <algorithm>
+
 #include "auto_apms_behavior_tree/exceptions.hpp"
 #include "yaml-cpp/yaml.h"
 
@@ -35,8 +37,8 @@ struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
       params_node[Manifest::PARAM_NAME_PACKAGE] = params.package;
       params_node[Manifest::PARAM_NAME_LIBRARY] = params.library;
       params_node[Manifest::PARAM_NAME_PORT] = params.port;
-      params_node[Manifest::PARAM_NAME_WAIT_TIMEOUT] = params.wait_timeout;
-      params_node[Manifest::PARAM_NAME_REQUEST_TIMEOUT] = params.request_timeout;
+      params_node[Manifest::PARAM_NAME_WAIT_TIMEOUT] = params.wait_timeout.count();
+      params_node[Manifest::PARAM_NAME_REQUEST_TIMEOUT] = params.request_timeout.count();
       node[name] = params_node;
     }
     return node;
@@ -44,14 +46,16 @@ struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
   static bool decode(const Node& node, Manifest::ParamMap& lhs)
   {
     if (!node.IsMap())
-      throw std::runtime_error("Root YAML::Node must be map.");
+      throw std::runtime_error("Root YAML::Node must be map but is type " + std::to_string(node.Type()) +
+                               " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
     for (YAML::const_iterator it = node.begin(); it != node.end(); ++it)
     {
       const auto& name = it->first.as<std::string>();
       const auto& params_node = it->second;
       if (!params_node.IsMap())
-        throw std::runtime_error("Params YAML::Node must be map.");
+        throw std::runtime_error("Params YAML::Node must be map but is type " + std::to_string(params_node.Type()) +
+                                 " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
       Manifest::Params params;
       for (YAML::const_iterator p = params_node.begin(); p != params_node.end(); ++p)
@@ -59,7 +63,9 @@ struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
         const auto param_key = p->first.as<std::string>();
         const auto& val = p->second;
         if (!val.IsScalar())
-          throw std::runtime_error("Value for key '" + param_key + "' is not scalar.");
+          throw std::runtime_error("Value for key '" + param_key + "' must be scalar but is type " +
+                                   std::to_string(val.Type()) +
+                                   " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
         if (param_key == Manifest::PARAM_NAME_CLASS)
         {
@@ -83,12 +89,12 @@ struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
         }
         if (param_key == Manifest::PARAM_NAME_WAIT_TIMEOUT)
         {
-          params.wait_timeout = val.as<double>();
+          params.wait_timeout = std::chrono::duration<double>(val.as<double>());
           continue;
         }
         if (param_key == Manifest::PARAM_NAME_REQUEST_TIMEOUT)
         {
-          params.request_timeout = val.as<double>();
+          params.request_timeout = std::chrono::duration<double>(val.as<double>());
           continue;
         }
         // Unkown parameter
@@ -138,7 +144,9 @@ NodeManifest NodeManifest::fromFile(const std::string& file_path)
 
 NodeManifest NodeManifest::fromString(const std::string& manifest_str)
 {
-  return manifest_str.empty() ? ParamMap() : YAML::Load(manifest_str).as<ParamMap>();
+  const bool empty =
+      std::all_of(manifest_str.begin(), manifest_str.end(), [](unsigned char c) { return std::isspace(c); });
+  return empty ? ParamMap() : YAML::Load(manifest_str).as<ParamMap>();
 }
 
 bool NodeManifest::contains(const std::string& node_name) const

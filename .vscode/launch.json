@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "TreeExecutor debugger",
+            "request": "launch",
+            "type": "cppdbg",
+            "miDebuggerServerAddress": "localhost:3000",
+            "cwd": "/",
+            "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree/lib/auto_apms_behavior_tree/tree_executor"
+        }
+    ]
+}

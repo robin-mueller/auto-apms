@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "auto_apms_behavior_tree/node/node_registration_params.hpp"
 #include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
 
 namespace auto_apms_behavior_tree
@@ -27,20 +28,10 @@ namespace auto_apms_behavior_tree
 class NodeManifest
 {
 public:
-  /// @cond
-  struct Params
-  {
-    std::string class_name;
-    std::string package;
-    std::string library;
-    std::string port;
-    double wait_timeout = 3.0;
-    double request_timeout = 1.5;
-  };
-  /// @endcond
+  using Params = NodeRegistrationParams;
 
-  /// Mapping of a node's name and its load parameters.
-  using ParamMap = std::map<std::string, Params>;
+  /// Mapping of a node's name and its registration parameters.
+  using ParamMap = std::map<std::string, NodeRegistrationParams>;
 
   static const std::string PARAM_NAME_CLASS;
   static const std::string PARAM_NAME_PACKAGE;
@@ -67,10 +58,10 @@ public:
 
   bool contains(const std::string& node_name) const;
 
-  Params& operator[](const std::string& node_name);
-  const Params& operator[](const std::string& node_name) const;
+  NodeRegistrationParams& operator[](const std::string& node_name);
+  const NodeRegistrationParams& operator[](const std::string& node_name) const;
 
-  NodeManifest& add(const std::string& node_name, const Params& p);
+  NodeManifest& add(const std::string& node_name, const NodeRegistrationParams& p);
 
   NodeManifest& remove(const std::string& node_name);
 

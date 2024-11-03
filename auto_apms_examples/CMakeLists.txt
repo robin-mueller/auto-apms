@@ -30,31 +30,31 @@ set(SERVICE_SOURCES
 rosidl_generate_interfaces(${PROJECT_NAME} ${ACTION_SOURCES} ${SERVICE_SOURCES} ${MESSAGE_SOURCES})
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} rosidl_typesupport_cpp)
 
-add_library(contingency_management SHARED
-    contingency_management/src/flight_orchestrator.cpp
-    contingency_management/src/safety_monitor.cpp
-    contingency_management/src/contingency_manager.cpp
-    contingency_management/src/mission_manager.cpp
+# add_library(contingency_management SHARED
+    # contingency_management/src/flight_orchestrator.cpp
+    # contingency_management/src/safety_monitor.cpp
+    # contingency_management/src/contingency_manager.cpp
+    # contingency_management/src/mission_manager.cpp
     # contingency_management/src/flight_recorder.cpp
-)
-target_include_directories(contingency_management PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/include>
-    $<INSTALL_INTERFACE:contingency_management/include>)
-ament_target_dependencies(contingency_management
-    auto_apms_behavior_tree
-    rclcpp_components)
-target_link_libraries(contingency_management "${cpp_typesupport_target}")
-install(
-    TARGETS contingency_management
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin)
+# )
+# target_include_directories(contingency_management PUBLIC
+#     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/contingency_management/include>
+#     $<INSTALL_INTERFACE:contingency_management/include>)
+# ament_target_dependencies(contingency_management
+#     auto_apms_behavior_tree
+#     rclcpp_components)
+# target_link_libraries(contingency_management "${cpp_typesupport_target}")
+# install(
+#     TARGETS contingency_management
+#     LIBRARY DESTINATION lib
+#     ARCHIVE DESTINATION lib
+#     RUNTIME DESTINATION bin)
 
-rclcpp_components_register_nodes(contingency_management
-    "auto_apms::ops_engine::FlightOrchestratorExecutor"
-    "auto_apms::ops_engine::SafetyMonitorExecutor"
-    "auto_apms::ops_engine::ContingencyManagerExecutor"
-    "auto_apms::ops_engine::MissionManagerExecutor")
+# rclcpp_components_register_nodes(contingency_management
+#     "auto_apms::ops_engine::FlightOrchestratorExecutor"
+#     "auto_apms::ops_engine::SafetyMonitorExecutor"
+#     "auto_apms::ops_engine::ContingencyManagerExecutor"
+#     "auto_apms::ops_engine::MissionManagerExecutor")
 
 # rclcpp_components_register_node(contingency_management PLUGIN "auto_apms::ops_engine::FlightRecorderNode" EXECUTABLE flight_recorder)
 # rclcpp_components_register_node(contingency_management PLUGIN "auto_apms::ops_engine::MissionManagerExecutor" EXECUTABLE debug_node)
@@ -82,20 +82,20 @@ auto_apms_behavior_tree_register_nodes(behavior_tree_nodes
     "auto_apms::ops_engine::GetSystemState"
 )
 
-auto_apms_behavior_tree_register_trees("contingency_management/trees/contingency_manager.xml"
-    NODE_PLUGIN_MANIFEST
-    "contingency_management/config/contingency_manager_plugins.yaml"
-)
-auto_apms_behavior_tree_register_trees("contingency_management/trees/flight_orchestrator.xml"
-    NODE_PLUGIN_MANIFEST
-    "contingency_management/config/orchestrator_plugins.yaml"
-)
+# auto_apms_behavior_tree_register_trees("contingency_management/trees/contingency_manager.xml"
+#     NODE_MANIFEST
+#     "contingency_management/config/contingency_manager_plugins.yaml"
+# )
+# auto_apms_behavior_tree_register_trees("contingency_management/trees/flight_orchestrator.xml"
+#     NODE_MANIFEST
+#     "contingency_management/config/orchestrator_plugins.yaml"
+# )
 auto_apms_behavior_tree_register_trees("contingency_management/trees/nominal_mission.xml"
-    NODE_PLUGIN_MANIFEST
+    NODE_MANIFEST
     "contingency_management/config/mission_manager_plugins.yaml"
 )
 auto_apms_behavior_tree_register_trees("contingency_management/trees/safety_monitor.xml"
-    NODE_PLUGIN_MANIFEST
+    NODE_MANIFEST
     "contingency_management/config/safety_monitor_plugins.yaml"
 )
 auto_apms_behavior_tree_register_trees("contingency_management/trees/alternate_landing_mission.xml")
@@ -126,7 +126,7 @@ add_and_install_example_executable("src/task_ex1.cpp" auto_apms_core auto_apms_i
 
 auto_apms_behavior_tree_register_trees(
     "example_trees/relative_goto/relative_goto.xml"
-    NODE_PLUGIN_MANIFEST
+    NODE_MANIFEST
     "example_trees/relative_goto/node_plugins.yaml"
 )
 

@@ -317,29 +317,22 @@ template <class T>
 inline void RosActionNode<T>::cancelGoal()
 {
   auto& executor = client_instance_->callback_executor;
-  if (!goal_handle_)
+  if (!goal_response_ && future_goal_handle_.valid())
   {
-    if (future_goal_handle_.valid())
+    // Here the discussion is if we should block or put a timer for the waiting
+    auto ret = executor.spin_until_future_complete(future_goal_handle_, getRosContext().request_timeout);
+    if (ret != rclcpp::FutureReturnCode::SUCCESS)
     {
-      // Here the discussion is if we should block or put a timer for the waiting
-      auto ret = executor.spin_until_future_complete(future_goal_handle_, getRosContext().request_timeout);
-      if (ret != rclcpp::FutureReturnCode::SUCCESS)
-      {
-        // In that case the goal was not accepted or timed out so probably we should do nothing.
-        return;
-      }
-      else
-      {
-        goal_handle_ = future_goal_handle_.get();
-        future_goal_handle_ = {};
-      }
-    }
-    else
-    {
-      RCLCPP_WARN(logger_, "%s - Tried to cancel goal when goal_handle_ is nullptr. Ignoring.", getFullName().c_str());
+      // Do nothing in case of INTERRUPT or TIMEOUT since we must return rather quickly
       return;
     }
+    goal_handle_ = future_goal_handle_.get();
+    future_goal_handle_ = {};
   }
+
+  // If goal was rejected or handle has been invalidated, we do not need to cancel
+  if (!goal_handle_)
+    return;
 
   /**
    * Wait for the cancellation to be complete
@@ -415,7 +408,6 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     result_ = {};
 
     Goal goal;
-
     if (!setGoal(goal))
     {
       return check_status(onFailure(INVALID_GOAL));
@@ -435,6 +427,8 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     };
     //--------------------
     goal_options.result_callback = [this](const WrappedResult& result) {
+      if (!goal_handle_)
+        throw std::logic_error(getFullName() + " - goal_handle_ is nullptr in result callback.");
       if (goal_handle_->get_goal_id() == result.goal_id)
       {
         result_ = result;
@@ -463,20 +457,15 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     // FIRST case: check if the goal request has a timeout
     if (!goal_response_)
     {
-      auto nodelay = std::chrono::milliseconds(0);
-      auto timeout = rclcpp::Duration::from_seconds(double(getRosContext().request_timeout.count()) / 1000);
-
-      auto ret = client_instance_->callback_executor.spin_until_future_complete(future_goal_handle_, nodelay);
+      auto ret =
+          client_instance_->callback_executor.spin_until_future_complete(future_goal_handle_, std::chrono::seconds(0));
       if (ret != rclcpp::FutureReturnCode::SUCCESS)
       {
-        if ((getRosContext().getCurrentTime() - time_goal_sent_) > timeout)
+        if ((getRosContext().getCurrentTime() - time_goal_sent_) > getRosContext().request_timeout)
         {
           return check_status(onFailure(SEND_GOAL_TIMEOUT));
         }
-        else
-        {
-          return BT::NodeStatus::RUNNING;
-        }
+        return BT::NodeStatus::RUNNING;
       }
       else
       {
@@ -489,10 +478,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
           RCLCPP_ERROR(logger_, "%s - Goal was rejected by server.", getFullName().c_str());
           return check_status(onFailure(GOAL_REJECTED_BY_SERVER));
         }
-        else
-        {
-          RCLCPP_DEBUG(logger_, "%s - Goal accepted by server, waiting for result.", getFullName().c_str());
-        }
+        RCLCPP_DEBUG(logger_, "%s - Goal accepted by server, waiting for result.", getFullName().c_str());
       }
     }
 

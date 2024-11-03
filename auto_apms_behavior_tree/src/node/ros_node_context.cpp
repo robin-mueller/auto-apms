@@ -16,6 +16,13 @@
 
 namespace auto_apms_behavior_tree
 {
+RosNodeContext::RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams& tree_node_params)
+  : nh(node_ptr)
+  , default_port_name(tree_node_params.port)
+  , wait_for_server_timeout(tree_node_params.wait_timeout)
+  , request_timeout(tree_node_params.request_timeout)
+{
+}
 
 rclcpp::Logger RosNodeContext::getLogger() const
 {

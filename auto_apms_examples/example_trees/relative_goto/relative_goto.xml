@@ -2,7 +2,7 @@
 <root BTCPP_format="4"
       main_tree_to_execute="RelativeGoTo">
   <BehaviorTree ID="RelativeGoTo">
-    <Sequence>
+    <SequenceWithMemory>
       <Arm name="ArmInstance"
            wait_until_ready_to_arm="true"
            action_name=""/>
@@ -19,7 +19,7 @@
             action_name=""/>
       <Land action_name=""/>
       <Disarm action_name=""/>
-    </Sequence>
+    </SequenceWithMemory>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->

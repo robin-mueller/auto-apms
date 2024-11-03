@@ -83,8 +83,9 @@ TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallbac
   if (!tree_build_director_loader_.isClassAvailable(tree_builder_name))
   {
     throw exceptions::TreeBuildError("There is no tree builder class named '" + tree_builder_name +
-                                     "'. Make sure it is registered using the CMake macro "
-                                     "auto_apms_behavior_tree_register_builders().");
+                                     "'. Make sure that it's spelled correctly and registered by calling "
+                                     "auto_apms_behavior_tree_register_builders() in the CMakeLists.txt of the "
+                                     "corresponding package.");
   }
 
   // Try to load and create the tree builder
@@ -98,10 +99,9 @@ TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallbac
   {
     throw exceptions::TreeBuildError("An error occured when trying to create an instance of tree builder '" +
                                      tree_builder_name +
-                                     "'. Remember that the "
-                                     "AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILDER macro must be called in the "
-                                     "source file for the "
-                                     "plugin to be discoverable. Error message: " +
+                                     "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILDER macro must be "
+                                     "called in the source file for the builder class to be discoverable. Error "
+                                     "message: " +
                                      e.what());
   }
 
@@ -170,7 +170,7 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
   // Reject if a tree is already executing
   if (isBusy())
   {
-    RCLCPP_WARN(logger_, "Goal %s was REJECTED: Tree with ID '%s' is currently executing.",
+    RCLCPP_WARN(logger_, "Goal %s was REJECTED: Tree '%s' is currently executing.",
                 rclcpp_action::to_string(uuid).c_str(), getTreeName().c_str());
     return rclcpp_action::GoalResponse::REJECT;
   }
@@ -182,7 +182,7 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
   }
   catch (const std::exception& e)
   {
-    RCLCPP_WARN(logger_, "Goal %s was REJECTED because parsing the node override manifest failed: %s",
+    RCLCPP_WARN(logger_, "Goal %s was REJECTED: Parsing the node override manifest failed: %s",
                 rclcpp_action::to_string(uuid).c_str(), e.what());
     return rclcpp_action::GoalResponse::REJECT;
   }
@@ -198,7 +198,7 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
   }
   catch (const std::exception& e)
   {
-    RCLCPP_WARN(logger_, "Goal %s was REJECTED due to an error during configuring the tree builder: %s",
+    RCLCPP_WARN(logger_, "Goal %s was REJECTED: Error during configuring the tree builder: %s",
                 rclcpp_action::to_string(uuid).c_str(), e.what());
     return rclcpp_action::GoalResponse::REJECT;
   }
@@ -208,7 +208,7 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
 rclcpp_action::CancelResponse
 TreeExecutorServer::handle_start_cancel_(std::shared_ptr<StartActionContext::GoalHandle> /*goal_handle_ptr*/)
 {
-  setControlCommand(ControlCommand::HALT);
+  setControlCommand(ControlCommand::TERMINATE);
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -221,27 +221,29 @@ void TreeExecutorServer::handle_start_accept_(std::shared_ptr<StartActionContext
   catch (const std::exception& e)
   {
     auto result_ptr = std::make_shared<StartActionContext::Result>();
-    result_ptr->message = "An error occured when trying to start execution: " + std::string(e.what());
+    result_ptr->message = "An error occured trying to start execution: " + std::string(e.what());
     result_ptr->tree_result = StartActionContext::Result::TREE_RESULT_NOT_SET;
     goal_handle_ptr->abort(result_ptr);
     RCLCPP_ERROR_STREAM(logger_, result_ptr->message);
     return;
   }
+  const std::string started_tree_name = getTreeName();
 
   // If attach is true, the goal's life time is synchronized with the execution. Otherwise we succeed immediately and
   // leave the executor running (Detached mode).
   if (goal_handle_ptr->get_goal()->attach)
   {
     start_action_context_.setUp(goal_handle_ptr);
+    RCLCPP_INFO(logger_, "Successfully started execution of tree '%s' (Mode: Attached).", started_tree_name.c_str());
   }
   else
   {
     auto result_ptr = std::make_shared<StartActionContext::Result>();
-    result_ptr->message = "Detached execution started successfully";
+    result_ptr->message = "Successfully started execution of tree '" + started_tree_name + "' (Mode: Detached).";
     result_ptr->tree_result = StartActionContext::Result::TREE_RESULT_NOT_SET;
-    result_ptr->terminated_tree_identity = getTreeName();
+    result_ptr->terminated_tree_identity = started_tree_name;
     goal_handle_ptr->succeed(result_ptr);
-    RCLCPP_DEBUG_STREAM(logger_, result_ptr->message);
+    RCLCPP_INFO_STREAM(logger_, result_ptr->message);
   }
 }
 
@@ -360,7 +362,7 @@ void TreeExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionCon
   }
 
   command_timer_ptr_ = getNodePtr()->create_wall_timer(
-      std::chrono::duration<double, std::milli>(executor_param_listener_.get_params().tick_rate),
+      std::chrono::duration<double>(executor_param_listener_.get_params().tick_rate),
       [this, requested_state, goal_handle_ptr, action_result_ptr = std::make_shared<CommandActionContext::Result>()]() {
         // Check if canceling
         if (goal_handle_ptr->is_canceling())
@@ -424,7 +426,7 @@ bool TreeExecutorServer::onTick()
   return true;
 }
 
-void TreeExecutorServer::onClose(const ExecutionResult& result)
+void TreeExecutorServer::onTermination(const ExecutionResult& result)
 {
   if (!start_action_context_.isValid())  // Do nothing if started in detached mode
     return;

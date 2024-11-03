@@ -69,7 +69,7 @@ private:
 
   bool onTick() override;
 
-  void onClose(const ExecutionResult& result) override;
+  void onTermination(const ExecutionResult& result) override;
 
   const rclcpp::Logger logger_;
   const executor_params::ParamListener executor_param_listener_;

@@ -96,40 +96,26 @@ int main(int argc, char** argv)
       const auto classes = class_loader.getAvailableClassesForLibrary<NodeRegistrationInterface>(library_path);
       if (std::find(classes.begin(), classes.end(), factory_classname) == classes.end())
       {
-        throw std::runtime_error{ "Node '" + node_name + " (" + params.class_name +
+        throw std::runtime_error{ "Node '" + node_name + " (Class: " + params.class_name +
                                   ")' cannot be loaded, because factory class '" + factory_classname +
-                                  "' couldn't be found. You most likely misspelled the class name in CMake when "
-                                  "registering it in CMakeLists.txt using "
-                                  "auto_apms_behavior_tree_register_nodes() or forgot to call the "
-                                  "AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE "
-                                  "macro in the source file." };
+                                  "' couldn't be found. Check that the class name is spelled correctly and registered "
+                                  "by calling auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
+                                  "corresponding package. Also make sure that you called the "
+                                  "AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE macro in the source file." };
       }
 
-      RCLCPP_DEBUG(node_ptr->get_logger(), "Register behavior tree node plugin '%s (%s)' from library %s.",
+      RCLCPP_DEBUG(node_ptr->get_logger(), "Loading behavior tree node '%s' (Class: %s) from library %s.",
                    node_name.c_str(), params.class_name.c_str(), library_path.c_str());
 
       try
       {
         const auto plugin_instance = class_loader.createUniqueInstance<NodeRegistrationInterface>(factory_classname);
-        if (plugin_instance->requiresROSNodeParams())
-        {
-          RosNodeContext ros_params;
-          ros_params.nh = node_ptr;
-          ros_params.default_port_name = params.port;
-          ros_params.wait_for_server_timeout =
-              std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(params.wait_timeout));
-          ros_params.request_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
-              std::chrono::duration<double>(params.request_timeout));
-          plugin_instance->registerWithBehaviorTreeFactory(factory, node_name, &ros_params);
-        }
-        else
-        {
-          plugin_instance->registerWithBehaviorTreeFactory(factory, node_name);
-        }
+        RosNodeContext ros_node_context(node_ptr, params);  // Values don't matter when not instantiating it
+        plugin_instance->registerWithBehaviorTreeFactory(factory, node_name, &ros_node_context);
       }
       catch (const std::exception& e)
       {
-        throw std::runtime_error("Failed to load and register node '" + node_name + " (" + params.class_name +
+        throw std::runtime_error("Failed to load and register node '" + node_name + " (Class: " + params.class_name +
                                  ")': " + e.what() + ".");
       }
     }

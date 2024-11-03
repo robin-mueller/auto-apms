@@ -34,6 +34,11 @@ struct TreeBuildError : public auto_apms_core::exceptions::ExceptionBase
   using ExceptionBase::ExceptionBase;
 };
 
+struct TreeExecutionError : public auto_apms_core::exceptions::ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
+};
+
 struct RosNodeError : public auto_apms_core::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;

@@ -50,7 +50,7 @@ public:
       case LandingSiteStatusMsg::STATUS_PERMANENTLY_BLOCKED:
         break;
       default:
-        RCLCPP_WARN(getLogger(), "%s: Landing status is unkown", name().c_str());
+        RCLCPP_WARN(getRosContext().getLogger(), "%s: Landing status is unkown", name().c_str());
         break;
     }
     setOutput(OUTPUT_KEY_SITE_STATUS, status);

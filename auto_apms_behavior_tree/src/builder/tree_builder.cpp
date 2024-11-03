@@ -35,24 +35,26 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, 
     // If the node is already registered
     if (registered_nodes.find(node_name) != registered_nodes.end())
     {
-      if (!override)
+      if (override)
+      {
+        factory_ptr_->unregisterBuilder(node_name);
+      }
+      else
       {
         throw exceptions::TreeBuildError("Node '" + node_name +
                                          "' is already registered. Set override = true to allow for "
                                          "overriding previously registered nodes.");
       }
-      factory_ptr_->unregisterBuilder(node_name);
     }
 
     // Check if the class we search for is actually available with the loader.
     if (!tree_node_loader.isClassAvailable(params.class_name))
     {
-      throw exceptions::TreeBuildError("Node plugin '" + node_name + " (" + params.class_name +
-                                       ")' cannot be loaded, because it's not registered by the packages "
-                                       "searched by the plugin loader. It's "
-                                       "also possible that you misspelled the class name in CMake when "
-                                       "registering it in the CMakeLists.txt "
-                                       "using auto_apms_behavior_tree_register_nodes().");
+      throw exceptions::TreeBuildError("Node '" + node_name + " (Class: " + params.class_name +
+                                       ")' cannot be loaded, because the class name is not known to the class loader. "
+                                       "Make sure that it's spelled correctly and registered by calling "
+                                       "auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
+                                       "corresponding package.");
     }
 
     RCLCPP_DEBUG(node_ptr->get_logger(), "Loading behavior tree node '%s' (Class: %s) from library %s.",
@@ -66,10 +68,11 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, 
     }
     catch (const std::exception& e)
     {
-      throw exceptions::TreeBuildError("Failed to create an instance of node '" + node_name + " (" + params.class_name +
-                                       ")' from plugin. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE "
-                                       "macro must be called in the "
-                                       "source file for the plugin to be discoverable. Error message: " +
+      throw exceptions::TreeBuildError("Failed to create an instance of node '" + node_name +
+                                       " (Class: " + params.class_name +
+                                       ")'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE "
+                                       "macro must be called in the source file for the node class to be discoverable. "
+                                       "Error message: " +
                                        e.what() + ".");
     }
 
@@ -77,14 +80,8 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, 
     {
       if (plugin_instance->requiresROSNodeParams())
       {
-        RosNodeContext ros_params;
-        ros_params.nh = node_ptr;
-        ros_params.default_port_name = params.port;
-        ros_params.wait_for_server_timeout =
-            std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(params.wait_timeout));
-        ros_params.request_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::duration<double>(params.request_timeout));
-        plugin_instance->registerWithBehaviorTreeFactory(*factory_ptr_, node_name, &ros_params);
+        RosNodeContext ros_node_context(node_ptr, params);
+        plugin_instance->registerWithBehaviorTreeFactory(*factory_ptr_, node_name, &ros_node_context);
       }
       else
       {
@@ -93,8 +90,8 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, 
     }
     catch (const std::exception& e)
     {
-      throw exceptions::TreeBuildError("Failed to register node '" + node_name + " (" + params.class_name +
-                                       ")' with factory: " + e.what() + ".");
+      throw exceptions::TreeBuildError("Failed to register node '" + node_name + " (Class: " + params.class_name +
+                                       ")': " + e.what() + ".");
     }
   }
   return *this;

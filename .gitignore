@@ -5,6 +5,7 @@ doc/html/
 
 .vscode/*
 !.vscode/tasks.json
+!.vscode/launch.json
 
 # Ignore generated docs
 *.dox

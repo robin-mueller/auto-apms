@@ -329,14 +329,11 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
     // FIRST case: check if the goal request has a timeout
     if (!response_received_)
     {
-      auto const nodelay = std::chrono::milliseconds(0);
-      auto const timeout = rclcpp::Duration::from_seconds(double(getRosContext().request_timeout.count()) / 1000);
-
-      auto ret = srv_instance_->callback_executor.spin_until_future_complete(future_response_, nodelay);
+      auto ret = srv_instance_->callback_executor.spin_until_future_complete(future_response_, std::chrono::seconds(0));
 
       if (ret != rclcpp::FutureReturnCode::SUCCESS)
       {
-        if ((getRosContext().getCurrentTime() - time_request_sent_) > timeout)
+        if ((getRosContext().getCurrentTime() - time_request_sent_) > getRosContext().request_timeout)
         {
           return check_status(onFailure(SERVICE_TIMEOUT));
         }

@@ -105,9 +105,11 @@ int main(int argc, char** argv)
       {
         if (build_lib_paths.find(params.class_name) == build_lib_paths.end())
         {
-          throw std::runtime_error("Node plugin '" + node_name + "' ('" + params.class_name +
-                                   "') cannot be found. It doesn't exist in any installed package and is "
-                                   "also not being built by the current one.");
+          throw std::runtime_error("Node '" + node_name + "' (Class '" + params.class_name +
+                                   "') cannot be found. It's not being built by this package (" + build_package_name +
+                                   ") and is also not provided by any other package. For a node to be discoverable, "
+                                   "one must register it using auto_apms_behavior_tree_register_nodes() in the "
+                                   "CMakeLists.txt of a ROS 2 package.");
         }
         // Store the temporary library path to be used during build time until the install is available
         output_manifest[node_name].library = build_lib_paths[params.class_name];

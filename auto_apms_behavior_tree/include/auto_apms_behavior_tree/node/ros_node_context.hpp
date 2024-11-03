@@ -17,14 +17,17 @@
 #include <chrono>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node.hpp"
 #include "behaviortree_cpp/tree_node.h"
+#include "auto_apms_behavior_tree/node/node_registration_params.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 struct RosNodeContext
 {
+  RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams& tree_node_params);
+
   /// Handle for the ROS2 node.
   std::weak_ptr<rclcpp::Node> nh;
   /**
@@ -38,9 +41,9 @@ struct RosNodeContext
    */
   std::string default_port_name;
   /// Timeout [s] for initially discovering the associated ROS2 node.
-  std::chrono::milliseconds wait_for_server_timeout = std::chrono::milliseconds{ 3000 };
+  std::chrono::duration<double> wait_for_server_timeout;
   /// Timeout [s] for waiting for a response for the requested service or goal.
-  std::chrono::milliseconds request_timeout = std::chrono::milliseconds(1500);
+  std::chrono::duration<double> request_timeout;
 
   rclcpp::Logger getLogger() const;
 

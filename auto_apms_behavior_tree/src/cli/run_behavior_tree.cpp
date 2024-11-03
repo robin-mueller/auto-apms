@@ -87,7 +87,7 @@ int main(int argc, char** argv)
               tree_resource_ptr->tree_file_stem.c_str(), builder.getMainTreeName().c_str(),
               tree_resource_ptr->package_name.c_str());
 
-  const auto termination_timeout = std::chrono::duration<int, std::milli>(1500);
+  const auto termination_timeout = std::chrono::duration<double>(1.5);
   std::chrono::steady_clock::time_point termination_start;
   bool termination_started = false;
   try

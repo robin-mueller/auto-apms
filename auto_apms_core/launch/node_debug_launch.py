@@ -13,20 +13,28 @@
 # limitations under the License.
 
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
+    package = LaunchConfiguration("package")
+    package_arg = DeclareLaunchArgument("package", description="Name of the package registering the executable")
+    executable = LaunchConfiguration("executable")
+    executable_arg = DeclareLaunchArgument("executable", description="Name of the executable to run in debug mode")
+
     return LaunchDescription(
         [
+            package_arg,
+            executable_arg,
             Node(
                 namespace="",
-                package="auto_apms",
-                executable="node_debug_exe",
+                package=package,
+                executable=executable,
                 prefix=["gdbserver localhost:3000"],
                 output="screen",
                 emulate_tty=True,
-                parameters=[{"state_change_logging": True}],
-            )
+            ),
         ]
     )

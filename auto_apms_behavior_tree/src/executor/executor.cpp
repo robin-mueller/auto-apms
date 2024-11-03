@@ -17,38 +17,34 @@
 #include <chrono>
 
 #include "auto_apms_core/logging.hpp"
+#include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 TreeExecutor::TreeExecutor(rclcpp::Node::SharedPtr node_ptr)
-  : node_ptr_{ node_ptr }
-  , global_blackboard_ptr_{ TreeBlackboard::create() }
-  , control_command_{ ControlCommand::RUN }
-  , execution_stopped_{ true }
+  : node_ptr_(node_ptr)
+  , global_blackboard_ptr_(TreeBlackboard::create())
+  , control_command_(ControlCommand::RUN)
+  , execution_stopped_(true)
 {
   auto_apms_core::exposeToDebugLogging(node_ptr_->get_logger());
 }
 
 std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(CreateTreeCallback create_tree_cb)
 {
-  auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
   if (isBusy())
-  {
-    RCLCPP_WARN(node_ptr_->get_logger(), "Rejecting execution request, because executor is still busy.");
-    promise_ptr->set_value(ExecutionResult::START_REJECTED);
-    return promise_ptr->get_future();
-  }
+    throw exceptions::TreeExecutionError("Cannot start execution with tree '" + getTreeName() +
+                                         "' currently executing.");
 
   try
   {
-    tree_ptr_ = std::make_unique<Tree>(create_tree_cb(global_blackboard_ptr_));
+    tree_ptr_.reset(new Tree(create_tree_cb(global_blackboard_ptr_)));
   }
   catch (const std::exception& e)
   {
-    RCLCPP_WARN(node_ptr_->get_logger(), "Rejecting execution request, because creating the tree failed: %s", e.what());
-    promise_ptr->set_value(ExecutionResult::START_REJECTED);
-    return promise_ptr->get_future();
+    throw exceptions::TreeBuildError("Cannot start execution because creating the tree failed: " +
+                                     std::string(e.what()));
   }
 
   groot2_publisher_ptr_.reset();
@@ -60,23 +56,26 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(C
   /* Start execution timer */
 
   // Reset state variables
+  prev_execution_state_ = getExecutionState();
   control_command_ = ControlCommand::RUN;
   termination_reason_ = "";
+  execution_stopped_ = true;
 
-  // Create promise for asnychronous execution
-  CloseExecutionCallback close_execution_cb = [this, promise_ptr](ExecutionResult result, const std::string& msg) {
-    RCLCPP_DEBUG(node_ptr_->get_logger(), "Closing behavior tree execution from state %s. Reason: %s.",
+  // Create promise for asnychronous execution and configure termination callback
+  auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
+  TerminationCallback termination_callback = [this, promise_ptr](ExecutionResult result, const std::string& msg) {
+    RCLCPP_DEBUG(node_ptr_->get_logger(), "Terminating behavior tree execution from state %s. Reason: %s.",
                  toStr(getExecutionState()).c_str(), msg.c_str());
-    onClose(result);  // is evaluated before the timer is cancelled, which means the execution state has not changed yet
-                      // during the callback and can be evaluated to inspect the terminal state.
+    onTermination(result);  // is evaluated before the timer is cancelled, which means the execution state has not
+                            // changed yet during the callback and can be evaluated to inspect the terminal state.
     promise_ptr->set_value(result);
     execution_timer_ptr_->cancel();
+    tree_ptr_.reset();  // Release the memory allocated by the tree
   };
 
   execution_timer_ptr_ =
-      node_ptr_->create_wall_timer(std::chrono::duration<double, std::ratio<1, 1>>(executor_params_.tick_rate),
-                                   [this, close_execution_cb]() { execution_routine_(close_execution_cb); });
-
+      node_ptr_->create_wall_timer(std::chrono::duration<double>(executor_params_.tick_rate),
+                                   [this, termination_callback]() { execution_routine_(termination_callback); });
   return promise_ptr->get_future();
 }
 
@@ -108,9 +107,15 @@ std::string TreeExecutor::getTreeName()
   return "NO_TREE_NAME";
 }
 
-void TreeExecutor::execution_routine_(CloseExecutionCallback close_execution_cb)
+void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
 {
-  const ExecutionState execution_state_before = getExecutionState();  // Freeze execution state before anything else
+  const ExecutionState this_execution_state = getExecutionState();
+  if (prev_execution_state_ != this_execution_state)
+  {
+    RCLCPP_DEBUG(node_ptr_->get_logger(), "Executor for tree '%s' changed state from '%s' to '%s'.",
+                 getTreeName().c_str(), toStr(prev_execution_state_).c_str(), toStr(this_execution_state).c_str());
+    prev_execution_state_ = this_execution_state;
+  }
 
   /* Evaluate control command */
 
@@ -122,7 +127,7 @@ void TreeExecutor::execution_routine_(CloseExecutionCallback close_execution_cb)
       execution_stopped_ = true;
       return;
     case ControlCommand::RUN:
-      if (execution_state_before == ExecutionState::STARTING)
+      if (this_execution_state == ExecutionState::STARTING)
       {
         // Evaluate initial tick callback before ticking for the first time since the timer has been created
         if (!onInitialTick())
@@ -148,10 +153,10 @@ void TreeExecutor::execution_routine_(CloseExecutionCallback close_execution_cb)
       // Fall through to terminate if any of the callbacks returned false
       [[fallthrough]];
     case ControlCommand::TERMINATE:
-      if (execution_state_before == ExecutionState::HALTED)
+      if (this_execution_state == ExecutionState::HALTED)
       {
-        close_execution_cb(ExecutionResult::TERMINATED_PREMATURELY,
-                           termination_reason_.empty() ? "Terminated by control command" : termination_reason_);
+        termination_callback(ExecutionResult::TERMINATED_PREMATURELY,
+                             termination_reason_.empty() ? "Terminated by control command" : termination_reason_);
         return;
       }
 
@@ -159,7 +164,7 @@ void TreeExecutor::execution_routine_(CloseExecutionCallback close_execution_cb)
       [[fallthrough]];
     case ControlCommand::HALT:
       // Check if already halted
-      if (execution_state_before != ExecutionState::HALTED)
+      if (this_execution_state != ExecutionState::HALTED)
       {
         try
         {
@@ -167,14 +172,14 @@ void TreeExecutor::execution_routine_(CloseExecutionCallback close_execution_cb)
         }
         catch (const std::exception& e)
         {
-          close_execution_cb(ExecutionResult::ERROR, "Error during haltTree() on command " + toStr(control_command_) +
-                                                         ": " + std::string(e.what()));
+          termination_callback(ExecutionResult::ERROR, "Error during haltTree() on command " + toStr(control_command_) +
+                                                           ": " + std::string(e.what()));
         }
       }
       return;
     default:
-      throw std::logic_error("Handling of control command " + std::to_string(static_cast<int>(control_command_)) +
-                             " '" + toStr(control_command_) + "' is not implemented.");
+      throw std::logic_error("Handling control command " + std::to_string(static_cast<int>(control_command_)) + " '" +
+                             toStr(control_command_) + "' is not implemented.");
   }
 
   /* Tick the tree instance */
@@ -197,7 +202,7 @@ void TreeExecutor::execution_routine_(CloseExecutionCallback close_execution_cb)
     {
       msg += "\nDuring haltTree(), another exception occured: " + std::string(e.what());
     }
-    close_execution_cb(ExecutionResult::ERROR, msg);
+    termination_callback(ExecutionResult::ERROR, msg);
     return;
   }
 
@@ -216,9 +221,9 @@ void TreeExecutor::execution_routine_(CloseExecutionCallback close_execution_cb)
   const bool success = bt_status == BT::NodeStatus::SUCCESS;
   switch (onTreeExit(success))
   {
-    case TreeExitBehavior::CLOSE:
-      close_execution_cb(success ? ExecutionResult::TREE_SUCCEEDED : ExecutionResult::TREE_FAILED,
-                         "Closed on tree result " + BT::toStr(bt_status));
+    case TreeExitBehavior::TERMINATE:
+      termination_callback(success ? ExecutionResult::TREE_SUCCEEDED : ExecutionResult::TREE_FAILED,
+                           "Terminated on tree result " + BT::toStr(bt_status));
       return;
     case TreeExitBehavior::RESTART:
       control_command_ = ControlCommand::RUN;
@@ -240,10 +245,10 @@ bool TreeExecutor::onTick()
 
 TreeExecutor::TreeExitBehavior TreeExecutor::onTreeExit(bool /*success*/)
 {
-  return TreeExitBehavior::CLOSE;
+  return TreeExitBehavior::TERMINATE;
 }
 
-void TreeExecutor::onClose(const ExecutionResult& /*result*/)
+void TreeExecutor::onTermination(const ExecutionResult& /*result*/)
 {
 }
 
@@ -289,7 +294,7 @@ std::string toStr(TreeExecutor::ExecutionState state)
     case TreeExecutor::ExecutionState::IDLE:
       return "IDLE";
     case TreeExecutor::ExecutionState::STARTING:
-      return "IDLE";
+      return "STARTING";
     case TreeExecutor::ExecutionState::RUNNING:
       return "RUNNING";
     case TreeExecutor::ExecutionState::PAUSED:
@@ -320,8 +325,8 @@ std::string toStr(TreeExecutor::TreeExitBehavior behavior)
 {
   switch (behavior)
   {
-    case TreeExecutor::TreeExitBehavior::CLOSE:
-      return "CLOSE";
+    case TreeExecutor::TreeExitBehavior::TERMINATE:
+      return "TERMINATE";
     case TreeExecutor::TreeExitBehavior::RESTART:
       return "RESTART";
   }
@@ -338,8 +343,6 @@ std::string toStr(TreeExecutor::ExecutionResult result)
       return "TREE_FAILED";
     case TreeExecutor::ExecutionResult::TERMINATED_PREMATURELY:
       return "TERMINATED_PREMATURELY";
-    case TreeExecutor::ExecutionResult::START_REJECTED:
-      return "START_REJECTED";
     case TreeExecutor::ExecutionResult::ERROR:
       return "ERROR";
   }
