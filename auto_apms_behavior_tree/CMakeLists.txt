@@ -14,7 +14,7 @@ find_package(behaviortree_cpp REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
 find_package(generate_parameter_library REQUIRED)
-find_package(auto_apms_core)
+find_package(auto_apms_util)
 find_package(auto_apms_interfaces REQUIRED)
 
 option(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING "Enable debug logging severity" ON)
@@ -94,7 +94,7 @@ ament_target_dependencies(auto_apms_behavior_tree
     behaviortree_cpp
     yaml_cpp_vendor
     TinyXML2
-    auto_apms_core
+    auto_apms_util
     auto_apms_interfaces
 )
 target_link_libraries(auto_apms_behavior_tree
@@ -196,7 +196,7 @@ ament_export_dependencies(
     behaviortree_cpp
     yaml_cpp_vendor
     TinyXML2
-    auto_apms_core
+    auto_apms_util
     auto_apms_interfaces
     generate_parameter_library
 )

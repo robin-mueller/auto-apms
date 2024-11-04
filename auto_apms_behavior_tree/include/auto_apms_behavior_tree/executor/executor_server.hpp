@@ -15,7 +15,7 @@
 #pragma once
 
 #include "rclcpp/rclcpp.hpp"
-#include "auto_apms_core/action_context.hpp"
+#include "auto_apms_util/action_context.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
@@ -27,8 +27,8 @@ namespace auto_apms_behavior_tree
 class TreeExecutorServer : public TreeExecutor
 {
 public:
-  using StartActionContext = auto_apms_core::ActionContext<auto_apms_interfaces::action::StartTreeExecutor>;
-  using CommandActionContext = auto_apms_core::ActionContext<auto_apms_interfaces::action::CommandTreeExecutor>;
+  using StartActionContext = auto_apms_util::ActionContext<auto_apms_interfaces::action::StartTreeExecutor>;
+  using CommandActionContext = auto_apms_util::ActionContext<auto_apms_interfaces::action::CommandTreeExecutor>;
 
   static const std::string PARAM_NAME_TREE_BUILDER;
   static const std::string PARAM_NAME_TICK_RATE;

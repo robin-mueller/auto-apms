@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "auto_apms_core/task.hpp"
+#include "auto_apms_util/action_wrapper.hpp"
 #include "auto_apms_px4/mode.hpp"
 #include "auto_apms_px4/vehicle_command_client.hpp"
 #include "px4_msgs/msg/mode_completed.hpp"
@@ -25,7 +25,7 @@ namespace auto_apms_px4
 {
 
 template <class ActionT>
-class ModeExecutor : public auto_apms_core::Task<ActionT>
+class ModeExecutor : public auto_apms_util::ActionWrapper<ActionT>
 {
   enum class State : uint8_t
   {
@@ -35,40 +35,31 @@ class ModeExecutor : public auto_apms_core::Task<ActionT>
     COMPLETE
   };
 
-  using auto_apms_core::Task<ActionT>::DEFAULT_VALUE_EXECUTION_INTERVAL;
-  using auto_apms_core::Task<ActionT>::DEFAULT_VALUE_FEEDBACK_INTERVAL;
-
 public:
   using FlightMode = VehicleCommandClient::FlightMode;
-  using typename auto_apms_core::Task<ActionT>::ActionContextType;
-  using typename auto_apms_core::Task<ActionT>::Goal;
-  using typename auto_apms_core::Task<ActionT>::Feedback;
-  using typename auto_apms_core::Task<ActionT>::Result;
-  using TaskStatus = auto_apms_core::TaskStatus;
+  using typename auto_apms_util::ActionWrapper<ActionT>::ActionContextType;
+  using typename auto_apms_util::ActionWrapper<ActionT>::Goal;
+  using typename auto_apms_util::ActionWrapper<ActionT>::Feedback;
+  using typename auto_apms_util::ActionWrapper<ActionT>::Result;
+  using ActionStatus = auto_apms_util::ActionStatus;
 
-  explicit ModeExecutor(const std::string& name, rclcpp::Node::SharedPtr node_ptr,
+  explicit ModeExecutor(const std::string& action_name, rclcpp::Node::SharedPtr node_ptr,
                         std::shared_ptr<ActionContextType> action_context_ptr, uint8_t mode_id,
-                        bool deactivate_before_completion = true,
-                        std::chrono::milliseconds execution_interval = DEFAULT_VALUE_EXECUTION_INTERVAL,
-                        std::chrono::milliseconds feedback_interval = DEFAULT_VALUE_FEEDBACK_INTERVAL);
-  explicit ModeExecutor(const std::string& name, const rclcpp::NodeOptions& options, uint8_t mode_id,
-                        bool deactivate_before_completion = true,
-                        std::chrono::milliseconds execution_interval = DEFAULT_VALUE_EXECUTION_INTERVAL,
-                        std::chrono::milliseconds feedback_interval = DEFAULT_VALUE_FEEDBACK_INTERVAL);
-  explicit ModeExecutor(const std::string& name, const rclcpp::NodeOptions& options, FlightMode flight_mode,
-                        bool deactivate_before_completion = true,
-                        std::chrono::milliseconds execution_interval = DEFAULT_VALUE_EXECUTION_INTERVAL,
-                        std::chrono::milliseconds feedback_interval = DEFAULT_VALUE_FEEDBACK_INTERVAL);
+                        bool deactivate_before_completion = true);
+  explicit ModeExecutor(const std::string& action_name, const rclcpp::NodeOptions& options, uint8_t mode_id,
+                        bool deactivate_before_completion = true);
+  explicit ModeExecutor(const std::string& action_name, const rclcpp::NodeOptions& options, FlightMode flight_mode,
+                        bool deactivate_before_completion = true);
 
 private:
   void setUp();
-  auto_apms_core::TaskStatus asyncDeactivateFlightMode();
+  auto_apms_util::ActionStatus asyncDeactivateFlightMode();
   bool onGoalRequest(std::shared_ptr<const Goal> goal_ptr) override final;
   bool onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override final;
-  auto_apms_core::TaskStatus cancelGoal(std::shared_ptr<const Goal> goal_ptr,
-                                        std::shared_ptr<Result> result_ptr) override final;
-  auto_apms_core::TaskStatus executeGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
-                                         std::shared_ptr<Result> result_ptr) override final;
+  auto_apms_util::ActionStatus cancelGoal(std::shared_ptr<const Goal> goal_ptr,
+                                          std::shared_ptr<Result> result_ptr) override final;
+  auto_apms_util::ActionStatus executeGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+                                           std::shared_ptr<Result> result_ptr) override final;
 
 protected:
   bool isCurrentNavState(uint8_t nav_state);
@@ -91,40 +82,32 @@ private:
 };
 
 template <class ActionT>
-ModeExecutor<ActionT>::ModeExecutor(const std::string& name, rclcpp::Node::SharedPtr node_ptr,
+ModeExecutor<ActionT>::ModeExecutor(const std::string& action_name, rclcpp::Node::SharedPtr node_ptr,
                                     std::shared_ptr<ActionContextType> action_context_ptr, uint8_t mode_id,
-                                    bool deactivate_before_completion, std::chrono::milliseconds execution_interval,
-                                    std::chrono::milliseconds feedback_interval)
-  : auto_apms_core::Task<ActionT>{ name, node_ptr, action_context_ptr, execution_interval, feedback_interval }
-  , vehicle_command_client_{ *node_ptr }
-  , mode_id_{ mode_id }
-  , deactivate_before_completion_{ deactivate_before_completion }
+                                    bool deactivate_before_completion)
+  : auto_apms_util::ActionWrapper<ActionT>(action_name, node_ptr, action_context_ptr)
+  , vehicle_command_client_(*node_ptr)
+  , mode_id_(mode_id)
+  , deactivate_before_completion_(deactivate_before_completion)
 {
   setUp();
 }
 
 template <class ActionT>
-ModeExecutor<ActionT>::ModeExecutor(const std::string& name, const rclcpp::NodeOptions& options, uint8_t mode_id,
-                                    bool deactivate_before_completion, std::chrono::milliseconds execution_interval,
-                                    std::chrono::milliseconds feedback_interval)
-  : auto_apms_core::Task<ActionT>{ name, options, execution_interval, feedback_interval }
-  , vehicle_command_client_{ *this->node_ptr_ }
-  , mode_id_{ mode_id }
-  , deactivate_before_completion_{ deactivate_before_completion }
+ModeExecutor<ActionT>::ModeExecutor(const std::string& action_name, const rclcpp::NodeOptions& options, uint8_t mode_id,
+                                    bool deactivate_before_completion)
+  : auto_apms_util::ActionWrapper<ActionT>(action_name, options)
+  , vehicle_command_client_(*this->node_ptr_)
+  , mode_id_(mode_id)
+  , deactivate_before_completion_(deactivate_before_completion)
 {
   setUp();
 }
 
 template <class ActionT>
-ModeExecutor<ActionT>::ModeExecutor(const std::string& name, const rclcpp::NodeOptions& options, FlightMode flight_mode,
-                                    bool deactivate_before_completion, std::chrono::milliseconds execution_interval,
-                                    std::chrono::milliseconds feedback_interval)
-  : ModeExecutor<ActionT>{ name,
-                           options,
-                           static_cast<uint8_t>(flight_mode),
-                           deactivate_before_completion,
-                           execution_interval,
-                           feedback_interval }
+ModeExecutor<ActionT>::ModeExecutor(const std::string& action_name, const rclcpp::NodeOptions& options,
+                                    FlightMode flight_mode, bool deactivate_before_completion)
+  : ModeExecutor<ActionT>(action_name, options, static_cast<uint8_t>(flight_mode), deactivate_before_completion)
 {
 }
 
@@ -155,7 +138,7 @@ void ModeExecutor<ActionT>::setUp()
 }
 
 template <class ActionT>
-auto_apms_core::TaskStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
+auto_apms_util::ActionStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
 {
   // If currently waiting for flight mode activation and HOLD is active we need to wait for the nav state to change
   // before starting deactivation. Otherwise, we'll misinterpret the current nav state when in
@@ -168,7 +151,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
       auto& clock = *this->node_ptr_->get_clock();
       RCLCPP_DEBUG_THROTTLE(this->node_ptr_->get_logger(), clock, 200,
                             "Waiting for flight mode %i to become active before deactivating...", mode_id_);
-      return TaskStatus::RUNNING;
+      return ActionStatus::RUNNING;
     }
     else
     {
@@ -179,7 +162,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
   if (is_holding)
   {
     RCLCPP_DEBUG(this->node_ptr_->get_logger(), "Deactivated flight mode successfully (HOLD is active)");
-    return TaskStatus::SUCCESS;
+    return ActionStatus::SUCCESS;
   }
   else
   {
@@ -189,7 +172,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
       if (!vehicle_command_client_.SyncActivateFlightMode(FlightMode::Hold))
       {
         RCLCPP_ERROR(this->node_ptr_->get_logger(), "Failed to send command to activate HOLD");
-        return TaskStatus::FAILURE;
+        return ActionStatus::FAILURE;
       }
       // Force to consider only new status messages after sending new command
       last_vehicle_status_ptr_ = nullptr;
@@ -197,7 +180,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
     }
   }
 
-  return TaskStatus::RUNNING;
+  return ActionStatus::RUNNING;
 }
 
 template <class ActionT>
@@ -229,8 +212,8 @@ bool ModeExecutor<ActionT>::onCancelRequest(std::shared_ptr<const Goal> goal_ptr
 }
 
 template <class ActionT>
-auto_apms_core::TaskStatus ModeExecutor<ActionT>::cancelGoal(std::shared_ptr<const Goal> goal_ptr,
-                                                             std::shared_ptr<Result> result_ptr)
+auto_apms_util::ActionStatus ModeExecutor<ActionT>::cancelGoal(std::shared_ptr<const Goal> goal_ptr,
+                                                               std::shared_ptr<Result> result_ptr)
 {
   (void)goal_ptr;
   (void)result_ptr;
@@ -238,7 +221,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::cancelGoal(std::shared_ptr<con
   {
     return asyncDeactivateFlightMode();
   }
-  return TaskStatus::SUCCESS;
+  return ActionStatus::SUCCESS;
 }
 
 template <class ActionT>
@@ -252,9 +235,9 @@ bool ModeExecutor<ActionT>::isCurrentNavState(uint8_t nav_state)
 }
 
 template <class ActionT>
-auto_apms_core::TaskStatus ModeExecutor<ActionT>::executeGoal(std::shared_ptr<const Goal> goal_ptr,
-                                                              std::shared_ptr<Feedback> feedback_ptr,
-                                                              std::shared_ptr<Result> result_ptr)
+auto_apms_util::ActionStatus ModeExecutor<ActionT>::executeGoal(std::shared_ptr<const Goal> goal_ptr,
+                                                                std::shared_ptr<Feedback> feedback_ptr,
+                                                                std::shared_ptr<Result> result_ptr)
 {
   (void)goal_ptr;
   (void)result_ptr;
@@ -266,7 +249,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::executeGoal(std::shared_ptr<co
       {
         RCLCPP_ERROR(this->node_ptr_->get_logger(), "Failed to send activation command for flight mode %i. Aborting...",
                      mode_id_);
-        return TaskStatus::FAILURE;
+        return ActionStatus::FAILURE;
       }
       // Force to consider only new status messages after sending new command
       last_vehicle_status_ptr_ = nullptr;
@@ -274,14 +257,14 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::executeGoal(std::shared_ptr<co
 
       RCLCPP_DEBUG(this->node_ptr_->get_logger(), "Activation command for flight mode %i was sent successfully",
                    mode_id_);
-      return TaskStatus::RUNNING;
+      return ActionStatus::RUNNING;
     case State::WAIT_FOR_ACTIVATION:
       if (isCurrentNavState(mode_id_))
       {
         RCLCPP_DEBUG(this->node_ptr_->get_logger(), "Flight mode %i is active", mode_id_);
         state_ = State::WAIT_FOR_COMPLETION_SIGNAL;
       }
-      return TaskStatus::RUNNING;
+      return ActionStatus::RUNNING;
     case State::WAIT_FOR_COMPLETION_SIGNAL:
       // Populate feedback message
       setFeedback(feedback_ptr, *last_vehicle_status_ptr_);
@@ -311,9 +294,9 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::executeGoal(std::shared_ptr<co
       if (!isCurrentNavState(mode_id_))
       {
         RCLCPP_WARN(this->node_ptr_->get_logger(), "Flight mode %i was deactivated externally. Aborting...", mode_id_);
-        return TaskStatus::FAILURE;
+        return ActionStatus::FAILURE;
       }
-      return TaskStatus::RUNNING;
+      return ActionStatus::RUNNING;
     case State::COMPLETE:
       break;
   }
@@ -321,7 +304,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::executeGoal(std::shared_ptr<co
   if (deactivate_before_completion_)
   {
     const auto deactivation_state = asyncDeactivateFlightMode();
-    if (deactivation_state != TaskStatus::SUCCESS)
+    if (deactivation_state != ActionStatus::SUCCESS)
     {
       return deactivation_state;
     }
@@ -329,7 +312,7 @@ auto_apms_core::TaskStatus ModeExecutor<ActionT>::executeGoal(std::shared_ptr<co
   }
 
   RCLCPP_DEBUG(this->node_ptr_->get_logger(), "Flight mode %i execution termination", mode_id_);
-  return TaskStatus::SUCCESS;
+  return ActionStatus::SUCCESS;
 }
 
 template <class ActionT>
@@ -368,11 +351,8 @@ template <class ActionT, class ModeT>
 class ModeExecutorFactory
 {
 public:
-  ModeExecutorFactory(
-      const std::string& name, const rclcpp::NodeOptions& options, const std::string& topic_namespace_prefix = "",
-      bool deactivate_before_completion = true,
-      std::chrono::milliseconds execution_interval = auto_apms_core::Task<ActionT>::DEFAULT_VALUE_EXECUTION_INTERVAL,
-      std::chrono::milliseconds feedback_interval = auto_apms_core::Task<ActionT>::DEFAULT_VALUE_FEEDBACK_INTERVAL);
+  ModeExecutorFactory(const std::string& action_name, const rclcpp::NodeOptions& options,
+                      const std::string& topic_namespace_prefix = "", bool deactivate_before_completion = true);
 
   rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface();
 
@@ -383,20 +363,19 @@ private:
 };
 
 template <class ActionT, class ModeT>
-ModeExecutorFactory<ActionT, ModeT>::ModeExecutorFactory(const std::string& name, const rclcpp::NodeOptions& options,
+ModeExecutorFactory<ActionT, ModeT>::ModeExecutorFactory(const std::string& action_name,
+                                                         const rclcpp::NodeOptions& options,
                                                          const std::string& topic_namespace_prefix,
-                                                         bool deactivate_before_completion,
-                                                         std::chrono::milliseconds execution_interval,
-                                                         std::chrono::milliseconds feedback_interval)
-  : node_ptr_{ std::make_shared<rclcpp::Node>("task_" + name + "_node", options) }
+                                                         bool deactivate_before_completion)
+  : node_ptr_(std::make_shared<rclcpp::Node>(action_name + "_node", options))
 {
   static_assert(std::is_base_of<ModeBase<ActionT>, ModeT>::value,
                 "Template argument ModeT must inherit auto_apms::ModeBase<ActionT> as public and with same type "
-                "ActionT as auto_apms::Task<ActionT>");
+                "ActionT as auto_apms::ActionWrapper<ActionT>");
 
-  const auto action_context_ptr = std::make_shared<auto_apms_core::ActionContext<ActionT>>(node_ptr_->get_logger());
+  const auto action_context_ptr = std::make_shared<auto_apms_util::ActionContext<ActionT>>(node_ptr_->get_logger());
 
-  mode_ptr_ = std::make_unique<ModeT>(*node_ptr_, px4_ros2::ModeBase::Settings{ "mode_" + name },
+  mode_ptr_ = std::make_unique<ModeT>(*node_ptr_, px4_ros2::ModeBase::Settings("mode_" + action_name),
                                       topic_namespace_prefix, action_context_ptr);
 
   if (!px4_ros2::waitForFMU(*node_ptr_, std::chrono::seconds(3)))
@@ -410,14 +389,13 @@ ModeExecutorFactory<ActionT, ModeT>::ModeExecutorFactory(const std::string& name
 
   if (!mode_ptr_->doRegister())
   {
-    RCLCPP_FATAL(node_ptr_->get_logger(), "Registration of mode with task_name: '%s' failed.", name.c_str());
+    RCLCPP_FATAL(node_ptr_->get_logger(), "Registration of mode with action_name: '%s' failed.", action_name.c_str());
     throw std::runtime_error("Mode registration failed");
   }
 
   // AFTER (!) registration, the mode id can be queried to set up the executor
-  mode_executor_ptr_ =
-      std::make_shared<ModeExecutor<ActionT>>(name, node_ptr_, action_context_ptr, mode_ptr_->id(),
-                                              deactivate_before_completion, execution_interval, feedback_interval);
+  mode_executor_ptr_ = std::make_shared<ModeExecutor<ActionT>>(action_name, node_ptr_, action_context_ptr,
+                                                               mode_ptr_->id(), deactivate_before_completion);
 }
 
 template <class ActionT, class ModeT>

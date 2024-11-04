@@ -16,7 +16,7 @@
 
 #include <functional>
 
-#include "auto_apms_core/utils.hpp"
+#include "auto_apms_util/string.hpp"
 #include "auto_apms_behavior_tree/definitions.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 

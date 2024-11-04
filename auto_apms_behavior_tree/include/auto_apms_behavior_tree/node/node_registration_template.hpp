@@ -23,11 +23,11 @@ namespace auto_apms_behavior_tree
 template <typename T,
           bool requires_ros_node_params =
               std::is_constructible<T, const std::string&, const BT::NodeConfig&, const RosNodeContext&>::value>
-class NodeRegistrationFactory : public NodeRegistrationInterface
+class NodeRegistrationTemplate : public NodeRegistrationInterface
 {
 public:
-  NodeRegistrationFactory() = default;
-  virtual ~NodeRegistrationFactory() = default;
+  NodeRegistrationTemplate() = default;
+  virtual ~NodeRegistrationTemplate() = default;
 
   bool requiresROSNodeParams() const override
   {

@@ -19,7 +19,7 @@
 #include "auto_apms_behavior_tree/node/ros_service_node.hpp"
 #include "auto_apms_behavior_tree/node/ros_subscriber_node.hpp"
 
-#include "auto_apms_behavior_tree/node/node_registration_factory.hpp"
+#include "auto_apms_behavior_tree/node/node_registration_template.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 /**
@@ -28,5 +28,5 @@
  * @param type Fully qualified name of the class.
  */
 #define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(type)                                                                    \
-  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::NodeRegistrationFactory<type>,                                       \
+  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::NodeRegistrationTemplate<type>,                                      \
                          auto_apms_behavior_tree::NodeRegistrationInterface)

@@ -14,12 +14,15 @@
 
 #pragma once
 
-#include <string>
+#include <string.h>
 #include <vector>
 
-namespace auto_apms_core::util
+// Additionally include some string utils from rcpputils
+#include "rcpputils/join.hpp"
+
+namespace auto_apms_util
 {
-/// @ingroup auto_apms_core
+/// @ingroup auto_apms_util
 /// @{
 
 enum class TextColor
@@ -51,7 +54,7 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
  *
  * The text color will be reset to default after the text ends.
  *
- * @ingroup auto_apms_core
+ * @ingroup auto_apms_util
  * @param text Text to be displayed.
  * @param color Desired color of the text.
  * @return String including corresponding ANSI color escape sequences.
@@ -59,4 +62,4 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
 std::string makeColoredText(const std::string& text, TextColor color);
 
 /// @}
-}  // namespace auto_apms_core::util
+}  // namespace auto_apms_util

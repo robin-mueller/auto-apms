@@ -1,0 +1,15 @@
+auto_apms_util::action_wrapper_params:
+  ${_AUTO_APMS_UTIL__ACTION_PARAM_LOOP_RATE}:
+    type: double
+    default_value: 0.1
+    description: Rate [s] at which the action server node periodically invokes the execution callbacks.
+    validation:
+      gt_eq<>: [0.001]
+
+  ${_AUTO_APMS_UTIL__ACTION_PARAM_FEEDBACK_RATE}:
+    type: double
+    default_value: 0.5
+    description: Maximum rate [s] at which the action server node publishes feedback.
+    validation:
+      gt_eq<>: [0.001]
+

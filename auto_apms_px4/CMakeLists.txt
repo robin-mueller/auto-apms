@@ -7,7 +7,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 
-find_package(auto_apms_core REQUIRED)
+find_package(auto_apms_util REQUIRED)
 find_package(auto_apms_behavior_tree REQUIRED)
 find_package(auto_apms_interfaces REQUIRED)
 find_package(px4_msgs REQUIRED)
@@ -59,7 +59,7 @@ add_library(px4_tasks SHARED
 )
 target_link_libraries(px4_tasks auto_apms_px4)
 ament_target_dependencies(px4_tasks
-    auto_apms_core
+    auto_apms_util
     rclcpp_components
     tf2_eigen
 )

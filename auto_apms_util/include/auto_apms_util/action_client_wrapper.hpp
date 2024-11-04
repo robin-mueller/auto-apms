@@ -20,15 +20,15 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-namespace auto_apms_core
+namespace auto_apms_util
 {
 
 /**
  * @brief Enum for indicating a ROS 2 action goal's current status.
  *
- * It is used to represent the internal state of auto_apms_core::ActionClientWrapper.
+ * It is used to represent the internal state of auto_apms_util::ActionClientWrapper.
  *
- * @ingroup auto_apms_core
+ * @ingroup auto_apms_util
  */
 enum class ActionGoalStatus : uint8_t
 {
@@ -39,7 +39,7 @@ enum class ActionGoalStatus : uint8_t
 
 /**
  * @brief Convenience wrapper for a rclcpp_action::Client that introduces synchronous goal handling functions.
- * @ingroup auto_apms_core
+ * @ingroup auto_apms_util
  */
 template <typename ActionT>
 class ActionClientWrapper
@@ -54,11 +54,11 @@ public:
   using ResultFuture = std::shared_future<WrappedResultSharedPtr>;
 
   /**
-   * @brief Constructor.
-   * @param node Node reference. This instance doesn't own the node
-   * @param action_name Name of the corresponding action
+   * @brief ActionClientWrapper constructor.
+   * @param node_ptr Shared pointer to the node.
+   * @param action_name Name of the corresponding action.
    */
-  ActionClientWrapper(rclcpp::Node& node, const std::string& action_name);
+  ActionClientWrapper(rclcpp::Node::SharedPtr node_ptr, const std::string& action_name);
 
   /**
    * @brief Send a goal to the action and synchronously wait for the response.
@@ -118,12 +118,12 @@ private:
 };
 
 template <typename ActionT>
-ActionClientWrapper<ActionT>::ActionClientWrapper(rclcpp::Node& node, const std::string& action_name)
-  : node_base_interface_ptr_{ node.get_node_base_interface() }
-  , logger_{ node.get_logger() }
+ActionClientWrapper<ActionT>::ActionClientWrapper(rclcpp::Node::SharedPtr node_ptr, const std::string& action_name)
+  : node_base_interface_ptr_{ node_ptr->get_node_base_interface() }
+  , logger_{ node_ptr->get_logger() }
   , action_name_{ action_name }
 {
-  client_ptr_ = rclcpp_action::create_client<ActionT>(&node, action_name_);
+  client_ptr_ = rclcpp_action::create_client<ActionT>(node_ptr, action_name_);
 }
 
 template <typename ActionT>
@@ -249,4 +249,4 @@ std::shared_ptr<const typename ActionClientWrapper<ActionT>::Feedback> ActionCli
   return feedback_ptr_;
 }
 
-}  // namespace auto_apms_core
+}  // namespace auto_apms_util

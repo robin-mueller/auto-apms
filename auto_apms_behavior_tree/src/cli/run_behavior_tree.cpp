@@ -19,7 +19,7 @@
 #include "behaviortree_cpp/loggers/bt_cout_logger.h"
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "rclcpp/rclcpp.hpp"
-#include "auto_apms_core/logging.hpp"
+#include "auto_apms_util/logging.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
 #include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     termination_requested = 1;
   });
   auto node_ptr = std::make_shared<rclcpp::Node>("run_behavior_tree");
-  auto_apms_core::exposeToDebugLogging(node_ptr->get_logger());
+  auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
   std::unique_ptr<TreeResource> tree_resource_ptr;
   try

@@ -15,7 +15,7 @@
 #include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 
 #include "behaviortree_cpp/xml_parsing.h"
-#include "auto_apms_core/resources.hpp"
+#include "auto_apms_util/resources.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree

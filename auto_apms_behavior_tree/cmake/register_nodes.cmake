@@ -45,7 +45,7 @@ macro(auto_apms_behavior_tree_register_nodes target)
         list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO "${_class_name}@$<TARGET_FILE:${target}>")
 
         # Append to the variable that holds the content of the pluginlib xml file
-        set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::NodeRegistrationFactory<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::NodeRegistrationInterface\" /></library>\n")
+        set(_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__NODE_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::NodeRegistrationTemplate<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::NodeRegistrationInterface\" /></library>\n")
     endforeach()
 
 endmacro()

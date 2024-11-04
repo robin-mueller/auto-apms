@@ -29,7 +29,6 @@ using TreeBlackboard = BT::Blackboard;
 using TreeBlackboardSharedPtr = std::shared_ptr<TreeBlackboard>;
 
 // BT Executor definitions
-const char BT_EXECUTOR_UPLOAD_TREE_SERVICE_NAME_SUFFIX[] = "/upload";
 const char BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX[] = "/start";
 const char BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX[] = "/command";
 

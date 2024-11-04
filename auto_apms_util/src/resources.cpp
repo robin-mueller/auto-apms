@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_core/resources.hpp"
+#include "auto_apms_util/resources.hpp"
 
 #include "ament_index_cpp/get_resources.hpp"
 #include "ament_index_cpp/get_resource.hpp"
-#include "auto_apms_core/util/string.hpp"
-#include "auto_apms_core/exceptions.hpp"
+#include "auto_apms_util/string.hpp"
+#include "auto_apms_util/exceptions.hpp"
 
-namespace auto_apms_core
+namespace auto_apms_util
 {
 
 std::set<std::string> getAllPackagesWithResource(const std::string& resource_type)
@@ -47,7 +47,7 @@ std::vector<std::string> collectPluginXMLPaths(const std::string& resource_type,
     std::string base_path;
     if (ament_index_cpp::get_resource(resource_type, name, content, &base_path))
     {
-      std::vector<std::string> paths = util::splitString(content, "\n", false);
+      std::vector<std::string> paths = splitString(content, "\n", false);
       if (paths.size() != 1)
       {
         throw exceptions::ResourceNotFoundError("Invalid resource marker file installed by package: '" + name +
@@ -66,4 +66,4 @@ std::vector<std::string> collectPluginXMLPaths(const std::string& resource_type,
   return xml_paths;
 }
 
-}  // namespace auto_apms_core
+}  // namespace auto_apms_util

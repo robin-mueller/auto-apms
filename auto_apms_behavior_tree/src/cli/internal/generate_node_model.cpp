@@ -18,7 +18,7 @@
 
 #include "behaviortree_cpp/xml_parsing.h"
 #include "class_loader/multi_library_class_loader.hpp"
-#include "auto_apms_core/logging.hpp"
+#include "auto_apms_util/logging.hpp"
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
 
 using namespace auto_apms_behavior_tree;
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 
     rclcpp::init(argc, argv);
     auto node_ptr = std::make_shared<rclcpp::Node>("_generate_node_model_temp_node");
-    auto_apms_core::exposeToDebugLogging(node_ptr->get_logger());
+    auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
     // Create manifest
     BT::BehaviorTreeFactory factory;
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 
       // Look if the class we search for is actually present in the library.
       const std::string factory_classname =
-          "auto_apms_behavior_tree::NodeRegistrationFactory<" + params.class_name + ">";
+          "auto_apms_behavior_tree::NodeRegistrationTemplate<" + params.class_name + ">";
       const auto classes = class_loader.getAvailableClassesForLibrary<NodeRegistrationInterface>(library_path);
       if (std::find(classes.begin(), classes.end(), factory_classname) == classes.end())
       {

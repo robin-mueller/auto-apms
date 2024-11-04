@@ -6,7 +6,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(auto_apms_core REQUIRED)
+find_package(auto_apms_util REQUIRED)
 find_package(auto_apms_behavior_tree REQUIRED)
 find_package(auto_apms_interfaces REQUIRED)
 find_package(rclcpp_components REQUIRED)
@@ -118,7 +118,7 @@ macro(add_and_install_example_executable source_file)
     install(TARGETS ${example_target_name} DESTINATION lib/${PROJECT_NAME})
 endmacro()
 
-add_and_install_example_executable("src/task_ex1.cpp" auto_apms_core auto_apms_interfaces)
+add_and_install_example_executable("src/task_ex1.cpp" auto_apms_util auto_apms_interfaces)
 
 #
 # ------------ Example Behavior Trees --------------

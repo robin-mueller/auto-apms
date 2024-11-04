@@ -14,7 +14,7 @@
 
 #include "auto_apms_interfaces/action/arm_disarm.hpp"
 
-#include "auto_apms_core/task.hpp"
+#include "auto_apms_util/action_wrapper.hpp"
 #include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/vehicle_command_client.hpp"
 #include "px4_msgs/msg/vehicle_status.hpp"
@@ -22,7 +22,7 @@
 namespace auto_apms_px4
 {
 
-class ArmDisarmTask : public auto_apms_core::Task<auto_apms_interfaces::action::ArmDisarm>
+class ArmDisarmTask : public auto_apms_util::ActionWrapper<auto_apms_interfaces::action::ArmDisarm>
 {
   enum State
   {
@@ -41,7 +41,7 @@ class ArmDisarmTask : public auto_apms_core::Task<auto_apms_interfaces::action::
 
 public:
   explicit ArmDisarmTask(const rclcpp::NodeOptions& options)
-    : Task{ ARM_DISARM_TASK_NAME, options }, vehicle_command_client_{ *this->node_ptr_ }
+    : ActionWrapper{ ARM_DISARM_TASK_NAME, options }, vehicle_command_client_{ *this->node_ptr_ }
   {
     vehicle_status_sub_ptr_ = this->node_ptr_->create_subscription<px4_msgs::msg::VehicleStatus>(
         "/fmu/out/vehicle_status", rclcpp::QoS(1).best_effort(), [this](px4_msgs::msg::VehicleStatus::UniquePtr msg) {

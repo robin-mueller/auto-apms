@@ -16,7 +16,7 @@
 
 #include <stdexcept>
 
-namespace auto_apms_core::exceptions
+namespace auto_apms_util::exceptions
 {
 
 /**
@@ -35,4 +35,4 @@ struct ResourceNotFoundError : public ExceptionBase
   using ExceptionBase::ExceptionBase;
 };
 
-}  // namespace auto_apms_core::exceptions
+}  // namespace auto_apms_util::exceptions

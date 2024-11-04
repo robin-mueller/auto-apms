@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "auto_apms_core/action_context.hpp"
+#include "auto_apms_util/action_context.hpp"
 #include "px4_ros2/components/mode.hpp"
 #include "px4_ros2/odometry/attitude.hpp"
 #include "px4_ros2/odometry/global_position.hpp"
@@ -32,7 +32,7 @@ template <class ActionT>
 class ModeBase : public px4_ros2::ModeBase
 {
 protected:
-  using ActionContextType = auto_apms_core::ActionContext<ActionT>;
+  using ActionContextType = auto_apms_util::ActionContext<ActionT>;
   using Goal = typename ActionContextType::Goal;
   using Result = typename ActionContextType::Result;
   using Feedback = typename ActionContextType::Feedback;

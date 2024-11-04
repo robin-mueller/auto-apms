@@ -206,7 +206,7 @@ NodeManifest& NodeManifest::autoComplete(NodePluginClassLoader& class_loader)
     const std::string node_package_name = class_loader.getClassPackage(params.class_name);
     if (node_package_name.empty())
     {
-      throw auto_apms_core::exceptions::ResourceNotFoundError("Cannot find class '" + params.class_name +
+      throw auto_apms_util::exceptions::ResourceNotFoundError("Cannot find class '" + params.class_name +
                                                               "' required by node '" + node_name +
                                                               "', because no such resource is registered with this "
                                                               "plugin loader instance.");
@@ -217,7 +217,7 @@ NodeManifest& NodeManifest::autoComplete(NodePluginClassLoader& class_loader)
       // Verify the plugin can be found in the package
       if (params.package == node_package_name)
       {
-        throw auto_apms_core::exceptions::ResourceNotFoundError(
+        throw auto_apms_util::exceptions::ResourceNotFoundError(
             "Cannot find class '" + params.class_name + "' required by node '" + node_name + "' in package '" +
             params.package + "'. Internally, the resource is registered by package '" + node_package_name +
             "' instead. This can occur if multiple packages register a node plugin with the same class name. "

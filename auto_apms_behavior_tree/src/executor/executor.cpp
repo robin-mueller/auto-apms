@@ -16,7 +16,7 @@
 
 #include <chrono>
 
-#include "auto_apms_core/logging.hpp"
+#include "auto_apms_util/logging.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
@@ -28,7 +28,7 @@ TreeExecutor::TreeExecutor(rclcpp::Node::SharedPtr node_ptr)
   , control_command_(ControlCommand::RUN)
   , execution_stopped_(true)
 {
-  auto_apms_core::exposeToDebugLogging(node_ptr_->get_logger());
+  auto_apms_util::exposeToDebugLogging(node_ptr_->get_logger());
 }
 
 std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(CreateTreeCallback create_tree_cb)

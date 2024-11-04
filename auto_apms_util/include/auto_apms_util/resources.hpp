@@ -18,11 +18,11 @@
 #include <vector>
 #include <string>
 
-namespace auto_apms_core
+namespace auto_apms_util
 {
 
 /**
- * @ingroup auto_apms_core
+ * @ingroup auto_apms_util
  * @brief Collect all package names that register a certain type of `ament_index` resources.
  *
  * \note Resources are not available until the respective ROS2 package is installed.
@@ -34,7 +34,7 @@ namespace auto_apms_core
 std::set<std::string> getAllPackagesWithResource(const std::string& resource_type);
 
 /**
- * @ingroup auto_apms_core
+ * @ingroup auto_apms_util
  * @brief Collect the paths of plugin.xml manifest files used for initializing pluginlib::ClassLoader objects.
  *
  * This function requires packages to install plugins.xml manifest files and register them as an `ament_index` resource.
@@ -44,10 +44,10 @@ std::set<std::string> getAllPackagesWithResource(const std::string& resource_typ
  * @param search_packages Packages to consider when searching for plugin resources. Leave empty to search in all
  * packages.
  * @return Vector of file paths.
- * @throws auto_apms_core::exceptions::ResourceNotFoundError if failed to find a corresponding file in a package
+ * @throws auto_apms_util::exceptions::ResourceNotFoundError if failed to find a corresponding file in a package
  * specified in @p search_packages or if an `ament_index` resource marker file is invalid.
  */
 std::vector<std::string> collectPluginXMLPaths(const std::string& resource_type,
                                                const std::set<std::string>& search_packages = {});
 
-}  // namespace auto_apms_core
+}  // namespace auto_apms_util

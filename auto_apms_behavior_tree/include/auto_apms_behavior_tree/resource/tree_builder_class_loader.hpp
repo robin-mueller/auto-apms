@@ -31,7 +31,7 @@ public:
    * @brief TreeBuilderClassLoader constructor.
    * @param search_packages Packages to consider when searching for plugin resources. Leave empty to search in all
    * packages.
-   * @throws auto_apms_core::exceptions::ResourceNotFoundError if failed to find a pluginlib plugin
+   * @throws auto_apms_util::exceptions::ResourceNotFoundError if failed to find a pluginlib plugin
    * manifest file in a package specified in @p search_packages or if an `ament_index` resource marker file is invalid.
    */
   TreeBuilderClassLoader(const std::set<std::string>& search_packages = {});

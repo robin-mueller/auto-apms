@@ -10,7 +10,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 set(TEST_SOURCES
-    "action/TaskTestAction.action"
+    "action/TestActionWrapper.action"
 )
 
 set(MESSAGE_SOURCES

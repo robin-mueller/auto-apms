@@ -14,7 +14,7 @@
 
 #include "auto_apms_behavior_tree/node.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
-#include "auto_apms_core/exceptions.hpp"
+#include "auto_apms_util/exceptions.hpp"
 
 #define INPUT_KEY_PACKAGE "package_name"
 #define INPUT_KEY_FILENAME "filename"
@@ -46,7 +46,7 @@ public:
     {
       tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::selectByFileName(filename, package_name));
     }
-    catch (const auto_apms_core::exceptions::ResourceNotFoundError& e)
+    catch (const auto_apms_util::exceptions::ResourceNotFoundError& e)
     {
       return BT::NodeStatus::FAILURE;
     }

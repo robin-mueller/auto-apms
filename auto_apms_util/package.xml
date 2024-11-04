@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>auto_apms_core</name>
+  <name>auto_apms_util</name>
   <version>0.0.0</version>
-  <description>AutoAPMS core features</description>
+  <description>AutoAPMS utilities</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
   <license>Apache License 2.0</license>
 
@@ -13,6 +13,7 @@
   <depend>rclcpp_action</depend>
   <depend>rcpputils</depend>
   <depend>ament_index_cpp</depend>
+  <depend>generate_parameter_library</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>auto_apms_interfaces</test_depend>

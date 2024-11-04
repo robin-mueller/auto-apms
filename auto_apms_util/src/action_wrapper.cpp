@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "auto_apms_util/action_wrapper.hpp"
 
-#include "rclcpp/logger.hpp"
-
-namespace auto_apms_core
+namespace auto_apms_util
 {
 
-void exposeToDebugLogging(const rclcpp::Logger& logger);
+const std::string ACTION_WRAPPER_PARAM_NAME_LOOP_RATE = _AUTO_APMS_UTIL__ACTION_PARAM_LOOP_RATE;
+const std::string ACTION_WRAPPER_PARAM_NAME_FEEDBACK_RATE = _AUTO_APMS_UTIL__ACTION_PARAM_FEEDBACK_RATE;
 
-}  // namespace auto_apms_core
+}  // namespace auto_apms_util

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_core/util/string.hpp"
+#include "auto_apms_util/string.hpp"
 
 #include <algorithm>
 #include <sstream>
 #include <iterator>
 
-namespace auto_apms_core::util
+namespace auto_apms_util
 {
 
 std::vector<std::string> splitString(const std::string& str, const std::string& delimiter, bool preserve_empty)
@@ -62,4 +62,4 @@ std::string makeColoredText(const std::string& text, TextColor color)
   return text;
 }
 
-}  // namespace auto_apms_core::util
+}  // namespace auto_apms_util

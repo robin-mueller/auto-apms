@@ -16,7 +16,7 @@
 
 #include "rclcpp_action/rclcpp_action.hpp"
 
-namespace auto_apms_core
+namespace auto_apms_util
 {
 
 template <typename ActionT>
@@ -166,4 +166,4 @@ inline std::shared_ptr<typename ActionContext<ActionT>::Result> ActionContext<Ac
   return result_ptr_;
 }
 
-}  // namespace auto_apms_core
+}  // namespace auto_apms_util

@@ -12,9 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "auto_apms_util/logging.hpp"
 
-#include "auto_apms_core/util/string.hpp"
+#include "rclcpp/logging.hpp"
 
-// Additionally include some utils from rcpputils
-#include "rcpputils/join.hpp"
+namespace auto_apms_util
+{
+
+void exposeToDebugLogging(const rclcpp::Logger& logger)
+{
+#ifdef _AUTO_APMS_DEBUG_LOGGING
+  auto ret = rcutils_logging_set_logger_level(logger.get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
+  if (ret != RCUTILS_RET_OK)
+  {
+    RCLCPP_ERROR(logger, "Error setting severity: %s", rcutils_get_error_string().str);
+    rcutils_reset_error();
+  }
+#endif
+}
+
+}  // namespace auto_apms_util

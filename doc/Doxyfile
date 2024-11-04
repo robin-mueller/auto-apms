@@ -199,7 +199,7 @@ STRIP_FROM_PATH        =
 # specify the list of include paths that are normally passed to the compiler
 # using the -I flag.
 
-STRIP_FROM_INC_PATH    += auto_apms_core/include/
+STRIP_FROM_INC_PATH    += auto_apms_util/include/
 STRIP_FROM_INC_PATH    += auto_apms_behavior_tree/include/
 STRIP_FROM_INC_PATH    += auto_apms_px4/include/
 STRIP_FROM_INC_PATH    += auto_apms_mission/include/
@@ -968,7 +968,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                 += "auto_apms_core/include/auto_apms_core" "auto_apms_core/src"
+INPUT                 += "auto_apms_util/include/auto_apms_util" "auto_apms_util/src"
 INPUT                 += "auto_apms_behavior_tree/include/auto_apms_behavior_tree" "auto_apms_behavior_tree/src"
 INPUT                 += "auto_apms_px4/include/auto_apms_px4" "auto_apms_px4/src"
 INPUT                 += "auto_apms_mission/include/auto_apms_mission" "auto_apms_mission/src"

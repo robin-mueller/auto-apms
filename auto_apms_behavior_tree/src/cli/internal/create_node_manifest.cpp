@@ -16,9 +16,9 @@
 #include <iostream>
 #include <set>
 
-#include "auto_apms_core/exceptions.hpp"
-#include "auto_apms_core/resources.hpp"
-#include "auto_apms_core/util/string.hpp"
+#include "auto_apms_util/exceptions.hpp"
+#include "auto_apms_util/resources.hpp"
+#include "auto_apms_util/string.hpp"
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
 #include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
 
@@ -41,11 +41,11 @@ int main(int argc, char** argv)
   try
   {
     std::vector<std::string> manifest_files;
-    for (const auto& path : auto_apms_core::util::splitString(argv[1], ";"))
+    for (const auto& path : auto_apms_util::splitString(argv[1], ";"))
     {
       manifest_files.push_back(std::filesystem::absolute(path).string());
     }
-    const std::vector<std::string> build_infos = auto_apms_core::util::splitString(argv[2], ";");
+    const std::vector<std::string> build_infos = auto_apms_util::splitString(argv[2], ";");
     const std::string build_package_name = argv[3];
     const std::filesystem::path output_file{ std::filesystem::absolute(argv[4]) };
 
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
     std::map<std::string, std::string> build_lib_paths;
     for (const auto& build_info : build_infos)
     {
-      std::vector<std::string> parts = auto_apms_core::util::splitString(build_info, "@");
+      std::vector<std::string> parts = auto_apms_util::splitString(build_info, "@");
       if (parts.size() != 2)
       {
         throw std::runtime_error("Invalid build info entry ('" + build_info + "').");
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 
     auto output_manifest = NodeManifest::fromFiles(manifest_files);
     auto all_but_build_package =
-        auto_apms_core::getAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
+        auto_apms_util::getAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE);
     all_but_build_package.erase(build_package_name);
 
     /**
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
       {
         output_manifest[node_name] = NodeManifest({ { node_name, params } }).autoComplete(loader)[node_name];
       }
-      catch (const auto_apms_core::exceptions::ResourceNotFoundError& e)
+      catch (const auto_apms_util::exceptions::ResourceNotFoundError& e)
       {
         if (build_lib_paths.find(params.class_name) == build_lib_paths.end())
         {

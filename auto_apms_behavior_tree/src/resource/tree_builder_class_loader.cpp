@@ -14,7 +14,7 @@
 
 #include "auto_apms_behavior_tree/resource/tree_builder_class_loader.hpp"
 
-#include "auto_apms_core/resources.hpp"
+#include "auto_apms_util/resources.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -22,7 +22,7 @@ namespace auto_apms_behavior_tree
 TreeBuilderClassLoader::TreeBuilderClassLoader(const std::set<std::string>& search_packages)
   : ClassLoader(
         "auto_apms_behavior_tree", "auto_apms_behavior_tree::TreeBuilderFactoryInterface", "",
-        auto_apms_core::collectPluginXMLPaths(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILDER, search_packages))
+        auto_apms_util::collectPluginXMLPaths(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILDER, search_packages))
 {
 }
 

@@ -85,7 +85,7 @@ public:
    *
    * @param class_loader pluginlib::ClassLoader object managing behavior tree node plugin resources.
    * @return Reference to the altered manifest object.
-   * @throw auto_apms_core::exceptions::ResourceNotFoundError if no unique resource for a node can be found, thus the
+   * @throw auto_apms_util::exceptions::ResourceNotFoundError if no unique resource for a node can be found, thus the
    * library path cannot be filled automatically.
    */
   NodeManifest& autoComplete(NodePluginClassLoader& class_loader);
