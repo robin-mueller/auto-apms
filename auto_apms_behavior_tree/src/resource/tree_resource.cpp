@@ -20,7 +20,7 @@
 
 #include "ament_index_cpp/get_resource.hpp"
 #include "auto_apms_util/exceptions.hpp"
-#include "auto_apms_util/resources.hpp"
+#include "auto_apms_util/resource.hpp"
 #include "auto_apms_util/string.hpp"
 
 namespace auto_apms_behavior_tree
@@ -82,14 +82,13 @@ TreeResource TreeResource::selectByTreeName(const std::string& tree_name, const 
 
   if (matching_resources.empty())
   {
-    throw auto_apms_util::exceptions::ResourceNotFoundError{ "No behavior tree with name '" + tree_name +
-                                                             "' was registered." };
+    throw auto_apms_util::exceptions::ResourceError{ "No behavior tree with name '" + tree_name + "' was registered." };
   }
   if (matching_resources.size() > 1)
   {
-    throw auto_apms_util::exceptions::ResourceNotFoundError{ "The behavior tree name '" + tree_name +
-                                                             "' exists multiple times. Use the 'package_name' argument "
-                                                             "to narrow down the search." };
+    throw auto_apms_util::exceptions::ResourceError{ "The behavior tree name '" + tree_name +
+                                                     "' exists multiple times. Use the 'package_name' argument "
+                                                     "to narrow down the search." };
   }
 
   return matching_resources[0];
@@ -122,14 +121,14 @@ TreeResource TreeResource::selectByFileName(const std::string& file_name, const 
 
   if (matching_resources.empty())
   {
-    throw auto_apms_util::exceptions::ResourceNotFoundError{ "No behavior tree file with name '" + file_stem +
-                                                             ".xml' was registered." };
+    throw auto_apms_util::exceptions::ResourceError{ "No behavior tree file with name '" + file_stem +
+                                                     ".xml' was registered." };
   }
   if (matching_resources.size() > 1)
   {
-    throw auto_apms_util::exceptions::ResourceNotFoundError{ "Multiple behavior tree files with name '" + file_stem +
-                                                             ".xml' are registered. Use the 'package_name' argument to "
-                                                             "narrow down the search." };
+    throw auto_apms_util::exceptions::ResourceError{ "Multiple behavior tree files with name '" + file_stem +
+                                                     ".xml' are registered. Use the 'package_name' argument to "
+                                                     "narrow down the search." };
   }
 
   return matching_resources[0];
@@ -156,9 +155,9 @@ TreeResource TreeResource::fromString(const std::string& identity)
   TreeResource resource = selectByFileName(tree_file_stem, package_name);
   if (resource.tree_names.find(tree_name) == resource.tree_names.end())
   {
-    throw auto_apms_util::exceptions::ResourceNotFoundError(
-        "Found behavior tree file '" + tree_file_stem + ".xml' in package '" + resource.package_name +
-        "' but no tree with name '" + tree_name + "' exists in that file.");
+    throw auto_apms_util::exceptions::ResourceError("Found behavior tree file '" + tree_file_stem +
+                                                    ".xml' in package '" + resource.package_name +
+                                                    "' but no tree with name '" + tree_name + "' exists in that file.");
   }
   return resource;
 }

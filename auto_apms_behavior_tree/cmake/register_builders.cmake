@@ -14,6 +14,7 @@
 
 # Macro that registers behavior tree build directors from a specific target
 macro(auto_apms_behavior_tree_register_builders target)
+
     if(NOT TARGET ${target})
         message(
         FATAL_ERROR

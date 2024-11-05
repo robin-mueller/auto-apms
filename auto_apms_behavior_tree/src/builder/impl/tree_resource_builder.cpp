@@ -35,7 +35,7 @@ public:
       RCLCPP_ERROR(getLogger(), "%s", e.what());
       return false;
     }
-    catch (const auto_apms_util::exceptions::ResourceNotFoundError& e)
+    catch (const auto_apms_util::exceptions::ResourceError& e)
     {
       RCLCPP_ERROR(getLogger(), "%s", e.what());
       return false;

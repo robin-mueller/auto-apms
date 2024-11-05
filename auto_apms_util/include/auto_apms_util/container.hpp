@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_util/resources.hpp"
-#include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
+#pragma once
 
-namespace auto_apms_behavior_tree
+#include <vector>
+#include <algorithm>
+
+namespace auto_apms_util
 {
 
-NodePluginClassLoader::NodePluginClassLoader(const std::set<std::string>& search_packages)
-  : ClassLoader(
-        "auto_apms_behavior_tree", "auto_apms_behavior_tree::NodeRegistrationInterface", "",
-        auto_apms_util::collectPluginXMLPaths(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE, search_packages))
+template <typename ContainerT>
+ContainerT haveCommonElements(ContainerT vec1, ContainerT vec2)
 {
+  std::sort(vec1.begin(), vec1.end());
+  std::sort(vec2.begin(), vec2.end());
+  ContainerT intersection;
+  std::set_intersection(vec1.begin(), vec1.end(), vec2.begin(), vec2.end(), std::back_inserter(intersection));
+  return intersection;
 }
 
-}  // namespace auto_apms_behavior_tree
+}  // namespace auto_apms_util

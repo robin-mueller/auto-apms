@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include <vector>
+#include <map>
+
 #include "auto_apms_behavior_tree/node/node_registration_params.hpp"
-#include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -31,11 +33,9 @@ public:
   using Params = NodeRegistrationParams;
 
   /// Mapping of a node's name and its registration parameters.
-  using ParamMap = std::map<std::string, NodeRegistrationParams>;
+  using ParamMap = std::map<std::string, Params>;
 
   static const std::string PARAM_NAME_CLASS;
-  static const std::string PARAM_NAME_PACKAGE;
-  static const std::string PARAM_NAME_LIBRARY;
   static const std::string PARAM_NAME_PORT;
   static const std::string PARAM_NAME_WAIT_TIMEOUT;
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
@@ -58,37 +58,14 @@ public:
 
   bool contains(const std::string& node_name) const;
 
-  NodeRegistrationParams& operator[](const std::string& node_name);
-  const NodeRegistrationParams& operator[](const std::string& node_name) const;
+  Params& operator[](const std::string& node_name);
+  const Params& operator[](const std::string& node_name) const;
 
-  NodeManifest& add(const std::string& node_name, const NodeRegistrationParams& p);
+  NodeManifest& add(const std::string& node_name, const Params& p);
 
   NodeManifest& remove(const std::string& node_name);
 
   NodeManifest& merge(const NodeManifest& m);
-
-  /**
-   * @brief Automatically fill node plugin resource information in @p manifest.
-   *
-   * This function autocompletes the package and library fields of the manifest if possible. Depending on the value of
-   * the package field, the manifest will be updated:
-   *
-   * - **Package undefined**: The library path will be resolved by looking up the class name
-   * in @p class_loader.
-   *
-   * - **Package defined**: The library path will be resolved by looking up the class name
-   * in @p class_loader considering only resources registered by the given package.
-   *
-   * The library parameter will be overwritten in any case. Other parameters remain the same and are simply copied.
-   *
-   * This method is used internally. Mostly for introspection purposes.
-   *
-   * @param class_loader pluginlib::ClassLoader object managing behavior tree node plugin resources.
-   * @return Reference to the altered manifest object.
-   * @throw auto_apms_util::exceptions::ResourceNotFoundError if no unique resource for a node can be found, thus the
-   * library path cannot be filled automatically.
-   */
-  NodeManifest& autoComplete(NodePluginClassLoader& class_loader);
 
   void toFile(const std::string& file_path) const;
 

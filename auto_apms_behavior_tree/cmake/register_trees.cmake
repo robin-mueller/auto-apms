@@ -86,6 +86,7 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
         # However, this command is mainly relevant for defining a variable containing the library paths and generator expressions
         # for direct node plugin dependencies of the registered behavior tree
         set(_node_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/${_node_manifest_created_file_name}")
+        set(_node_manifest_rel_path__install "${_node_manifest_rel_dir__install}/${_node_manifest_created_file_name}")
         execute_process(
             COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/create_node_manifest"
                 "${ARGS_NODE_MANIFEST}" # Paths of the manifest source files
@@ -98,7 +99,7 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
                 "${PROJECT_NAME}"  # Name of the package that builds the behavior tree model
                 "${_node_manifest_abs_path__build}"  # File to write the behavior tree node plugin manifest to
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            OUTPUT_VARIABLE _node_plugin_library_paths
+            OUTPUT_VARIABLE _node_library_paths
             RESULT_VARIABLE _return_code)
         if(_return_code EQUAL 1)
             message(
@@ -106,28 +107,25 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
                 "Failed to create node plugin manifest for '${_tree_file_stem}' parsing [${ARGS_NODE_MANIFEST}]"
             )
         endif()
-        # Create a command to evaluate the generator expressions inculded in the manifest file after the CMake configuration stage.
-        # NOTE: The file isn't fully processed right after the invocation of the file(GENERATE ...) macro.
-        file(GENERATE OUTPUT "${_node_manifest_abs_path__build}" INPUT "${_node_manifest_abs_path__build}")
-        set(_node_manifest_rel_path__install "${_node_manifest_rel_dir__install}/${_node_manifest_created_file_name}")
 
         # Use the above created manifest for generating the node model
         set(_node_model_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/node_model_${_tree_file_stem}.xml")
         add_custom_command(OUTPUT "${_node_model_abs_path__build}"
             COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/generate_node_model"
                 "\"${_node_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
-                "\"${_node_model_abs_path__build}\"" # File to write the behavior tree node model to
 
-                # IMPORTANT: Since we already have the complete manifest, passing this variable to COMMAND isn't strictly necessary,
-                # but because this adds target-level dependencies to the custom command, it is required.
-                # All targets in _node_plugin_library_paths (generator expression or not) ar added as dependencies to the command.
-                # If this would be omitted, there would be an error saying 'there is no rule to make target ...'.
-                # Additionally, this variable needs to be passed to DEPENDS to create a file-level dependency
-                # to the shared libraries which makes sure that the command is executed when they are recompiled.
-                "\"${_node_plugin_library_paths}\""
+                # Exhaustive list of libraries to be loaded by ClassLoader.
+                # create_node_manifest previously collected all library paths that are required to successfully load the nodes specified in the manifest file.
+                # We pass this variable to the command to specifiy which libraries to load and to add target-level dependencies for those targets mentioned in any $<TARGET_FILE:tgt> generator expressions.
+                # Therefore, we configure the compilation so that any shared libraries created by the package invoking the macro are built before being used here.
+                # If we wouldn't do this, there would be an error saying 'there is no rule to make target ...'.
+                # Additionally, this variable needs to be passed to DEPENDS to create a file-level dependency to the shared library files which makes sure that the command is executed when they are recompiled.
+                "\"${_node_library_paths}\""
+
+                "\"${_node_model_abs_path__build}\"" # File to write the behavior tree node model to
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS ${ARGS_NODE_MANIFEST} ${_node_plugin_library_paths}
-            COMMENT "Generate behavior tree node model for tree file '${_tree_file_stem}' with libraries [${_node_plugin_library_paths}].")
+            DEPENDS ${ARGS_NODE_MANIFEST} ${_node_library_paths}
+            COMMENT "Generate behavior tree node model for tree file '${_tree_file_stem}' with libraries [${_node_library_paths}].")
         add_custom_target(_target_generate_node_model__${_node_model_custom_target_suffix} ALL
             DEPENDS "${_node_model_abs_path__build}")
 

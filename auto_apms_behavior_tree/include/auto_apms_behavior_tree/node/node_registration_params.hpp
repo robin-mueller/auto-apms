@@ -24,8 +24,6 @@ namespace auto_apms_behavior_tree
 struct NodeRegistrationParams
 {
   std::string class_name;
-  std::string package;
-  std::string library;
   std::string port;
   std::chrono::duration<double> wait_timeout = std::chrono::duration<double>(3);
   std::chrono::duration<double> request_timeout = std::chrono::duration<double>(1.5);

@@ -15,7 +15,9 @@
 #include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 
 #include "behaviortree_cpp/xml_parsing.h"
-#include "auto_apms_util/resources.hpp"
+#include "auto_apms_util/resource.hpp"
+#include "auto_apms_util/container.hpp"
+#include "auto_apms_util/string.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
@@ -27,7 +29,7 @@ TreeBuilder::TreeBuilder(std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr) :
 }
 
 TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
-                                              NodePluginClassLoader& tree_node_loader, bool override)
+                                              NodeRegistrationClassLoader& tree_node_loader, bool override)
 {
   const auto registered_nodes = getRegisteredNodes();
   for (const auto& [node_name, params] : node_manifest.getInternalMap())
@@ -100,7 +102,7 @@ TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, 
 TreeBuilder& TreeBuilder::registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
                                               bool override)
 {
-  NodePluginClassLoader loader;
+  NodeRegistrationClassLoader loader;
   return registerNodePlugins(node_ptr, node_manifest, loader, override);
 }
 
@@ -117,16 +119,11 @@ TreeBuilder& TreeBuilder::addTreeFromXMLDocument(const tinyxml2::XMLDocument& do
   const auto other_tree_names = getTreeNames(doc);
 
   // Verify that there are no duplicate tree names
-  std::vector<std::string> same_names;
-  std::set_intersection(this_tree_names.begin(), this_tree_names.end(), other_tree_names.begin(),
-                        other_tree_names.end(), std::inserter(same_names, same_names.begin()));
-  if (!same_names.empty())
+  const auto common_tree_names = auto_apms_util::haveCommonElements(this_tree_names, other_tree_names);
+  if (!common_tree_names.empty())
   {
-    std::ostringstream oss;
-    std::copy(same_names.begin(), same_names.end() - 1, std::ostream_iterator<std::string>(oss, ", "));
-    oss << same_names.back();
-    throw exceptions::TreeBuildError(
-        "Cannot merge tree document: The following trees are already defined: " + oss.str() + ".");
+    throw exceptions::TreeBuildError("Cannot merge tree document: The following trees are already defined: " +
+                                     rcpputils::join(common_tree_names, ", ") + ".");
   }
 
   // Iterate over all the children of the new document's root element
@@ -227,9 +224,9 @@ Tree TreeBuilder::buildTree(TreeBlackboardSharedPtr root_bb_ptr)
   return buildTree("", root_bb_ptr);
 }
 
-std::set<std::string> TreeBuilder::getTreeNames(const tinyxml2::XMLDocument& doc)
+std::vector<std::string> TreeBuilder::getTreeNames(const tinyxml2::XMLDocument& doc)
 {
-  std::set<std::string> names;
+  std::vector<std::string> names;
   if (const auto root = doc.RootElement())
   {
     for (const tinyxml2::XMLElement* child = root->FirstChildElement(); child != nullptr;
@@ -239,7 +236,7 @@ std::set<std::string> TreeBuilder::getTreeNames(const tinyxml2::XMLDocument& doc
       {
         if (const auto name = child->Attribute(TREE_ID_ATTRIBUTE_NAME.c_str()))
         {
-          names.insert(name);
+          names.push_back(name);
         }
         else
         {

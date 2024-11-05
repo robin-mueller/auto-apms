@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_util/resources.hpp"
+#include "auto_apms_util/resource.hpp"
 
 #include "ament_index_cpp/get_resources.hpp"
 #include "ament_index_cpp/get_resource.hpp"
@@ -31,8 +31,8 @@ std::set<std::string> getAllPackagesWithResource(const std::string& resource_typ
   }
   if (all_packages.empty())
   {
-    throw exceptions::ResourceNotFoundError("No resources of type '" + resource_type +
-                                            "' were found in the installed packages.");
+    throw exceptions::ResourceError("Cannot find resources for type '" + resource_type +
+                                    "' in any installed packages.");
   }
   return all_packages;
 }
@@ -41,26 +41,26 @@ std::vector<std::string> collectPluginXMLPaths(const std::string& resource_type,
                                                const std::set<std::string>& search_packages)
 {
   std::vector<std::string> xml_paths;
-  for (const auto& name : search_packages.empty() ? getAllPackagesWithResource(resource_type) : search_packages)
+  for (const auto& package : search_packages.empty() ? getAllPackagesWithResource(resource_type) : search_packages)
   {
     std::string content;
     std::string base_path;
-    if (ament_index_cpp::get_resource(resource_type, name, content, &base_path))
+    if (ament_index_cpp::get_resource(resource_type, package, content, &base_path))
     {
       std::vector<std::string> paths = splitString(content, "\n", false);
       if (paths.size() != 1)
       {
-        throw exceptions::ResourceNotFoundError("Invalid resource marker file installed by package: '" + name +
-                                                "' for resource type '" + resource_type +
-                                                "'. Must contain a single line with a path to the plugins.xml "
-                                                "manifest file relative to the package's install prefix.");
+        throw exceptions::ResourceError("Invalid resource marker file installed by package: '" + package +
+                                        "' for resource type '" + resource_type +
+                                        "'. Must contain a single line with a path to the plugins.xml "
+                                        "manifest file relative to the package's install prefix.");
       }
       xml_paths.push_back(base_path + '/' + paths[0]);
     }
     else
     {
-      throw exceptions::ResourceNotFoundError("Cannot find any resources for type '" + resource_type +
-                                              "' in install directory of package '" + name + "'.");
+      throw exceptions::ResourceError("Cannot find any resources for type '" + resource_type + "' in package '" +
+                                      package + "'.");
     }
   }
   return xml_paths;

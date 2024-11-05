@@ -34,8 +34,6 @@ struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
     {
       Node params_node;
       params_node[Manifest::PARAM_NAME_CLASS] = params.class_name;
-      params_node[Manifest::PARAM_NAME_PACKAGE] = params.package;
-      params_node[Manifest::PARAM_NAME_LIBRARY] = params.library;
       params_node[Manifest::PARAM_NAME_PORT] = params.port;
       params_node[Manifest::PARAM_NAME_WAIT_TIMEOUT] = params.wait_timeout.count();
       params_node[Manifest::PARAM_NAME_REQUEST_TIMEOUT] = params.request_timeout.count();
@@ -77,16 +75,6 @@ struct convert<auto_apms_behavior_tree::NodeManifest::ParamMap>
           params.port = val.as<std::string>();
           continue;
         }
-        if (param_key == Manifest::PARAM_NAME_PACKAGE)
-        {
-          params.package = val.as<std::string>();
-          continue;
-        }
-        if (param_key == Manifest::PARAM_NAME_LIBRARY)
-        {
-          params.library = val.as<std::string>();
-          continue;
-        }
         if (param_key == Manifest::PARAM_NAME_WAIT_TIMEOUT)
         {
           params.wait_timeout = std::chrono::duration<double>(val.as<double>());
@@ -113,8 +101,6 @@ namespace auto_apms_behavior_tree
 
 // clang-format off
 const std::string NodeManifest::PARAM_NAME_CLASS = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS;
-const std::string NodeManifest::PARAM_NAME_PACKAGE = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE;
-const std::string NodeManifest::PARAM_NAME_LIBRARY = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY;
 const std::string NodeManifest::PARAM_NAME_PORT = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PORT;
 const std::string NodeManifest::PARAM_NAME_REQUEST_TIMEOUT = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT;
 const std::string NodeManifest::PARAM_NAME_WAIT_TIMEOUT = _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT;
@@ -185,8 +171,7 @@ NodeManifest& NodeManifest::remove(const std::string& node_name)
 {
   if (!contains(node_name))
   {
-    throw std::logic_error{ "Node '" + node_name +
-                            "' doesn't exist in manifest, so the corresponding entry cannot be removed." };
+    throw std::logic_error{ "Node '" + node_name + "' doesn't exist, so the corresponding entry cannot be removed." };
   }
   param_map_.erase(node_name);
   return *this;
@@ -196,37 +181,6 @@ NodeManifest& NodeManifest::merge(const NodeManifest& m)
 {
   for (const auto& [node_name, params] : m.getInternalMap())
     add(node_name, params);
-  return *this;
-}
-
-NodeManifest& NodeManifest::autoComplete(NodePluginClassLoader& class_loader)
-{
-  for (const auto& [node_name, params] : param_map_)
-  {
-    const std::string node_package_name = class_loader.getClassPackage(params.class_name);
-    if (node_package_name.empty())
-    {
-      throw auto_apms_util::exceptions::ResourceNotFoundError("Cannot find class '" + params.class_name +
-                                                              "' required by node '" + node_name +
-                                                              "', because no such resource is registered with this "
-                                                              "plugin loader instance.");
-    }
-    const std::string node_lib_path = class_loader.getClassLibraryPath(params.class_name);
-    if (!params.package.empty())
-    {
-      // Verify the plugin can be found in the package
-      if (params.package == node_package_name)
-      {
-        throw auto_apms_util::exceptions::ResourceNotFoundError(
-            "Cannot find class '" + params.class_name + "' required by node '" + node_name + "' in package '" +
-            params.package + "'. Internally, the resource is registered by package '" + node_package_name +
-            "' instead. This can occur if multiple packages register a node plugin with the same class name. "
-            "To resolve this issue, introduce a unique package namespace to the respective class names.");
-      }
-    }
-    param_map_[node_name].package = node_package_name;
-    param_map_[node_name].library = node_lib_path;  // Any entry in library will be overwritten
-  }
   return *this;
 }
 

@@ -9,7 +9,6 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(pluginlib REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
@@ -32,8 +31,6 @@ set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER "state_change_l
 
 # Node manifest parameter names
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS "class_name")
-set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE "package")
-set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY "library")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PORT "port")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT "wait_timeout")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT "request_timeout")
@@ -64,7 +61,7 @@ add_library(auto_apms_behavior_tree SHARED
     "src/executor/executor.cpp"
     "src/executor/executor_server.cpp"
     "src/resource/tree_resource.cpp"
-    "src/resource/node_class_loader.cpp"
+    "src/resource/node_registration_class_loader.cpp"
     "src/resource/tree_builder_class_loader.cpp"
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
@@ -76,8 +73,6 @@ target_compile_definitions(auto_apms_behavior_tree PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE}"
     _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILDER="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILDER}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_CLASS}"
-    _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PACKAGE}"
-    _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_LIBRARY}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PORT="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PORT}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT}"
     _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT}"
@@ -90,7 +85,6 @@ ament_target_dependencies(auto_apms_behavior_tree
     rclcpp
     rclcpp_action
     rclcpp_components
-    pluginlib
     behaviortree_cpp
     yaml_cpp_vendor
     TinyXML2
@@ -161,9 +155,6 @@ rclcpp_components_register_node(auto_apms_behavior_tree
 # Create a file containing a complete behavior tree node plugin load manifest
 add_executable(create_node_manifest "src/cli/internal/create_node_manifest.cpp")
 target_link_libraries(create_node_manifest auto_apms_behavior_tree)
-target_compile_definitions(create_node_manifest PRIVATE
-    _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE="${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE}"
-)
 
 # Generate the node model according to a behavior tree node plugin manifest
 add_executable(generate_node_model "src/cli/internal/generate_node_model.cpp")
@@ -192,7 +183,6 @@ ament_export_dependencies(
     rclcpp
     rclcpp_action
     rclcpp_components
-    pluginlib
     behaviortree_cpp
     yaml_cpp_vendor
     TinyXML2

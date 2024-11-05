@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "pluginlib/class_loader.hpp"
+#include "auto_apms_util/resource.hpp"
 #include "auto_apms_behavior_tree/node/node_registration_interface.hpp"
 
 namespace auto_apms_behavior_tree
@@ -22,19 +22,23 @@ namespace auto_apms_behavior_tree
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief Version of pluginlib::ClassLoader specifically for loading installed behavior tree node plugins.
+ * @brief A pluginlib::ClassLoader specifically for loading installed behavior tree node plugins.
  */
-class NodePluginClassLoader : public pluginlib::ClassLoader<NodeRegistrationInterface>
+class NodeRegistrationClassLoader : public auto_apms_util::ResourceClassLoader<NodeRegistrationInterface>
 {
 public:
+  static const std::string BASE_PACKAGE_NAME;
+  static const std::string BASE_CLASS_NAME;
+  static const std::string RESOURCE_TYPE_NAME;
+
   /**
-   * @brief NodePluginClassLoader constructor.
-   * @param search_packages Packages to consider when searching for plugin resources. Leave empty to search in all
-   * packages.
-   * @throws auto_apms_util::exceptions::ResourceNotFoundError if failed to find a pluginlib plugin
+   * @brief NodeRegistrationClassLoader constructor.
+   * @param search_packages Packages to consider when searching for plugin associated resources. Leave empty to search
+   * in all packages.
+   * @throws auto_apms_util::exceptions::ResourceError if failed to find a pluginlib plugin
    * manifest file in a package specified in @p search_packages or if an `ament_index` resource marker file is invalid.
    */
-  NodePluginClassLoader(const std::set<std::string>& search_packages = {});
+  NodeRegistrationClassLoader(const std::set<std::string>& search_packages = {});
 };
 
 }  // namespace auto_apms_behavior_tree

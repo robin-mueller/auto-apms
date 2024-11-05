@@ -46,7 +46,7 @@ public:
     {
       tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::selectByFileName(filename, package_name));
     }
-    catch (const auto_apms_util::exceptions::ResourceNotFoundError& e)
+    catch (const auto_apms_util::exceptions::ResourceError& e)
     {
       return BT::NodeStatus::FAILURE;
     }

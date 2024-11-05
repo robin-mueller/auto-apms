@@ -81,7 +81,7 @@ public:
    * @param identity Identity string with formatting compliant to the signatures above.
    * @return Corresponding TreeResource object.
    * @throws exceptions::ResourceIdentityFormatError if the identity string has wrong format.
-   * @throws auto_apms_util::exceptions::ResourceNotFoundError if the resource cannot be found using the given
+   * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
    * identity string.
    */
   static TreeResource fromString(const std::string& identity);

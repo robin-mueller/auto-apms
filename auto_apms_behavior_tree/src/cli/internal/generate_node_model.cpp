@@ -16,10 +16,13 @@
 #include <fstream>
 #include <iostream>
 
+#include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
-#include "class_loader/multi_library_class_loader.hpp"
+#include "class_loader/class_loader.hpp"
 #include "auto_apms_util/logging.hpp"
+#include "auto_apms_util/string.hpp"
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
+#include "auto_apms_behavior_tree/node/node_registration_interface.hpp"
 
 using namespace auto_apms_behavior_tree;
 
@@ -28,15 +31,18 @@ int main(int argc, char** argv)
   if (argc < 3)
   {
     std::cerr << "generate_node_model: Missing inputs! The program requires: \n\t1.) The path to the node plugin "
-                 "manifest.\n\t2.) The xml file to store the model.\n";
-    std::cerr << "Usage: generate_node_model <manifest_file> <output_file>.\n";
+                 "manifest.\n\t2. The exhaustive list of libraries to be loaded by ClassLoader (Seperated by "
+                 "';').\n\t3.) The xml file to "
+                 "store the model.\n";
+    std::cerr << "Usage: generate_node_model <manifest_file> <library_paths> <output_file>.\n";
     return EXIT_FAILURE;
   }
 
   try
   {
-    const std::string manifest_file{ std::filesystem::absolute(argv[1]).string() };
-    const std::filesystem::path output_file{ std::filesystem::absolute(argv[2]) };
+    const std::string manifest_file = std::filesystem::absolute(argv[1]).string();
+    const std::vector<std::string> library_paths = auto_apms_util::splitString(argv[2], ";", false);
+    const std::filesystem::path output_file = std::filesystem::absolute(argv[3]);
 
     // Ensure that arguments are not empty
     if (manifest_file.empty())
@@ -58,7 +64,6 @@ int main(int argc, char** argv)
     auto node_ptr = std::make_shared<rclcpp::Node>("_generate_node_model_temp_node");
     auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
-    // Create manifest
     BT::BehaviorTreeFactory factory;
     const auto manifest = NodeManifest::fromFile(manifest_file);
 
@@ -67,49 +72,44 @@ int main(int argc, char** argv)
      * customizing the internal node/library allocation map.
      */
 
-    auto class_loader = class_loader::MultiLibraryClassLoader{ false };
+    // Instatiate loaders for all libraries in library_paths (We don't use class_loader::MultiLibraryClassLoader because
+    // we want to keep track of the libraries that the nodes come from for debugging purposes)
+    std::vector<std::unique_ptr<class_loader::ClassLoader>> class_loaders;
+    for (const auto& path : library_paths)
+      class_loaders.push_back(std::make_unique<class_loader::ClassLoader>(path));
+
+    // Walk manifest and register all plugins with BT::BehaviorTreeFactory
     for (const auto& [node_name, params] : manifest.getInternalMap())
     {
-      if (params.library.empty())
-      {
-        // Library path is a required field now
-        throw std::runtime_error("Parameters for node '" + node_name + "' do not specify a library path.");
-      }
-      const auto& library_path = params.library;
-
-      // Make sure that library is loaded
-      if (!class_loader.isLibraryAvailable(library_path))
-      {
-        try
-        {
-          class_loader.loadLibrary(library_path);
-        }
-        catch (const std::exception& e)
-        {
-          throw std::runtime_error("Failed to load library '" + library_path + "': " + e.what() + ".");
-        }
-      }
-
-      // Look if the class we search for is actually present in the library.
-      const std::string factory_classname =
+      const std::string required_class_name =
           "auto_apms_behavior_tree::NodeRegistrationTemplate<" + params.class_name + ">";
-      const auto classes = class_loader.getAvailableClassesForLibrary<NodeRegistrationInterface>(library_path);
-      if (std::find(classes.begin(), classes.end(), factory_classname) == classes.end())
+
+      class_loader::ClassLoader* loader = nullptr;
+      size_t index = 0;
+      do
       {
-        throw std::runtime_error{ "Node '" + node_name + " (Class: " + params.class_name +
-                                  ")' cannot be loaded, because factory class '" + factory_classname +
-                                  "' couldn't be found. Check that the class name is spelled correctly and registered "
-                                  "by calling auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
-                                  "corresponding package. Also make sure that you called the "
-                                  "AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE macro in the source file." };
+        loader = class_loaders.at(index++).get();
+      } while (index < class_loaders.size() &&
+               !loader->isClassAvailable<NodeRegistrationInterface>(required_class_name));
+
+      if (!loader)
+      {
+        throw std::runtime_error("Node '" + node_name + " (Class: " + params.class_name +
+                                 ")' cannot be loaded, because the required registration class '" +
+                                 required_class_name +
+                                 "' couldn't be found. Check that the class name is spelled correctly and "
+                                 "registered "
+                                 "by calling auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
+                                 "corresponding package. Also make sure that you called the "
+                                 "AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE macro in the source file.");
       }
 
       RCLCPP_DEBUG(node_ptr->get_logger(), "Loading behavior tree node '%s' (Class: %s) from library %s.",
-                   node_name.c_str(), params.class_name.c_str(), library_path.c_str());
+                   node_name.c_str(), params.class_name.c_str(), loader->getLibraryPath().c_str());
 
       try
       {
-        const auto plugin_instance = class_loader.createUniqueInstance<NodeRegistrationInterface>(factory_classname);
+        const auto plugin_instance = loader->createUniqueInstance<NodeRegistrationInterface>(required_class_name);
         RosNodeContext ros_node_context(node_ptr, params);  // Values don't matter when not instantiating it
         plugin_instance->registerWithBehaviorTreeFactory(factory, node_name, &ros_node_context);
       }

@@ -17,7 +17,7 @@
 #include <tinyxml2.h>
 
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
-#include "auto_apms_behavior_tree/resource/node_class_loader.hpp"
+#include "auto_apms_behavior_tree/resource/node_registration_class_loader.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 #include "auto_apms_behavior_tree/definitions.hpp"
 
@@ -57,7 +57,7 @@ public:
    * @throw exceptions::TreeBuildError if registration fails.
    */
   TreeBuilder& registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
-                                   NodePluginClassLoader& tree_node_loader, bool override = false);
+                                   NodeRegistrationClassLoader& tree_node_loader, bool override = false);
 
   /**
    * @overload
@@ -89,7 +89,7 @@ public:
 
   /* Static helper functions */
 
-  static std::set<std::string> getTreeNames(const tinyxml2::XMLDocument& doc);
+  static std::vector<std::string> getTreeNames(const tinyxml2::XMLDocument& doc);
 
   static std::string writeXMLDocumentToString(const tinyxml2::XMLDocument& doc);
 

@@ -11,6 +11,7 @@ find_package(rcpputils REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(generate_parameter_library REQUIRED)
+find_package(pluginlib REQUIRED)
 
 option(AUTO_APMS_UTIL_DEBUG_LOGGING "Enable debug logging severity" ON)
 if(AUTO_APMS_UTIL_DEBUG_LOGGING)
@@ -37,7 +38,7 @@ set(CMAKE_CURRENT_SOURCE_DIR ${_temp})
 add_library(auto_apms_util SHARED
     "src/action_wrapper.cpp"
     "src/string.cpp"
-    "src/resources.cpp"
+    "src/resource.cpp"
     "src/logging.cpp"
 )
 target_include_directories(auto_apms_util PUBLIC
@@ -53,6 +54,7 @@ ament_target_dependencies(auto_apms_util
     rcpputils
     rclcpp_action
     ament_index_cpp
+    pluginlib
 )
 target_link_libraries(auto_apms_util
     action_wrapper_params
@@ -108,6 +110,7 @@ ament_export_dependencies(
     rcpputils
     rclcpp_action
     ament_index_cpp
+    pluginlib
 )
 
 ament_package()

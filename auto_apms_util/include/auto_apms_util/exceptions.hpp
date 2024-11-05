@@ -30,7 +30,7 @@ public:
   }
 };
 
-struct ResourceNotFoundError : public ExceptionBase
+struct ResourceError : public ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };
