@@ -39,9 +39,10 @@ namespace auto_apms_behavior_tree
  */
 class TreeBuilder
 {
-  static inline const std::string MAIN_TREE_ATTRIBUTE_NAME = "main_tree_to_execute";
-  static inline const std::string TREE_ELEMENT_NAME = "BehaviorTree";
-  static inline const std::string TREE_ID_ATTRIBUTE_NAME = "ID";
+  static inline const char ROOT_ELEMENT_NAME[] = "root";
+  static inline const char MAIN_TREE_ATTRIBUTE_NAME[] = "main_tree_to_execute";
+  static inline const char TREE_ELEMENT_NAME[] = "BehaviorTree";
+  static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
 
 public:
   TreeBuilder(std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr = std::make_shared<BT::BehaviorTreeFactory>());
@@ -56,42 +57,51 @@ public:
    * existing plugin and use the new one instead.
    * @throw exceptions::TreeBuildError if registration fails.
    */
-  TreeBuilder& registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
-                                   NodeRegistrationClassLoader& tree_node_loader, bool override = false);
+  TreeBuilder& loadNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
+                               NodeRegistrationClassLoader& tree_node_loader, bool override = false);
 
   /**
    * @overload
    *
-   * Creates a default behavior tree node plugin class loader.
+   * Creates a default NodeRegistrationClassLoader.
    */
-  TreeBuilder& registerNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
-                                   bool override = false);
+  TreeBuilder& loadNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
+                               bool override = false);
 
-  TreeBuilder& addTreeFromXMLDocument(const tinyxml2::XMLDocument& doc);
+  TreeBuilder& mergeTreesFromDocument(const tinyxml2::XMLDocument& doc);
 
-  TreeBuilder& addTreeFromString(const std::string& tree_str);
+  TreeBuilder& mergeTreesFromString(const std::string& tree_str);
 
-  TreeBuilder& addTreeFromFile(const std::string& tree_file_path);
+  TreeBuilder& mergeTreesFromFile(const std::string& tree_file_path);
 
-  TreeBuilder& addTreeFromResource(const TreeResource& resource, rclcpp::Node::SharedPtr node_ptr);
+  TreeBuilder& mergeTreesFromResource(const TreeResource& resource, rclcpp::Node::SharedPtr node_ptr);
+
+  bool isExistingTreeName(const std::string& tree_name);
+
+  tinyxml2::XMLElement* insertNewTreeElement(const std::string& tree_name);
+
+  tinyxml2::XMLElement* getTreeElement(const std::string& tree_name);
+
+  static std::vector<std::string> getAllTreeNames(const tinyxml2::XMLDocument& doc);
+
+  std::vector<std::string> getAllTreeNames() const;
 
   std::string getMainTreeName() const;
 
   TreeBuilder& setMainTreeName(const std::string& main_tree_name);
 
-  std::string writeTreeXMLToString() const;
+  static std::string writeTreeDocumentToString(const tinyxml2::XMLDocument& doc);
 
-  std::unordered_map<std::string, BT::NodeType> getRegisteredNodes();
+  std::string writeTreeDocumentToString() const;
+
+  std::unordered_map<std::string, BT::NodeType> getRegisteredNodes() const;
+
+  // Verify the structure of this tree document and that all mentioned nodes are registered with the factory
+  bool verifyTreeDocument() const;
 
   Tree buildTree(const std::string main_tree_name, TreeBlackboardSharedPtr root_bb_ptr = TreeBlackboard::create());
 
   Tree buildTree(TreeBlackboardSharedPtr root_bb_ptr = TreeBlackboard::create());
-
-  /* Static helper functions */
-
-  static std::vector<std::string> getTreeNames(const tinyxml2::XMLDocument& doc);
-
-  static std::string writeXMLDocumentToString(const tinyxml2::XMLDocument& doc);
 
 private:
   tinyxml2::XMLDocument doc_;

@@ -13,11 +13,8 @@
 // limitations under the License.
 
 #include <signal.h>
-
 #include <chrono>
 
-#include "behaviortree_cpp/loggers/bt_cout_logger.h"
-#include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "rclcpp/rclcpp.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
@@ -32,16 +29,12 @@ int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::cerr << "run_behavior_tree: Missing inputs! The program requires: \n\t1.) Name of the registered behavior "
-                 "tree file (extension may be omitted).\n\t2.) Optional: Name of the tree to be executed "
-                 "(Default is \"\": Using the main tree).\n\t3.) Optional: Name of the package to be searched "
-                 "(Default is \"\": Searching in all packages).\n";
-    std::cerr << "Usage: run_behavior_tree <file_name> [<tree_name>] [<package_name>]\n";
+    std::cerr << "run_tree_node: Missing inputs! The program requires: \n\t1.) YAML representation of "
+                 "NodeRegistrationParams encoded in a "
+                 "string.\n";
+    std::cerr << "Usage: run_tree_node <registration_params>\n";
     return EXIT_FAILURE;
   }
-  const std::string tree_file_name{ argv[1] };
-  const std::string tree_name{ argc > 2 ? argv[2] : "" };
-  const std::string package_name{ argc > 3 ? argv[3] : "" };
 
   // Ensure that rclcpp is not shut down before the tree has been halted (on destruction) and all pending actions have
   // been successfully canceled
@@ -50,45 +43,45 @@ int main(int argc, char** argv)
     (void)sig;
     termination_requested = 1;
   });
-  auto node_ptr = std::make_shared<rclcpp::Node>("run_behavior_tree");
+  auto node_ptr = std::make_shared<rclcpp::Node>("run_tree_node_cpp");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
-  std::unique_ptr<TreeResource> tree_resource_ptr;
+  NodeRegistrationParams registration_params;
   try
   {
-    tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::selectByFileName(tree_file_name, package_name));
+    registration_params = NodeRegistrationParams::decode(argv[1]);
   }
-  catch (const std::exception& e)
+  catch (std::exception& e)
   {
-    RCLCPP_ERROR(node_ptr->get_logger(),
-                 "ERROR searching for corresponding behavior tree resource with arguments tree_file_name: '%s', "
-                 "package_name: '%s': %s",
-                 tree_file_name.c_str(), package_name.c_str(), e.what());
+    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument registration_params: %s", e.what());
     return EXIT_FAILURE;
   }
 
   TreeBuilder builder;
   try
   {
-    builder.addTreeFromResource(*tree_resource_ptr, node_ptr);
+    builder.loadNodePlugins(node_ptr, NodeManifest({ { registration_params.class_name, registration_params } }));
   }
   catch (const std::exception& e)
   {
-    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR loading behavior tree '%s' from resource %s: %s", tree_name.c_str(),
-                 tree_resource_ptr->tree_file_path.c_str(), e.what());
+    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR loading behavior tree node '%s': %s",
+                 registration_params.class_name.c_str(), e.what());
     return EXIT_FAILURE;
   }
 
-  TreeExecutor executor{ node_ptr };
+  const std::string tree_name = "RunTreeNodeCPP";
+  auto tree_element = builder.insertNewTreeElement(tree_name);
+  tree_element->InsertNewChildElement(registration_params.class_name.c_str());
+
+  RCLCPP_INFO(node_ptr->get_logger(), "Creating a tree with a single node:\n%s",
+              builder.writeTreeDocumentToString().c_str());
+
+  TreeExecutor executor(node_ptr);
   auto future = executor.startExecution(
       [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.buildTree(tree_name, bb); });
 
-  RCLCPP_INFO(node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.",
-              tree_resource_ptr->tree_file_stem.c_str(), builder.getMainTreeName().c_str(),
-              tree_resource_ptr->package_name.c_str());
-
   const auto termination_timeout = std::chrono::duration<double>(1.5);
-  std::chrono::steady_clock::time_point termination_start;
+  rclcpp::Time termination_start;
   bool termination_started = false;
   try
   {
@@ -97,7 +90,7 @@ int main(int argc, char** argv)
     {
       if (termination_started)
       {
-        if (std::chrono::steady_clock::now() - termination_start > termination_timeout)
+        if (node_ptr->now() - termination_start > termination_timeout)
         {
           RCLCPP_WARN(node_ptr->get_logger(), "Termination took too long. Aborted.");
           return EXIT_FAILURE;
@@ -105,7 +98,7 @@ int main(int argc, char** argv)
       }
       else if (termination_requested)
       {
-        termination_start = std::chrono::steady_clock::now();
+        termination_start = node_ptr->now();
         executor.setControlCommand(TreeExecutor::ControlCommand::TERMINATE);
         termination_started = true;
         RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");

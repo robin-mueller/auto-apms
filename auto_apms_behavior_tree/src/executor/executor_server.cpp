@@ -116,7 +116,7 @@ TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallbac
   return [this, node_overrides, build_director_ptr](TreeBlackboardSharedPtr bb) {
     TreeBuilder builder;
     build_director_ptr->configureBuilder(builder);
-    builder.registerNodePlugins(getNodePtr(), node_overrides, true);
+    builder.loadNodePlugins(getNodePtr(), node_overrides, true);
     return builder.buildTree(bb);
   };
 }
@@ -178,7 +178,7 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
   NodeManifest node_overrides;
   try
   {
-    node_overrides = NodeManifest::fromString(goal_ptr->node_overrides);
+    node_overrides = NodeManifest::decode(goal_ptr->node_overrides);
   }
   catch (const std::exception& e)
   {

@@ -64,8 +64,8 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(C
   // Create promise for asnychronous execution and configure termination callback
   auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
   TerminationCallback termination_callback = [this, promise_ptr](ExecutionResult result, const std::string& msg) {
-    RCLCPP_DEBUG(node_ptr_->get_logger(), "Terminating behavior tree execution from state %s. Reason: %s.",
-                 toStr(getExecutionState()).c_str(), msg.c_str());
+    RCLCPP_INFO(node_ptr_->get_logger(), "Terminating behavior tree execution from state %s. Reason: %s.",
+                toStr(getExecutionState()).c_str(), msg.c_str());
     onTermination(result);  // is evaluated before the timer is cancelled, which means the execution state has not
                             // changed yet during the callback and can be evaluated to inspect the terminal state.
     promise_ptr->set_value(result);

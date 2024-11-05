@@ -94,7 +94,7 @@ public:
     const std::string main_tree_id = "AlternateLandingMission";
     auto resource = auto_apms_behavior_tree::TreeResource::selectByTreeName(main_tree_id, "auto_apms_examples");
     std::string tree_str =
-        auto_apms_behavior_tree::TreeBuilder().addTreeFromFile(resource.tree_file_path).writeTreeXMLToString();
+        auto_apms_behavior_tree::TreeBuilder().mergeTreesFromFile(resource.tree_file_path).writeTreeDocumentToString();
 
     // Search for pattern ${SOME_NAME} allowing letters, numbers, _ and -
     std::regex placeholder("\\$\\{([A-Za-z0-9_-]+)\\}");

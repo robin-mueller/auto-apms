@@ -47,7 +47,7 @@ public:
   {
     if (!resource_ptr_)
       throw exceptions::TreeBuildError("TreeResourceBuilder - resource_ptr_ is nullptr.");
-    builder.addTreeFromResource(*resource_ptr_, getNodePtr());
+    builder.mergeTreesFromResource(*resource_ptr_, getNodePtr());
   }
 
 private:

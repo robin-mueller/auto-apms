@@ -15,6 +15,7 @@
 #pragma once
 
 #include "auto_apms_behavior_tree/node/node_registration_interface.hpp"
+
 #include <boost/core/demangle.hpp>
 
 namespace auto_apms_behavior_tree

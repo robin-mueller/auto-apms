@@ -12,6 +12,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(generate_parameter_library REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(yaml_cpp_vendor REQUIRED)
 
 option(AUTO_APMS_UTIL_DEBUG_LOGGING "Enable debug logging severity" ON)
 if(AUTO_APMS_UTIL_DEBUG_LOGGING)
@@ -55,6 +56,7 @@ ament_target_dependencies(auto_apms_util
     rclcpp_action
     ament_index_cpp
     pluginlib
+    yaml_cpp_vendor
 )
 target_link_libraries(auto_apms_util
     action_wrapper_params
@@ -111,6 +113,7 @@ ament_export_dependencies(
     rclcpp_action
     ament_index_cpp
     pluginlib
+    yaml_cpp_vendor
 )
 
 ament_package()
