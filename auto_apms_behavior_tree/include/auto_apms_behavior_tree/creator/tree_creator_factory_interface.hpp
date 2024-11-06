@@ -25,7 +25,7 @@ public:
   TreeCreatorFactoryInterface() = default;
   virtual ~TreeCreatorFactoryInterface() = default;
 
-  virtual std::shared_ptr<TreeCreatorBase> instantiateBuilder(const rclcpp::Node::SharedPtr node_ptr) = 0;
+  virtual std::shared_ptr<TreeCreatorBase> instantiateCreator(rclcpp::Node::SharedPtr node_ptr) = 0;
 };
 
 }  // namespace auto_apms_behavior_tree

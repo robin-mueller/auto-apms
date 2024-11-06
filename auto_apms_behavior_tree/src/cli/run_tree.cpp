@@ -42,10 +42,7 @@ int main(int argc, char ** argv)
   // Ensure that rclcpp is not shut down before the tree has been halted (on destruction) and all pending actions have
   // been successfully canceled
   rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
-  signal(SIGINT, [](int sig) {
-    (void)sig;
-    termination_requested = 1;
-  });
+  signal(SIGINT, [](int /*sig*/) { termination_requested = 1; });
   auto node_ptr = std::make_shared<rclcpp::Node>("run_tree_cpp");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
@@ -70,10 +67,12 @@ int main(int argc, char ** argv)
       tree_resource_ptr->tree_file_path.c_str(), e.what());
     return EXIT_FAILURE;
   }
+  builder.setMainTreeName(tree_name);
 
   TreeExecutor executor(node_ptr);
   auto future = executor.startExecution(
-    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.buildTree(tree_name, bb); });
+    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.buildTree(bb); },
+    std::chrono::milliseconds(250));
 
   RCLCPP_INFO(
     node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.", tree_resource_ptr->tree_file_stem.c_str(),

@@ -30,22 +30,23 @@ const std::string TreeExecutorServer::PARAM_NAME_GROOT2_PORT = _AUTO_APMS_BEHAVI
 const std::string TreeExecutorServer::PARAM_NAME_STATE_CHANGE_LOGGER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER;
 // clang-format on
 
-TreeExecutorServer::TreeExecutorServer(const std::string & name, const rclcpp::NodeOptions & options)
-: TreeExecutor(std::make_shared<rclcpp::Node>(name, options)),
-  logger_(getNodePtr()->get_logger()),
-  executor_param_listener_(getNodePtr()),
+TreeExecutorServer::TreeExecutorServer(const std::string & name, rclcpp::NodeOptions options)
+: TreeExecutor(std::make_shared<rclcpp::Node>(
+    name, options.automatically_declare_parameters_from_overrides(true).allow_undeclared_parameters(true))),
+  logger_(node_ptr_->get_logger()),
+  executor_param_listener_(node_ptr_),
   start_action_context_(logger_),
   command_action_context_(logger_)
 {
   using namespace std::placeholders;
   start_action_ptr_ = rclcpp_action::create_server<StartActionContext::Type>(
-    getNodePtr(), name + BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX,
+    node_ptr_, name + BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX,
     std::bind(&TreeExecutorServer::handle_start_goal_, this, _1, _2),
     std::bind(&TreeExecutorServer::handle_start_cancel_, this, _1),
     std::bind(&TreeExecutorServer::handle_start_accept_, this, _1));
 
   command_action_ptr_ = rclcpp_action::create_server<CommandActionContext::Type>(
-    getNodePtr(), name + BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
+    node_ptr_, name + BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
     std::bind(&TreeExecutorServer::handle_command_goal_, this, _1, _2),
     std::bind(&TreeExecutorServer::handle_command_cancel_, this, _1),
     std::bind(&TreeExecutorServer::handle_command_accept_, this, _1));
@@ -55,7 +56,7 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, const rclcpp::N
   // This is desired to keep the internal parameter struct in sync, because the callbacks of the listeners implicitly
   // set them if the change is accepted. Otherwise, they would be set even if the local callback rejects the change.
   on_set_parameters_callback_handle_ =
-    getNodePtr()->add_on_set_parameters_callback([this](const std::vector<rclcpp::Parameter> & parameters) {
+    node_ptr_->add_on_set_parameters_callback([this](const std::vector<rclcpp::Parameter> & parameters) {
       return this->on_set_parameters_callback_(parameters);
     });
 
@@ -63,10 +64,11 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, const rclcpp::N
   auto & args = options.arguments();
   if (args.size() > 1)  // First argument is always path of executable
   {
+    auto params = executor_param_listener_.get_params();
     std::vector<std::string> additional_args{args.begin() + 1, args.end()};
     RCLCPP_DEBUG(
       logger_, "Additional cli arguments in rclcpp::NodeOptions: %s", rcpputils::join(additional_args, ", ").c_str());
-    startExecution(makeCreateTreeCallback(executor_param_listener_.get_params().tree_creator_name, args[1]));
+    startExecution(makeCreateTreeCallback(params.tree_creator_name, args[1]), params.tick_rate, params.groot2_port);
   }
 }
 
@@ -76,6 +78,39 @@ TreeExecutorServer::TreeExecutorServer(const rclcpp::NodeOptions & options)
 }
 
 void TreeExecutorServer::prepareTreeBuilder(TreeBuilder & /*builder*/) {}
+
+bool TreeExecutorServer::isDynamicBlackboardParamName(const std::string & name)
+{
+  return name.find(DYNAMIC_BB_PARAM_PREFIX + DYNAMIC_BB_PARAM_SEPARATOR) == 0;
+}
+
+void TreeExecutorServer::configureBlackboardFromParameters(TreeBlackboard & bb)
+{
+  // Get all parameter entries with prefix bb and depth 2 (Will match all names like bb.foo but not bb.foo.bar)
+  const auto res = node_ptr_->list_parameters({DYNAMIC_BB_PARAM_PREFIX}, 2);
+  std::map<std::string, std::string> entries;
+  for (const std::string & name_with_prefix : res.names) {
+    if (const std::size_t dot_pos = name_with_prefix.find(DYNAMIC_BB_PARAM_SEPARATOR);
+        dot_pos != std::string::npos && dot_pos + 1 < name_with_prefix.length()) {
+      const std::string name = name_with_prefix.substr(dot_pos + 1);
+      entries[name] = node_ptr_->get_parameter(name_with_prefix).value_to_string();
+    }
+  }
+  if (dynamic_bb_param_entries_ != entries) {
+    for (const auto & [name, val] : entries) {
+      try {
+        bb.set(name, val);  // Use global blackboard idiom
+      } catch (const std::exception & e) {
+        RCLCPP_ERROR(logger_, "Error setting blackboard entry %s=%s: %s", name.c_str(), val.c_str(), e.what());
+        return;
+      }
+    }
+    dynamic_bb_param_entries_ = entries;
+    RCLCPP_DEBUG(
+      logger_, "Set global blackboard entries from parameters: { %s }",
+      auto_apms_util::printMap(dynamic_bb_param_entries_).c_str());
+  }
+}
 
 TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallback(
   const std::string & tree_creator_name, const std::string & tree_creator_request, const NodeManifest & node_overrides)
@@ -92,7 +127,7 @@ TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallbac
   // Try to load and create the tree builder
   std::shared_ptr<TreeCreatorBase> creator_ptr;
   try {
-    creator_ptr = tree_creator_loader_.createUniqueInstance(tree_creator_name)->instantiateBuilder(getNodePtr());
+    creator_ptr = tree_creator_loader_.createUniqueInstance(tree_creator_name)->instantiateCreator(node_ptr_);
   } catch (const std::exception & e) {
     throw exceptions::TreeBuildError(
       "An error occured when trying to create an instance of tree builder '" + tree_creator_name +
@@ -110,12 +145,17 @@ TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallbac
   }
 
   // By passing the creator's shared pointer to the callback, it lives on and the tree can be built later.
-  return [this, node_overrides, creator_ptr](TreeBlackboardSharedPtr bb) {
-    TreeBuilder builder(getNodePtr(), node_loader_ptr_);
+  return [this, node_overrides, creator_ptr](TreeBlackboardSharedPtr bb_ptr) {
+    // Set up blackboard using dynamic parameters
+    configureBlackboardFromParameters(*bb_ptr);
+
+    // Run build pipeline
+    TreeBuilder builder(node_ptr_, node_loader_ptr_);
     prepareTreeBuilder(builder);
     creator_ptr->configureTreeBuilder(builder);
+    creator_ptr->configureBlackboard(*bb_ptr);
     builder.loadNodePlugins(node_overrides, true);
-    return creator_ptr->createTree(builder, bb);
+    return creator_ptr->createTree(builder, bb_ptr);
   };
 }
 
@@ -138,8 +178,8 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
       return result;
     };
 
-    // Check for allowed while busy
-    if (isBusy() && not_in_list(allowed_while_busy)) {
+    // Check for allowed while busy (We allow all dynamic blackboard parameters by default)
+    if (isBusy() && !isDynamicBlackboardParamName(param_name) && not_in_list(allowed_while_busy)) {
       return create_rejected("Parameter cannot change when executor is busy");
     }
 
@@ -207,8 +247,9 @@ rclcpp_action::CancelResponse TreeExecutorServer::handle_start_cancel_(
 
 void TreeExecutorServer::handle_start_accept_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr)
 {
+  const auto params = executor_param_listener_.get_params();
   try {
-    startExecution(create_tree_callback_);
+    startExecution(create_tree_callback_, params.tick_rate, params.groot2_port);
   } catch (const std::exception & e) {
     auto result_ptr = std::make_shared<StartActionContext::Result>();
     result_ptr->message = "An error occured trying to start execution: " + std::string(e.what());
@@ -336,7 +377,7 @@ void TreeExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionCon
       throw std::logic_error("command_request is unkown");
   }
 
-  command_timer_ptr_ = getNodePtr()->create_wall_timer(
+  command_timer_ptr_ = node_ptr_->create_wall_timer(
     std::chrono::duration<double>(executor_param_listener_.get_params().tick_rate),
     [this, requested_state, goal_handle_ptr, action_result_ptr = std::make_shared<CommandActionContext::Result>()]() {
       // Check if canceling
@@ -369,13 +410,17 @@ void TreeExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionCon
 
 bool TreeExecutorServer::onTick()
 {
-  /**
-   * Update executor parameters
-   */
-  setExecutorParameters(executor_param_listener_.get_params());
+  const auto params = executor_param_listener_.get_params();
+  auto & state_observer = getStateObserver();
 
-  if (!start_action_context_.isValid())  // Don't send feedback if started in detached mode
-    return true;
+  /**
+   * Update entities using dynamic parameters
+   */
+  state_observer.setLogging(params.state_change_logger);
+  configureBlackboardFromParameters(*getGlobalBlackboardPtr());
+
+  // Don't send feedback if started in detached mode
+  if (!start_action_context_.isValid()) return true;
 
   /**
    * Send feedback
@@ -383,7 +428,7 @@ bool TreeExecutorServer::onTick()
   auto feedback_ptr = start_action_context_.getFeedbackPtr();  // feedback from previous tick persists
   feedback_ptr->execution_state_str = toStr(getExecutionState());
   feedback_ptr->running_tree_identity = getTreeName();
-  auto running_action_history = getStateObserver().getRunningActionHistory();
+  auto running_action_history = state_observer.getRunningActionHistory();
   if (!running_action_history.empty()) {
     // If there are multiple nodes running (ParallelNode), join the IDs to a single string
     feedback_ptr->running_action_name = rcpputils::join(running_action_history, " + ");
@@ -391,7 +436,7 @@ bool TreeExecutorServer::onTick()
       std::chrono::duration<double>{std::chrono::high_resolution_clock::now().time_since_epoch()}.count();
 
     // Reset the history cache
-    getStateObserver().flush();
+    state_observer.flush();
   }
   start_action_context_.publishFeedback();
   return true;

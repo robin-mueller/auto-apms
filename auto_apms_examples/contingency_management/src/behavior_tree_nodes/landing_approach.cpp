@@ -38,7 +38,7 @@ public:
   {
     // Check if a new message was received
     if (!last_msg_ptr) {
-      RCLCPP_WARN(getRosContext().getLogger(), "%s - No new landing approach message was received", name().c_str());
+      RCLCPP_WARN(logger_, "%s - No new landing approach message was received", name().c_str());
       return BT::NodeStatus::FAILURE;
     }
 

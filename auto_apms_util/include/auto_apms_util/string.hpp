@@ -16,6 +16,7 @@
 
 #include <string.h>
 
+#include <map>
 #include <vector>
 
 // Additionally include some string utils from rcpputils
@@ -50,6 +51,10 @@ enum class TextColor
  */
 std::vector<std::string> splitString(
   const std::string & str, const std::string & delimiter, bool preserve_empty = true);
+
+std::string printMap(
+  const std::map<std::string, std::string> & map, const std::string & key_val_sep = "=",
+  const std::string & entry_sep = ", ");
 
 /**
  * @brief Add ANSI color escape sequences to display the text in color when printed to console.

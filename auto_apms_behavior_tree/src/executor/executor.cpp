@@ -16,7 +16,6 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_util/logging.hpp"
 
 namespace auto_apms_behavior_tree
@@ -31,11 +30,13 @@ TreeExecutor::TreeExecutor(rclcpp::Node::SharedPtr node_ptr)
   auto_apms_util::exposeToDebugLogging(node_ptr_->get_logger());
 }
 
-std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(CreateTreeCallback create_tree_cb)
+std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
+  CreateTreeCallback create_tree_cb, double tick_rate_sec, unsigned int groot2_port)
 {
-  if (isBusy())
+  if (isBusy()) {
     throw exceptions::TreeExecutionError(
       "Cannot start execution with tree '" + getTreeName() + "' currently executing.");
+  }
 
   try {
     tree_ptr_.reset(new Tree(create_tree_cb(global_blackboard_ptr_)));
@@ -45,7 +46,7 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(C
   }
 
   groot2_publisher_ptr_.reset();
-  groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, executor_params_.groot2_port);
+  groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, groot2_port);
   state_observer_ptr_.reset();
   state_observer_ptr_ = std::make_unique<BTStateObserver>(*tree_ptr_, node_ptr_->get_logger());
   state_observer_ptr_->enableTransitionToIdle(false);
@@ -72,7 +73,7 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(C
   };
 
   execution_timer_ptr_ = node_ptr_->create_wall_timer(
-    std::chrono::duration<double>(executor_params_.tick_rate),
+    std::chrono::duration<double>(tick_rate_sec),
     [this, termination_callback]() { execution_routine_(termination_callback); });
   return promise_ptr->get_future();
 }
@@ -166,7 +167,6 @@ void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
 
   /* Tick the tree instance */
 
-  state_observer_ptr_->setLogging(executor_params_.state_change_logger);
   BT::NodeStatus bt_status = BT::NodeStatus::IDLE;
   try {
     // It is important to tick EXACTLY once to prevent loops induced by BT nodes from blocking
@@ -217,18 +217,12 @@ void TreeExecutor::onTermination(const ExecutionResult & /*result*/) {}
 
 void TreeExecutor::setControlCommand(ControlCommand cmd) { control_command_ = cmd; }
 
-void TreeExecutor::setExecutorParameters(const ExecutorParams & p) { executor_params_ = p; }
-
-rclcpp::Node::SharedPtr TreeExecutor::getNodePtr() { return node_ptr_; }
-
 rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutor::get_node_base_interface()
 {
   return node_ptr_->get_node_base_interface();
 }
 
 TreeBlackboardSharedPtr TreeExecutor::getGlobalBlackboardPtr() { return global_blackboard_ptr_; }
-
-TreeExecutor::ExecutorParams TreeExecutor::getExecutorParameters() { return executor_params_; }
 
 BTStateObserver & TreeExecutor::getStateObserver() { return *state_observer_ptr_; }
 

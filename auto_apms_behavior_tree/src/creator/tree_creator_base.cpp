@@ -22,13 +22,11 @@ TreeCreatorBase::TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr)
 {
 }
 
-BT::Tree TreeCreatorBase::createTree(TreeBuilder & builder, TreeBlackboardSharedPtr root_blackboard_ptr)
+void TreeCreatorBase::configureBlackboard(TreeBlackboard & /*bb*/) {}
+
+BT::Tree TreeCreatorBase::createTree(TreeBuilder & builder, TreeBlackboardSharedPtr bb_ptr)
 {
-  return builder.buildTree(root_blackboard_ptr);
+  return builder.buildTree(bb_ptr);
 }
-
-rclcpp::Node::SharedPtr TreeCreatorBase::getNodePtr() { return node_ptr_; }
-
-const rclcpp::Logger & TreeCreatorBase::getLogger() { return logger_; }
 
 }  // namespace auto_apms_behavior_tree

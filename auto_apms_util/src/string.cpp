@@ -40,6 +40,21 @@ std::vector<std::string> splitString(const std::string & str, const std::string 
   return parts;
 }
 
+std::string printMap(
+  const std::map<std::string, std::string> & map, const std::string & key_val_sep, const std::string & entry_sep)
+{
+  std::ostringstream oss;
+  bool first = true;
+  for (const auto & [key, val] : map) {
+    if (!first) {
+      oss << entry_sep;  // Separator between entries
+    }
+    oss << key << key_val_sep << val;  // Separator between key and value
+    first = false;
+  }
+  return oss.str();
+}
+
 std::string makeColoredText(const std::string & text, TextColor color)
 {
   switch (color) {

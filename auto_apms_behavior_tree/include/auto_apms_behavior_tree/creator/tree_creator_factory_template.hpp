@@ -26,7 +26,7 @@ public:
   TreeCreatorFactoryTemplate() = default;
   virtual ~TreeCreatorFactoryTemplate() = default;
 
-  std::shared_ptr<TreeCreatorBase> instantiateBuilder(const rclcpp::Node::SharedPtr node_ptr)
+  std::shared_ptr<TreeCreatorBase> instantiateCreator(rclcpp::Node::SharedPtr node_ptr)
   {
     static_assert(
       std::is_convertible_v<T *, TreeCreatorBase *>,

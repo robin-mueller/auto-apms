@@ -12,6 +12,7 @@
                           alt="{alt}"
                           lat="{lat}"
                           lon="{lon}"
+                          topic_name=""
                           _onSuccess="new_lon := lon + 0.0001"/>
       <GoTo lat="{lat}"
             lon="{new_lon}"
@@ -63,7 +64,6 @@
                    default="{lon}"
                    type="double">Current longitude in degree [°]</output_port>
       <input_port name="topic_name"
-                  default=""
                   type="std::string">Topic name</input_port>
     </Condition>
     <Action ID="Takeoff">

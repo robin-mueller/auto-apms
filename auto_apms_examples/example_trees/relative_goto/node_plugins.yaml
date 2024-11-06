@@ -3,6 +3,9 @@
 # applies to 'port'. That is, you can specify both relative and absolute names.
 #
 
+Error:
+  class_name: auto_apms_behavior_tree::ThrowException
+
 Arm:
   class_name: auto_apms_px4::ArmAction
   port: arm_disarm

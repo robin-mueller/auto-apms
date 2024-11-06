@@ -32,13 +32,11 @@ public:
 
   virtual void configureTreeBuilder(TreeBuilder & builder) = 0;
 
-  virtual BT::Tree createTree(TreeBuilder & builder, TreeBlackboardSharedPtr root_blackboard_ptr);
+  virtual void configureBlackboard(TreeBlackboard & bb);
 
-  rclcpp::Node::SharedPtr getNodePtr();
+  BT::Tree createTree(TreeBuilder & builder, TreeBlackboardSharedPtr bb_ptr);
 
-  const rclcpp::Logger & getLogger();
-
-private:
+protected:
   rclcpp::Node::SharedPtr node_ptr_;
   const rclcpp::Logger logger_;
 };

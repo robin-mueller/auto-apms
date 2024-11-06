@@ -29,10 +29,10 @@ public:
     try {
       resource_ptr_ = std::make_unique<TreeResource>(TreeResource::fromString(request));
     } catch (const exceptions::ResourceIdentityFormatError & e) {
-      RCLCPP_ERROR(getLogger(), "%s", e.what());
+      RCLCPP_ERROR(logger_, "%s", e.what());
       return false;
     } catch (const auto_apms_util::exceptions::ResourceError & e) {
-      RCLCPP_ERROR(getLogger(), "%s", e.what());
+      RCLCPP_ERROR(logger_, "%s", e.what());
       return false;
     }
     return true;

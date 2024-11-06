@@ -21,6 +21,7 @@
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_util/action_context.hpp"
+#include "executor_params.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace auto_apms_behavior_tree
@@ -37,13 +38,15 @@ public:
   static const std::string PARAM_NAME_GROOT2_PORT;
   static const std::string PARAM_NAME_STATE_CHANGE_LOGGER;
   inline static const std::string DEFAULT_NODE_NAME = "tree_executor";
+  inline static const std::string DYNAMIC_BB_PARAM_PREFIX = "bb";
+  inline static const std::string DYNAMIC_BB_PARAM_SEPARATOR = ".";
 
   /**
    * @brief Constructor for TreeExecutorServer with custom name.
    * @param[in] name Name of the rclcpp::Node instance.
    * @param[in] options Options forwarded to rclcpp::Node constructor.
    */
-  TreeExecutorServer(const std::string & name, const rclcpp::NodeOptions & options);
+  TreeExecutorServer(const std::string & name, rclcpp::NodeOptions options);
 
   /**
    * @brief Constructor for TreeExecutorServer with default name TreeExecutorServer::DEFAULT_NODE_NAME.
@@ -52,7 +55,15 @@ public:
   TreeExecutorServer(const rclcpp::NodeOptions & options);
 
 private:
+  /* Virtual methods */
+
   virtual void prepareTreeBuilder(TreeBuilder & builder);
+
+  /* Utility methods */
+
+  bool isDynamicBlackboardParamName(const std::string & name);
+
+  void configureBlackboardFromParameters(TreeBlackboard & bb);
 
   CreateTreeCallback makeCreateTreeCallback(
     const std::string & tree_creator_name, const std::string & tree_creator_request,
@@ -84,6 +95,7 @@ private:
   TreeCreatorClassLoader tree_creator_loader_;
   std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr_;
   CreateTreeCallback create_tree_callback_;
+  std::map<std::string, std::string> dynamic_bb_param_entries_;
 
   // Interface objects
   rclcpp_action::Server<StartActionContext::Type>::SharedPtr start_action_ptr_;
