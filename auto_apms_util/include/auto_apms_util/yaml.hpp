@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <boost/core/demangle.hpp>
+#include <map>
 
 #include "yaml-cpp/yaml.h"
 
@@ -37,3 +38,10 @@
     }                                                                                                             \
     return out.c_str();                                                                                           \
   }
+
+namespace auto_apms_util
+{
+
+std::map<std::string, std::string> yamlToMap(const std::string & str);
+
+}

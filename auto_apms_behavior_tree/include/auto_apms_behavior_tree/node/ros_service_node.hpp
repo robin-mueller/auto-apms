@@ -139,20 +139,18 @@ public:
    */
   virtual BT::NodeStatus onFailure(ServiceNodeErrorCode error);
 
-  std::string getFullName() const;
-
-protected:
-  const Context & getRosContext();
-
-  static std::mutex & getMutex();
-
   // method to set the service name programmatically
   void setServiceName(const std::string & service_name);
 
+  const rclcpp::Logger logger_;
+
+private:
+  static std::mutex & getMutex();
+
+  bool createClient(const std::string & service_name);
+
   // contains the fully-qualified name of the node and the name of the client
   static ClientsRegistry & getRegistry();
-
-  const rclcpp::Logger logger_;
 
 private:
   const Context context_;
@@ -164,8 +162,6 @@ private:
   BT::NodeStatus on_feedback_state_change_;
   bool response_received_;
   typename Response::SharedPtr response_;
-
-  bool createClient(const std::string & service_name);
 };
 
 //----------------------------------------------------------------
@@ -210,14 +206,15 @@ template <class ServiceT>
 inline bool RosServiceNode<ServiceT>::createClient(const std::string & service_name)
 {
   if (service_name.empty()) {
-    throw exceptions::RosNodeError(getFullName() + " - Argument service_name is empty when trying to create a client.");
+    throw exceptions::RosNodeError(
+      context_.getFullName(this) + " - Argument service_name is empty when trying to create a client.");
   }
 
   std::unique_lock lk(getMutex());
-  auto node = getRosContext().nh.lock();
+  auto node = context_.nh.lock();
   if (!node) {
     throw exceptions::RosNodeError(
-      getFullName() +
+      context_.getFullName(this) +
       " - The shared pointer to the ROS node went out of scope. The tree node doesn't "
       "take the ownership of the node.");
   }
@@ -228,15 +225,18 @@ inline bool RosServiceNode<ServiceT>::createClient(const std::string & service_n
   if (it == registry.end() || it->second.expired()) {
     srv_instance_ = std::make_shared<ServiceClientInstance>(node, service_name);
     registry.insert({client_key, srv_instance_});
-    RCLCPP_DEBUG(logger_, "%s - Created client for service '%s'.", getFullName().c_str(), service_name.c_str());
+    RCLCPP_DEBUG(
+      logger_, "%s - Created client for service '%s'.", context_.getFullName(this).c_str(), service_name.c_str());
   } else {
     srv_instance_ = it->second.lock();
   }
   service_name_ = service_name;
 
-  bool found = srv_instance_->service_client->wait_for_service(getRosContext().wait_for_server_timeout);
+  bool found = srv_instance_->service_client->wait_for_service(context_.wait_for_server_timeout);
   if (!found) {
-    RCLCPP_WARN(logger_, "%s - Service with name '%s' is not reachable.", getFullName().c_str(), service_name_.c_str());
+    RCLCPP_WARN(
+      logger_, "%s - Service with name '%s' is not reachable.", context_.getFullName(this).c_str(),
+      service_name_.c_str());
   }
   return found;
 }
@@ -262,14 +262,15 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
 
   if (!srv_instance_) {
     throw exceptions::RosNodeError(
-      getFullName() +
+      context_.getFullName(this) +
       " - You must specify a service name either by using a default value or by "
       "passing a value to the corresponding dynamic input port.");
   }
 
   auto check_status = [this](BT::NodeStatus status) {
     if (!isStatusCompleted(status)) {
-      throw exceptions::RosNodeError(getFullName() + " - The callback must return either SUCCESS or FAILURE.");
+      throw exceptions::RosNodeError(
+        context_.getFullName(this) + " - The callback must return either SUCCESS or FAILURE.");
     }
     return status;
   };
@@ -295,7 +296,7 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
     }
 
     future_response_ = srv_instance_->service_client->async_send_request(request).share();
-    time_request_sent_ = getRosContext().getCurrentTime();
+    time_request_sent_ = context_.getCurrentTime();
 
     return BT::NodeStatus::RUNNING;
   }
@@ -308,7 +309,7 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
       auto ret = srv_instance_->callback_executor.spin_until_future_complete(future_response_, std::chrono::seconds(0));
 
       if (ret != rclcpp::FutureReturnCode::SUCCESS) {
-        if ((getRosContext().getCurrentTime() - time_request_sent_) > getRosContext().request_timeout) {
+        if ((context_.getCurrentTime() - time_request_sent_) > context_.request_timeout) {
           return check_status(onFailure(SERVICE_TIMEOUT));
         } else {
           return BT::NodeStatus::RUNNING;
@@ -319,7 +320,7 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
         future_response_ = {};
 
         if (!response_) {
-          throw exceptions::RosNodeError(getFullName() + " - Request was rejected by the service.");
+          throw exceptions::RosNodeError(context_.getFullName(this) + " - Request was rejected by the service.");
         }
       }
     }
@@ -353,24 +354,8 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::onResponseReceived(const typenam
 template <class ServiceT>
 inline BT::NodeStatus RosServiceNode<ServiceT>::onFailure(ServiceNodeErrorCode error)
 {
-  RCLCPP_ERROR(logger_, "%s - Error %d: %s", getFullName().c_str(), error, toStr(error));
+  RCLCPP_ERROR(logger_, "%s - Error %d: %s", context_.getFullName(this).c_str(), error, toStr(error));
   return BT::NodeStatus::FAILURE;
-}
-
-template <class ServiceT>
-inline std::string RosServiceNode<ServiceT>::getFullName() const
-{
-  // NOTE: registrationName() is empty during construction as this member is first set after the factory constructed the
-  // object
-  if (registrationName().empty()) return name();
-  if (this->name() == this->registrationName()) return this->name();
-  return this->name() + " (Type: " + this->registrationName() + ")";
-}
-
-template <class ServiceT>
-inline const typename RosServiceNode<ServiceT>::Context & RosServiceNode<ServiceT>::getRosContext()
-{
-  return context_;
 }
 
 template <class ServiceT>

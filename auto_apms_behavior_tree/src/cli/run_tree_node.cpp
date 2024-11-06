@@ -16,9 +16,10 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
+#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
 #include "auto_apms_util/logging.hpp"
+#include "auto_apms_util/yaml.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 sig_atomic_t volatile termination_requested = 0;
@@ -30,9 +31,8 @@ int main(int argc, char ** argv)
 {
   if (argc < 2) {
     std::cerr << "run_tree_node: Missing inputs! The program requires: \n\t1.) YAML representation of "
-                 "NodeRegistrationParams encoded in a "
-                 "string.\n";
-    std::cerr << "Usage: run_tree_node <registration_params>\n";
+                 "NodeRegistrationParams encoded in a string.\n";
+    std::cerr << "Usage: run_tree_node <registration_params> [<port_values>]\n";
     return EXIT_FAILURE;
   }
 
@@ -54,19 +54,27 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  TreeBuilder builder;
-  try {
-    builder.loadNodePlugins(node_ptr, NodeManifest({{registration_params.class_name, registration_params}}));
-  } catch (const std::exception & e) {
-    RCLCPP_ERROR(
-      node_ptr->get_logger(), "ERROR loading behavior tree node '%s': %s", registration_params.class_name.c_str(),
-      e.what());
-    return EXIT_FAILURE;
+  TreeBuilder::PortValues port_values;
+  if (argc > 2) {
+    try {
+      port_values = auto_apms_util::yamlToMap(argv[2]);
+    } catch (std::exception & e) {
+      RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument port_values: %s", e.what());
+      return EXIT_FAILURE;
+    }
   }
 
   const std::string tree_name = "RunTreeNodeCPP";
-  auto tree_element = builder.insertNewTreeElement(tree_name);
-  tree_element->InsertNewChildElement(registration_params.class_name.c_str());
+  TreeBuilder builder(node_ptr);
+  try {
+    auto tree_element = builder.insertNewTreeElement(tree_name);
+    auto node_element =
+      builder.insertNewNodeElement(tree_element, registration_params.class_name.c_str(), registration_params);
+    builder.addNodePortValues(node_element, port_values, true);
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR inserting tree node: %s", e.what());
+    return EXIT_FAILURE;
+  }
 
   RCLCPP_INFO(
     node_ptr->get_logger(), "Creating a tree with a single node:\n%s", builder.writeTreeDocumentToString().c_str());

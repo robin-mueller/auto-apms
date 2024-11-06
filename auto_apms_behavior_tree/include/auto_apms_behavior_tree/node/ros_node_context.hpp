@@ -48,6 +48,8 @@ struct RosNodeContext
   rclcpp::Logger getLogger() const;
 
   rclcpp::Time getCurrentTime() const;
+
+  static std::string getFullName(const BT::TreeNode * node);
 };
 
 }  // namespace auto_apms_behavior_tree

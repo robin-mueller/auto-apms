@@ -20,6 +20,7 @@
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
 #include "auto_apms_behavior_tree/resource/node_registration_class_loader.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
+#include "rclcpp/node.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -45,47 +46,67 @@ class TreeBuilder
   static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
 
 public:
-  TreeBuilder(std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr = std::make_shared<BT::BehaviorTreeFactory>());
+  using Document = tinyxml2::XMLDocument;
+  using ElementPtr = tinyxml2::XMLElement *;
+  using ConstElementPtr = const tinyxml2::XMLElement *;
+  using PortValues = std::map<std::string, std::string>;
+
+  TreeBuilder(
+    rclcpp::Node::SharedPtr node_ptr, std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr = nullptr,
+    std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr = nullptr);
 
   /**
    * @brief Load behavior tree node plugins and register with behavior tree factory.
    *
-   * @param[in] node_ptr ROS2 node to pass to RosNodeContext.
    * @param[in] node_manifest Parameters for locating and configuring the behavior tree node plugins.
-   * @param[in] tree_node_loader Reference to loader for behavior tree node plugin classes.
    * @param[in] override If @p node_manifest specifies nodes that have already been registered, unregister the
    * existing plugin and use the new one instead.
    * @throw exceptions::TreeBuildError if registration fails.
    */
-  TreeBuilder & loadNodePlugins(
-    rclcpp::Node::SharedPtr node_ptr, const NodeManifest & node_manifest,
-    NodeRegistrationClassLoader & tree_node_loader, bool override = false);
+  TreeBuilder & loadNodePlugins(const NodeManifest & node_manifest, bool override = false);
 
-  /**
-   * @overload
-   *
-   * Creates a default NodeRegistrationClassLoader.
-   */
-  TreeBuilder & loadNodePlugins(
-    rclcpp::Node::SharedPtr node_ptr, const NodeManifest & node_manifest, bool override = false);
+  std::unordered_map<std::string, BT::NodeType> getRegisteredNodesTypeMap() const;
 
-  std::unordered_map<std::string, BT::NodeType> getRegisteredNodes() const;
+  std::vector<std::string> getRegisteredNodes() const;
 
-  TreeBuilder & mergeTreesFromDocument(const tinyxml2::XMLDocument & doc);
+  TreeBuilder & mergeTreesFromDocument(const Document & doc);
 
   TreeBuilder & mergeTreesFromString(const std::string & tree_str);
 
   TreeBuilder & mergeTreesFromFile(const std::string & tree_file_path);
 
-  TreeBuilder & mergeTreesFromResource(const TreeResource & resource, rclcpp::Node::SharedPtr node_ptr);
+  TreeBuilder & mergeTreesFromResource(const TreeResource & resource);
+
+  ElementPtr insertNewTreeElement(const std::string & tree_name);
+
+  ElementPtr insertNewNodeElement(
+    ElementPtr parent_element, const std::string & node_name, const NodeRegistrationParams & registration_params = {});
+
+  /**
+   * @brief Adds node port values to the node specified by @p node_element.
+   *
+   * Will use each port's default value if one is implemented and the corresponding key doesn't exist in @p port_values.
+   * If the argument is omitted, only default values will be used.
+   *
+   * If @p verify is `true`, the method additionally verifies that @p port_values complies with the node's port model
+   * and throws an exception if there are any values for unkown port names. If set to `false`, no error is raised in
+   * such a case and values for unkown port names are silently discarded thus won't appear in the element's list of port
+   * attributes.
+   *
+   * @param node_element Pointer to the node element.
+   * @param port_values Port values to be used to fill the corresponding attributes of the node element.
+   * @param verify Flag wether to verify that @p port_values complies with the node's port model.
+   * @return Reference to the modified TreeBuilder object.
+   * @throws exceptions::TreeBuildError if @p verify is set to `true` and @p port_values contains keys that are not
+   * associated with the node.
+   */
+  TreeBuilder & addNodePortValues(ElementPtr node_element, PortValues port_values = {}, bool verify = true);
 
   bool isExistingTreeName(const std::string & tree_name);
 
-  tinyxml2::XMLElement * insertNewTreeElement(const std::string & tree_name);
+  ElementPtr getTreeElement(const std::string & tree_name);
 
-  tinyxml2::XMLElement * getTreeElement(const std::string & tree_name);
-
-  static std::vector<std::string> getAllTreeNames(const tinyxml2::XMLDocument & doc);
+  static std::vector<std::string> getAllTreeNames(const Document & doc);
 
   std::vector<std::string> getAllTreeNames() const;
 
@@ -93,7 +114,7 @@ public:
 
   TreeBuilder & setMainTreeName(const std::string & main_tree_name);
 
-  static std::string writeTreeDocumentToString(const tinyxml2::XMLDocument & doc);
+  static std::string writeTreeDocumentToString(const Document & doc);
 
   std::string writeTreeDocumentToString() const;
 
@@ -104,9 +125,13 @@ public:
 
   Tree buildTree(TreeBlackboardSharedPtr root_bb_ptr = TreeBlackboard::create());
 
+  std::shared_ptr<BT::BehaviorTreeFactory> getInternalTreeFactory() const;
+
 private:
-  tinyxml2::XMLDocument doc_;
+  Document doc_;
+  rclcpp::Node::WeakPtr node_wptr_;
   std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr_;
+  std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr_;
 };
 
 }  // namespace auto_apms_behavior_tree

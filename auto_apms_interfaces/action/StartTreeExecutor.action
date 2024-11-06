@@ -1,6 +1,6 @@
 # Request
-string tree_builder_name
-string tree_build_request
+string tree_creator_name
+string tree_creator_request
 string node_overrides
 bool attach true
 ---

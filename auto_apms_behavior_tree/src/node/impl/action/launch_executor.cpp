@@ -42,8 +42,8 @@ public:
     if (feedback->running_action_timestamp > last_running_node_timestamp_) {
       last_running_node_timestamp_ = feedback->running_action_timestamp;
       RCLCPP_DEBUG(
-        logger_, "%s - Tree '%s' is ticking node '%s'", getFullName().c_str(), feedback->running_tree_identity.c_str(),
-        feedback->running_action_name.c_str());
+        logger_, "%s - Tree '%s' is ticking node '%s'", RosNodeContext::getFullName(this).c_str(),
+        feedback->running_tree_identity.c_str(), feedback->running_action_name.c_str());
     }
     return BT::NodeStatus::RUNNING;
   }

@@ -1,7 +1,7 @@
 auto_apms_behavior_tree::executor_params:
-  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILDER}:
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_CREATOR}:
     type: string
-    default_value: auto_apms_behavior_tree::TreeResourceBuilder
+    default_value: auto_apms_behavior_tree::ResourceTreeCreator
     description: Fully qualified class name of the behavior tree builder responsible for creating trees by default.
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}:
     type: double

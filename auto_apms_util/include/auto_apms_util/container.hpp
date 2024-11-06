@@ -20,13 +20,19 @@
 namespace auto_apms_util
 {
 
-template <typename ContainerT>
-ContainerT haveCommonElements(ContainerT vec1, ContainerT vec2)
+template <typename ValueT, typename AllocatorT, template <typename T, class A> class ContainerT>
+bool contains(const ContainerT<ValueT, AllocatorT> & c, const ValueT & val)
 {
-  std::sort(vec1.begin(), vec1.end());
-  std::sort(vec2.begin(), vec2.end());
+  return std::find(c.begin(), c.end(), val) != c.end();
+}
+
+template <typename ContainerT>
+ContainerT haveCommonElements(ContainerT c1, ContainerT c2)
+{
+  std::sort(c1.begin(), c1.end());
+  std::sort(c2.begin(), c2.end());
   ContainerT intersection;
-  std::set_intersection(vec1.begin(), vec1.end(), vec2.begin(), vec2.end(), std::back_inserter(intersection));
+  std::set_intersection(c1.begin(), c1.end(), c2.begin(), c2.end(), std::back_inserter(intersection));
   return intersection;
 }
 

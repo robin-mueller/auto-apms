@@ -76,21 +76,16 @@ public:
    */
   virtual bool setMessage(MessageT & msg);
 
-  std::string getFullName() const;
-
-protected:
-  const Context & getRosContext();
-
   const rclcpp::Logger logger_;
 
 private:
+  bool createPublisher(const std::string & topic_name);
+
   const Context context_;
   const rclcpp::QoS qos_;
   std::string topic_name_;
   bool topic_name_should_be_checked_ = false;
   std::shared_ptr<Publisher> publisher_;
-
-  bool createPublisher(const std::string & topic_name);
 };
 
 //----------------------------------------------------------------
@@ -125,20 +120,22 @@ template <class MessageT>
 inline bool RosPublisherNode<MessageT>::createPublisher(const std::string & topic_name)
 {
   if (topic_name.empty()) {
-    throw exceptions::RosNodeError(getFullName() + " - Argument topic_name is empty when trying to create a client.");
+    throw exceptions::RosNodeError(
+      context_.getFullName(this) + " - Argument topic_name is empty when trying to create a client.");
   }
 
-  auto node = getRosContext().nh.lock();
+  auto node = context_.nh.lock();
   if (!node) {
     throw exceptions::RosNodeError(
-      getFullName() +
+      context_.getFullName(this) +
       " - The shared pointer to the ROS node went out of scope. The tree node doesn't "
       "take the ownership of the node.");
   }
 
   publisher_ = node->template create_publisher<MessageT>(topic_name, qos_);
   topic_name_ = topic_name;
-  RCLCPP_DEBUG(logger_, "%s - Created publisher for topic '%s'.", getFullName().c_str(), topic_name.c_str());
+  RCLCPP_DEBUG(
+    logger_, "%s - Created publisher for topic '%s'.", context_.getFullName(this).c_str(), topic_name.c_str());
   return true;
 }
 
@@ -158,7 +155,7 @@ inline BT::NodeStatus RosPublisherNode<MessageT>::tick()
 
   if (!publisher_) {
     throw exceptions::RosNodeError(
-      getFullName() +
+      context_.getFullName(this) +
       " - You must specify a service name either by using a default value or by "
       "passing a value to the corresponding dynamic input port.");
   }
@@ -175,22 +172,6 @@ template <class MessageT>
 inline bool RosPublisherNode<MessageT>::setMessage(MessageT & /*msg*/)
 {
   return true;
-}
-
-template <class MessageT>
-inline std::string RosPublisherNode<MessageT>::getFullName() const
-{
-  // NOTE: registrationName() is empty during construction as this member is frist set after the factory constructed the
-  // object
-  if (registrationName().empty()) return name();
-  if (this->name() == this->registrationName()) return this->name();
-  return this->name() + " (Type: " + this->registrationName() + ")";
-}
-
-template <class MessageT>
-inline const typename RosPublisherNode<MessageT>::Context & RosPublisherNode<MessageT>::getRosContext()
-{
-  return context_;
 }
 
 }  // namespace auto_apms_behavior_tree

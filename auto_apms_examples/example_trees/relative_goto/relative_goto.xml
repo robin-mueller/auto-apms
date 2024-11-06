@@ -63,7 +63,7 @@
                    default="{lon}"
                    type="double">Current longitude in degree [°]</output_port>
       <input_port name="topic_name"
-                  default="__default__placeholder__"
+                  default=""
                   type="std::string">Topic name</input_port>
     </Condition>
     <Action ID="Takeoff">

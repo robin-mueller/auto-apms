@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
-#include "auto_apms_behavior_tree/resource/tree_builder_class_loader.hpp"
+#include "auto_apms_behavior_tree/resource/node_registration_class_loader.hpp"
+#include "auto_apms_behavior_tree/resource/tree_creator_class_loader.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_util/action_context.hpp"
@@ -49,9 +51,17 @@ public:
    */
   TreeExecutorServer(const rclcpp::NodeOptions & options);
 
+private:
+  virtual void prepareTreeBuilder(TreeBuilder & builder);
+
   CreateTreeCallback makeCreateTreeCallback(
-    const std::string & tree_builder_name, const std::string & tree_build_request,
+    const std::string & tree_creator_name, const std::string & tree_creator_request,
     const NodeManifest & node_overrides = {});
+
+protected:
+  virtual bool onTick() override;
+
+  virtual void onTermination(const ExecutionResult & result) override;
 
 private:
   rcl_interfaces::msg::SetParametersResult on_set_parameters_callback_(
@@ -68,15 +78,14 @@ private:
     std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
   void handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
 
-  bool onTick() override;
-
-  void onTermination(const ExecutionResult & result) override;
-
   const rclcpp::Logger logger_;
   const executor_params::ParamListener executor_param_listener_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
-  TreeBuilderClassLoader tree_build_director_loader_;
+  TreeCreatorClassLoader tree_creator_loader_;
+  std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr_;
   CreateTreeCallback create_tree_callback_;
+
+  // Interface objects
   rclcpp_action::Server<StartActionContext::Type>::SharedPtr start_action_ptr_;
   StartActionContext start_action_context_;
   rclcpp_action::Server<CommandActionContext::Type>::SharedPtr command_action_ptr_;

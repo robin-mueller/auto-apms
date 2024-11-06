@@ -24,7 +24,7 @@ namespace auto_apms_behavior_tree
 {
 
 // clang-format off
-const std::string TreeExecutorServer::PARAM_NAME_TREE_BUILDER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_BUILDER;
+const std::string TreeExecutorServer::PARAM_NAME_TREE_BUILDER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_CREATOR;
 const std::string TreeExecutorServer::PARAM_NAME_TICK_RATE = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE;
 const std::string TreeExecutorServer::PARAM_NAME_GROOT2_PORT = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT;
 const std::string TreeExecutorServer::PARAM_NAME_STATE_CHANGE_LOGGER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER;
@@ -66,7 +66,7 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, const rclcpp::N
     std::vector<std::string> additional_args{args.begin() + 1, args.end()};
     RCLCPP_DEBUG(
       logger_, "Additional cli arguments in rclcpp::NodeOptions: %s", rcpputils::join(additional_args, ", ").c_str());
-    startExecution(makeCreateTreeCallback(executor_param_listener_.get_params().tree_builder_name, args[1]));
+    startExecution(makeCreateTreeCallback(executor_param_listener_.get_params().tree_creator_name, args[1]));
   }
 }
 
@@ -75,45 +75,47 @@ TreeExecutorServer::TreeExecutorServer(const rclcpp::NodeOptions & options)
 {
 }
 
+void TreeExecutorServer::prepareTreeBuilder(TreeBuilder & /*builder*/) {}
+
 TreeExecutorServer::CreateTreeCallback TreeExecutorServer::makeCreateTreeCallback(
-  const std::string & tree_builder_name, const std::string & tree_build_request, const NodeManifest & node_overrides)
+  const std::string & tree_creator_name, const std::string & tree_creator_request, const NodeManifest & node_overrides)
 {
   // Make sure builder is available
-  if (!tree_build_director_loader_.isClassAvailable(tree_builder_name)) {
+  if (!tree_creator_loader_.isClassAvailable(tree_creator_name)) {
     throw exceptions::TreeBuildError(
-      "There is no tree builder class named '" + tree_builder_name +
+      "There is no tree builder class named '" + tree_creator_name +
       "'. Make sure that it's spelled correctly and registered by calling "
-      "auto_apms_behavior_tree_register_builders() in the CMakeLists.txt of the "
+      "auto_apms_behavior_tree_register_creators() in the CMakeLists.txt of the "
       "corresponding package.");
   }
 
   // Try to load and create the tree builder
-  std::shared_ptr<TreeBuilderBase> build_director_ptr;
+  std::shared_ptr<TreeCreatorBase> creator_ptr;
   try {
-    build_director_ptr =
-      tree_build_director_loader_.createUniqueInstance(tree_builder_name)->instantiateBuilder(getNodePtr());
+    creator_ptr = tree_creator_loader_.createUniqueInstance(tree_creator_name)->instantiateBuilder(getNodePtr());
   } catch (const std::exception & e) {
     throw exceptions::TreeBuildError(
-      "An error occured when trying to create an instance of tree builder '" + tree_builder_name +
-      "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILDER macro must be "
+      "An error occured when trying to create an instance of tree builder '" + tree_creator_name +
+      "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_CREATOR macro must be "
       "called in the source file for the builder class to be discoverable. Error "
       "message: " +
       e.what());
   }
 
   // Request the tree identity
-  if (!build_director_ptr->setRequest(tree_build_request)) {
+  if (!creator_ptr->setRequest(tree_creator_request)) {
     throw exceptions::TreeBuildError(
-      "Request to build tree '" + tree_build_request + "' was denied by tree builder '" + tree_builder_name +
+      "Request to build tree '" + tree_creator_request + "' was denied by tree builder '" + tree_creator_name +
       "'(setRequest() returned false).");
   }
 
-  // By passing the builder's shared pointer to the callback, it lives on and the tree can be built later.
-  return [this, node_overrides, build_director_ptr](TreeBlackboardSharedPtr bb) {
-    TreeBuilder builder;
-    build_director_ptr->configureBuilder(builder);
-    builder.loadNodePlugins(getNodePtr(), node_overrides, true);
-    return builder.buildTree(bb);
+  // By passing the creator's shared pointer to the callback, it lives on and the tree can be built later.
+  return [this, node_overrides, creator_ptr](TreeBlackboardSharedPtr bb) {
+    TreeBuilder builder(getNodePtr(), node_loader_ptr_);
+    prepareTreeBuilder(builder);
+    creator_ptr->configureTreeBuilder(builder);
+    builder.loadNodePlugins(node_overrides, true);
+    return creator_ptr->createTree(builder, bb);
   };
 }
 
@@ -144,11 +146,11 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
     // Check if builder plugin name is valid
     if (param_name == PARAM_NAME_TREE_BUILDER) {
       const std::string class_name = p.as_string();
-      if (!tree_build_director_loader_.isClassAvailable(class_name)) {
+      if (!tree_creator_loader_.isClassAvailable(class_name)) {
         return create_rejected(
           "There is no tree builder class named '" + class_name +
           "'. Make sure it is registered using the CMake macro "
-          "auto_apms_behavior_tree_register_builders().");
+          "auto_apms_behavior_tree_register_creators().");
       }
     }
   }
@@ -183,10 +185,10 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
   try {
     // Use the goal's information for determining the builder plugin to load if the string is non-empty.
     // Otherwise use the current value of the parameter.
-    const std::string builder_name = goal_ptr->tree_builder_name.empty()
-                                       ? executor_param_listener_.get_params().tree_builder_name
-                                       : goal_ptr->tree_builder_name;
-    create_tree_callback_ = makeCreateTreeCallback(builder_name, goal_ptr->tree_build_request, node_overrides);
+    const std::string builder_name = goal_ptr->tree_creator_name.empty()
+                                       ? executor_param_listener_.get_params().tree_creator_name
+                                       : goal_ptr->tree_creator_name;
+    create_tree_callback_ = makeCreateTreeCallback(builder_name, goal_ptr->tree_creator_request, node_overrides);
   } catch (const std::exception & e) {
     RCLCPP_WARN(
       logger_, "Goal %s was REJECTED: Error during configuring the tree builder: %s",
@@ -392,7 +394,6 @@ bool TreeExecutorServer::onTick()
     getStateObserver().flush();
   }
   start_action_context_.publishFeedback();
-
   return true;
 }
 

@@ -113,19 +113,16 @@ public:
    */
   virtual BT::NodeStatus onMessageReceived(const MessageT & msg);
 
-  std::string getFullName() const;
+  const rclcpp::Logger logger_;
 
-protected:
-  const Context & getRosContext();
-
+private:
   static std::mutex & registryMutex();
 
   // contains the fully-qualified name of the node and the name of the topic
   static SubscribersRegistry & getRegistry();
 
-  const rclcpp::Logger logger_;
+  bool createSubscriber(const std::string & topic_name);
 
-private:
   const Context context_;
   const rclcpp::QoS qos_;
   std::string topic_name_;
@@ -134,8 +131,6 @@ private:
   std::shared_ptr<MessageT> last_msg_;
   boost::signals2::connection signal_connection_;
   std::string subscriber_key_;
-
-  bool createSubscriber(const std::string & topic_name);
 };
 
 //----------------------------------------------------------------
@@ -189,19 +184,20 @@ template <class MessageT>
 inline bool RosSubscriberNode<MessageT>::createSubscriber(const std::string & topic_name)
 {
   if (topic_name.empty()) {
-    throw exceptions::RosNodeError(getFullName() + " - Argument topic_name is empty when trying to create a client.");
+    throw exceptions::RosNodeError(
+      context_.getFullName(this) + " - Argument topic_name is empty when trying to create a client.");
   }
   if (sub_instance_) {
-    throw exceptions::RosNodeError(getFullName() + " - Cannot call createSubscriber() more than once.");
+    throw exceptions::RosNodeError(context_.getFullName(this) + " - Cannot call createSubscriber() more than once.");
   }
 
   // find SubscriberInstance in the registry
   std::unique_lock lk(registryMutex());
 
-  auto node = getRosContext().nh.lock();
+  auto node = context_.nh.lock();
   if (!node) {
     throw exceptions::RosNodeError(
-      getFullName() +
+      context_.getFullName(this) +
       " - The shared pointer to the ROS node went out of scope. The tree node doesn't "
       "take the ownership of the node.");
   }
@@ -212,7 +208,8 @@ inline bool RosSubscriberNode<MessageT>::createSubscriber(const std::string & to
   if (it == registry.end() || it->second.expired()) {
     sub_instance_ = std::make_shared<SubscriberInstance>(node, topic_name, qos_);
     registry.insert({subscriber_key_, sub_instance_});
-    RCLCPP_DEBUG(logger_, "%s - Created subscriber for topic '%s'.", getFullName().c_str(), topic_name.c_str());
+    RCLCPP_DEBUG(
+      logger_, "%s - Created subscriber for topic '%s'.", context_.getFullName(this).c_str(), topic_name.c_str());
   } else {
     sub_instance_ = it->second.lock();
   }
@@ -246,14 +243,15 @@ inline BT::NodeStatus RosSubscriberNode<MessageT>::tick()
 
   if (!sub_instance_) {
     throw exceptions::RosNodeError(
-      getFullName() +
+      context_.getFullName(this) +
       " - You must specify a service name either by using a default value or by "
       "passing a value to the corresponding dynamic input port.");
   }
 
   auto check_status = [this](BT::NodeStatus status) {
     if (!isStatusCompleted(status)) {
-      throw exceptions::RosNodeError(getFullName() + " - The callback must return either SUCCESS or FAILURE.");
+      throw exceptions::RosNodeError(
+        context_.getFullName(this) + " - The callback must return either SUCCESS or FAILURE.");
     }
     return status;
   };
@@ -274,22 +272,6 @@ template <class MessageT>
 inline BT::NodeStatus RosSubscriberNode<MessageT>::onMessageReceived(const MessageT & /*msg*/)
 {
   return BT::NodeStatus::SUCCESS;
-}
-
-template <class MessageT>
-inline std::string RosSubscriberNode<MessageT>::getFullName() const
-{
-  // NOTE: registrationName() is empty during construction as this member is frist set after the factory constructed the
-  // object
-  if (registrationName().empty()) return name();
-  if (this->name() == this->registrationName()) return this->name();
-  return this->name() + " (Type: " + this->registrationName() + ")";
-}
-
-template <class MessageT>
-inline const typename RosSubscriberNode<MessageT>::Context & RosSubscriberNode<MessageT>::getRosContext()
-{
-  return context_;
 }
 
 template <class MessageT>

@@ -13,12 +13,12 @@
 # limitations under the License.
 
 # Macro that registers behavior tree build directors from a specific target
-macro(auto_apms_behavior_tree_register_builders target)
+macro(auto_apms_behavior_tree_register_creators target)
 
     if(NOT TARGET ${target})
         message(
         FATAL_ERROR
-        "auto_apms_behavior_tree_register_builders(): '${target}' is not a target.")
+        "auto_apms_behavior_tree_register_creators(): '${target}' is not a target.")
     endif()
 
     # Check target type
@@ -26,24 +26,24 @@ macro(auto_apms_behavior_tree_register_builders target)
     if(NOT _target_type STREQUAL "SHARED_LIBRARY")
         message(
         FATAL_ERROR
-        "auto_apms_behavior_tree_register_builders(): '${target}' is not a shared library target.")
+        "auto_apms_behavior_tree_register_creators(): '${target}' is not a shared library target.")
     endif()
 
     cmake_parse_arguments(ARGS "" "" "" ${ARGN})
 
     # Parse behavior tree node class names
     foreach(_class_name ${ARGS_UNPARSED_ARGUMENTS})
-        if(${_class_name} IN_LIST _AUTO_APMS_BEHAVIOR_TREE__BUILDER_CLASS_NAMES)
+        if(${_class_name} IN_LIST _AUTO_APMS_BEHAVIOR_TREE__CREATOR_CLASS_NAMES)
             message(
             FATAL_ERROR
-            "auto_apms_behavior_tree_register_builders(): Class name '${_class_name}' has already been registered before.")
+            "auto_apms_behavior_tree_register_creators(): Class name '${_class_name}' has already been registered before.")
         endif()
 
         # Append all class names to a list to keep track of all available behavior tree node classes within this package
-        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__BUILDER_CLASS_NAMES ${_class_name})
+        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__CREATOR_CLASS_NAMES ${_class_name})
 
         # Append to the variable that holds the content of the pluginlib xml file
-        set(_AUTO_APMS_BEHAVIOR_TREE__BUILDER_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__BUILDER_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::TreeBuilderFactoryTemplate<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::TreeBuilderFactoryInterface\" /></library>\n")
+        set(_AUTO_APMS_BEHAVIOR_TREE__CREATOR_PLUGIN_XML_CONTENT "${_AUTO_APMS_BEHAVIOR_TREE__CREATOR_PLUGIN_XML_CONTENT}<library path=\"${target}\"><class name=\"${_class_name}\" type=\"auto_apms_behavior_tree::TreeCreatorFactoryTemplate<${_class_name}>\" base_class_type=\"auto_apms_behavior_tree::TreeCreatorFactoryInterface\" /></library>\n")
     endforeach()
 
 endmacro()

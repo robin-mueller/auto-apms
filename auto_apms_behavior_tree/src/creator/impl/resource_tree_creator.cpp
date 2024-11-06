@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/builder.hpp"
+#include "auto_apms_behavior_tree/creator.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class TreeResourceBuilder : public TreeBuilderBase
+class ResourceTreeCreator : public TreeCreatorBase
 {
 public:
-  using TreeBuilderBase::TreeBuilderBase;
+  using TreeCreatorBase::TreeCreatorBase;
 
   bool setRequest(const std::string & request) override final
   {
@@ -38,10 +38,10 @@ public:
     return true;
   }
 
-  void configureBuilder(TreeBuilder & builder) override final
+  void configureTreeBuilder(TreeBuilder & builder) override final
   {
-    if (!resource_ptr_) throw exceptions::TreeBuildError("TreeResourceBuilder - resource_ptr_ is nullptr.");
-    builder.mergeTreesFromResource(*resource_ptr_, getNodePtr());
+    if (!resource_ptr_) throw exceptions::TreeBuildError("ResourceTreeCreator - resource_ptr_ is nullptr.");
+    builder.mergeTreesFromResource(*resource_ptr_);
   }
 
 private:
@@ -50,4 +50,4 @@ private:
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILDER(auto_apms_behavior_tree::TreeResourceBuilder)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_CREATOR(auto_apms_behavior_tree::ResourceTreeCreator)

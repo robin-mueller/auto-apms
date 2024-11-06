@@ -16,7 +16,7 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
+#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -61,9 +61,9 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  TreeBuilder builder;
+  TreeBuilder builder(node_ptr);
   try {
-    builder.mergeTreesFromResource(*tree_resource_ptr, node_ptr);
+    builder.mergeTreesFromResource(*tree_resource_ptr);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(
       node_ptr->get_logger(), "ERROR loading behavior tree '%s' from resource %s: %s", tree_name.c_str(),

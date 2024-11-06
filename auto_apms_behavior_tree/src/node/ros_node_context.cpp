@@ -40,4 +40,13 @@ rclcpp::Time RosNodeContext::getCurrentTime() const
   return rclcpp::Clock(RCL_ROS_TIME).now();
 }
 
+std::string RosNodeContext::getFullName(const BT::TreeNode * node)
+{
+  // NOTE: registrationName() is empty during construction as this member is frist set after the factory constructed the
+  // object
+  if (node->registrationName().empty()) return node->name();
+  if (node->name() == node->registrationName()) return node->name();
+  return node->name() + " (Type: " + node->registrationName() + ")";
+}
+
 }  // namespace auto_apms_behavior_tree

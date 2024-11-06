@@ -12,28 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include "auto_apms_behavior_tree/builder/tree_builder_factory_interface.hpp"
+#include "auto_apms_behavior_tree/creator/tree_creator_base.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-template <typename T>
-class TreeBuilderFactoryTemplate : public TreeBuilderFactoryInterface
+TreeCreatorBase::TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr)
+: node_ptr_(node_ptr), logger_{node_ptr->get_logger()}
 {
-public:
-  TreeBuilderFactoryTemplate() = default;
-  virtual ~TreeBuilderFactoryTemplate() = default;
+}
 
-  std::shared_ptr<TreeBuilderBase> instantiateBuilder(const rclcpp::Node::SharedPtr node_ptr)
-  {
-    static_assert(
-      std::is_convertible_v<T *, TreeBuilderBase *>,
-      "Cannot convert T* to TreeBuilderBase*. Did you forget to specify the keyword 'public' when "
-      "inheriting? --> class T : public TreeBuilderBase");
-    return std::make_shared<T>(node_ptr);
-  }
-};
+BT::Tree TreeCreatorBase::createTree(TreeBuilder & builder, TreeBlackboardSharedPtr root_blackboard_ptr)
+{
+  return builder.buildTree(root_blackboard_ptr);
+}
+
+rclcpp::Node::SharedPtr TreeCreatorBase::getNodePtr() { return node_ptr_; }
+
+const rclcpp::Logger & TreeCreatorBase::getLogger() { return logger_; }
 
 }  // namespace auto_apms_behavior_tree

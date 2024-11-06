@@ -26,17 +26,17 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return {BT::InputPort<std::string>(INPUT_KEY_MSG, "Error message. Can be empty")};
+    return {BT::InputPort<std::string>(INPUT_KEY_MSG, "Error message. Creates a generic error message if empty.")};
   }
 
   BT::NodeStatus tick() final
   {
     auto input = getInput<std::string>(INPUT_KEY_MSG);
-    auto node_name = name() == registrationName() ? registrationName() : registrationName() + ": " + name();
-    if (!input.has_value()) {
-      throw exceptions::RosNodeError(node_name + " - An error occured");
+    auto prefix = RosNodeContext::getFullName(this);
+    if (input.has_value()) {
+      throw exceptions::RosNodeError(prefix + " - " + input.value());
     }
-    throw exceptions::RosNodeError(node_name + " - " + input.value());
+    throw exceptions::RosNodeError(prefix + " - Tree ran into an exception");
   }
 };
 
