@@ -37,19 +37,19 @@ protected:
   using Result = typename ActionContextType::Result;
   using Feedback = typename ActionContextType::Feedback;
 
-  ModeBase(rclcpp::Node& node, const Settings& settings, const std::string& topic_namespace_prefix,
-           std::shared_ptr<ActionContextType> action_context_ptr)
-    : px4_ros2::ModeBase{ node, settings, topic_namespace_prefix }, action_context_ptr_{ action_context_ptr }
+  ModeBase(
+    rclcpp::Node & node, const Settings & settings, const std::string & topic_namespace_prefix,
+    std::shared_ptr<ActionContextType> action_context_ptr)
+  : px4_ros2::ModeBase{node, settings, topic_namespace_prefix}, action_context_ptr_{action_context_ptr}
   {
   }
 
 private:
   virtual void OnActivateWithGoal(std::shared_ptr<const Goal> goal_ptr);
-  virtual void UpdateSetpointWithGoal(float dt_s, std::shared_ptr<const Goal> goal_ptr,
-                                      std::shared_ptr<Feedback> feedback_ptr, std::shared_ptr<Result> result_ptr) = 0;
-  virtual void onDeactivate() override
-  {
-  }
+  virtual void UpdateSetpointWithGoal(
+    float dt_s, std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+    std::shared_ptr<Result> result_ptr) = 0;
+  virtual void onDeactivate() override {}
 
   void onActivate() override;
   void updateSetpoint(float dt_s) override;
@@ -72,8 +72,9 @@ void ModeBase<ActionT>::onActivate()
 template <class ActionT>
 void ModeBase<ActionT>::updateSetpoint(float dt_s)
 {
-  UpdateSetpointWithGoal(dt_s, action_context_ptr_->getGoalHandlePtr()->get_goal(),
-                         action_context_ptr_->getFeedbackPtr(), action_context_ptr_->getResultPtr());
+  UpdateSetpointWithGoal(
+    dt_s, action_context_ptr_->getGoalHandlePtr()->get_goal(), action_context_ptr_->getFeedbackPtr(),
+    action_context_ptr_->getResultPtr());
 }
 
 template <class ActionT>
@@ -82,16 +83,17 @@ class PositionAwareMode : public ModeBase<ActionT>
 protected:
   using typename ModeBase<ActionT>::ActionContextType;
 
-  PositionAwareMode(rclcpp::Node& node, const px4_ros2::ModeBase::Settings& settings,
-                    const std::string& topic_namespace_prefix, std::shared_ptr<ActionContextType> action_context_ptr)
-    : ModeBase<ActionT>{ node, settings, topic_namespace_prefix, action_context_ptr }
+  PositionAwareMode(
+    rclcpp::Node & node, const px4_ros2::ModeBase::Settings & settings, const std::string & topic_namespace_prefix,
+    std::shared_ptr<ActionContextType> action_context_ptr)
+  : ModeBase<ActionT>{node, settings, topic_namespace_prefix, action_context_ptr}
   {
     vehicle_global_position_ptr_ = std::make_shared<px4_ros2::OdometryGlobalPosition>(*this);
     vehicle_local_position_ptr_ = std::make_shared<px4_ros2::OdometryLocalPosition>(*this);
     vehicle_attitude_ptr_ = std::make_shared<px4_ros2::OdometryAttitude>(*this);
   }
 
-  bool IsPositionReached(const Eigen::Vector3d& target_position_f_glob) const;
+  bool IsPositionReached(const Eigen::Vector3d & target_position_f_glob) const;
   bool IsAltitudeReached(float target_altitude_amsl_m) const;
   bool IsHeadingReached(float target_heading_rad) const;
 
@@ -102,12 +104,12 @@ protected:
 };
 
 template <class ActionT>
-bool PositionAwareMode<ActionT>::IsPositionReached(const Eigen::Vector3d& target_position_f_glob) const
+bool PositionAwareMode<ActionT>::IsPositionReached(const Eigen::Vector3d & target_position_f_glob) const
 {
   static constexpr float kPositionErrorThresholdMeter = 0.5f;           // [m]
   static constexpr float kVelocityErrorThresholdMeterPerSecond = 0.3f;  // [m/s]
   const float position_error_m =
-      px4_ros2::distanceToGlobalPosition(vehicle_global_position_ptr_->position(), target_position_f_glob);
+    px4_ros2::distanceToGlobalPosition(vehicle_global_position_ptr_->position(), target_position_f_glob);
   return (position_error_m < kPositionErrorThresholdMeter) &&
          (vehicle_local_position_ptr_->velocityNed().norm() < kVelocityErrorThresholdMeterPerSecond);
 }

@@ -23,7 +23,7 @@ class PauseExecutorAction : public RosActionNode<auto_apms_interfaces::action::C
 public:
   using RosActionNode::RosActionNode;
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
     goal.command = Goal::COMMAND_PAUSE;
     return true;

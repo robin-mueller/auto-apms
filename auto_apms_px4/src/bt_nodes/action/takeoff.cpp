@@ -28,10 +28,10 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({ BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target takeoff altitude in meter (AMSL)") });
+    return providedBasicPorts({BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target takeoff altitude in meter (AMSL)")});
   }
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
     goal.altitude_amsl_m = getInput<double>(INPUT_KEY_ALTITUDE).value();
     return true;

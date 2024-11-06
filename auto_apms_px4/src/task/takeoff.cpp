@@ -23,13 +23,13 @@ namespace auto_apms_px4
 class TakeoffTask : public ModeExecutor<auto_apms_interfaces::action::Takeoff>
 {
 public:
-  explicit TakeoffTask(const rclcpp::NodeOptions& options)
-    : ModeExecutor{ TAKEOFF_TASK_NAME, options, FlightMode::Takeoff }
+  explicit TakeoffTask(const rclcpp::NodeOptions & options)
+  : ModeExecutor{TAKEOFF_TASK_NAME, options, FlightMode::Takeoff}
   {
   }
 
 private:
-  bool sendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr)
+  bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr)
   {
     return client.Takeoff(goal_ptr->altitude_amsl_m, goal_ptr->heading_rad);
   }

@@ -32,16 +32,15 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(
-        { BT::InputPort<uint8_t>(INPUT_KEY_SITE_ID, "ID of the landing site to inspect"),
-          BT::OutputPort<uint8_t>(OUTPUT_KEY_SITE_STATUS, "{landing_site_status}", "The landing status flag") });
+      {BT::InputPort<uint8_t>(INPUT_KEY_SITE_ID, "ID of the landing site to inspect"),
+       BT::OutputPort<uint8_t>(OUTPUT_KEY_SITE_STATUS, "{landing_site_status}", "The landing status flag")});
   }
 
-  BT::NodeStatus onMessageReceived(const LandingSiteStatusMsg& msg) override final
+  BT::NodeStatus onMessageReceived(const LandingSiteStatusMsg & msg) override final
   {
     auto return_status = BT::NodeStatus::FAILURE;
     auto status = msg.status[getInput<uint8_t>(INPUT_KEY_SITE_ID).value()];
-    switch (status)
-    {
+    switch (status) {
       case LandingSiteStatusMsg::STATUS_CLEAR_FOR_LANDING:
         return_status = BT::NodeStatus::SUCCESS;
         break;

@@ -26,15 +26,14 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return { BT::InputPort<std::string>(INPUT_KEY_MSG, "Error message. Can be empty") };
+    return {BT::InputPort<std::string>(INPUT_KEY_MSG, "Error message. Can be empty")};
   }
 
   BT::NodeStatus tick() final
   {
     auto input = getInput<std::string>(INPUT_KEY_MSG);
     auto node_name = name() == registrationName() ? registrationName() : registrationName() + ": " + name();
-    if (!input.has_value())
-    {
+    if (!input.has_value()) {
       throw exceptions::RosNodeError(node_name + " - An error occured");
     }
     throw exceptions::RosNodeError(node_name + " - " + input.value());

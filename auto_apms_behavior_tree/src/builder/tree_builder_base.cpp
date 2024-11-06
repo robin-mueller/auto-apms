@@ -13,24 +13,19 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/builder/tree_builder_base.hpp"
+
 #include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 TreeBuilderBase::TreeBuilderBase(rclcpp::Node::SharedPtr node_ptr)
-  : node_ptr_(node_ptr), logger_{ node_ptr->get_logger() }
+: node_ptr_(node_ptr), logger_{node_ptr->get_logger()}
 {
 }
 
-rclcpp::Node::SharedPtr TreeBuilderBase::getNodePtr()
-{
-  return node_ptr_;
-}
+rclcpp::Node::SharedPtr TreeBuilderBase::getNodePtr() { return node_ptr_; }
 
-const rclcpp::Logger& TreeBuilderBase::getLogger()
-{
-  return logger_;
-}
+const rclcpp::Logger & TreeBuilderBase::getLogger() { return logger_; }
 
 }  // namespace auto_apms_behavior_tree

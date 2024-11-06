@@ -29,19 +29,19 @@ namespace auto_apms::ops_engine
 class MissionManagerExecutor : public BTExecutor
 {
 public:
-  MissionManagerExecutor(const rclcpp::NodeOptions& options);
+  MissionManagerExecutor(const rclcpp::NodeOptions & options);
 
 private:
-  void SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory& factory) final;
-  void OnTreeCreated(BT::Blackboard& global_blackboard) final;
+  void SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory & factory) final;
+  void OnTreeCreated(BT::Blackboard & global_blackboard) final;
 
   BT::Blackboard::Ptr initial_bb_;
   rclcpp::Publisher<LandingApproachMsg>::SharedPtr pub_landing_approach_ptr_;
   rclcpp::TimerBase::SharedPtr publish_timer_ptr_;
 };
 
-MissionManagerExecutor::MissionManagerExecutor(const rclcpp::NodeOptions& options)
-  : BTExecutor{ "mission_manager", options, 6666 }, initial_bb_{ BT::Blackboard::create() }
+MissionManagerExecutor::MissionManagerExecutor(const rclcpp::NodeOptions & options)
+: BTExecutor{"mission_manager", options, 6666}, initial_bb_{BT::Blackboard::create()}
 {
   initial_bb_->set<double>(KEY_ALTITUDE, 190.0);
   initial_bb_->set<int>(KEY_NEXT_LANDING_SITE_ID, 0);
@@ -57,12 +57,12 @@ MissionManagerExecutor::MissionManagerExecutor(const rclcpp::NodeOptions& option
   });
 }
 
-void MissionManagerExecutor::SetupBehaviorTreeFactory(rclcpp::Node::SharedPtr node_ptr,
-                                                      BT::BehaviorTreeFactory& factory)
+void MissionManagerExecutor::SetupBehaviorTreeFactory(
+  rclcpp::Node::SharedPtr node_ptr, BT::BehaviorTreeFactory & factory)
 {
 }
 
-void MissionManagerExecutor::OnTreeCreated(BT::Blackboard& global_blackboard)
+void MissionManagerExecutor::OnTreeCreated(BT::Blackboard & global_blackboard)
 {
   initial_bb_->cloneInto(global_blackboard);  // Reset the global blackboard
 }

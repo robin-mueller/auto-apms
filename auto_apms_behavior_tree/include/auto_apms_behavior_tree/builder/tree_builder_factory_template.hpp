@@ -28,9 +28,10 @@ public:
 
   std::shared_ptr<TreeBuilderBase> instantiateBuilder(const rclcpp::Node::SharedPtr node_ptr)
   {
-    static_assert(std::is_convertible_v<T*, TreeBuilderBase*>,
-                  "Cannot convert T* to TreeBuilderBase*. Did you forget to specify the keyword 'public' when "
-                  "inheriting? --> class T : public TreeBuilderBase");
+    static_assert(
+      std::is_convertible_v<T *, TreeBuilderBase *>,
+      "Cannot convert T* to TreeBuilderBase*. Did you forget to specify the keyword 'public' when "
+      "inheriting? --> class T : public TreeBuilderBase");
     return std::make_shared<T>(node_ptr);
   }
 };

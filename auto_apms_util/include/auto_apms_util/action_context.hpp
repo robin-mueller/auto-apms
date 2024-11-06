@@ -29,7 +29,7 @@ public:
   using Result = typename ActionT::Result;
   using GoalHandle = rclcpp_action::ServerGoalHandle<ActionT>;
 
-  ActionContext(const rclcpp::Logger& logger);
+  ActionContext(const rclcpp::Logger & logger);
 
   void setUp(std::shared_ptr<GoalHandle> goal_handle_ptr);
 
@@ -54,8 +54,8 @@ public:
 private:
   const rclcpp::Logger logger_;
   std::shared_ptr<GoalHandle> goal_handle_ptr_;
-  const std::shared_ptr<Feedback> feedback_ptr_{ std::make_shared<Feedback>() };
-  const std::shared_ptr<Result> result_ptr_{ std::make_shared<Result>() };
+  const std::shared_ptr<Feedback> feedback_ptr_{std::make_shared<Feedback>()};
+  const std::shared_ptr<Result> result_ptr_{std::make_shared<Result>()};
 };
 
 /**
@@ -63,7 +63,7 @@ private:
  */
 
 template <class ActionT>
-ActionContext<ActionT>::ActionContext(const rclcpp::Logger& logger) : logger_{ logger }
+ActionContext<ActionT>::ActionContext(const rclcpp::Logger & logger) : logger_{logger}
 {
 }
 
@@ -78,27 +78,23 @@ void ActionContext<ActionT>::setUp(std::shared_ptr<GoalHandle> goal_handle_ptr)
 template <class ActionT>
 void ActionContext<ActionT>::publishFeedback()
 {
-  if (!goal_handle_ptr_)
-  {
+  if (!goal_handle_ptr_) {
     RCLCPP_FATAL(logger_, "Tried to publish feedback on a goal, but no goal handle was set up.");
     throw std::runtime_error("goal_handle_ptr_ is nullptr.");
   }
-  if (goal_handle_ptr_->is_executing())
-  {
+  if (goal_handle_ptr_->is_executing()) {
     goal_handle_ptr_->publish_feedback(feedback_ptr_);
-  }
-  else
-  {
-    RCLCPP_WARN(logger_, "The node tried to publish feedback on goal %s which is not executing. Ignoring ...",
-                rclcpp_action::to_string(goal_handle_ptr_->get_goal_id()).c_str());
+  } else {
+    RCLCPP_WARN(
+      logger_, "The node tried to publish feedback on goal %s which is not executing. Ignoring ...",
+      rclcpp_action::to_string(goal_handle_ptr_->get_goal_id()).c_str());
   }
 }
 
 template <class ActionT>
 void ActionContext<ActionT>::succeed()
 {
-  if (!goal_handle_ptr_)
-  {
+  if (!goal_handle_ptr_) {
     RCLCPP_FATAL(logger_, "Tried to succeed the goal, but no goal handle was set up.");
     throw std::runtime_error("goal_handle_ptr_ is nullptr.");
   }
@@ -109,8 +105,7 @@ void ActionContext<ActionT>::succeed()
 template <class ActionT>
 void ActionContext<ActionT>::cancel()
 {
-  if (!goal_handle_ptr_)
-  {
+  if (!goal_handle_ptr_) {
     RCLCPP_FATAL(logger_, "Tried to cancel the goal, but no goal handle was set up.");
     throw std::runtime_error("goal_handle_ptr_ is nullptr.");
   }
@@ -121,8 +116,7 @@ void ActionContext<ActionT>::cancel()
 template <class ActionT>
 void ActionContext<ActionT>::abort()
 {
-  if (!goal_handle_ptr_)
-  {
+  if (!goal_handle_ptr_) {
     RCLCPP_FATAL(logger_, "Tried to abort the goal, but no goal handle was set up.");
     throw std::runtime_error("goal_handle_ptr_ is nullptr.");
   }
@@ -145,10 +139,9 @@ inline bool ActionContext<ActionT>::isValid()
 template <class ActionT>
 std::shared_ptr<typename ActionContext<ActionT>::GoalHandle> ActionContext<ActionT>::getGoalHandlePtr()
 {
-  if (!goal_handle_ptr_)
-  {
-    RCLCPP_FATAL(logger_,
-                 "Tried to access the goal handle calling ActionContext::goal_handle() but no goal handle was set up.");
+  if (!goal_handle_ptr_) {
+    RCLCPP_FATAL(
+      logger_, "Tried to access the goal handle calling ActionContext::goal_handle() but no goal handle was set up.");
     throw std::runtime_error("goal_handle_ptr_ is nullptr.");
   }
   return goal_handle_ptr_;

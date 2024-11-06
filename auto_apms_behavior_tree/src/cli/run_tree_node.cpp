@@ -13,22 +13,22 @@
 // limitations under the License.
 
 #include <signal.h>
+
 #include <chrono>
 
-#include "rclcpp/rclcpp.hpp"
-#include "auto_apms_util/logging.hpp"
-#include "auto_apms_behavior_tree/executor/executor.hpp"
 #include "auto_apms_behavior_tree/builder/tree_builder.hpp"
+#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_util/logging.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 sig_atomic_t volatile termination_requested = 0;
 
 using namespace std::chrono_literals;
 using namespace auto_apms_behavior_tree;
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
-  if (argc < 2)
-  {
+  if (argc < 2) {
     std::cerr << "run_tree_node: Missing inputs! The program requires: \n\t1.) YAML representation of "
                  "NodeRegistrationParams encoded in a "
                  "string.\n";
@@ -47,25 +47,20 @@ int main(int argc, char** argv)
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
   NodeRegistrationParams registration_params;
-  try
-  {
+  try {
     registration_params = NodeRegistrationParams::decode(argv[1]);
-  }
-  catch (std::exception& e)
-  {
+  } catch (std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument registration_params: %s", e.what());
     return EXIT_FAILURE;
   }
 
   TreeBuilder builder;
-  try
-  {
-    builder.loadNodePlugins(node_ptr, NodeManifest({ { registration_params.class_name, registration_params } }));
-  }
-  catch (const std::exception& e)
-  {
-    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR loading behavior tree node '%s': %s",
-                 registration_params.class_name.c_str(), e.what());
+  try {
+    builder.loadNodePlugins(node_ptr, NodeManifest({{registration_params.class_name, registration_params}}));
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(
+      node_ptr->get_logger(), "ERROR loading behavior tree node '%s': %s", registration_params.class_name.c_str(),
+      e.what());
     return EXIT_FAILURE;
   }
 
@@ -73,47 +68,38 @@ int main(int argc, char** argv)
   auto tree_element = builder.insertNewTreeElement(tree_name);
   tree_element->InsertNewChildElement(registration_params.class_name.c_str());
 
-  RCLCPP_INFO(node_ptr->get_logger(), "Creating a tree with a single node:\n%s",
-              builder.writeTreeDocumentToString().c_str());
+  RCLCPP_INFO(
+    node_ptr->get_logger(), "Creating a tree with a single node:\n%s", builder.writeTreeDocumentToString().c_str());
 
   TreeExecutor executor(node_ptr);
   auto future = executor.startExecution(
-      [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.buildTree(tree_name, bb); });
+    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.buildTree(tree_name, bb); });
 
   const auto termination_timeout = std::chrono::duration<double>(1.5);
   rclcpp::Time termination_start;
   bool termination_started = false;
-  try
-  {
+  try {
     while (rclcpp::spin_until_future_complete(node_ptr, future, std::chrono::milliseconds(250)) !=
-           rclcpp::FutureReturnCode::SUCCESS)
-    {
-      if (termination_started)
-      {
-        if (node_ptr->now() - termination_start > termination_timeout)
-        {
+           rclcpp::FutureReturnCode::SUCCESS) {
+      if (termination_started) {
+        if (node_ptr->now() - termination_start > termination_timeout) {
           RCLCPP_WARN(node_ptr->get_logger(), "Termination took too long. Aborted.");
           return EXIT_FAILURE;
         }
-      }
-      else if (termination_requested)
-      {
+      } else if (termination_requested) {
         termination_start = node_ptr->now();
         executor.setControlCommand(TreeExecutor::ControlCommand::TERMINATE);
         termination_started = true;
         RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");
       }
     }
-  }
-  catch (const std::exception& e)
-  {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR during behavior tree execution: %s", e.what());
     return EXIT_FAILURE;
   }
 
   // To prevent a deadlock, throw if future isn't ready at this point. However, this shouldn't happen.
-  if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
-  {
+  if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
     throw std::logic_error("Future object is not ready.");
   }
 

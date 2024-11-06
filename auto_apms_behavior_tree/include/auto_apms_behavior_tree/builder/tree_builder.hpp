@@ -16,10 +16,10 @@
 
 #include <tinyxml2.h>
 
+#include "auto_apms_behavior_tree/definitions.hpp"
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
 #include "auto_apms_behavior_tree/resource/node_registration_class_loader.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
-#include "auto_apms_behavior_tree/definitions.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -57,47 +57,48 @@ public:
    * existing plugin and use the new one instead.
    * @throw exceptions::TreeBuildError if registration fails.
    */
-  TreeBuilder& loadNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
-                               NodeRegistrationClassLoader& tree_node_loader, bool override = false);
+  TreeBuilder & loadNodePlugins(
+    rclcpp::Node::SharedPtr node_ptr, const NodeManifest & node_manifest,
+    NodeRegistrationClassLoader & tree_node_loader, bool override = false);
 
   /**
    * @overload
    *
    * Creates a default NodeRegistrationClassLoader.
    */
-  TreeBuilder& loadNodePlugins(rclcpp::Node::SharedPtr node_ptr, const NodeManifest& node_manifest,
-                               bool override = false);
+  TreeBuilder & loadNodePlugins(
+    rclcpp::Node::SharedPtr node_ptr, const NodeManifest & node_manifest, bool override = false);
 
-  TreeBuilder& mergeTreesFromDocument(const tinyxml2::XMLDocument& doc);
+  std::unordered_map<std::string, BT::NodeType> getRegisteredNodes() const;
 
-  TreeBuilder& mergeTreesFromString(const std::string& tree_str);
+  TreeBuilder & mergeTreesFromDocument(const tinyxml2::XMLDocument & doc);
 
-  TreeBuilder& mergeTreesFromFile(const std::string& tree_file_path);
+  TreeBuilder & mergeTreesFromString(const std::string & tree_str);
 
-  TreeBuilder& mergeTreesFromResource(const TreeResource& resource, rclcpp::Node::SharedPtr node_ptr);
+  TreeBuilder & mergeTreesFromFile(const std::string & tree_file_path);
 
-  bool isExistingTreeName(const std::string& tree_name);
+  TreeBuilder & mergeTreesFromResource(const TreeResource & resource, rclcpp::Node::SharedPtr node_ptr);
 
-  tinyxml2::XMLElement* insertNewTreeElement(const std::string& tree_name);
+  bool isExistingTreeName(const std::string & tree_name);
 
-  tinyxml2::XMLElement* getTreeElement(const std::string& tree_name);
+  tinyxml2::XMLElement * insertNewTreeElement(const std::string & tree_name);
 
-  static std::vector<std::string> getAllTreeNames(const tinyxml2::XMLDocument& doc);
+  tinyxml2::XMLElement * getTreeElement(const std::string & tree_name);
+
+  static std::vector<std::string> getAllTreeNames(const tinyxml2::XMLDocument & doc);
 
   std::vector<std::string> getAllTreeNames() const;
 
   std::string getMainTreeName() const;
 
-  TreeBuilder& setMainTreeName(const std::string& main_tree_name);
+  TreeBuilder & setMainTreeName(const std::string & main_tree_name);
 
-  static std::string writeTreeDocumentToString(const tinyxml2::XMLDocument& doc);
+  static std::string writeTreeDocumentToString(const tinyxml2::XMLDocument & doc);
 
   std::string writeTreeDocumentToString() const;
 
-  std::unordered_map<std::string, BT::NodeType> getRegisteredNodes() const;
-
   // Verify the structure of this tree document and that all mentioned nodes are registered with the factory
-  bool verifyTreeDocument() const;
+  bool verifyTree() const;
 
   Tree buildTree(const std::string main_tree_name, TreeBlackboardSharedPtr root_bb_ptr = TreeBlackboard::create());
 

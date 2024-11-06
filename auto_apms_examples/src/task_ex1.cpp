@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_util/action_client_wrapper.hpp"
 #include "auto_apms_interfaces/action/arm_disarm.hpp"
 #include "auto_apms_interfaces/action/land.hpp"
 #include "auto_apms_interfaces/action/takeoff.hpp"
+#include "auto_apms_util/action_client_wrapper.hpp"
 
 using namespace std::chrono_literals;
 using ArmDisarmAction = auto_apms_interfaces::action::ArmDisarm;
 using TakeoffAction = auto_apms_interfaces::action::Takeoff;
 using LandAction = auto_apms_interfaces::action::Land;
 
-int main(int argc, char* argv[])
+int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
 
@@ -41,18 +41,15 @@ int main(int argc, char* argv[])
   arm_goal.arming_state = arm_goal.ARMING_STATE_ARM;
   auto arm_future = arm_disarm_client.syncSendGoal(arm_goal);
 
-  if (arm_future.wait_for(0s) == std::future_status::ready && !arm_future.get())
-  {
+  if (arm_future.wait_for(0s) == std::future_status::ready && !arm_future.get()) {
     std::cerr << "Arming goal was rejected\n";
     rclcpp::shutdown();
     return EXIT_FAILURE;
   }
 
-  while (rclcpp::spin_until_future_complete(node_ptr, arm_future, 1s) != rclcpp::FutureReturnCode::SUCCESS)
-  {
+  while (rclcpp::spin_until_future_complete(node_ptr, arm_future, 1s) != rclcpp::FutureReturnCode::SUCCESS) {
     RCLCPP_INFO(node_ptr->get_logger(), "Waiting for the vehicle to be armed");
-    if (!rclcpp::ok())
-    {
+    if (!rclcpp::ok()) {
       rclcpp::shutdown();
       return EXIT_FAILURE;
     }
@@ -60,19 +57,15 @@ int main(int argc, char* argv[])
 
   auto arm_result = arm_future.get();
 
-  if (!arm_result)
-  {
+  if (!arm_result) {
     std::cerr << "Arm result is nullptr\n";
     rclcpp::shutdown();
     return EXIT_FAILURE;
   }
 
-  if ((*arm_result).code == rclcpp_action::ResultCode::SUCCEEDED)
-  {
+  if ((*arm_result).code == rclcpp_action::ResultCode::SUCCEEDED) {
     RCLCPP_INFO(node_ptr->get_logger(), "Arming succeeded");
-  }
-  else
-  {
+  } else {
     std::cerr << "Arming did not succeed\n";
     rclcpp::shutdown();
     return EXIT_FAILURE;
@@ -84,8 +77,7 @@ int main(int argc, char* argv[])
   takeoff_goal.altitude_amsl_m = 1e9;
   auto takeoff_future = takeoff_client.syncSendGoal(takeoff_goal);
 
-  if (takeoff_future.wait_for(0s) == std::future_status::ready && !takeoff_future.get())
-  {
+  if (takeoff_future.wait_for(0s) == std::future_status::ready && !takeoff_future.get()) {
     std::cerr << "Takeoff goal was rejected\n";
     rclcpp::shutdown();
     return EXIT_FAILURE;
@@ -96,8 +88,7 @@ int main(int argc, char* argv[])
 
   RCLCPP_INFO(node_ptr->get_logger(), "Canceling takeoff ...");
 
-  if (!takeoff_client.syncCancelLastGoal())
-  {
+  if (!takeoff_client.syncCancelLastGoal()) {
     std::cerr << "Cancelation of takeoff was rejected\n";
     rclcpp::shutdown();
     return EXIT_FAILURE;
@@ -107,18 +98,15 @@ int main(int argc, char* argv[])
 
   auto land_future = land_client.syncSendGoal();
 
-  if (land_future.wait_for(0s) == std::future_status::ready && !land_future.get())
-  {
+  if (land_future.wait_for(0s) == std::future_status::ready && !land_future.get()) {
     std::cerr << "Landing goal was rejected\n";
     rclcpp::shutdown();
     return EXIT_FAILURE;
   }
 
-  while (rclcpp::spin_until_future_complete(node_ptr, land_future, 1s) != rclcpp::FutureReturnCode::SUCCESS)
-  {
+  while (rclcpp::spin_until_future_complete(node_ptr, land_future, 1s) != rclcpp::FutureReturnCode::SUCCESS) {
     RCLCPP_INFO(node_ptr->get_logger(), "Waiting for landing");
-    if (!rclcpp::ok())
-    {
+    if (!rclcpp::ok()) {
       rclcpp::shutdown();
       return EXIT_FAILURE;
     }
@@ -126,19 +114,15 @@ int main(int argc, char* argv[])
 
   auto land_result = land_future.get();
 
-  if (!land_result)
-  {
+  if (!land_result) {
     std::cerr << "Land result is nullptr\n";
     rclcpp::shutdown();
     return EXIT_FAILURE;
   }
 
-  if ((*land_result).code == rclcpp_action::ResultCode::SUCCEEDED)
-  {
+  if ((*land_result).code == rclcpp_action::ResultCode::SUCCEEDED) {
     RCLCPP_INFO(node_ptr->get_logger(), "Landing succeeded");
-  }
-  else
-  {
+  } else {
     std::cerr << "Landing did not succeed\n";
     rclcpp::shutdown();
     return EXIT_FAILURE;

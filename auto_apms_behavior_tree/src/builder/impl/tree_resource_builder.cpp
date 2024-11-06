@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/builder.hpp"
-#include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
+#include "auto_apms_behavior_tree/resource/tree_resource.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -24,29 +24,23 @@ class TreeResourceBuilder : public TreeBuilderBase
 public:
   using TreeBuilderBase::TreeBuilderBase;
 
-  bool setRequest(const std::string& request) override final
+  bool setRequest(const std::string & request) override final
   {
-    try
-    {
+    try {
       resource_ptr_ = std::make_unique<TreeResource>(TreeResource::fromString(request));
-    }
-    catch (const exceptions::ResourceIdentityFormatError& e)
-    {
+    } catch (const exceptions::ResourceIdentityFormatError & e) {
       RCLCPP_ERROR(getLogger(), "%s", e.what());
       return false;
-    }
-    catch (const auto_apms_util::exceptions::ResourceError& e)
-    {
+    } catch (const auto_apms_util::exceptions::ResourceError & e) {
       RCLCPP_ERROR(getLogger(), "%s", e.what());
       return false;
     }
     return true;
   }
 
-  void configureBuilder(TreeBuilder& builder) override final
+  void configureBuilder(TreeBuilder & builder) override final
   {
-    if (!resource_ptr_)
-      throw exceptions::TreeBuildError("TreeResourceBuilder - resource_ptr_ is nullptr.");
+    if (!resource_ptr_) throw exceptions::TreeBuildError("TreeResourceBuilder - resource_ptr_ is nullptr.");
     builder.mergeTreesFromResource(*resource_ptr_, getNodePtr());
   }
 

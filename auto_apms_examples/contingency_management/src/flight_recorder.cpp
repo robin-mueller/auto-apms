@@ -41,16 +41,13 @@ struct RecordSample
     position_ptr.reset();
     event_ptr.reset();
   }
-  operator bool() const
-  {
-    return position_ptr && event_ptr;
-  }
+  operator bool() const { return position_ptr && event_ptr; }
 };
 
 class FlightRecorderNode : public rclcpp::Node
 {
 public:
-  FlightRecorderNode(const rclcpp::NodeOptions& options);
+  FlightRecorderNode(const rclcpp::NodeOptions & options);
   ~FlightRecorderNode();
 
 private:
@@ -63,7 +60,7 @@ private:
   std::map<std::chrono::system_clock::time_point, RecordSample> record_;
 };
 
-FlightRecorderNode::FlightRecorderNode(const rclcpp::NodeOptions& options) : Node{ NODE_NAME, options }
+FlightRecorderNode::FlightRecorderNode(const rclcpp::NodeOptions & options) : Node{NODE_NAME, options}
 {
   // Sample interval parameter
   this->declare_parameter(PARAM_NAME_SAMPLE_INTERVAL, 250);
@@ -71,7 +68,7 @@ FlightRecorderNode::FlightRecorderNode(const rclcpp::NodeOptions& options) : Nod
 
   // Path name for recording file
   auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  std::string datetime_str{ std::ctime(&now) };
+  std::string datetime_str{std::ctime(&now)};
   datetime_str.erase(std::remove(datetime_str.begin(), datetime_str.end(), '\n'), datetime_str.cend());
   std::replace(datetime_str.begin(), datetime_str.end(), ' ', '_');
   save_path_ = std::filesystem::path(ament_index_cpp::get_package_share_directory("auto_apms")) / NODE_NAME /
@@ -79,24 +76,22 @@ FlightRecorderNode::FlightRecorderNode(const rclcpp::NodeOptions& options) : Nod
 
   // Record data subscribers
   position_sub_ptr_ = this->create_subscription<VehiclePositionMsg>(
-      "/fmu/out/vehicle_global_position", rclcpp::QoS(1).best_effort(),
-      [this](std::unique_ptr<VehiclePositionMsg> msg) { sample_.position_ptr = std::move(msg); });
+    "/fmu/out/vehicle_global_position", rclcpp::QoS(1).best_effort(),
+    [this](std::unique_ptr<VehiclePositionMsg> msg) { sample_.position_ptr = std::move(msg); });
   event_sub_ptr_ = this->create_subscription<ContingencyEventMsg>(
-      std::string(this->get_namespace()) + CONTINGENCY_EVENT_TOPIC_NAME, 10,
-      [this](std::unique_ptr<ContingencyEventMsg> msg) { sample_.event_ptr = std::move(msg); });
+    std::string(this->get_namespace()) + CONTINGENCY_EVENT_TOPIC_NAME, 10,
+    [this](std::unique_ptr<ContingencyEventMsg> msg) { sample_.event_ptr = std::move(msg); });
 
   sample_timer_ptr_ = this->create_wall_timer(sample_interval, [this]() {
     // If no event was received, set to undefined
-    if (!sample_.event_ptr)
-    {
+    if (!sample_.event_ptr) {
       ContingencyEventMsg undefined_event_msg;
       undefined_event_msg.event_id = ContingencyEventMsg::EVENT_UNDEFINED;
       sample_.event_ptr = std::make_shared<ContingencyEventMsg>(undefined_event_msg);
     }
 
     // Skip sampling when information is not fully available
-    if (!sample_)
-    {
+    if (!sample_) {
       return;
     }
 
@@ -110,8 +105,7 @@ FlightRecorderNode::FlightRecorderNode(const rclcpp::NodeOptions& options) : Nod
 
 FlightRecorderNode::~FlightRecorderNode()
 {
-  if (record_.empty())
-  {
+  if (record_.empty()) {
     RCLCPP_WARN(this->get_logger(), "Did not assemble any data, so nothing will be written");
     return;
   }
@@ -119,9 +113,8 @@ FlightRecorderNode::~FlightRecorderNode()
   RCLCPP_INFO(this->get_logger(), "Saving flight record to '%s'", save_path_.c_str());
   auto dir = save_path_.parent_path();
   std::filesystem::create_directories(dir);
-  std::ofstream out_file{ save_path_ };
-  if (!out_file.is_open())
-  {
+  std::ofstream out_file{save_path_};
+  if (!out_file.is_open()) {
     RCLCPP_ERROR(this->get_logger(), "Failed to open out_file");
     return;
   }
@@ -136,8 +129,7 @@ FlightRecorderNode::~FlightRecorderNode()
   };
 
   // Body
-  for (const auto& rec : record_)
-  {
+  for (const auto & rec : record_) {
     out_file << std::chrono::duration_cast<std::chrono::milliseconds>(rec.first.time_since_epoch()).count() << ','
              << double_to_string(rec.second.position_ptr->lon, 14) << ','
              << double_to_string(rec.second.position_ptr->lat, 14) << ','

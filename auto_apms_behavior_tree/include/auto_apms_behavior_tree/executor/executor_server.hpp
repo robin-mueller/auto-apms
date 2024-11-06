@@ -14,12 +14,12 @@
 
 #pragma once
 
-#include "rclcpp/rclcpp.hpp"
-#include "auto_apms_util/action_context.hpp"
-#include "auto_apms_interfaces/action/start_tree_executor.hpp"
-#include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
 #include "auto_apms_behavior_tree/resource/tree_builder_class_loader.hpp"
+#include "auto_apms_interfaces/action/command_tree_executor.hpp"
+#include "auto_apms_interfaces/action/start_tree_executor.hpp"
+#include "auto_apms_util/action_context.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -41,35 +41,36 @@ public:
    * @param[in] name Name of the rclcpp::Node instance.
    * @param[in] options Options forwarded to rclcpp::Node constructor.
    */
-  TreeExecutorServer(const std::string& name, const rclcpp::NodeOptions& options);
+  TreeExecutorServer(const std::string & name, const rclcpp::NodeOptions & options);
 
   /**
    * @brief Constructor for TreeExecutorServer with default name TreeExecutorServer::DEFAULT_NODE_NAME.
    * @param[in] options Options forwarded to rclcpp::Node constructor.
    */
-  TreeExecutorServer(const rclcpp::NodeOptions& options);
+  TreeExecutorServer(const rclcpp::NodeOptions & options);
 
-  CreateTreeCallback makeCreateTreeCallback(const std::string& tree_builder_name, const std::string& tree_build_request,
-                                            const NodeManifest& node_overrides = {});
+  CreateTreeCallback makeCreateTreeCallback(
+    const std::string & tree_builder_name, const std::string & tree_build_request,
+    const NodeManifest & node_overrides = {});
 
 private:
-  rcl_interfaces::msg::SetParametersResult
-  on_set_parameters_callback_(const std::vector<rclcpp::Parameter>& parameters);
+  rcl_interfaces::msg::SetParametersResult on_set_parameters_callback_(
+    const std::vector<rclcpp::Parameter> & parameters);
 
-  rclcpp_action::GoalResponse handle_start_goal_(const rclcpp_action::GoalUUID& uuid,
-                                                 std::shared_ptr<const StartActionContext::Goal> goal_ptr);
+  rclcpp_action::GoalResponse handle_start_goal_(
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const StartActionContext::Goal> goal_ptr);
   rclcpp_action::CancelResponse handle_start_cancel_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr);
   void handle_start_accept_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr);
 
-  rclcpp_action::GoalResponse handle_command_goal_(const rclcpp_action::GoalUUID& uuid,
-                                                   std::shared_ptr<const CommandActionContext::Goal> goal_ptr);
-  rclcpp_action::CancelResponse
-  handle_command_cancel_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
+  rclcpp_action::GoalResponse handle_command_goal_(
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const CommandActionContext::Goal> goal_ptr);
+  rclcpp_action::CancelResponse handle_command_cancel_(
+    std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
   void handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
 
   bool onTick() override;
 
-  void onTermination(const ExecutionResult& result) override;
+  void onTermination(const ExecutionResult & result) override;
 
   const rclcpp::Logger logger_;
   const executor_params::ParamListener executor_param_listener_;

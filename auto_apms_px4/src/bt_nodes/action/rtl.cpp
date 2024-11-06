@@ -24,10 +24,7 @@ class RTLAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_interf
 public:
   using RosActionNode::RosActionNode;
 
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts({});
-  }
+  static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 };
 
 }  // namespace auto_apms_px4

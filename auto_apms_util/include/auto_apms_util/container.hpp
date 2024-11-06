@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 namespace auto_apms_util
 {

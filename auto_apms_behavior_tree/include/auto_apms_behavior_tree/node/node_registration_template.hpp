@@ -14,41 +14,36 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/node/node_registration_interface.hpp"
-
 #include <boost/core/demangle.hpp>
+
+#include "auto_apms_behavior_tree/node/node_registration_interface.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-template <typename T,
-          bool requires_ros_node_params =
-              std::is_constructible<T, const std::string&, const BT::NodeConfig&, const RosNodeContext&>::value>
+template <
+  typename T, bool requires_ros_node_params =
+                std::is_constructible<T, const std::string &, const BT::NodeConfig &, const RosNodeContext &>::value>
 class NodeRegistrationTemplate : public NodeRegistrationInterface
 {
 public:
   NodeRegistrationTemplate() = default;
   virtual ~NodeRegistrationTemplate() = default;
 
-  bool requiresROSNodeParams() const override
-  {
-    return requires_ros_node_params;
-  }
+  bool requiresROSNodeParams() const override { return requires_ros_node_params; }
 
-  void registerWithBehaviorTreeFactory(BT::BehaviorTreeFactory& factory, const std::string& registration_name,
-                                       const RosNodeContext* const params_ptr = nullptr) const override
+  void registerWithBehaviorTreeFactory(
+    BT::BehaviorTreeFactory & factory, const std::string & registration_name,
+    const RosNodeContext * const params_ptr = nullptr) const override
   {
-    if constexpr (requires_ros_node_params)
-    {
-      if (!params_ptr)
-      {
-        throw std::runtime_error(boost::core::demangle(typeid(T).name()) +
-                                 " requires a valid RosNodeContext object to be passed via argument 'params_ptr'.");
+    if constexpr (requires_ros_node_params) {
+      if (!params_ptr) {
+        throw std::runtime_error(
+          boost::core::demangle(typeid(T).name()) +
+          " requires a valid RosNodeContext object to be passed via argument 'params_ptr'.");
       }
       factory.registerNodeType<T>(registration_name, *params_ptr);
-    }
-    else
-    {
+    } else {
       factory.registerNodeType<T>(registration_name);
     }
   }

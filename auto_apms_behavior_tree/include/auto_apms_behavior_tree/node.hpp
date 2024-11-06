@@ -14,12 +14,11 @@
 
 #pragma once
 
+#include "auto_apms_behavior_tree/node/node_registration_template.hpp"
 #include "auto_apms_behavior_tree/node/ros_action_node.hpp"
 #include "auto_apms_behavior_tree/node/ros_publisher_node.hpp"
 #include "auto_apms_behavior_tree/node/ros_service_node.hpp"
 #include "auto_apms_behavior_tree/node/ros_subscriber_node.hpp"
-
-#include "auto_apms_behavior_tree/node/node_registration_template.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 /**
@@ -27,6 +26,6 @@
  * @brief Macro for registering a behavior tree node plugin.
  * @param type Fully qualified name of the class.
  */
-#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(type)                                                                    \
-  PLUGINLIB_EXPORT_CLASS(auto_apms_behavior_tree::NodeRegistrationTemplate<type>,                                      \
-                         auto_apms_behavior_tree::NodeRegistrationInterface)
+#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(type) \
+  PLUGINLIB_EXPORT_CLASS(                           \
+    auto_apms_behavior_tree::NodeRegistrationTemplate<type>, auto_apms_behavior_tree::NodeRegistrationInterface)

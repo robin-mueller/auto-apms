@@ -21,9 +21,8 @@ const std::string TreeBuilderClassLoader::BASE_PACKAGE_NAME = "auto_apms_behavio
 const std::string TreeBuilderClassLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::TreeBuilderFactoryInterface";
 const std::string TreeBuilderClassLoader::RESOURCE_TYPE_NAME = _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__BUILDER;
 
-TreeBuilderClassLoader::TreeBuilderClassLoader(const std::set<std::string>& search_packages)
-  : ResourceClassLoader(
-        createWithAmbiguityCheck(BASE_PACKAGE_NAME, BASE_CLASS_NAME, RESOURCE_TYPE_NAME, search_packages))
+TreeBuilderClassLoader::TreeBuilderClassLoader(const std::set<std::string> & search_packages)
+: ResourceClassLoader(createWithAmbiguityCheck(BASE_PACKAGE_NAME, BASE_CLASS_NAME, RESOURCE_TYPE_NAME, search_packages))
 {
 }
 

@@ -19,22 +19,21 @@
 
 #include "yaml-cpp/yaml.h"
 
-#define AUTO_APMS_DEFINE_YAML_INTERPRETER_METHODS(ClassType)                                                           \
-  static ClassType decode(const std::string& str)                                                                      \
-  {                                                                                                                    \
-    const bool empty = std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isspace(c); });           \
-    return empty ? ClassType() : YAML::Load(str).as<ClassType>();                                                      \
-  }                                                                                                                    \
-  std::string encode() const                                                                                           \
-  {                                                                                                                    \
-    YAML::Node root;                                                                                                   \
-    root = *this;                                                                                                      \
-    YAML::Emitter out;                                                                                                 \
-    out << root;                                                                                                       \
-    if (!out.good())                                                                                                   \
-    {                                                                                                                  \
-      throw std::runtime_error("Error trying to encode " + boost::core::demangle(typeid(ClassType).name()) + ": " +    \
-                               out.GetLastError());                                                                    \
-    }                                                                                                                  \
-    return out.c_str();                                                                                                \
+#define AUTO_APMS_DEFINE_YAML_INTERPRETER_METHODS(ClassType)                                                      \
+  static ClassType decode(const std::string & str)                                                                \
+  {                                                                                                               \
+    const bool empty = std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isspace(c); });      \
+    return empty ? ClassType() : YAML::Load(str).as<ClassType>();                                                 \
+  }                                                                                                               \
+  std::string encode() const                                                                                      \
+  {                                                                                                               \
+    YAML::Node root;                                                                                              \
+    root = *this;                                                                                                 \
+    YAML::Emitter out;                                                                                            \
+    out << root;                                                                                                  \
+    if (!out.good()) {                                                                                            \
+      throw std::runtime_error(                                                                                   \
+        "Error trying to encode " + boost::core::demangle(typeid(ClassType).name()) + ": " + out.GetLastError()); \
+    }                                                                                                             \
+    return out.c_str();                                                                                           \
   }

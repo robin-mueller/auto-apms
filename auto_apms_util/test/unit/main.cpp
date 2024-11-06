@@ -31,8 +31,7 @@ public:
 
   bool onGoalRequest(std::shared_ptr<const Goal> goal_ptr) override
   {
-    if (goal_ptr->request == 1)
-    {
+    if (goal_ptr->request == 1) {
       return false;
     }
     return true;
@@ -40,39 +39,31 @@ public:
 
   void setInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
   {
-    if (goal_ptr->request == 2)
-    {
+    if (goal_ptr->request == 2) {
       result_ptr->result = 1;
     }
-    if (goal_ptr->request == 3)
-    {
+    if (goal_ptr->request == 3) {
       result_ptr->result = 10;
     }
   }
   bool onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
   {
-    if (goal_ptr->request == 5)
-    {
+    if (goal_ptr->request == 5) {
       return false;
     }
-    if (goal_ptr->request == 7)
-    {
+    if (goal_ptr->request == 7) {
       result_ptr->result = 20;
     }
     return true;
   }
   ActionStatus cancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr) override
   {
-    switch (goal_ptr->request)
-    {
+    switch (goal_ptr->request) {
       case 6:
         // CancelGoalReject
-        if (++result_ptr->result < 23)
-        {
+        if (++result_ptr->result < 23) {
           return ActionStatus::RUNNING;
-        }
-        else
-        {
+        } else {
           return ActionStatus::SUCCESS;
         }
       case 8:
@@ -83,22 +74,19 @@ public:
         throw std::logic_error("Unexpected goal request in cancelGoal: " + std::to_string(goal_ptr->request));
     }
   }
-  ActionStatus executeGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
-                           std::shared_ptr<Result> result_ptr) override
+  ActionStatus executeGoal(
+    std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+    std::shared_ptr<Result> result_ptr) override
   {
-    switch (goal_ptr->request)
-    {
+    switch (goal_ptr->request) {
       case 2:
         // InitialResult
         return ActionStatus::SUCCESS;
       case 3:
         // ExecuteGoal
-        if (++result_ptr->result < 13)
-        {
+        if (++result_ptr->result < 13) {
           return ActionStatus::RUNNING;
-        }
-        else
-        {
+        } else {
           return ActionStatus::SUCCESS;
         }
       case 4:
@@ -203,8 +191,9 @@ TEST_F(TestFixture, SendFeedback)
 {
   goal.request = 4;
   ActionClientWrapper<ActionType>::SendGoalOptions send_goal_options;
-  send_goal_options.feedback_callback = [this](ActionClientWrapper<ActionType>::ClientGoalHandle::SharedPtr,
-                                               const std::shared_ptr<const ActionClientWrapper<ActionType>::Feedback>) {
+  send_goal_options.feedback_callback = [this](
+                                          ActionClientWrapper<ActionType>::ClientGoalHandle::SharedPtr,
+                                          const std::shared_ptr<const ActionClientWrapper<ActionType>::Feedback>) {
     action_server_ptr->feeback_received = true;
   };
 
@@ -312,7 +301,7 @@ TEST_F(TestFixture, CancelGoalAbort)
   ASSERT_EQ(result->result->result, 40) << "Result has unexpected value";
 }
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);

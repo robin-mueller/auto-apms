@@ -23,16 +23,15 @@ namespace auto_apms_px4
 class MissionTask : public ModeExecutor<auto_apms_interfaces::action::Mission>
 {
 public:
-  explicit MissionTask(const rclcpp::NodeOptions& options)
-    : ModeExecutor{ MISSION_TASK_NAME, options, FlightMode::Mission }
+  explicit MissionTask(const rclcpp::NodeOptions & options)
+  : ModeExecutor{MISSION_TASK_NAME, options, FlightMode::Mission}
   {
   }
 
 private:
-  bool sendActivationCommand(const VehicleCommandClient& client, std::shared_ptr<const Goal> goal_ptr) final
+  bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr) final
   {
-    if (goal_ptr->do_restart)
-    {
+    if (goal_ptr->do_restart) {
       return client.StartMission();
     }
     return client.SyncActivateFlightMode(FlightMode::Mission);

@@ -15,6 +15,7 @@
 #pragma once
 
 #include <string.h>
+
 #include <vector>
 
 // Additionally include some string utils from rcpputils
@@ -47,7 +48,8 @@ enum class TextColor
  * @param[in] preserve_empty Preserve empty string tokens in the result vector.
  * @return Vector of string representing the string's tokens without the delimiter.
  */
-std::vector<std::string> splitString(const std::string& str, const std::string& delimiter, bool preserve_empty = true);
+std::vector<std::string> splitString(
+  const std::string & str, const std::string & delimiter, bool preserve_empty = true);
 
 /**
  * @brief Add ANSI color escape sequences to display the text in color when printed to console.
@@ -59,7 +61,7 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
  * @param color Desired color of the text.
  * @return String including corresponding ANSI color escape sequences.
  */
-std::string makeColoredText(const std::string& text, TextColor color);
+std::string makeColoredText(const std::string & text, TextColor color);
 
 /// @}
 }  // namespace auto_apms_util

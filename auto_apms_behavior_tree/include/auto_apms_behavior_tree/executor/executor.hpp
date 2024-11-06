@@ -17,12 +17,11 @@
 #include <functional>
 #include <future>
 
-#include "behaviortree_cpp/loggers/groot2_publisher.h"
-#include "rclcpp/node.hpp"
-
-#include "executor_params.hpp"
-#include "auto_apms_behavior_tree/executor/state_observer.hpp"
 #include "auto_apms_behavior_tree/definitions.hpp"
+#include "auto_apms_behavior_tree/executor/state_observer.hpp"
+#include "behaviortree_cpp/loggers/groot2_publisher.h"
+#include "executor_params.hpp"
+#include "rclcpp/node.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -59,7 +58,7 @@ public:
   };
 
 private:
-  using TerminationCallback = std::function<void(ExecutionResult, const std::string&)>;
+  using TerminationCallback = std::function<void(ExecutionResult, const std::string &)>;
 
 public:
   using CreateTreeCallback = std::function<Tree(TreeBlackboardSharedPtr)>;
@@ -86,14 +85,14 @@ private:
 
   virtual TreeExitBehavior onTreeExit(bool success);
 
-  virtual void onTermination(const ExecutionResult& result);
+  virtual void onTermination(const ExecutionResult & result);
 
 public:
   /* Setter functions */
 
   void setControlCommand(ControlCommand cmd);
 
-  void setExecutorParameters(const ExecutorParams& p);
+  void setExecutorParameters(const ExecutorParams & p);
 
   /* Getter functions */
 
@@ -113,7 +112,7 @@ public:
 
   ExecutorParams getExecutorParameters();
 
-  BTStateObserver& getStateObserver();
+  BTStateObserver & getStateObserver();
 
 private:
   rclcpp::Node::SharedPtr node_ptr_;

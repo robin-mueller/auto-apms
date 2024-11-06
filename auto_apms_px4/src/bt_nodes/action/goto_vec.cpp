@@ -30,28 +30,22 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(
-        { BT::InputPort<Eigen::Vector3d>(INPUT_KEY_VEC, "Target position as a pointer to a vector") });
+      {BT::InputPort<Eigen::Vector3d>(INPUT_KEY_VEC, "Target position as a pointer to a vector")});
   }
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
-    if (auto any_locked = getLockedPortContent(INPUT_KEY_VEC))
-    {
-      if (any_locked->empty())
-      {
+    if (auto any_locked = getLockedPortContent(INPUT_KEY_VEC)) {
+      if (any_locked->empty()) {
         RCLCPP_ERROR(logger_, "%s - Value at blackboard entry {%s} is empty", name().c_str(), INPUT_KEY_VEC);
         return false;
-      }
-      else if (Eigen::Vector3d* vec_ptr = any_locked->castPtr<Eigen::Vector3d>())
-      {
+      } else if (Eigen::Vector3d * vec_ptr = any_locked->castPtr<Eigen::Vector3d>()) {
         goal.lat = vec_ptr->x();
         goal.lon = vec_ptr->y();
         goal.alt = vec_ptr->z();
         goal.head_towards_destination = true;
         return true;
-      }
-      else
-      {
+      } else {
         RCLCPP_ERROR(logger_, "%s - Failed to cast pointer {%s}", name().c_str(), INPUT_KEY_VEC);
         return false;
       }

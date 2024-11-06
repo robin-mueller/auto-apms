@@ -33,14 +33,13 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(
-        { BT::OutputPort<float>(OUTPUT_KEY_BATTERY, "{battery_level}", "Battery level in percent") });
+      {BT::OutputPort<float>(OUTPUT_KEY_BATTERY, "{battery_level}", "Battery level in percent")});
   }
 
-  BT::NodeStatus onTick(const std::shared_ptr<SystemStateMsg>& last_msg_ptr) override final
+  BT::NodeStatus onTick(const std::shared_ptr<SystemStateMsg> & last_msg_ptr) override final
   {
     // Check if a new message was received
-    if (last_msg_ptr)
-    {
+    if (last_msg_ptr) {
       last_msg_ = *last_msg_ptr;
     }
 

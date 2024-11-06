@@ -23,12 +23,9 @@ class DisarmAction : public auto_apms_behavior_tree::RosActionNode<auto_apms_int
 public:
   using RosActionNode::RosActionNode;
 
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts({});
-  }
+  static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
     goal.arming_state = Goal::ARMING_STATE_DISARM;
     return true;

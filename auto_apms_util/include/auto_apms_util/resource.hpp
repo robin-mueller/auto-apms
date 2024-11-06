@@ -14,15 +14,15 @@
 
 #pragma once
 
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <map>
 
-#include "pluginlib/class_loader.hpp"
 #include "auto_apms_util/container.hpp"
-#include "auto_apms_util/string.hpp"
 #include "auto_apms_util/exceptions.hpp"
+#include "auto_apms_util/string.hpp"
+#include "pluginlib/class_loader.hpp"
 
 namespace auto_apms_util
 {
@@ -39,7 +39,7 @@ namespace auto_apms_util
  * @return Package names.
  * @throws exceptions::ResourceError if no resources of type @p resource_type were found.
  */
-std::set<std::string> getAllPackagesWithResource(const std::string& resource_type);
+std::set<std::string> getAllPackagesWithResource(const std::string & resource_type);
 
 /**
  * @brief Collect the paths of plugin.xml manifest files used for initializing pluginlib::ClassLoader objects.
@@ -56,8 +56,8 @@ std::set<std::string> getAllPackagesWithResource(const std::string& resource_typ
  * in @p search_packages.
  * @throw auto_apms_util::exceptions::ResourceError if an `ament_index` resource marker file is invalid.
  */
-std::vector<std::string> collectPluginXMLPaths(const std::string& resource_type,
-                                               const std::set<std::string>& search_packages = {});
+std::vector<std::string> collectPluginXMLPaths(
+  const std::string & resource_type, const std::set<std::string> & search_packages = {});
 
 /// @}
 
@@ -83,8 +83,9 @@ public:
    * @param plugin_xml_paths List of plugins.xml files to parse for determining the available classes.
    * @throws ament_index_cpp::PackageNotFoundError if @p base_package is not installed.
    */
-  ResourceClassLoader(const std::string& base_package, const std::string& base_class,
-                      const std::vector<std::string>& plugin_xml_paths);
+  ResourceClassLoader(
+    const std::string & base_package, const std::string & base_class,
+    const std::vector<std::string> & plugin_xml_paths);
 
   /**
    * @brief Parse all associated plugin manifest files registered with the ament resource index and instantiate a
@@ -110,10 +111,9 @@ public:
    * - ResourceClassLoader::ResourceClassLoader()
    * - collectPluginXMLPaths()
    */
-  static ResourceClassLoader createWithAmbiguityCheck(const std::string& base_package, const std::string& base_class,
-                                                      const std::string& resource_type,
-                                                      const std::set<std::string>& search_packages = {},
-                                                      const std::map<std::string, std::string>& reserved_names = {});
+  static ResourceClassLoader createWithAmbiguityCheck(
+    const std::string & base_package, const std::string & base_class, const std::string & resource_type,
+    const std::set<std::string> & search_packages = {}, const std::map<std::string, std::string> & reserved_names = {});
 };
 
 // #####################################################################################################################
@@ -121,55 +121,50 @@ public:
 // #####################################################################################################################
 
 template <typename BaseT>
-inline ResourceClassLoader<BaseT>::ResourceClassLoader(const std::string& base_package, const std::string& base_class,
-                                                       const std::vector<std::string>& plugin_xml_paths)
-  : pluginlib::ClassLoader<BaseT>(base_package, base_class, "", plugin_xml_paths)
+inline ResourceClassLoader<BaseT>::ResourceClassLoader(
+  const std::string & base_package, const std::string & base_class, const std::vector<std::string> & plugin_xml_paths)
+: pluginlib::ClassLoader<BaseT>(base_package, base_class, "", plugin_xml_paths)
 {
 }
 
 template <typename BaseT>
 inline ResourceClassLoader<BaseT> ResourceClassLoader<BaseT>::createWithAmbiguityCheck(
-    const std::string& base_package, const std::string& base_class, const std::string& resource_type,
-    const std::set<std::string>& search_packages, const std::map<std::string, std::string>& reserved_names)
+  const std::string & base_package, const std::string & base_class, const std::string & resource_type,
+  const std::set<std::string> & search_packages, const std::map<std::string, std::string> & reserved_names)
 {
   const auto packages_with_resource =
-      search_packages.empty() ? getAllPackagesWithResource(resource_type) : search_packages;
+    search_packages.empty() ? getAllPackagesWithResource(resource_type) : search_packages;
   std::map<std::string, std::vector<std::string>> packages_for_class_name;
-  for (const auto& package : packages_with_resource)
-  {
+  for (const auto & package : packages_with_resource) {
     const std::vector<std::string> loader_names =
-        pluginlib::ClassLoader<BaseT>(base_package, base_class, "", collectPluginXMLPaths(resource_type, { package }))
-            .getDeclaredClasses();
-    for (const auto& class_name : loader_names)
-    {
+      pluginlib::ClassLoader<BaseT>(base_package, base_class, "", collectPluginXMLPaths(resource_type, {package}))
+        .getDeclaredClasses();
+    for (const auto & class_name : loader_names) {
       packages_for_class_name[class_name].push_back(package);
     }
   }
 
   // Include reserved names in map
-  for (const auto& [class_name, package] : reserved_names)
-  {
+  for (const auto & [class_name, package] : reserved_names) {
     packages_for_class_name[class_name].push_back(package);
   }
 
   // Determine if there are duplicate class names
   std::vector<std::string> error_details;
-  for (const auto& [class_name, packages] : packages_for_class_name)
-  {
-    if (packages.size() > 1)
-    {
-      error_details.push_back("- Class '" + class_name + "' found in packages ['" + rcpputils::join(packages, "', '") +
-                              "'].");
+  for (const auto & [class_name, packages] : packages_for_class_name) {
+    if (packages.size() > 1) {
+      error_details.push_back(
+        "- Class '" + class_name + "' found in packages ['" + rcpputils::join(packages, "', '") + "'].");
     }
   }
-  if (!error_details.empty())
-  {
-    throw exceptions::ResourceError("Ambiguous class names found! ResourceClassLoader (Base: '" + base_class +
-                                    "') created with createWithAmbiguityCheck() won't register resources from packages "
-                                    "that use already existing lookup names. Found the following duplicates:\n" +
-                                    rcpputils::join(error_details, "\n"));
+  if (!error_details.empty()) {
+    throw exceptions::ResourceError(
+      "Ambiguous class names found! ResourceClassLoader (Base: '" + base_class +
+      "') created with createWithAmbiguityCheck() won't register resources from packages "
+      "that use already existing lookup names. Found the following duplicates:\n" +
+      rcpputils::join(error_details, "\n"));
   }
-  return { base_package, base_class, collectPluginXMLPaths(resource_type, packages_with_resource) };
+  return {base_package, base_class, collectPluginXMLPaths(resource_type, packages_with_resource)};
 }
 
 }  // namespace auto_apms_util

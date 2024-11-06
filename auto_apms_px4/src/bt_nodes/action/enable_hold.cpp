@@ -24,12 +24,9 @@ class EnableHoldAction : public auto_apms_behavior_tree::RosActionNode<auto_apms
 public:
   using RosActionNode::RosActionNode;
 
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts({});
-  }
+  static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
     (void)goal;
     return true;

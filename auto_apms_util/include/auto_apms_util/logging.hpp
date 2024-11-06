@@ -19,6 +19,6 @@
 namespace auto_apms_util
 {
 
-void exposeToDebugLogging(const rclcpp::Logger& logger);
+void exposeToDebugLogging(const rclcpp::Logger & logger);
 
 }  // namespace auto_apms_util

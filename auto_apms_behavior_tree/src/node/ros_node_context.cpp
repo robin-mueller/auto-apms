@@ -16,18 +16,17 @@
 
 namespace auto_apms_behavior_tree
 {
-RosNodeContext::RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams& tree_node_params)
-  : nh(node_ptr)
-  , default_port_name(tree_node_params.port)
-  , wait_for_server_timeout(tree_node_params.wait_timeout)
-  , request_timeout(tree_node_params.request_timeout)
+RosNodeContext::RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams & tree_node_params)
+: nh(node_ptr),
+  default_port_name(tree_node_params.port),
+  wait_for_server_timeout(tree_node_params.wait_timeout),
+  request_timeout(tree_node_params.request_timeout)
 {
 }
 
 rclcpp::Logger RosNodeContext::getLogger() const
 {
-  if (const auto node = nh.lock())
-  {
+  if (const auto node = nh.lock()) {
     return node->get_logger();
   }
   return rclcpp::get_logger("RosTreeNode");
@@ -35,8 +34,7 @@ rclcpp::Logger RosNodeContext::getLogger() const
 
 rclcpp::Time RosNodeContext::getCurrentTime() const
 {
-  if (const auto node = nh.lock())
-  {
+  if (const auto node = nh.lock()) {
     return node->now();
   }
   return rclcpp::Clock(RCL_ROS_TIME).now();

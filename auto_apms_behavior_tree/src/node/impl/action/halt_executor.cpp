@@ -23,7 +23,7 @@ class HaltExecutorAction : public RosActionNode<auto_apms_interfaces::action::Co
 public:
   using RosActionNode::RosActionNode;
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
     goal.command = Goal::COMMAND_HALT;
     return true;

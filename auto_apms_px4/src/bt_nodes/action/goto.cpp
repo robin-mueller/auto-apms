@@ -29,12 +29,13 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({ BT::InputPort<double>(INPUT_KEY_LATITUDE, "Target latitude"),
-                                BT::InputPort<double>(INPUT_KEY_LONGITUDE, "Target longitude"),
-                                BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target altitude in meter (AMSL)") });
+    return providedBasicPorts(
+      {BT::InputPort<double>(INPUT_KEY_LATITUDE, "Target latitude"),
+       BT::InputPort<double>(INPUT_KEY_LONGITUDE, "Target longitude"),
+       BT::InputPort<double>(INPUT_KEY_ALTITUDE, "Target altitude in meter (AMSL)")});
   }
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
     goal.lat = getInput<double>(INPUT_KEY_LATITUDE).value();
     goal.lon = getInput<double>(INPUT_KEY_LONGITUDE).value();

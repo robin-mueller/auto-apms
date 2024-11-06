@@ -21,9 +21,8 @@ const std::string NodeRegistrationClassLoader::BASE_PACKAGE_NAME = "auto_apms_be
 const std::string NodeRegistrationClassLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::NodeRegistrationInterface";
 const std::string NodeRegistrationClassLoader::RESOURCE_TYPE_NAME = _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE;
 
-NodeRegistrationClassLoader::NodeRegistrationClassLoader(const std::set<std::string>& search_packages)
-  : ResourceClassLoader(
-        createWithAmbiguityCheck(BASE_PACKAGE_NAME, BASE_CLASS_NAME, RESOURCE_TYPE_NAME, search_packages))
+NodeRegistrationClassLoader::NodeRegistrationClassLoader(const std::set<std::string> & search_packages)
+: ResourceClassLoader(createWithAmbiguityCheck(BASE_PACKAGE_NAME, BASE_CLASS_NAME, RESOURCE_TYPE_NAME, search_packages))
 {
 }
 

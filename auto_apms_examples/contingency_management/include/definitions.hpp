@@ -30,8 +30,7 @@ const char LANDING_APPROCH_TOPIC_NAME[] = "landing_approach";
 
 inline std::string toStr(ContingencyEventMsg msg)
 {
-  switch (msg.event_id)
-  {
+  switch (msg.event_id) {
     case ContingencyEventMsg::NO_EVENT:
       return "NO_EVENT";
     case ContingencyEventMsg::EVENT_BATTERY_CRITICAL:
@@ -48,14 +47,12 @@ inline std::string toStr(ContingencyEventMsg msg)
   return "undefined";
 }
 
-inline void RegisterContingencyEventEnum(BT::BehaviorTreeFactory& factory)
+inline void RegisterContingencyEventEnum(BT::BehaviorTreeFactory & factory)
 {
   ContingencyEventMsg event_msg;
-  for (int i = 0; i <= UINT8_MAX; i++)
-  {
+  for (int i = 0; i <= UINT8_MAX; i++) {
     event_msg.event_id = i;
-    if (auto str = toStr(event_msg); str != "undefined")
-    {
+    if (auto str = toStr(event_msg); str != "undefined") {
       factory.registerScriptingEnum(str, event_msg.event_id);
     }
   }

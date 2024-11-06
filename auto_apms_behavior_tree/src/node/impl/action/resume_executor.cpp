@@ -23,7 +23,7 @@ class ResumeExecutorAction : public RosActionNode<auto_apms_interfaces::action::
 public:
   using RosActionNode::RosActionNode;
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
     goal.command = Goal::COMMAND_RESUME;
     return true;

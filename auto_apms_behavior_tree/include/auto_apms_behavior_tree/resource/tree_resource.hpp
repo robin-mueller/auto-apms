@@ -45,11 +45,11 @@ public:
    * @param package_name Name of the package to search for resources.
    * @return Collection of all resources found in @p package_name.
    */
-  static std::vector<TreeResource> collectFromPackage(const std::string& package_name);
+  static std::vector<TreeResource> collectFromPackage(const std::string & package_name);
 
-  static TreeResource selectByTreeName(const std::string& tree_name, const std::string& package_name = "");
+  static TreeResource selectByTreeName(const std::string & tree_name, const std::string & package_name = "");
 
-  static TreeResource selectByFileName(const std::string& file_name, const std::string& package_name = "");
+  static TreeResource selectByFileName(const std::string & file_name, const std::string & package_name = "");
 
   /**
    * @brief Find a behavior tree resource using an identity string.
@@ -84,7 +84,7 @@ public:
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
    * identity string.
    */
-  static TreeResource fromString(const std::string& identity);
+  static TreeResource fromString(const std::string & identity);
 
   std::string writeTreeToString() const;
 };

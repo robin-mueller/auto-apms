@@ -17,16 +17,16 @@
 #include <chrono>
 #include <string>
 
-#include "rclcpp/node.hpp"
-#include "behaviortree_cpp/tree_node.h"
 #include "auto_apms_behavior_tree/node/node_registration_params.hpp"
+#include "behaviortree_cpp/tree_node.h"
+#include "rclcpp/node.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 struct RosNodeContext
 {
-  RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams& tree_node_params);
+  RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams & tree_node_params);
 
   /// Handle for the ROS2 node.
   std::weak_ptr<rclcpp::Node> nh;

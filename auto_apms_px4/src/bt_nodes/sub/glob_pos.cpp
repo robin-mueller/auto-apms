@@ -32,35 +32,35 @@ class ReadGlobalPosition : public auto_apms_behavior_tree::RosSubscriberNode<Glo
   GlobalPositionMsg last_msg_;
 
 public:
-  ReadGlobalPosition(const std::string& instance_name, const Config& config, const Context& context)
-    : RosSubscriberNode{ instance_name, config, context, rclcpp::SensorDataQoS{} }
+  ReadGlobalPosition(const std::string & instance_name, const Config & config, const Context & context)
+  : RosSubscriberNode{instance_name, config, context, rclcpp::SensorDataQoS{}}
   {
   }
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({ BT::OutputPort<Eigen::Vector3d>(OUTPUT_KEY_POS, "{pos_vec}",
-                                                                "Current global position vector (latitude [°], "
-                                                                "longitude [°], altitude AMSL [m])"),
-                                BT::OutputPort<double>(OUTPUT_KEY_LAT, "{lat}", "Current latitude in degree [°]"),
-                                BT::OutputPort<double>(OUTPUT_KEY_LON, "{lon}", "Current longitude in degree [°]"),
-                                BT::OutputPort<double>(OUTPUT_KEY_ALT, "{alt}", "Current altitude in meter (AMSL)") });
+    return providedBasicPorts(
+      {BT::OutputPort<Eigen::Vector3d>(
+         OUTPUT_KEY_POS, "{pos_vec}",
+         "Current global position vector (latitude [°], "
+         "longitude [°], altitude AMSL [m])"),
+       BT::OutputPort<double>(OUTPUT_KEY_LAT, "{lat}", "Current latitude in degree [°]"),
+       BT::OutputPort<double>(OUTPUT_KEY_LON, "{lon}", "Current longitude in degree [°]"),
+       BT::OutputPort<double>(OUTPUT_KEY_ALT, "{alt}", "Current altitude in meter (AMSL)")});
   }
 
-  BT::NodeStatus onTick(const std::shared_ptr<GlobalPositionMsg>& last_msg_ptr) final
+  BT::NodeStatus onTick(const std::shared_ptr<GlobalPositionMsg> & last_msg_ptr) final
   {
     // Check if a new message was received
-    if (last_msg_ptr)
-    {
+    if (last_msg_ptr) {
       last_msg_ = *last_msg_ptr;
     }
 
-    if (auto any_locked = getLockedPortContent(OUTPUT_KEY_POS))
-    {
+    if (auto any_locked = getLockedPortContent(OUTPUT_KEY_POS)) {
       setOutput(OUTPUT_KEY_LAT, last_msg_.lat);
       setOutput(OUTPUT_KEY_LON, last_msg_.lon);
       setOutput(OUTPUT_KEY_ALT, last_msg_.alt);
-      Eigen::Vector3d pos{ last_msg_.lat, last_msg_.lon, last_msg_.alt };
+      Eigen::Vector3d pos{last_msg_.lat, last_msg_.lon, last_msg_.alt};
       any_locked.assign(pos);
       return BT::NodeStatus::SUCCESS;
     }

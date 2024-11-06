@@ -29,7 +29,7 @@ namespace auto_apms::ops_engine
 class AsyncPrecondition : public BT::DecoratorNode
 {
 public:
-  AsyncPrecondition(const std::string& name, const BT::NodeConfig& config) : DecoratorNode(name, config)
+  AsyncPrecondition(const std::string & name, const BT::NodeConfig & config) : DecoratorNode(name, config)
   {
     loadExecutor();
   }
@@ -38,15 +38,17 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return { BT::InputPort<std::string>(INPUT_KEY_IF,
-                                        "If true, return RUNNING. Otherwise, return what's specified in argument '" +
-                                            std::string(INPUT_KEY_ELSE) + "'"),
-             BT::InputPort<BT::NodeStatus>(INPUT_KEY_ELSE, BT::NodeStatus::SKIPPED,
-                                           "Return status if condition is "
-                                           "false"),
-             BT::InputPort<bool>(INPUT_KEY_CHECK_WHILE_RUNNING, false,
-                                 "Check the condition in argument '" + std::string(INPUT_KEY_IF) +
-                                     "' also while the child is RUNNING") };
+    return {
+      BT::InputPort<std::string>(
+        INPUT_KEY_IF, "If true, return RUNNING. Otherwise, return what's specified in argument '" +
+                        std::string(INPUT_KEY_ELSE) + "'"),
+      BT::InputPort<BT::NodeStatus>(
+        INPUT_KEY_ELSE, BT::NodeStatus::SKIPPED,
+        "Return status if condition is "
+        "false"),
+      BT::InputPort<bool>(
+        INPUT_KEY_CHECK_WHILE_RUNNING, false,
+        "Check the condition in argument '" + std::string(INPUT_KEY_IF) + "' also while the child is RUNNING")};
   }
 
 private:
@@ -54,36 +56,31 @@ private:
   {
     // Load the result of the condition
     loadExecutor();
-    BT::Ast::Environment env = { config().blackboard, config().enums };
+    BT::Ast::Environment env = {config().blackboard, config().enums};
     bool condition_result = _executor(env).cast<bool>();
 
     BT::NodeStatus else_return;
-    if (!getInput(INPUT_KEY_ELSE, else_return))
-    {
-      throw auto_apms_behavior_tree::exceptions::RosNodeError("Missing parameter [" + std::string(INPUT_KEY_ELSE) +
-                                                              "] in Precondition");
+    if (!getInput(INPUT_KEY_ELSE, else_return)) {
+      throw auto_apms_behavior_tree::exceptions::RosNodeError(
+        "Missing parameter [" + std::string(INPUT_KEY_ELSE) + "] in Precondition");
     }
 
     // Return RUNNING the first time the condition is true
-    if (status() == BT::NodeStatus::IDLE)
-    {
-      if (condition_result)
-      {
+    if (status() == BT::NodeStatus::IDLE) {
+      if (condition_result) {
         setStatus(BT::NodeStatus::RUNNING);  // Change the current status
         return BT::NodeStatus::RUNNING;
       }
       return else_return;
     }
 
-    if (getInput<bool>(INPUT_KEY_CHECK_WHILE_RUNNING).value() && !condition_result)
-    {
+    if (getInput<bool>(INPUT_KEY_CHECK_WHILE_RUNNING).value() && !condition_result) {
       return else_return;
     }
 
     // Propagate the tick
     auto const child_status = child_node_->executeTick();
-    if (isStatusCompleted(child_status))
-    {
+    if (isStatusCompleted(child_status)) {
       resetChild();
     }
     return child_status;
@@ -92,22 +89,17 @@ private:
   void loadExecutor()
   {
     std::string script;
-    if (!getInput(INPUT_KEY_IF, script))
-    {
-      throw auto_apms_behavior_tree::exceptions::RosNodeError("Missing parameter [" + std::string(INPUT_KEY_IF) +
-                                                              "] in Precondition");
+    if (!getInput(INPUT_KEY_IF, script)) {
+      throw auto_apms_behavior_tree::exceptions::RosNodeError(
+        "Missing parameter [" + std::string(INPUT_KEY_IF) + "] in Precondition");
     }
-    if (script == _script)
-    {
+    if (script == _script) {
       return;
     }
     auto executor = BT::ParseScript(script);
-    if (!executor)
-    {
+    if (!executor) {
       throw auto_apms_behavior_tree::exceptions::RosNodeError(executor.error());
-    }
-    else
-    {
+    } else {
       _executor = executor.value();
       _script = script;
     }

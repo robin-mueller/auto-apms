@@ -19,12 +19,11 @@
 namespace auto_apms_util
 {
 
-void exposeToDebugLogging(const rclcpp::Logger& logger)
+void exposeToDebugLogging(const rclcpp::Logger & logger)
 {
 #ifdef _AUTO_APMS_DEBUG_LOGGING
   auto ret = rcutils_logging_set_logger_level(logger.get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
-  if (ret != RCUTILS_RET_OK)
-  {
+  if (ret != RCUTILS_RET_OK) {
     RCLCPP_ERROR(logger, "Error setting severity: %s", rcutils_get_error_string().str);
     rcutils_reset_error();
   }

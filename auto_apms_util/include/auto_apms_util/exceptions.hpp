@@ -25,9 +25,7 @@ namespace auto_apms_util::exceptions
 class ExceptionBase : public std::runtime_error
 {
 public:
-  explicit inline ExceptionBase(const std::string& msg) : std::runtime_error(msg)
-  {
-  }
+  explicit inline ExceptionBase(const std::string & msg) : std::runtime_error(msg) {}
 };
 
 struct ResourceError : public ExceptionBase

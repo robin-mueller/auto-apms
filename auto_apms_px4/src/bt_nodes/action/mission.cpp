@@ -28,11 +28,11 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({ BT::InputPort<bool>(INPUT_KEY_DO_RESTART, false,
-                                                    "Wether to restart (true) or resume (false) the mission.") });
+    return providedBasicPorts(
+      {BT::InputPort<bool>(INPUT_KEY_DO_RESTART, false, "Wether to restart (true) or resume (false) the mission.")});
   }
 
-  bool setGoal(Goal& goal)
+  bool setGoal(Goal & goal)
   {
     goal.do_restart = getInput<bool>(INPUT_KEY_DO_RESTART).value();
     return true;

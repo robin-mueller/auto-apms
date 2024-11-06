@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "rclcpp/node.hpp"
 #include "auto_apms_behavior_tree/builder/tree_builder.hpp"
+#include "rclcpp/node.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -27,13 +27,13 @@ public:
 
   virtual ~TreeBuilderBase() = default;
 
-  virtual bool setRequest(const std::string& request) = 0;
+  virtual bool setRequest(const std::string & request) = 0;
 
-  virtual void configureBuilder(TreeBuilder& builder) = 0;
+  virtual void configureBuilder(TreeBuilder & builder) = 0;
 
   rclcpp::Node::SharedPtr getNodePtr();
 
-  const rclcpp::Logger& getLogger();
+  const rclcpp::Logger & getLogger();
 
 private:
   rclcpp::Node::SharedPtr node_ptr_;

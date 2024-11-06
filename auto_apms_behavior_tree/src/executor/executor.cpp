@@ -16,17 +16,17 @@
 
 #include <chrono>
 
-#include "auto_apms_util/logging.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
+#include "auto_apms_util/logging.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 TreeExecutor::TreeExecutor(rclcpp::Node::SharedPtr node_ptr)
-  : node_ptr_(node_ptr)
-  , global_blackboard_ptr_(TreeBlackboard::create())
-  , control_command_(ControlCommand::RUN)
-  , execution_stopped_(true)
+: node_ptr_(node_ptr),
+  global_blackboard_ptr_(TreeBlackboard::create()),
+  control_command_(ControlCommand::RUN),
+  execution_stopped_(true)
 {
   auto_apms_util::exposeToDebugLogging(node_ptr_->get_logger());
 }
@@ -34,17 +34,14 @@ TreeExecutor::TreeExecutor(rclcpp::Node::SharedPtr node_ptr)
 std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(CreateTreeCallback create_tree_cb)
 {
   if (isBusy())
-    throw exceptions::TreeExecutionError("Cannot start execution with tree '" + getTreeName() +
-                                         "' currently executing.");
+    throw exceptions::TreeExecutionError(
+      "Cannot start execution with tree '" + getTreeName() + "' currently executing.");
 
-  try
-  {
+  try {
     tree_ptr_.reset(new Tree(create_tree_cb(global_blackboard_ptr_)));
-  }
-  catch (const std::exception& e)
-  {
-    throw exceptions::TreeBuildError("Cannot start execution because creating the tree failed: " +
-                                     std::string(e.what()));
+  } catch (const std::exception & e) {
+    throw exceptions::TreeBuildError(
+      "Cannot start execution because creating the tree failed: " + std::string(e.what()));
   }
 
   groot2_publisher_ptr_.reset();
@@ -63,9 +60,10 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(C
 
   // Create promise for asnychronous execution and configure termination callback
   auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
-  TerminationCallback termination_callback = [this, promise_ptr](ExecutionResult result, const std::string& msg) {
-    RCLCPP_INFO(node_ptr_->get_logger(), "Terminating behavior tree execution from state %s. Reason: %s.",
-                toStr(getExecutionState()).c_str(), msg.c_str());
+  TerminationCallback termination_callback = [this, promise_ptr](ExecutionResult result, const std::string & msg) {
+    RCLCPP_INFO(
+      node_ptr_->get_logger(), "Terminating behavior tree execution from state %s. Reason: %s.",
+      toStr(getExecutionState()).c_str(), msg.c_str());
     onTermination(result);  // is evaluated before the timer is cancelled, which means the execution state has not
                             // changed yet during the callback and can be evaluated to inspect the terminal state.
     promise_ptr->set_value(result);
@@ -73,25 +71,19 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(C
     tree_ptr_.reset();  // Release the memory allocated by the tree
   };
 
-  execution_timer_ptr_ =
-      node_ptr_->create_wall_timer(std::chrono::duration<double>(executor_params_.tick_rate),
-                                   [this, termination_callback]() { execution_routine_(termination_callback); });
+  execution_timer_ptr_ = node_ptr_->create_wall_timer(
+    std::chrono::duration<double>(executor_params_.tick_rate),
+    [this, termination_callback]() { execution_routine_(termination_callback); });
   return promise_ptr->get_future();
 }
 
-bool TreeExecutor::isBusy()
-{
-  return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled();
-}
+bool TreeExecutor::isBusy() { return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled(); }
 
 TreeExecutor::ExecutionState TreeExecutor::getExecutionState()
 {
-  if (isBusy())
-  {
-    if (!tree_ptr_)
-      throw std::logic_error("tree_ptr_ cannot be nullptr when execution is started.");
-    if (tree_ptr_->rootNode()->status() == BT::NodeStatus::IDLE)
-    {
+  if (isBusy()) {
+    if (!tree_ptr_) throw std::logic_error("tree_ptr_ cannot be nullptr when execution is started.");
+    if (tree_ptr_->rootNode()->status() == BT::NodeStatus::IDLE) {
       // The root node being IDLE here means that the tree hasn't been ticked yet since its creation or was halted
       return execution_stopped_ ? ExecutionState::STARTING : ExecutionState::HALTED;
     }
@@ -102,18 +94,17 @@ TreeExecutor::ExecutionState TreeExecutor::getExecutionState()
 
 std::string TreeExecutor::getTreeName()
 {
-  if (tree_ptr_)
-    return tree_ptr_->subtrees[0]->tree_ID;
+  if (tree_ptr_) return tree_ptr_->subtrees[0]->tree_ID;
   return "NO_TREE_NAME";
 }
 
 void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
 {
   const ExecutionState this_execution_state = getExecutionState();
-  if (prev_execution_state_ != this_execution_state)
-  {
-    RCLCPP_DEBUG(node_ptr_->get_logger(), "Executor for tree '%s' changed state from '%s' to '%s'.",
-                 getTreeName().c_str(), toStr(prev_execution_state_).c_str(), toStr(this_execution_state).c_str());
+  if (prev_execution_state_ != this_execution_state) {
+    RCLCPP_DEBUG(
+      node_ptr_->get_logger(), "Executor for tree '%s' changed state from '%s' to '%s'.", getTreeName().c_str(),
+      toStr(prev_execution_state_).c_str(), toStr(this_execution_state).c_str());
     prev_execution_state_ = this_execution_state;
   }
 
@@ -121,31 +112,24 @@ void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
 
   execution_stopped_ = false;
   bool do_on_tick = true;
-  switch (control_command_)
-  {
+  switch (control_command_) {
     case ControlCommand::PAUSE:
       execution_stopped_ = true;
       return;
     case ControlCommand::RUN:
-      if (this_execution_state == ExecutionState::STARTING)
-      {
+      if (this_execution_state == ExecutionState::STARTING) {
         // Evaluate initial tick callback before ticking for the first time since the timer has been created
-        if (!onInitialTick())
-        {
+        if (!onInitialTick()) {
           do_on_tick = false;
           termination_reason_ = "onInitialTick() returned false";
         }
       }
       // Evaluate tick callback everytime before actually ticking.
       // This also happens the first time except if onInitialTick() returned false
-      if (do_on_tick)
-      {
-        if (onTick())
-        {
+      if (do_on_tick) {
+        if (onTick()) {
           break;
-        }
-        else
-        {
+        } else {
           termination_reason_ = "onTick() returned false";
         }
       }
@@ -153,10 +137,10 @@ void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
       // Fall through to terminate if any of the callbacks returned false
       [[fallthrough]];
     case ControlCommand::TERMINATE:
-      if (this_execution_state == ExecutionState::HALTED)
-      {
-        termination_callback(ExecutionResult::TERMINATED_PREMATURELY,
-                             termination_reason_.empty() ? "Terminated by control command" : termination_reason_);
+      if (this_execution_state == ExecutionState::HALTED) {
+        termination_callback(
+          ExecutionResult::TERMINATED_PREMATURELY,
+          termination_reason_.empty() ? "Terminated by control command" : termination_reason_);
         return;
       }
 
@@ -164,42 +148,34 @@ void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
       [[fallthrough]];
     case ControlCommand::HALT:
       // Check if already halted
-      if (this_execution_state != ExecutionState::HALTED)
-      {
-        try
-        {
+      if (this_execution_state != ExecutionState::HALTED) {
+        try {
           tree_ptr_->haltTree();
-        }
-        catch (const std::exception& e)
-        {
-          termination_callback(ExecutionResult::ERROR, "Error during haltTree() on command " + toStr(control_command_) +
-                                                           ": " + std::string(e.what()));
+        } catch (const std::exception & e) {
+          termination_callback(
+            ExecutionResult::ERROR,
+            "Error during haltTree() on command " + toStr(control_command_) + ": " + std::string(e.what()));
         }
       }
       return;
     default:
-      throw std::logic_error("Handling control command " + std::to_string(static_cast<int>(control_command_)) + " '" +
-                             toStr(control_command_) + "' is not implemented.");
+      throw std::logic_error(
+        "Handling control command " + std::to_string(static_cast<int>(control_command_)) + " '" +
+        toStr(control_command_) + "' is not implemented.");
   }
 
   /* Tick the tree instance */
 
   state_observer_ptr_->setLogging(executor_params_.state_change_logger);
   BT::NodeStatus bt_status = BT::NodeStatus::IDLE;
-  try
-  {
+  try {
     // It is important to tick EXACTLY once to prevent loops induced by BT nodes from blocking
     bt_status = tree_ptr_->tickExactlyOnce();
-  }
-  catch (const std::exception& e)
-  {
+  } catch (const std::exception & e) {
     std::string msg = "Ran into an exception during tick: " + std::string(e.what());
-    try
-    {
+    try {
       tree_ptr_->haltTree();  // Try to halt tree before aborting
-    }
-    catch (const std::exception& e)
-    {
+    } catch (const std::exception & e) {
       msg += "\nDuring haltTree(), another exception occured: " + std::string(e.what());
     }
     termination_callback(ExecutionResult::ERROR, msg);
@@ -208,22 +184,20 @@ void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
 
   /* Continue execution until tree is not running anymore */
 
-  if (bt_status == BT::NodeStatus::RUNNING)
-    return;
+  if (bt_status == BT::NodeStatus::RUNNING) return;
 
   /* Determine how to handle the behavior tree execution result */
 
-  if (!(bt_status == BT::NodeStatus::SUCCESS || bt_status == BT::NodeStatus::FAILURE))
-  {
-    throw std::logic_error("bt_status is " + BT::toStr(bt_status) +
-                           ". Must be one of SUCCESS or FAILURE at this point.");
+  if (!(bt_status == BT::NodeStatus::SUCCESS || bt_status == BT::NodeStatus::FAILURE)) {
+    throw std::logic_error(
+      "bt_status is " + BT::toStr(bt_status) + ". Must be one of SUCCESS or FAILURE at this point.");
   }
   const bool success = bt_status == BT::NodeStatus::SUCCESS;
-  switch (onTreeExit(success))
-  {
+  switch (onTreeExit(success)) {
     case TreeExitBehavior::TERMINATE:
-      termination_callback(success ? ExecutionResult::TREE_SUCCEEDED : ExecutionResult::TREE_FAILED,
-                           "Terminated on tree result " + BT::toStr(bt_status));
+      termination_callback(
+        success ? ExecutionResult::TREE_SUCCEEDED : ExecutionResult::TREE_FAILED,
+        "Terminated on tree result " + BT::toStr(bt_status));
       return;
     case TreeExitBehavior::RESTART:
       control_command_ = ControlCommand::RUN;
@@ -233,64 +207,34 @@ void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
   throw std::logic_error("Execution routine is not intended to proceed to this statement.");
 }
 
-bool TreeExecutor::onInitialTick()
-{
-  return true;
-}
+bool TreeExecutor::onInitialTick() { return true; }
 
-bool TreeExecutor::onTick()
-{
-  return true;
-}
+bool TreeExecutor::onTick() { return true; }
 
-TreeExecutor::TreeExitBehavior TreeExecutor::onTreeExit(bool /*success*/)
-{
-  return TreeExitBehavior::TERMINATE;
-}
+TreeExecutor::TreeExitBehavior TreeExecutor::onTreeExit(bool /*success*/) { return TreeExitBehavior::TERMINATE; }
 
-void TreeExecutor::onTermination(const ExecutionResult& /*result*/)
-{
-}
+void TreeExecutor::onTermination(const ExecutionResult & /*result*/) {}
 
-void TreeExecutor::setControlCommand(ControlCommand cmd)
-{
-  control_command_ = cmd;
-}
+void TreeExecutor::setControlCommand(ControlCommand cmd) { control_command_ = cmd; }
 
-void TreeExecutor::setExecutorParameters(const ExecutorParams& p)
-{
-  executor_params_ = p;
-}
+void TreeExecutor::setExecutorParameters(const ExecutorParams & p) { executor_params_ = p; }
 
-rclcpp::Node::SharedPtr TreeExecutor::getNodePtr()
-{
-  return node_ptr_;
-}
+rclcpp::Node::SharedPtr TreeExecutor::getNodePtr() { return node_ptr_; }
 
 rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutor::get_node_base_interface()
 {
   return node_ptr_->get_node_base_interface();
 }
 
-TreeBlackboardSharedPtr TreeExecutor::getGlobalBlackboardPtr()
-{
-  return global_blackboard_ptr_;
-}
+TreeBlackboardSharedPtr TreeExecutor::getGlobalBlackboardPtr() { return global_blackboard_ptr_; }
 
-TreeExecutor::ExecutorParams TreeExecutor::getExecutorParameters()
-{
-  return executor_params_;
-}
+TreeExecutor::ExecutorParams TreeExecutor::getExecutorParameters() { return executor_params_; }
 
-BTStateObserver& TreeExecutor::getStateObserver()
-{
-  return *state_observer_ptr_;
-}
+BTStateObserver & TreeExecutor::getStateObserver() { return *state_observer_ptr_; }
 
 std::string toStr(TreeExecutor::ExecutionState state)
 {
-  switch (state)
-  {
+  switch (state) {
     case TreeExecutor::ExecutionState::IDLE:
       return "IDLE";
     case TreeExecutor::ExecutionState::STARTING:
@@ -307,8 +251,7 @@ std::string toStr(TreeExecutor::ExecutionState state)
 
 std::string toStr(TreeExecutor::ControlCommand cmd)
 {
-  switch (cmd)
-  {
+  switch (cmd) {
     case TreeExecutor::ControlCommand::RUN:
       return "RUN";
     case TreeExecutor::ControlCommand::PAUSE:
@@ -323,8 +266,7 @@ std::string toStr(TreeExecutor::ControlCommand cmd)
 
 std::string toStr(TreeExecutor::TreeExitBehavior behavior)
 {
-  switch (behavior)
-  {
+  switch (behavior) {
     case TreeExecutor::TreeExitBehavior::TERMINATE:
       return "TERMINATE";
     case TreeExecutor::TreeExitBehavior::RESTART:
@@ -335,8 +277,7 @@ std::string toStr(TreeExecutor::TreeExitBehavior behavior)
 
 std::string toStr(TreeExecutor::ExecutionResult result)
 {
-  switch (result)
-  {
+  switch (result) {
     case TreeExecutor::ExecutionResult::TREE_SUCCEEDED:
       return "TREE_SUCCEEDED";
     case TreeExecutor::ExecutionResult::TREE_FAILED:

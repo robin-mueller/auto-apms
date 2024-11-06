@@ -30,15 +30,14 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({ BT::OutputPort<uint8_t>(OUTPUT_KEY_SITE_ID, "{next_landing_site_id}",
-                                                        "ID of the next landing site to be approached") });
+    return providedBasicPorts({BT::OutputPort<uint8_t>(
+      OUTPUT_KEY_SITE_ID, "{next_landing_site_id}", "ID of the next landing site to be approached")});
   }
 
-  BT::NodeStatus onTick(const std::shared_ptr<LandingApproachMsg>& last_msg_ptr) override final
+  BT::NodeStatus onTick(const std::shared_ptr<LandingApproachMsg> & last_msg_ptr) override final
   {
     // Check if a new message was received
-    if (!last_msg_ptr)
-    {
+    if (!last_msg_ptr) {
       RCLCPP_WARN(getRosContext().getLogger(), "%s - No new landing approach message was received", name().c_str());
       return BT::NodeStatus::FAILURE;
     }

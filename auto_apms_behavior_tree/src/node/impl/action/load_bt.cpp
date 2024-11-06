@@ -30,10 +30,11 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return { BT::InputPort<std::string>(INPUT_KEY_PACKAGE, "Name of the ROS2 package containing the trees file"),
-             BT::InputPort<std::string>(INPUT_KEY_FILENAME, "Name of the trees file (Extension may be omitted)"),
-             BT::OutputPort<std::string>(OUTPUT_KEY_DATA, "{xml_data}",
-                                         "XML string containing the data for the behavior trees") };
+    return {
+      BT::InputPort<std::string>(INPUT_KEY_PACKAGE, "Name of the ROS2 package containing the trees file"),
+      BT::InputPort<std::string>(INPUT_KEY_FILENAME, "Name of the trees file (Extension may be omitted)"),
+      BT::OutputPort<std::string>(
+        OUTPUT_KEY_DATA, "{xml_data}", "XML string containing the data for the behavior trees")};
   }
 
   BT::NodeStatus tick() final
@@ -42,12 +43,9 @@ public:
     auto filename = getInput<std::string>(INPUT_KEY_FILENAME).value();
 
     std::unique_ptr<TreeResource> tree_resource_ptr;
-    try
-    {
+    try {
       tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::selectByFileName(filename, package_name));
-    }
-    catch (const auto_apms_util::exceptions::ResourceError& e)
-    {
+    } catch (const auto_apms_util::exceptions::ResourceError & e) {
       return BT::NodeStatus::FAILURE;
     }
 

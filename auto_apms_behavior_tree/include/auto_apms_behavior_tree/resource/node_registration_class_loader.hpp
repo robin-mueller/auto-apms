@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "auto_apms_util/resource.hpp"
 #include "auto_apms_behavior_tree/node/node_registration_interface.hpp"
+#include "auto_apms_util/resource.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -38,7 +38,7 @@ public:
    * @throws auto_apms_util::exceptions::ResourceError if failed to find a pluginlib plugin
    * manifest file in a package specified in @p search_packages or if an `ament_index` resource marker file is invalid.
    */
-  NodeRegistrationClassLoader(const std::set<std::string>& search_packages = {});
+  NodeRegistrationClassLoader(const std::set<std::string> & search_packages = {});
 };
 
 }  // namespace auto_apms_behavior_tree
