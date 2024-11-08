@@ -62,16 +62,14 @@ private:
   using TerminationCallback = std::function<void(ExecutionResult, const std::string &)>;
 
 public:
-  using CreateTreeCallback = std::function<Tree(TreeBlackboardSharedPtr)>;
-
   TreeExecutor(rclcpp::Node::SharedPtr node_ptr);
 
   std::shared_future<ExecutionResult> startExecution(
-    CreateTreeCallback create_tree_cb, double tick_rate_sec = 0.25, unsigned int groot2_port = 1667);
+    TreeConstructor make_tree, double tick_rate_sec = 0.25, unsigned int groot2_port = 1667);
 
   template <typename TimeRepT = int64_t, typename TimeT = std::milli>
   std::shared_future<ExecutionResult> startExecution(
-    CreateTreeCallback create_tree_cb, const std::chrono::duration<TimeRepT, TimeT> & tick_rate,
+    TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate,
     unsigned int groot2_port = 1667);
 
   bool isBusy();
@@ -143,10 +141,10 @@ std::string toStr(TreeExecutor::ExecutionResult result);
 
 template <typename TimeRepT, typename TimeT>
 inline std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
-  CreateTreeCallback create_tree_cb, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, unsigned int groot2_port)
+  TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, unsigned int groot2_port)
 {
   return startExecution(
-    create_tree_cb, std::chrono::duration_cast<std::chrono::duration<double>>(tick_rate).count(), groot2_port);
+    make_tree, std::chrono::duration_cast<std::chrono::duration<double>>(tick_rate).count(), groot2_port);
 }
 
 }  // namespace auto_apms_behavior_tree

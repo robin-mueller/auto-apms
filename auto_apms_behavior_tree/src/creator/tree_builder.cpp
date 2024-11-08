@@ -26,15 +26,19 @@ namespace auto_apms_behavior_tree
 {
 
 TreeBuilder::TreeBuilder(
-  rclcpp::Node::SharedPtr node_ptr, std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr,
-  std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr)
+  rclcpp::Node::SharedPtr node_ptr, std::shared_ptr<NodeRegistrationClassLoader> tree_node_loader_ptr)
 : node_wptr_(node_ptr),
-  factory_ptr_(factory_ptr ? factory_ptr : std::make_shared<BT::BehaviorTreeFactory>()),
-  node_loader_ptr_(node_loader_ptr ? node_loader_ptr : std::make_shared<NodeRegistrationClassLoader>())
+  tree_node_loader_ptr_(tree_node_loader_ptr)
 {
   ElementPtr root_ele = doc_.NewElement(ROOT_ELEMENT_NAME);
   root_ele->SetAttribute("BTCPP_format", "4");
   doc_.InsertFirstChild(root_ele);
+}
+
+TreeBuilder & TreeBuilder::setScriptingEnum(const std::string & enum_name, int val)
+{
+  factory_.registerScriptingEnum(enum_name, val);
+  return *this;
 }
 
 TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, bool override)
@@ -49,7 +53,7 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
     // If the node is already registered
     if (registered_nodes.find(node_name) != registered_nodes.end()) {
       if (override) {
-        factory_ptr_->unregisterBuilder(node_name);
+        factory_.unregisterBuilder(node_name);
       } else {
         throw exceptions::TreeBuildError(
           "Node '" + node_name +
@@ -59,7 +63,7 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
     }
 
     // Check if the class we search for is actually available with the loader.
-    if (!node_loader_ptr_->isClassAvailable(params.class_name)) {
+    if (!tree_node_loader_ptr_->isClassAvailable(params.class_name)) {
       throw exceptions::TreeBuildError(
         "Node '" + node_name + " (Class: " + params.class_name +
         ")' cannot be loaded, because the class name is not known to the class loader. "
@@ -70,11 +74,11 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
 
     RCLCPP_DEBUG(
       node_ptr->get_logger(), "Loading behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
-      params.class_name.c_str(), node_loader_ptr_->getClassLibraryPath(params.class_name).c_str());
+      params.class_name.c_str(), tree_node_loader_ptr_->getClassLibraryPath(params.class_name).c_str());
 
     pluginlib::UniquePtr<NodeRegistrationInterface> plugin_instance;
     try {
-      plugin_instance = node_loader_ptr_->createUniqueInstance(params.class_name);
+      plugin_instance = tree_node_loader_ptr_->createUniqueInstance(params.class_name);
     } catch (const std::exception & e) {
       throw exceptions::TreeBuildError(
         "Failed to create an instance of node '" + node_name + " (Class: " + params.class_name +
@@ -87,9 +91,9 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
     try {
       if (plugin_instance->requiresROSNodeParams()) {
         RosNodeContext ros_node_context(node_ptr, params);
-        plugin_instance->registerWithBehaviorTreeFactory(*factory_ptr_, node_name, &ros_node_context);
+        plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
       } else {
-        plugin_instance->registerWithBehaviorTreeFactory(*factory_ptr_, node_name);
+        plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name);
       }
     } catch (const std::exception & e) {
       throw exceptions::TreeBuildError(
@@ -102,14 +106,14 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
 std::unordered_map<std::string, BT::NodeType> TreeBuilder::getRegisteredNodesTypeMap() const
 {
   std::unordered_map<std::string, BT::NodeType> map;
-  for (const auto & it : factory_ptr_->manifests()) map.insert({it.first, it.second.type});
+  for (const auto & it : factory_.manifests()) map.insert({it.first, it.second.type});
   return map;
 }
 
 std::vector<std::string> TreeBuilder::getRegisteredNodes() const
 {
   std::vector<std::string> vec;
-  for (const auto & it : factory_ptr_->manifests()) vec.push_back(it.first);
+  for (const auto & it : factory_.manifests()) vec.push_back(it.first);
   return vec;
 }
 
@@ -205,7 +209,7 @@ TreeBuilder & TreeBuilder::addNodePortValues(ElementPtr node_element, PortValues
 
   // Load tree nodes model
   Document model_doc;
-  if (model_doc.Parse(BT::writeTreeNodesModelXML(*factory_ptr_, true).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+  if (model_doc.Parse(BT::writeTreeNodesModelXML(factory_, true).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
     throw exceptions::TreeBuildError(
       "Error parsing the current tree nodes model: " + std::string(model_doc.ErrorStr()));
   }
@@ -313,9 +317,9 @@ Tree TreeBuilder::buildTree(const std::string main_tree_name, TreeBlackboardShar
 {
   Tree tree;
   try {
-    factory_ptr_->registerBehaviorTreeFromText(writeTreeDocumentToString());
-    tree = factory_ptr_->createTree(main_tree_name, root_bb_ptr);
-    factory_ptr_->clearRegisteredBehaviorTrees();
+    factory_.registerBehaviorTreeFromText(writeTreeDocumentToString());
+    tree = factory_.createTree(main_tree_name, root_bb_ptr);
+    factory_.clearRegisteredBehaviorTrees();
   } catch (const std::exception & e) {
     throw exceptions::TreeBuildError("Error during buildTree(): " + std::string(e.what()));
   }
@@ -323,8 +327,6 @@ Tree TreeBuilder::buildTree(const std::string main_tree_name, TreeBlackboardShar
 }
 
 Tree TreeBuilder::buildTree(TreeBlackboardSharedPtr root_bb_ptr) { return buildTree("", root_bb_ptr); }
-
-std::shared_ptr<BT::BehaviorTreeFactory> TreeBuilder::getInternalTreeFactory() const { return factory_ptr_; }
 
 std::vector<std::string> TreeBuilder::getAllTreeNames(const Document & doc)
 {

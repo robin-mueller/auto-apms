@@ -15,6 +15,7 @@
 #pragma once
 
 #include "behaviortree_cpp/bt_factory.h"
+#include "auto_apms_behavior_tree/util/bt_types.hpp"
 
 /**
  * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
@@ -27,9 +28,10 @@ namespace auto_apms_behavior_tree
 using Tree = BT::Tree;
 using TreeBlackboard = BT::Blackboard;
 using TreeBlackboardSharedPtr = std::shared_ptr<TreeBlackboard>;
+using TreeConstructor = std::function<Tree(TreeBlackboardSharedPtr)>;
 
 // BT Executor definitions
-const char BT_EXECUTOR_RUN_ACTION_NAME_SUFFIX[] = "/start";
-const char BT_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX[] = "/command";
+const char TREE_EXECUTOR_START_ACTION_NAME_SUFFIX[] = "/start";
+const char TREE_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX[] = "/command";
 
 }  // namespace auto_apms_behavior_tree

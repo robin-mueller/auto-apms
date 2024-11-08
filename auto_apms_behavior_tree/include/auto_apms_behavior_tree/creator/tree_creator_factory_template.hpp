@@ -22,16 +22,23 @@ namespace auto_apms_behavior_tree
 template <typename T>
 class TreeCreatorFactoryTemplate : public TreeCreatorFactoryInterface
 {
+  static_assert(
+    std::is_convertible_v<T *, TreeCreatorBase *>,
+    "Cannot convert T* to TreeCreatorBase*. Did you forget to specify the keyword 'public' when inheriting? --> class "
+    "T : public TreeCreatorBase");
+
 public:
   TreeCreatorFactoryTemplate() = default;
   virtual ~TreeCreatorFactoryTemplate() = default;
 
+  std::shared_ptr<TreeCreatorBase> instantiateCreator(
+    rclcpp::Node::SharedPtr node_ptr, TreeBuilder::SharedPtr tree_builder_ptr)
+  {
+    return std::make_shared<T>(node_ptr, tree_builder_ptr);
+  }
+
   std::shared_ptr<TreeCreatorBase> instantiateCreator(rclcpp::Node::SharedPtr node_ptr)
   {
-    static_assert(
-      std::is_convertible_v<T *, TreeCreatorBase *>,
-      "Cannot convert T* to TreeCreatorBase*. Did you forget to specify the keyword 'public' when "
-      "inheriting? --> class T : public TreeCreatorBase");
     return std::make_shared<T>(node_ptr);
   }
 };

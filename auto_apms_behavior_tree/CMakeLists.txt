@@ -9,11 +9,29 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
 find_package(generate_parameter_library REQUIRED)
 find_package(auto_apms_util)
 find_package(auto_apms_interfaces REQUIRED)
+
+# Configure and include BehaviorTree.CPP library
+include(FetchContent)
+FetchContent_Declare(behaviortree_cpp
+    GIT_REPOSITORY https://github.com/BehaviorTree/BehaviorTree.CPP.git
+    GIT_TAG 4.6.2
+    GIT_SHALLOW true
+    GIT_PROGRESS true
+)
+set(BTCPP_BUILD_TOOLS       OFF CACHE BOOL "")
+set(BTCPP_EXAMPLES          OFF CACHE BOOL "")
+set(BTCPP_UNIT_TESTS        OFF CACHE BOOL "")
+set(BTCPP_GROOT_INTERFACE   ON  CACHE BOOL "")
+set(BTCPP_SQLITE_LOGGING    OFF CACHE BOOL "")
+FetchContent_MakeAvailable(behaviortree_cpp)
+
+#
+# ------------ Configuration --------------
+#
 
 option(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING "Enable debug logging severity" ON)
 if(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
@@ -21,6 +39,7 @@ if(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
 endif()
 
 set(_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/internal")
+set(_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE "auto_apms_behavior_tree")
 
 # Behavior tree executor parameter names
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_CREATOR "tree_creator_name")
@@ -34,11 +53,11 @@ set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_PORT "port")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT "wait_timeout")
 set(_AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT "request_timeout")
 
+# Resources
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE "behavior_trees")
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE "auto_apms_behavior_tree__tree")
 set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__NODE "auto_apms_behavior_tree__node")
-set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__CREATOR "auto_apms_behavior_tree__builder")
-set(_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE "auto_apms_behavior_tree")
+set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__CREATOR "auto_apms_behavior_tree__creator")
 
 #
 # ------------ Library --------------
@@ -63,6 +82,7 @@ add_library(auto_apms_behavior_tree SHARED
     "src/resource/tree_resource.cpp"
     "src/resource/node_registration_class_loader.cpp"
     "src/resource/tree_creator_class_loader.cpp"
+    "src/util/bt_types.cpp"
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -85,12 +105,12 @@ ament_target_dependencies(auto_apms_behavior_tree
     rclcpp
     rclcpp_action
     rclcpp_components
-    behaviortree_cpp
     TinyXML2
     auto_apms_util
     auto_apms_interfaces
 )
 target_link_libraries(auto_apms_behavior_tree
+    behaviortree_cpp
     executor_params
 )
 
@@ -134,16 +154,16 @@ auto_apms_behavior_tree_register_nodes(tree_nodes
 # ------------ Tree Builders --------------
 #
 
-add_library(tree_builders SHARED
+add_library(tree_creators SHARED
     "src/creator/impl/resource_tree_creator.cpp"
 )
-target_link_libraries(tree_builders auto_apms_behavior_tree)
+target_link_libraries(tree_creators auto_apms_behavior_tree)
 
 # In the original package, we need to manually include this before being able to call the macro.
 # However, it is automatically available for all downstream packages.
 include("cmake/register_creators.cmake")
 
-auto_apms_behavior_tree_register_creators(tree_builders
+auto_apms_behavior_tree_register_creators(tree_creators
     "auto_apms_behavior_tree::ResourceTreeCreator"
 )
 
@@ -174,6 +194,7 @@ target_link_libraries(run_tree_node auto_apms_behavior_tree)
 ###### Export libraries ######
 install(
     TARGETS
+    behaviortree_cpp
     executor_params
     auto_apms_behavior_tree
     EXPORT export_${PROJECT_NAME}
@@ -185,19 +206,16 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
     rclcpp
     rclcpp_action
-    rclcpp_components
-    behaviortree_cpp
     TinyXML2
     auto_apms_util
     auto_apms_interfaces
-    generate_parameter_library
 )
 
-###### Non export libraries ######
+###### Plugins ######
 install(
     TARGETS
     tree_nodes
-    tree_builders
+    tree_creators
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin

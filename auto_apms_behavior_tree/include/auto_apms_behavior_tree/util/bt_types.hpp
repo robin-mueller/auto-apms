@@ -14,21 +14,19 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/creator/tree_creator_base.hpp"
+#include "behaviortree_cpp/basic_types.h"
 
-namespace auto_apms_behavior_tree
+namespace BT
 {
 
-class TreeCreatorFactoryInterface
-{
-public:
-  TreeCreatorFactoryInterface() = default;
-  virtual ~TreeCreatorFactoryInterface() = default;
+template <>
+[[nodiscard]] std::vector<uint8_t> convertFromString<std::vector<uint8_t>>(StringView str);
 
-  virtual std::shared_ptr<TreeCreatorBase> instantiateCreator(
-    rclcpp::Node::SharedPtr node_ptr, TreeBuilder::SharedPtr tree_builder_ptr) = 0;
+template <>
+[[nodiscard]] std::vector<bool> convertFromString<std::vector<bool>>(StringView str);
 
-  virtual std::shared_ptr<TreeCreatorBase> instantiateCreator(rclcpp::Node::SharedPtr node_ptr) = 0;
-};
+template <>
+[[nodiscard]] std::vector<int64_t, std::allocator<int64_t>>
+convertFromString<std::vector<int64_t, std::allocator<int64_t>>>(StringView str);
 
-}  // namespace auto_apms_behavior_tree
+}  // namespace BT

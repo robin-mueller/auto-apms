@@ -46,14 +46,21 @@ class TreeBuilder
   static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
 
 public:
+  RCLCPP_SMART_PTR_DEFINITIONS(TreeBuilder)
+
   using Document = tinyxml2::XMLDocument;
   using ElementPtr = tinyxml2::XMLElement *;
   using ConstElementPtr = const tinyxml2::XMLElement *;
   using PortValues = std::map<std::string, std::string>;
 
   TreeBuilder(
-    rclcpp::Node::SharedPtr node_ptr, std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr = nullptr,
-    std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr = nullptr);
+    rclcpp::Node::SharedPtr node_ptr, std::shared_ptr<NodeRegistrationClassLoader> tree_node_loader_ptr =
+                                        std::make_shared<NodeRegistrationClassLoader>());
+
+  TreeBuilder & setScriptingEnum(const std::string & enum_name, int val);
+
+  template <typename EnumT>
+  TreeBuilder & setScriptingEnumsFromType();
 
   /**
    * @brief Load behavior tree node plugins and register with behavior tree factory.
@@ -125,13 +132,22 @@ public:
 
   Tree buildTree(TreeBlackboardSharedPtr root_bb_ptr = TreeBlackboard::create());
 
-  std::shared_ptr<BT::BehaviorTreeFactory> getInternalTreeFactory() const;
-
 private:
   Document doc_;
+  BT::BehaviorTreeFactory factory_;
   rclcpp::Node::WeakPtr node_wptr_;
-  std::shared_ptr<BT::BehaviorTreeFactory> factory_ptr_;
-  std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr_;
+  std::shared_ptr<NodeRegistrationClassLoader> tree_node_loader_ptr_;
 };
+
+// #####################################################################################################################
+// ################################              DEFINITIONS              ##############################################
+// #####################################################################################################################
+
+template <typename EnumT>
+TreeBuilder & TreeBuilder::setScriptingEnumsFromType()
+{
+  factory_.registerScriptingEnums<EnumT>();
+  return *this;
+}
 
 }  // namespace auto_apms_behavior_tree

@@ -30,6 +30,8 @@ namespace auto_apms_behavior_tree
 class TreeExecutorServer : public TreeExecutor
 {
 public:
+  using ExecutorParameters = executor_params::Params;
+  using ExecutorParameterListener = executor_params::ParamListener;
   using StartActionContext = auto_apms_util::ActionContext<auto_apms_interfaces::action::StartTreeExecutor>;
   using CommandActionContext = auto_apms_util::ActionContext<auto_apms_interfaces::action::CommandTreeExecutor>;
 
@@ -38,8 +40,8 @@ public:
   static const std::string PARAM_NAME_GROOT2_PORT;
   static const std::string PARAM_NAME_STATE_CHANGE_LOGGER;
   inline static const std::string DEFAULT_NODE_NAME = "tree_executor";
-  inline static const std::string DYNAMIC_BB_PARAM_PREFIX = "bb";
-  inline static const std::string DYNAMIC_BB_PARAM_SEPARATOR = ".";
+  inline static const std::string SCRIPTING_ENUM_PARAM_PREFIX = "enum";
+  inline static const std::string BLACKBOARD_PARAM_PREFIX = "bb";
 
   /**
    * @brief Constructor for TreeExecutorServer with custom name.
@@ -52,29 +54,37 @@ public:
    * @brief Constructor for TreeExecutorServer with default name TreeExecutorServer::DEFAULT_NODE_NAME.
    * @param[in] options Options forwarded to rclcpp::Node constructor.
    */
-  TreeExecutorServer(const rclcpp::NodeOptions & options);
+  TreeExecutorServer(rclcpp::NodeOptions options);
 
 private:
   /* Virtual methods */
 
   virtual void prepareTreeBuilder(TreeBuilder & builder);
 
+protected:
   /* Utility methods */
 
-  bool isDynamicBlackboardParamName(const std::string & name);
+  std::map<std::string, rclcpp::Parameter> getParametersWithPrefix(const std::string& prefix);
 
-  void configureBlackboardFromParameters(TreeBlackboard & bb);
+  std::string stripPrefixFromParameterName(const std::string& prefix, const std::string & param_name);
 
-  CreateTreeCallback makeCreateTreeCallback(
-    const std::string & tree_creator_name, const std::string & tree_creator_request,
+  void setScriptingEnumsFromParameters(TreeBuilder& builder);
+
+  void updateBlackboardFromParameters(TreeBlackboard & bb);
+
+  TreeConstructor makeTreeConstructor(
+    const std::string & tree_name, const std::string & tree_creator_name, const std::string & tree_creator_request,
     const NodeManifest & node_overrides = {});
 
-protected:
+private:
+  /* Executor specific virtual overrides */
+
   virtual bool onTick() override;
 
   virtual void onTermination(const ExecutionResult & result) override;
 
-private:
+  /* Internal callbacks */
+
   rcl_interfaces::msg::SetParametersResult on_set_parameters_callback_(
     const std::vector<rclcpp::Parameter> & parameters);
 
@@ -90,12 +100,12 @@ private:
   void handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
 
   const rclcpp::Logger logger_;
-  const executor_params::ParamListener executor_param_listener_;
+  ExecutorParameterListener executor_param_listener_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
   TreeCreatorClassLoader tree_creator_loader_;
   std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr_;
-  CreateTreeCallback create_tree_callback_;
-  std::map<std::string, std::string> dynamic_bb_param_entries_;
+  TreeConstructor tree_constructor_;
+  std::map<std::string, rclcpp::Parameter> bb_param_map_;
 
   // Interface objects
   rclcpp_action::Server<StartActionContext::Type>::SharedPtr start_action_ptr_;

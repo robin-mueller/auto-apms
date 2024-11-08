@@ -17,16 +17,32 @@
 namespace auto_apms_behavior_tree
 {
 
-TreeCreatorBase::TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr)
-: node_ptr_(node_ptr), logger_{node_ptr->get_logger()}
+TreeCreatorBase::TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr, TreeBuilder::SharedPtr tree_builder_ptr)
+: logger_(node_ptr->get_logger()), node_wptr_(node_ptr), builder_ptr_(tree_builder_ptr)
 {
 }
+
+TreeCreatorBase::TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr)
+: TreeCreatorBase(node_ptr, TreeBuilder::make_shared(node_ptr))
+{
+}
+
+rclcpp::Node::SharedPtr TreeCreatorBase::getNodePtr() const { 
+  if (node_wptr_.expired()) {
+    throw std::runtime_error("TreeCreatorBase: Weak pointer to rclcpp::Node expired.");
+  }
+  return node_wptr_.lock();
+ }
 
 void TreeCreatorBase::configureBlackboard(TreeBlackboard & /*bb*/) {}
 
-BT::Tree TreeCreatorBase::createTree(TreeBuilder & builder, TreeBlackboardSharedPtr bb_ptr)
+Tree TreeCreatorBase::createTree(const std::string & tree_name, TreeBlackboardSharedPtr bb_ptr)
 {
-  return builder.buildTree(bb_ptr);
+  configureTreeBuilder(*builder_ptr_);
+  configureBlackboard(*bb_ptr);
+  return builder_ptr_->buildTree(tree_name, bb_ptr);
 }
+
+Tree TreeCreatorBase::createTree(TreeBlackboardSharedPtr bb_ptr) { return createTree("", bb_ptr); }
 
 }  // namespace auto_apms_behavior_tree

@@ -31,7 +31,7 @@ TreeExecutor::TreeExecutor(rclcpp::Node::SharedPtr node_ptr)
 }
 
 std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
-  CreateTreeCallback create_tree_cb, double tick_rate_sec, unsigned int groot2_port)
+  TreeConstructor make_tree, double tick_rate_sec, unsigned int groot2_port)
 {
   if (isBusy()) {
     throw exceptions::TreeExecutionError(
@@ -39,7 +39,7 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
   }
 
   try {
-    tree_ptr_.reset(new Tree(create_tree_cb(global_blackboard_ptr_)));
+    tree_ptr_.reset(new Tree(make_tree(global_blackboard_ptr_)));
   } catch (const std::exception & e) {
     throw exceptions::TreeBuildError(
       "Cannot start execution because creating the tree failed: " + std::string(e.what()));

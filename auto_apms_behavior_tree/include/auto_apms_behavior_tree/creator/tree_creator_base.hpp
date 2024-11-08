@@ -24,21 +24,32 @@ namespace auto_apms_behavior_tree
 class TreeCreatorBase
 {
 public:
+  TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr, TreeBuilder::SharedPtr tree_builder_ptr);
+
   TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr);
 
   virtual ~TreeCreatorBase() = default;
 
   virtual bool setRequest(const std::string & request) = 0;
 
+  rclcpp::Node::SharedPtr getNodePtr() const;
+
+private:
   virtual void configureTreeBuilder(TreeBuilder & builder) = 0;
 
   virtual void configureBlackboard(TreeBlackboard & bb);
 
-  BT::Tree createTree(TreeBuilder & builder, TreeBlackboardSharedPtr bb_ptr);
+public:
+  Tree createTree(const std::string & tree_name, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
+
+  Tree createTree(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
 protected:
-  rclcpp::Node::SharedPtr node_ptr_;
   const rclcpp::Logger logger_;
+
+private:
+  rclcpp::Node::WeakPtr node_wptr_;
+  TreeBuilder::SharedPtr builder_ptr_;
 };
 
 }  // namespace auto_apms_behavior_tree
