@@ -12,10 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(DEFINED _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE)
+if(DEFINED _AUTO_APMS_UTIL__PLUGINS_XML_CONTENT)
+    file(GENERATE
+        OUTPUT "${_AUTO_APMS_UTIL__PACKAGE_BUILD_DIR_ABSOLUTE}/${PROJECT_NAME}_plugins.xml"
+        CONTENT "<class_libraries>\n${_AUTO_APMS_UTIL__PLUGINS_XML_CONTENT}</class_libraries>"
+    )
+    install(
+        FILES
+        "${_AUTO_APMS_UTIL__PACKAGE_BUILD_DIR_ABSOLUTE}/${PROJECT_NAME}_plugins.xml"
+        DESTINATION
+        "${_AUTO_APMS_UTIL__PACKAGE_SHARED_RESOURCES_DIR_RELATIVE}"
+    )
     ament_index_register_resource(
-        "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE}"
+        "${_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB}"
         CONTENT
-        "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}"
+        "${_AUTO_APMS_UTIL__PACKAGE_SHARED_RESOURCES_DIR_RELATIVE}/${PROJECT_NAME}_plugins.xml"
     )
 endif()
+

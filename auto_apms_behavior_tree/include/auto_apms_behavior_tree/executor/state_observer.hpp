@@ -22,10 +22,10 @@
 namespace auto_apms_behavior_tree
 {
 
-class BTStateObserver : public BT::StatusChangeLogger
+class TreeStateObserver : public BT::StatusChangeLogger
 {
 public:
-  BTStateObserver(
+  TreeStateObserver(
     const BT::Tree & tree, const rclcpp::Logger & node_logger,
     std::chrono::seconds max_logging_rate = std::chrono::seconds(0));
 

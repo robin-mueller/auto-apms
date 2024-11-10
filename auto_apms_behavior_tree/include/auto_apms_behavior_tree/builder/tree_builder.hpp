@@ -16,10 +16,13 @@
 
 #include <tinyxml2.h>
 
+#include <memory>
+
 #include "auto_apms_behavior_tree/definitions.hpp"
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
-#include "auto_apms_behavior_tree/resource/node_registration_class_loader.hpp"
+#include "auto_apms_behavior_tree/resource/node_registration_loader.hpp"
 #include "auto_apms_behavior_tree/resource/tree_resource.hpp"
+#include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 
 namespace auto_apms_behavior_tree
@@ -41,12 +44,12 @@ namespace auto_apms_behavior_tree
 class TreeBuilder
 {
   static inline const char ROOT_ELEMENT_NAME[] = "root";
-  static inline const char MAIN_TREE_ATTRIBUTE_NAME[] = "main_tree_to_execute";
+  static inline const char ROOT_TREE_ATTRIBUTE_NAME[] = "main_tree_to_execute";
   static inline const char TREE_ELEMENT_NAME[] = "BehaviorTree";
   static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
 
 public:
-  RCLCPP_SMART_PTR_DEFINITIONS(TreeBuilder)
+  RCLCPP_SMART_PTR_DEFINITIONS_NOT_COPYABLE(TreeBuilder)
 
   using Document = tinyxml2::XMLDocument;
   using ElementPtr = tinyxml2::XMLElement *;
@@ -54,8 +57,8 @@ public:
   using PortValues = std::map<std::string, std::string>;
 
   TreeBuilder(
-    rclcpp::Node::SharedPtr node_ptr, std::shared_ptr<NodeRegistrationClassLoader> tree_node_loader_ptr =
-                                        std::make_shared<NodeRegistrationClassLoader>());
+    rclcpp::Node::SharedPtr node_ptr,
+    NodeRegistrationLoader::SharedPtr tree_node_loader_ptr = NodeRegistrationLoader::make_shared());
 
   TreeBuilder & setScriptingEnum(const std::string & enum_name, int val);
 
@@ -117,9 +120,11 @@ public:
 
   std::vector<std::string> getAllTreeNames() const;
 
-  std::string getMainTreeName() const;
+  bool hasRootTreeName() const;
 
-  TreeBuilder & setMainTreeName(const std::string & main_tree_name);
+  std::string getRootTreeName() const;
+
+  TreeBuilder & setRootTreeName(const std::string & root_tree_name);
 
   static std::string writeTreeDocumentToString(const Document & doc);
 
@@ -128,15 +133,15 @@ public:
   // Verify the structure of this tree document and that all mentioned nodes are registered with the factory
   bool verifyTree() const;
 
-  Tree buildTree(const std::string main_tree_name, TreeBlackboardSharedPtr root_bb_ptr = TreeBlackboard::create());
+  Tree instantiateTree(const std::string root_tree_name, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
-  Tree buildTree(TreeBlackboardSharedPtr root_bb_ptr = TreeBlackboard::create());
+  Tree instantiateTree(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
 private:
   Document doc_;
   BT::BehaviorTreeFactory factory_;
   rclcpp::Node::WeakPtr node_wptr_;
-  std::shared_ptr<NodeRegistrationClassLoader> tree_node_loader_ptr_;
+  NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
 };
 
 // #####################################################################################################################

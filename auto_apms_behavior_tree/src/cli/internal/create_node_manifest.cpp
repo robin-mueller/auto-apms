@@ -17,7 +17,7 @@
 #include <set>
 
 #include "auto_apms_behavior_tree/node/node_manifest.hpp"
-#include "auto_apms_behavior_tree/resource/node_registration_class_loader.hpp"
+#include "auto_apms_behavior_tree/resource/node_registration_loader.hpp"
 #include "auto_apms_util/exceptions.hpp"
 #include "auto_apms_util/resource.hpp"
 #include "auto_apms_util/string.hpp"
@@ -60,7 +60,7 @@ int main(int argc, char ** argv)
     }
 
     // Interpret build info
-    std::map<std::string, std::string> build_lib_paths;
+    std::map<std::string, std::string> library_paths_build_package;
     std::map<std::string, std::string> reserved_names;
     for (const auto & build_info : build_infos) {
       std::vector<std::string> parts = auto_apms_util::splitString(build_info, "@");
@@ -69,46 +69,47 @@ int main(int argc, char ** argv)
       }
       const std::string & class_name = parts[0];
       const std::string & build_path = parts[1];
-      if (build_lib_paths.find(class_name) != build_lib_paths.end()) {
+      if (library_paths_build_package.find(class_name) != library_paths_build_package.end()) {
         throw std::runtime_error("Node class '" + class_name + "' is specified multiple times in build infos.");
       }
-      build_lib_paths[class_name] = build_path;  // {class_name: build_path}
+      library_paths_build_package[class_name] = build_path;  // {class_name: build_path}
       reserved_names[class_name] = build_package_name;
     }
 
     // Construct manifest object from input files
     auto output_manifest = NodeManifest::fromFiles(manifest_files);
 
-    // Exclude the build package from the list of packages to be searched for resources, because they are not installed
-    // yet. Instead we provided additional information about which nodes are being built by the build package with the
-    // build_infos argument.
-    auto all_but_build_package =
-      auto_apms_util::getAllPackagesWithResource(NodeRegistrationClassLoader::RESOURCE_TYPE_NAME);
-    all_but_build_package.erase(build_package_name);
-
     /**
-     * Trying to construct NodeRegistrationClassLoader will work completely fine during build time for all packages
+     * Trying to construct NodeRegistrationLoader will work completely fine during build time for all packages
      * EXCEPT the original auto_apms_behavior_tree package. The constructor will throw pluginlib::ClassLoaderException
      * if auto_apms_behavior_tree is being built for the first time, because the pluginlib::ClassLoader constructor
      * initially checks wether the package containing the base class is installed. Therefore we MUST avoid triggering
      * this script during build time of auto_apms_behavior_tree.
      */
-    auto loader = NodeRegistrationClassLoader::createWithAmbiguityCheck(
-      NodeRegistrationClassLoader::BASE_PACKAGE_NAME, NodeRegistrationClassLoader::BASE_CLASS_NAME,
-      NodeRegistrationClassLoader::RESOURCE_TYPE_NAME, all_but_build_package, reserved_names);
+    NodeRegistrationLoader::UniquePtr loader_ptr;
+    const std::set<std::string> exclude_packages = {build_package_name};
+    try {
+      // Exclude the build package from the list of packages to be searched for resources, because resources from this
+      // package are not installed yet. Instead we hold additional build information in the build_infos variable.
+      loader_ptr = NodeRegistrationLoader::make_unique(exclude_packages);
+    } catch (const auto_apms_util::exceptions::ResourceError & e) {
+      // Allow creating node manifests also if no other packages register node resources (Only using resources of the
+      // build package).
+      loader_ptr = nullptr;
+    }
 
     // Determine shared libraries associated with the node classes required by the manifest files
     std::set<std::string> library_paths;
     for (const auto & [node_name, params] : output_manifest.getInternalMap()) {
       // Look for class in the build package
-      if (build_lib_paths.find(params.class_name) != build_lib_paths.end()) {
-        library_paths.insert(build_lib_paths[params.class_name]);
+      if (library_paths_build_package.find(params.class_name) != library_paths_build_package.end()) {
+        library_paths.insert(library_paths_build_package[params.class_name]);
         continue;
       }
 
       // Look for class in other already installed packages if it is not provided by the build package
-      if (loader.isClassAvailable(params.class_name)) {
-        library_paths.insert(loader.getClassLibraryPath(params.class_name));
+      if (loader_ptr && loader_ptr->isClassAvailable(params.class_name)) {
+        library_paths.insert(loader_ptr->getClassLibraryPath(params.class_name));
         continue;
       }
 

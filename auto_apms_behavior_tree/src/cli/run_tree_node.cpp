@@ -16,7 +16,7 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "auto_apms_util/yaml.hpp"
@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
 
   TreeExecutor executor(node_ptr);
   auto future = executor.startExecution(
-    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.buildTree(tree_name, bb); });
+    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiateTree(tree_name, bb); });
 
   const auto termination_timeout = std::chrono::duration<double>(1.5);
   rclcpp::Time termination_start;

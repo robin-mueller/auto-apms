@@ -48,7 +48,7 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
   groot2_publisher_ptr_.reset();
   groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, groot2_port);
   state_observer_ptr_.reset();
-  state_observer_ptr_ = std::make_unique<BTStateObserver>(*tree_ptr_, node_ptr_->get_logger());
+  state_observer_ptr_ = std::make_unique<TreeStateObserver>(*tree_ptr_, node_ptr_->get_logger());
   state_observer_ptr_->enableTransitionToIdle(false);
 
   /* Start execution timer */
@@ -224,7 +224,7 @@ rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutor::get_node_bas
 
 TreeBlackboardSharedPtr TreeExecutor::getGlobalBlackboardPtr() { return global_blackboard_ptr_; }
 
-BTStateObserver & TreeExecutor::getStateObserver() { return *state_observer_ptr_; }
+TreeStateObserver & TreeExecutor::getStateObserver() { return *state_observer_ptr_; }
 
 std::string toStr(TreeExecutor::ExecutionState state)
 {

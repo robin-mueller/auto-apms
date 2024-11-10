@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 
 #include <regex>
 
@@ -25,10 +25,8 @@
 namespace auto_apms_behavior_tree
 {
 
-TreeBuilder::TreeBuilder(
-  rclcpp::Node::SharedPtr node_ptr, std::shared_ptr<NodeRegistrationClassLoader> tree_node_loader_ptr)
-: node_wptr_(node_ptr),
-  tree_node_loader_ptr_(tree_node_loader_ptr)
+TreeBuilder::TreeBuilder(rclcpp::Node::SharedPtr node_ptr, NodeRegistrationLoader::SharedPtr tree_node_loader_ptr)
+: node_wptr_(node_ptr), tree_node_loader_ptr_(tree_node_loader_ptr)
 {
   ElementPtr root_ele = doc_.NewElement(ROOT_ELEMENT_NAME);
   root_ele->SetAttribute("BTCPP_format", "4");
@@ -125,13 +123,13 @@ TreeBuilder & TreeBuilder::mergeTreesFromDocument(const Document & doc)
     throw exceptions::TreeBuildError(
       "Cannot merge trees: Root element of other document is not named '" + std::string(ROOT_ELEMENT_NAME) + "'.");
   // Overwrite main tree in current document
-  if (const char * name = other_root->Attribute(MAIN_TREE_ATTRIBUTE_NAME)) setMainTreeName(name);
+  if (const char * name = other_root->Attribute(ROOT_TREE_ATTRIBUTE_NAME)) setRootTreeName(name);
 
   const auto this_tree_names = getAllTreeNames();
   const auto other_tree_names = getAllTreeNames(doc);
 
   // Verify that there are no duplicate tree names
-  const auto common_tree_names = auto_apms_util::haveCommonElements(this_tree_names, other_tree_names);
+  const auto common_tree_names = auto_apms_util::getCommonElements(this_tree_names, other_tree_names);
   if (!common_tree_names.empty()) {
     throw exceptions::TreeBuildError(
       "Cannot merge trees: The following trees are already defined: " + rcpputils::join(common_tree_names, ", ") + ".");
@@ -289,15 +287,23 @@ TreeBuilder::ElementPtr TreeBuilder::getTreeElement(const std::string & tree_nam
 
 std::vector<std::string> TreeBuilder::getAllTreeNames() const { return getAllTreeNames(doc_); }
 
-std::string TreeBuilder::getMainTreeName() const
+bool TreeBuilder::hasRootTreeName() const
 {
-  if (const auto main_tree_name = doc_.RootElement()->Attribute(MAIN_TREE_ATTRIBUTE_NAME)) return main_tree_name;
-  return "";
+  if (doc_.RootElement()->Attribute(ROOT_TREE_ATTRIBUTE_NAME)) return true;
+  return false;
 }
 
-TreeBuilder & TreeBuilder::setMainTreeName(const std::string & main_tree_name)
+std::string TreeBuilder::getRootTreeName() const
 {
-  if (!main_tree_name.empty()) doc_.RootElement()->SetAttribute(MAIN_TREE_ATTRIBUTE_NAME, main_tree_name.c_str());
+  if (const auto root_tree_name = doc_.RootElement()->Attribute(ROOT_TREE_ATTRIBUTE_NAME)) return root_tree_name;
+  throw exceptions::TreeBuildError(
+    "Cannot get root tree name because the document's root element has no attribute '" +
+    std::string(ROOT_TREE_ATTRIBUTE_NAME) + "'.");
+}
+
+TreeBuilder & TreeBuilder::setRootTreeName(const std::string & root_tree_name)
+{
+  if (!root_tree_name.empty()) doc_.RootElement()->SetAttribute(ROOT_TREE_ATTRIBUTE_NAME, root_tree_name.c_str());
   return *this;
 }
 
@@ -313,20 +319,28 @@ bool TreeBuilder::verifyTree() const
   return true;
 }
 
-Tree TreeBuilder::buildTree(const std::string main_tree_name, TreeBlackboardSharedPtr root_bb_ptr)
+Tree TreeBuilder::instantiateTree(const std::string root_tree_name, TreeBlackboardSharedPtr bb_ptr)
 {
   Tree tree;
   try {
     factory_.registerBehaviorTreeFromText(writeTreeDocumentToString());
-    tree = factory_.createTree(main_tree_name, root_bb_ptr);
+    tree = factory_.createTree(root_tree_name, bb_ptr);
     factory_.clearRegisteredBehaviorTrees();
   } catch (const std::exception & e) {
-    throw exceptions::TreeBuildError("Error during buildTree(): " + std::string(e.what()));
+    throw exceptions::TreeBuildError("Error during instantiateTree(): " + std::string(e.what()));
   }
   return tree;
 }
 
-Tree TreeBuilder::buildTree(TreeBlackboardSharedPtr root_bb_ptr) { return buildTree("", root_bb_ptr); }
+Tree TreeBuilder::instantiateTree(TreeBlackboardSharedPtr bb_ptr)
+{
+  if (hasRootTreeName()) return instantiateTree(getRootTreeName(), bb_ptr);
+  throw exceptions::TreeBuildError(
+    "Cannot instantiate tree without a root tree name. You must either specify the attribute '" +
+    std::string(ROOT_TREE_ATTRIBUTE_NAME) +
+    "' of the tree document's root element or call setRootTreeName() to define the root tree. Alternatively, you may "
+    "call a different signature of instantiateTree().");
+}
 
 std::vector<std::string> TreeBuilder::getAllTreeNames(const Document & doc)
 {

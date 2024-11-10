@@ -25,6 +25,9 @@ set(_AUTO_APMS_UTIL_BUILD_DIR_RELATIVE "auto_apms_util")
 set(_AUTO_APMS_UTIL__ACTION_PARAM_LOOP_RATE "loop_rate")
 set(_AUTO_APMS_UTIL__ACTION_PARAM_FEEDBACK_RATE "feedback_rate")
 
+# Pluginlib conventions
+set(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB "auto_apms_pluginlib")
+
 #
 # ------------ Library --------------
 #
@@ -50,6 +53,9 @@ target_include_directories(auto_apms_util PUBLIC
 target_compile_definitions(auto_apms_util PRIVATE
     _AUTO_APMS_UTIL__ACTION_PARAM_LOOP_RATE="${_AUTO_APMS_UTIL__ACTION_PARAM_LOOP_RATE}"
     _AUTO_APMS_UTIL__ACTION_PARAM_FEEDBACK_RATE="${_AUTO_APMS_UTIL__ACTION_PARAM_FEEDBACK_RATE}"
+)
+target_compile_definitions(auto_apms_util PUBLIC
+    _AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB="${_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB}"
 )
 ament_target_dependencies(auto_apms_util
     rclcpp
@@ -107,6 +113,11 @@ install(
     DESTINATION share/${PROJECT_NAME}
 )
 
+install(
+    DIRECTORY cmake
+    DESTINATION share/${PROJECT_NAME}
+)
+
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
     rclcpp
@@ -115,6 +126,7 @@ ament_export_dependencies(
     ament_index_cpp
     pluginlib
     yaml_cpp_vendor
+    generate_parameter_library
 )
 
-ament_package()
+ament_package(CONFIG_EXTRAS "auto_apms_util-extras.cmake.in")

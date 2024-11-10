@@ -16,7 +16,7 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -67,16 +67,15 @@ int main(int argc, char ** argv)
       tree_resource_ptr->tree_file_path.c_str(), e.what());
     return EXIT_FAILURE;
   }
-  builder.setMainTreeName(tree_name);
+  builder.setRootTreeName(tree_name);
 
   TreeExecutor executor(node_ptr);
-  auto future = executor.startExecution(
-    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.buildTree(bb); },
-    std::chrono::milliseconds(250));
+  auto future =
+    executor.startExecution([&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiateTree(bb); });
 
   RCLCPP_INFO(
     node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.", tree_resource_ptr->tree_file_stem.c_str(),
-    builder.getMainTreeName().c_str(), tree_resource_ptr->package_name.c_str());
+    builder.getRootTreeName().c_str(), tree_resource_ptr->package_name.c_str());
 
   const auto termination_timeout = std::chrono::duration<double>(1.5);
   rclcpp::Time termination_start;

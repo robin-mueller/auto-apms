@@ -110,7 +110,7 @@ public:
    */
   TreeBlackboardSharedPtr getGlobalBlackboardPtr();
 
-  BTStateObserver & getStateObserver();
+  TreeStateObserver & getStateObserver();
 
 protected:
   rclcpp::Node::SharedPtr node_ptr_;
@@ -119,7 +119,7 @@ private:
   TreeBlackboardSharedPtr global_blackboard_ptr_;
   std::unique_ptr<Tree> tree_ptr_;
   std::unique_ptr<BT::Groot2Publisher> groot2_publisher_ptr_;
-  std::unique_ptr<BTStateObserver> state_observer_ptr_;
+  std::unique_ptr<TreeStateObserver> state_observer_ptr_;
   rclcpp::TimerBase::SharedPtr execution_timer_ptr_;
   ExecutionState prev_execution_state_;
   ControlCommand control_command_;

@@ -43,7 +43,7 @@ namespace auto_apms_behavior_tree
 
 /**
  * @brief Necessary parameters for loading and registering a behavior tree node class from a shared library using
- * e.g. NodeRegistrationClassLoader.
+ * e.g. NodeRegistrationLoader.
  */
 struct NodeRegistrationParams
 {

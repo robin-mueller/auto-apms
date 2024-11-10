@@ -59,7 +59,7 @@ TreeResource TreeResource::selectByTreeName(const std::string & tree_name, const
   if (!package_name.empty()) {
     search_packages.insert(package_name);
   } else {
-    search_packages = auto_apms_util::getAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE);
+    search_packages = auto_apms_util::getPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE);
   }
 
   std::vector<TreeResource> matching_resources;
@@ -91,7 +91,7 @@ TreeResource TreeResource::selectByFileName(const std::string & file_name, const
   if (!package_name.empty()) {
     search_packages.insert(package_name);
   } else {
-    search_packages = auto_apms_util::getAllPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE);
+    search_packages = auto_apms_util::getPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE);
   }
 
   std::vector<TreeResource> matching_resources;

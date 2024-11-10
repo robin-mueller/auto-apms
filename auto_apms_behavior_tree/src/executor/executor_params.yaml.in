@@ -1,8 +1,25 @@
 auto_apms_behavior_tree::executor_params:
-  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_CREATOR}:
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_NODE}:
+    type: string_array
+    default_value: []
+    read_only: true
+    description: List of package names to exclude when searching for tree node plugins.
+    validation:
+      unique<>: []
+
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_BUILD}:
+    type: string_array
+    default_value: []
+    read_only: true
+    description: List of package names to exclude when searching for tree build handler plugins.
+    validation:
+      unique<>: []
+
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER}:
     type: string
-    default_value: auto_apms_behavior_tree::ResourceTreeCreator
-    description: Fully qualified class name of the behavior tree builder responsible for creating trees by default.
+    default_value: auto_apms_behavior_tree::TreeResourceBuildHandler
+    description: Fully qualified class name of the behavior tree build handler responsible for creating trees if not overridden by the StartTreeExecutor action goal.
+
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}:
     type: double
     default_value: 0.1

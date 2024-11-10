@@ -14,21 +14,20 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/creator/tree_creator_base.hpp"
+#include "auto_apms_behavior_tree/builder/tree_build_handler.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class TreeCreatorFactoryInterface
+class TreeBuildHandlerFactoryInterface
 {
 public:
-  TreeCreatorFactoryInterface() = default;
-  virtual ~TreeCreatorFactoryInterface() = default;
+  TreeBuildHandlerFactoryInterface() = default;
+  virtual ~TreeBuildHandlerFactoryInterface() = default;
 
-  virtual std::shared_ptr<TreeCreatorBase> instantiateCreator(
-    rclcpp::Node::SharedPtr node_ptr, TreeBuilder::SharedPtr tree_builder_ptr) = 0;
+  virtual TreeBuildHandler::SharedPtr makeShared(rclcpp::Node::SharedPtr node_ptr) = 0;
 
-  virtual std::shared_ptr<TreeCreatorBase> instantiateCreator(rclcpp::Node::SharedPtr node_ptr) = 0;
+  virtual TreeBuildHandler::UniquePtr makeUnique(rclcpp::Node::SharedPtr node_ptr) = 0;
 };
 
 }  // namespace auto_apms_behavior_tree

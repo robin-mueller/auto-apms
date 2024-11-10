@@ -14,42 +14,38 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "auto_apms_behavior_tree/definitions.hpp"
+#include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-class TreeCreatorBase
+/**
+ * @brief Applies the [builder](https://refactoring.guru/design-patterns/builder/cpp/example#lang-features) software
+ * design pattern and allows for TreeExecutorServer to be able to dynamically change the way how a tree is created.
+ */
+class TreeBuildHandler
 {
 public:
-  TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr, TreeBuilder::SharedPtr tree_builder_ptr);
+  RCLCPP_SMART_PTR_ALIASES_ONLY(TreeBuildHandler)
 
-  TreeCreatorBase(rclcpp::Node::SharedPtr node_ptr);
+  TreeBuildHandler(rclcpp::Node::SharedPtr node_ptr);
 
-  virtual ~TreeCreatorBase() = default;
+  virtual ~TreeBuildHandler() = default;
 
   virtual bool setRequest(const std::string & request) = 0;
 
+  virtual void handleBuild(TreeBuilder & builder, TreeBlackboard & bb) = 0;
+
   rclcpp::Node::SharedPtr getNodePtr() const;
-
-private:
-  virtual void configureTreeBuilder(TreeBuilder & builder) = 0;
-
-  virtual void configureBlackboard(TreeBlackboard & bb);
-
-public:
-  Tree createTree(const std::string & tree_name, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
-
-  Tree createTree(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
 protected:
   const rclcpp::Logger logger_;
 
 private:
   rclcpp::Node::WeakPtr node_wptr_;
-  TreeBuilder::SharedPtr builder_ptr_;
 };
 
 }  // namespace auto_apms_behavior_tree

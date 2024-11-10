@@ -15,7 +15,7 @@
 #include <regex>
 
 #include "Eigen/Geometry"
-#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "auto_apms_behavior_tree/node.hpp"
 #include "px4_ros2/utils/geodesic.hpp"
 

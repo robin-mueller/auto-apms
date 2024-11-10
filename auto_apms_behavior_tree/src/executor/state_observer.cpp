@@ -19,7 +19,7 @@
 namespace auto_apms_behavior_tree
 {
 
-BTStateObserver::BTStateObserver(
+TreeStateObserver::TreeStateObserver(
   const BT::Tree & tree, const rclcpp::Logger & node_logger, std::chrono::seconds max_logging_rate)
 : StatusChangeLogger{tree.rootNode()},
   logger_{node_logger},
@@ -28,20 +28,20 @@ BTStateObserver::BTStateObserver(
 {
 }
 
-void BTStateObserver::flush() { running_action_history_.clear(); }
+void TreeStateObserver::flush() { running_action_history_.clear(); }
 
-void BTStateObserver::setLogging(bool active) { logging_active_ = active; }
+void TreeStateObserver::setLogging(bool active) { logging_active_ = active; }
 
-const std::vector<std::string> & BTStateObserver::getRunningActionHistory() const { return running_action_history_; }
+const std::vector<std::string> & TreeStateObserver::getRunningActionHistory() const { return running_action_history_; }
 
-const std::string & BTStateObserver::getLastRunningActionName() const { return last_running_action_name_; }
+const std::string & TreeStateObserver::getLastRunningActionName() const { return last_running_action_name_; }
 
-uint16_t BTStateObserver::createStateChangeBitmask(BT::NodeStatus prev_status, BT::NodeStatus curr_status)
+uint16_t TreeStateObserver::createStateChangeBitmask(BT::NodeStatus prev_status, BT::NodeStatus curr_status)
 {
   return static_cast<uint16_t>(prev_status) << 8 | static_cast<uint16_t>(curr_status);
 }
 
-void BTStateObserver::callback(
+void TreeStateObserver::callback(
   BT::Duration timestamp, const BT::TreeNode & node, BT::NodeStatus prev_status, BT::NodeStatus status)
 {
   if (node.type() == BT::NodeType::ACTION && status == BT::NodeStatus::RUNNING) {

@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(DEFINED _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE)
-    ament_index_register_resource(
-        "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE}"
-        CONTENT
-        "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}"
+# Macro that registers behavior tree build handler plugins from a specific target
+macro(auto_apms_behavior_tree_register_build_handlers target)
+    auto_apms_util_register_plugins(
+        ${target}
+        "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface"
+        ${ARGN}
+        FACTORY_TEMPLATE_CLASS "auto_apms_behavior_tree::TreeBuildHandlerFactoryTemplate"
     )
-endif()
+endmacro()

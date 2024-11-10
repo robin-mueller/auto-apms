@@ -65,13 +65,13 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
     set(multiValueArgs NODE_MANIFEST)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    set(_tree_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE}")
+    set(_tree_rel_dir__install "${_AUTO_APMS_UTIL__PACKAGE_SHARED_RESOURCES_DIR_RELATIVE}/${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE}")
     set(_node_manifest_rel_path__install "")
 
     if(NOT ${ARGS_NODE_MANIFEST} STREQUAL "")
-        file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}")
+        file(MAKE_DIRECTORY "${_AUTO_APMS_UTIL__PACKAGE_BUILD_DIR_ABSOLUTE}")
         list(REMOVE_DUPLICATES ARGS_NODE_MANIFEST) # Disregard duplicates
-        set(_node_manifest_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_RESOURCES_DIR_RELATIVE}")
+        set(_node_manifest_rel_dir__install "${_AUTO_APMS_UTIL__PACKAGE_SHARED_RESOURCES_DIR_RELATIVE}")
         set(_node_manifest_created_file_name "node_manifest_${_tree_file_stem}.yaml")
         set(_node_model_rel_dir__install "${_tree_rel_dir__install}")
 
@@ -85,10 +85,10 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
         # Create the complete manifest for model generation.
         # However, this command is mainly relevant for defining a variable containing the library paths and generator expressions
         # for direct node plugin dependencies of the registered behavior tree
-        set(_node_manifest_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/${_node_manifest_created_file_name}")
+        set(_node_manifest_abs_path__build "${_AUTO_APMS_UTIL__PACKAGE_BUILD_DIR_ABSOLUTE}/${_node_manifest_created_file_name}")
         set(_node_manifest_rel_path__install "${_node_manifest_rel_dir__install}/${_node_manifest_created_file_name}")
         execute_process(
-            COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/create_node_manifest"
+            COMMAND "${_AUTO_APMS_BEHAVIOR_TREE__INTERNAL_CLI_INSTALL_DIR}/create_node_manifest"
                 "${ARGS_NODE_MANIFEST}" # Paths of the manifest source files
 
                 # General build information for node plugins compiled by this package.
@@ -109,9 +109,9 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
         endif()
 
         # Use the above created manifest for generating the node model
-        set(_node_model_abs_path__build "${PROJECT_BINARY_DIR}/${_AUTO_APMS_BEHAVIOR_TREE_BUILD_DIR_RELATIVE}/node_model_${_tree_file_stem}.xml")
+        set(_node_model_abs_path__build "${_AUTO_APMS_UTIL__PACKAGE_BUILD_DIR_ABSOLUTE}/node_model_${_tree_file_stem}.xml")
         add_custom_command(OUTPUT "${_node_model_abs_path__build}"
-            COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_INTERNAL_CLI_INSTALL_DIR}/generate_node_model"
+            COMMAND "${_AUTO_APMS_BEHAVIOR_TREE__INTERNAL_CLI_INSTALL_DIR}/generate_node_model"
                 "\"${_node_manifest_abs_path__build}\"" # Path to the processed node plugin manifest
 
                 # Exhaustive list of libraries to be loaded by ClassLoader.

@@ -26,7 +26,7 @@ namespace auto_apms_behavior_tree
 {
 
 // clang-format off
-const std::string TreeExecutorServer::PARAM_NAME_TREE_BUILDER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TREE_CREATOR;
+const std::string TreeExecutorServer::PARAM_NAME_TREE_BUILDER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER;
 const std::string TreeExecutorServer::PARAM_NAME_TICK_RATE = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE;
 const std::string TreeExecutorServer::PARAM_NAME_GROOT2_PORT = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT;
 const std::string TreeExecutorServer::PARAM_NAME_STATE_CHANGE_LOGGER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER;
@@ -40,6 +40,12 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, rclcpp::NodeOpt
   start_action_context_(logger_),
   command_action_context_(logger_)
 {
+  const ExecutorParameters params = executor_param_listener_.get_params();
+  node_loader_ptr_ = NodeRegistrationLoader::make_shared(
+    std::set<std::string>(params.node_exclude_packages.begin(), params.node_exclude_packages.end()));
+  build_handler_loader_ptr_ = TreeBuildHandlerLoader::make_unique(
+    std::set<std::string>(params.build_handler_exclude_packages.begin(), params.build_handler_exclude_packages.end()));
+
   using namespace std::placeholders;
   start_action_ptr_ = rclcpp_action::create_server<StartActionContext::Type>(
     node_ptr_, name + TREE_EXECUTOR_START_ACTION_NAME_SUFFIX,
@@ -68,20 +74,16 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, rclcpp::NodeOpt
     // Log relevant arguments. First argument is executable name (argv[0]) and won't be considered.
     std::vector<std::string> relevant_args{args.begin() + 1, args.end()};
     RCLCPP_DEBUG(
-      logger_, "Additional cli arguments in rclcpp::NodeOptions: [ %s ]",
-      rcpputils::join(relevant_args, ", ").c_str());
+      logger_, "Additional cli arguments in rclcpp::NodeOptions: [ %s ]", rcpputils::join(relevant_args, ", ").c_str());
 
     // Start tree execution with the creator request being the first relevant argument
     const std::string request = relevant_args[0];
     const ExecutorParameters params = executor_param_listener_.get_params();
-    startExecution(makeTreeConstructor("", params.tree_creator_name, request), params.tick_rate, params.groot2_port);
+    startExecution(makeTreeConstructor("", params.tree_build_handler, request), params.tick_rate, params.groot2_port);
   }
 }
 
-TreeExecutorServer::TreeExecutorServer(rclcpp::NodeOptions options)
-: TreeExecutorServer(DEFAULT_NODE_NAME, options)
-{
-}
+TreeExecutorServer::TreeExecutorServer(rclcpp::NodeOptions options) : TreeExecutorServer(DEFAULT_NODE_NAME, options) {}
 
 void TreeExecutorServer::prepareTreeBuilder(TreeBuilder & /*builder*/) {}
 
@@ -106,33 +108,31 @@ std::string TreeExecutorServer::stripPrefixFromParameterName(const std::string &
   return "";
 }
 
-void TreeExecutorServer::setScriptingEnumsFromParameters(TreeBuilder& builder)
+void TreeExecutorServer::setScriptingEnumsFromParameters(TreeBuilder & builder)
 {
   const std::map<std::string, rclcpp::Parameter> enums_param_map = getParametersWithPrefix(SCRIPTING_ENUM_PARAM_PREFIX);
-    std::map<std::string, std::string> set_successfully_map;
-    for (const auto & [name, param] : enums_param_map) {
-      try {
-        switch (param.get_type()) {
-          case rclcpp::ParameterType::PARAMETER_BOOL:
-            builder.setScriptingEnum(name, static_cast<int>(param.as_bool()));
-            break;
-          case rclcpp::ParameterType::PARAMETER_INTEGER:
-            builder.setScriptingEnum(name, param.as_int());
-            break;
-          default:
-            throw std::runtime_error("Parameter to scripting enum conversion is not defined.");
-        }
-        set_successfully_map[name] = param.value_to_string();
-      } catch (const std::exception & e) {
-        RCLCPP_ERROR(
-          logger_, "Error setting scripting enum from parameter %s=%s (Type: %s): %s", name.c_str(),
-          param.value_to_string().c_str(), param.get_type_name().c_str(), e.what());
+  std::map<std::string, std::string> set_successfully_map;
+  for (const auto & [name, param] : enums_param_map) {
+    try {
+      switch (param.get_type()) {
+        case rclcpp::ParameterType::PARAMETER_BOOL:
+          builder.setScriptingEnum(name, static_cast<int>(param.as_bool()));
+          break;
+        case rclcpp::ParameterType::PARAMETER_INTEGER:
+          builder.setScriptingEnum(name, param.as_int());
+          break;
+        default:
+          throw std::runtime_error("Parameter to scripting enum conversion is not defined.");
       }
+      set_successfully_map[name] = param.value_to_string();
+    } catch (const std::exception & e) {
+      RCLCPP_ERROR(
+        logger_, "Error setting scripting enum from parameter %s=%s (Type: %s): %s", name.c_str(),
+        param.value_to_string().c_str(), param.get_type_name().c_str(), e.what());
     }
-    RCLCPP_DEBUG(
-      logger_, "Defined scripting enums from parameters: { %s }",
-      auto_apms_util::printMap(set_successfully_map).c_str());
-  
+  }
+  RCLCPP_DEBUG(
+    logger_, "Defined scripting enums from parameters: { %s }", auto_apms_util::printMap(set_successfully_map).c_str());
 }
 
 void TreeExecutorServer::updateBlackboardFromParameters(TreeBlackboard & bb)
@@ -187,50 +187,51 @@ void TreeExecutorServer::updateBlackboardFromParameters(TreeBlackboard & bb)
 }
 
 TreeConstructor TreeExecutorServer::makeTreeConstructor(
-  const std::string & tree_name, const std::string & tree_creator_name, const std::string & tree_creator_request,
-  const NodeManifest & node_overrides)
+  const std::string & root_tree_name, const std::string & build_handler_class_name,
+  const std::string & build_handler_request, const NodeManifest & node_overrides)
 {
-  // Make sure builder is available
-  if (!tree_creator_loader_.isClassAvailable(tree_creator_name)) {
+  // Make sure build handler is available
+  if (!build_handler_loader_ptr_->isClassAvailable(build_handler_class_name)) {
     throw exceptions::TreeBuildError(
-      "There is no tree creator class named '" + tree_creator_name +
+      "There is no tree build handler class named '" + build_handler_class_name +
       "'. Make sure that it's spelled correctly and registered by calling "
-      "auto_apms_behavior_tree_register_creators() in the CMakeLists.txt of the "
+      "auto_apms_behavior_tree_register_build_handlers() in the CMakeLists.txt of the "
       "corresponding package.");
   }
 
-  // Try to load and create the tree creator
-  TreeBuilder::SharedPtr builder_ptr = TreeBuilder::make_shared(node_ptr_, node_loader_ptr_);
-  std::shared_ptr<TreeCreatorBase> creator_ptr;
+  // Try to load and create the tree build handler
   try {
-    creator_ptr =
-      tree_creator_loader_.createUniqueInstance(tree_creator_name)->instantiateCreator(node_ptr_, builder_ptr);
+    build_handler_ptr_ =
+      build_handler_loader_ptr_->createUniqueInstance(build_handler_class_name)->makeUnique(node_ptr_);
   } catch (const std::exception & e) {
     throw exceptions::TreeBuildError(
-      "An error occured when trying to create an instance of tree creator class '" + tree_creator_name +
-      "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_CREATOR macro must be "
+      "An error occured when trying to create an instance of tree build handler class '" + build_handler_class_name +
+      "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER macro must be "
       "called in the source file for the class to be discoverable. Error "
       "message: " +
       e.what());
   }
 
   // Request the tree identity
-  if (!creator_ptr->setRequest(tree_creator_request)) {
+  if (!build_handler_ptr_->setRequest(build_handler_request)) {
     throw exceptions::TreeBuildError(
-      "Request to create tree '" + tree_creator_request + "' was denied by '" + tree_creator_name +
+      "Request to create tree '" + build_handler_request + "' was denied by '" + build_handler_class_name +
       "' (setRequest() returned false).");
   }
 
-  // By passing the the local variables to the callback's captures by value they live on and can be used for building
-  // the tree later. Otherwise a segmentation fault would occur since the memory of the arguments would be released at
-  // the time the method returns.
-  return [this, builder_ptr, creator_ptr, tree_name, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
+  // By passing the the local variables to the callback's captures by value they live on and can be used for creating
+  // the tree later. Otherwise a segmentation fault would occur since the memory allocated for the arguments is released
+  // at the time the method returns.
+  return [this, root_tree_name, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
+    TreeBuilder builder(node_ptr_, node_loader_ptr_);
+
     // Run build pipeline
-    prepareTreeBuilder(*builder_ptr);
-    setScriptingEnumsFromParameters(*builder_ptr);
+    prepareTreeBuilder(builder);
+    setScriptingEnumsFromParameters(builder);
     updateBlackboardFromParameters(*bb_ptr);
-    builder_ptr->loadNodePlugins(node_overrides, true);
-    return creator_ptr->createTree(tree_name, bb_ptr);
+    build_handler_ptr_->handleBuild(builder, *bb_ptr);
+    builder.loadNodePlugins(node_overrides, true);
+    return builder.instantiateTree(root_tree_name, bb_ptr);
   };
 }
 
@@ -253,21 +254,24 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
       return result;
     };
 
-    // Check for allowed while busy (We allow all dynamic blackboard parameters by default)
-    if (
-      isBusy() && stripPrefixFromParameterName(BLACKBOARD_PARAM_PREFIX, param_name).empty() &&
-      not_in_list(allowed_while_busy)) {
-      return create_rejected("Parameter cannot change when executor is busy");
+    // Check for allowed while busy (We allow all blackboard parameters by default)
+    if (isBusy() && stripPrefixFromParameterName(BLACKBOARD_PARAM_PREFIX, param_name).empty()) {
+      if (!stripPrefixFromParameterName(SCRIPTING_ENUM_PARAM_PREFIX, param_name).empty()) {
+        return create_rejected("Scripting enums are constant while tree executor is running");
+      }
+      if (not_in_list(allowed_while_busy)) {
+        return create_rejected("Parameter is not allowed to change while tree executor is running");
+      }
     }
 
     // Check if builder plugin name is valid
     if (param_name == PARAM_NAME_TREE_BUILDER) {
       const std::string class_name = p.as_string();
-      if (!tree_creator_loader_.isClassAvailable(class_name)) {
+      if (!build_handler_loader_ptr_->isClassAvailable(class_name)) {
         return create_rejected(
-          "There is no tree builder class named '" + class_name +
+          "There is no build handler class named '" + class_name +
           "'. Make sure it is registered using the CMake macro "
-          "auto_apms_behavior_tree_register_creators().");
+          "auto_apms_behavior_tree_register_build_handlers().");
       }
     }
   }
@@ -301,10 +305,10 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
 
   try {
     tree_constructor_ = makeTreeConstructor(
-      goal_ptr->tree_name,
-      goal_ptr->tree_creator_name.empty() ? executor_param_listener_.get_params().tree_creator_name
-                                          : goal_ptr->tree_creator_name,
-      goal_ptr->tree_creator_request, node_overrides);
+      goal_ptr->root_tree_name,
+      goal_ptr->tree_build_handler.empty() ? executor_param_listener_.get_params().tree_build_handler
+                                           : goal_ptr->tree_build_handler,
+      goal_ptr->tree_build_request, node_overrides);
   } catch (const std::exception & e) {
     RCLCPP_WARN(
       logger_, "Goal %s was REJECTED: Error making the tree constructor: %s", rclcpp_action::to_string(uuid).c_str(),

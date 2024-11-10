@@ -26,14 +26,23 @@ bool contains(const ContainerT<ValueT, AllocatorT> & c, const ValueT & val)
   return std::find(c.begin(), c.end(), val) != c.end();
 }
 
-template <typename ContainerT>
-ContainerT haveCommonElements(ContainerT c1, ContainerT c2)
+template <typename KeyT, typename CompareT, typename AllocatorT>
+std::set<KeyT, CompareT, AllocatorT> getCommonElements(
+  std::set<KeyT, CompareT, AllocatorT> c1, std::set<KeyT, CompareT, AllocatorT> c2)
+{
+  std::set<KeyT, CompareT, AllocatorT> intersect;
+  std::set_intersection(c1.begin(), c1.end(), c2.begin(), c2.end(), std::inserter(intersect, intersect.begin()));
+  return intersect;
+}
+
+template <typename KeyT, typename AllocatorT>
+std::vector<KeyT, AllocatorT> getCommonElements(std::vector<KeyT, AllocatorT> c1, std::vector<KeyT, AllocatorT> c2)
 {
   std::sort(c1.begin(), c1.end());
   std::sort(c2.begin(), c2.end());
-  ContainerT intersection;
-  std::set_intersection(c1.begin(), c1.end(), c2.begin(), c2.end(), std::back_inserter(intersection));
-  return intersection;
+  std::vector<KeyT, AllocatorT> intersect;
+  std::set_intersection(c1.begin(), c1.end(), c2.begin(), c2.end(), std::back_inserter(intersect));
+  return intersect;
 }
 
 }  // namespace auto_apms_util

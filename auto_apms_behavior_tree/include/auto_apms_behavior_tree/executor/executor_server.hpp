@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/creator/tree_builder.hpp"
+#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
-#include "auto_apms_behavior_tree/resource/node_registration_class_loader.hpp"
-#include "auto_apms_behavior_tree/resource/tree_creator_class_loader.hpp"
+#include "auto_apms_behavior_tree/resource/node_registration_loader.hpp"
+#include "auto_apms_behavior_tree/resource/tree_build_handler_loader.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_util/action_context.hpp"
@@ -64,11 +64,11 @@ private:
 protected:
   /* Utility methods */
 
-  std::map<std::string, rclcpp::Parameter> getParametersWithPrefix(const std::string& prefix);
+  std::map<std::string, rclcpp::Parameter> getParametersWithPrefix(const std::string & prefix);
 
-  std::string stripPrefixFromParameterName(const std::string& prefix, const std::string & param_name);
+  std::string stripPrefixFromParameterName(const std::string & prefix, const std::string & param_name);
 
-  void setScriptingEnumsFromParameters(TreeBuilder& builder);
+  void setScriptingEnumsFromParameters(TreeBuilder & builder);
 
   void updateBlackboardFromParameters(TreeBlackboard & bb);
 
@@ -102,8 +102,9 @@ private:
   const rclcpp::Logger logger_;
   ExecutorParameterListener executor_param_listener_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
-  TreeCreatorClassLoader tree_creator_loader_;
-  std::shared_ptr<NodeRegistrationClassLoader> node_loader_ptr_;
+  NodeRegistrationLoader::SharedPtr node_loader_ptr_;
+  TreeBuildHandlerLoader::UniquePtr build_handler_loader_ptr_;
+  TreeBuildHandler::UniquePtr build_handler_ptr_;
   TreeConstructor tree_constructor_;
   std::map<std::string, rclcpp::Parameter> bb_param_map_;
 

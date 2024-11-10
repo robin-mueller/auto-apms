@@ -1,1 +1,1 @@
-filter=-linelength
+filter=-linelength,-readability/wonkycase

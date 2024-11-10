@@ -14,31 +14,31 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/creator/tree_creator_factory_interface.hpp"
+#include "auto_apms_behavior_tree/builder/tree_build_handler_factory_interface.hpp"
 #include "auto_apms_util/resource.hpp"
+#include "rclcpp/macros.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief A pluginlib::ClassLoader specifically for loading installed behavior tree builder plugins.
+ * @brief A pluginlib::ClassLoader specifically for loading installed behavior tree build handler plugins.
  */
-class TreeCreatorClassLoader : public auto_apms_util::ResourceClassLoader<TreeCreatorFactoryInterface>
+class TreeBuildHandlerLoader : public auto_apms_util::PluginClassLoader<TreeBuildHandlerFactoryInterface>
 {
 public:
+  RCLCPP_SMART_PTR_DEFINITIONS(TreeBuildHandlerLoader)
+
   static const std::string BASE_PACKAGE_NAME;
   static const std::string BASE_CLASS_NAME;
-  static const std::string RESOURCE_TYPE_NAME;
 
   /**
-   * @brief TreeCreatorClassLoader constructor.
-   * @param search_packages Packages to consider when searching for associated plugin resources. Leave empty to search
-   * in all packages.
-   * @throws auto_apms_util::exceptions::ResourceError if failed to find a pluginlib plugin
-   * manifest file in a package specified in @p search_packages or if an `ament_index` resource marker file is invalid.
+   * @brief TreeBuildHandlerLoader constructor.
+   * @param exclude_packages Packages to exclude when searching for associated plugin resources.
+   * @throws See auto_apms_util::createUnambiguousPluginClassLoader.
    */
-  TreeCreatorClassLoader(const std::set<std::string> & search_packages = {});
+  TreeBuildHandlerLoader(const std::set<std::string> & exclude_packages = {});
 };
 
 }  // namespace auto_apms_behavior_tree

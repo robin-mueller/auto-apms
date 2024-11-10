@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/resource/tree_creator_class_loader.hpp"
+#include "auto_apms_behavior_tree/resource/node_registration_loader.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-const std::string TreeCreatorClassLoader::BASE_PACKAGE_NAME = "auto_apms_behavior_tree";
-const std::string TreeCreatorClassLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::TreeCreatorFactoryInterface";
-const std::string TreeCreatorClassLoader::RESOURCE_TYPE_NAME = _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__CREATOR;
+const std::string NodeRegistrationLoader::BASE_PACKAGE_NAME = "auto_apms_behavior_tree";
+const std::string NodeRegistrationLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::NodeRegistrationInterface";
 
-TreeCreatorClassLoader::TreeCreatorClassLoader(const std::set<std::string> & search_packages)
-: ResourceClassLoader(createWithAmbiguityCheck(BASE_PACKAGE_NAME, BASE_CLASS_NAME, RESOURCE_TYPE_NAME, search_packages))
+NodeRegistrationLoader::NodeRegistrationLoader(const std::set<std::string> & exclude_packages)
+: PluginClassLoader(createUnambiguousPluginClassLoader(BASE_PACKAGE_NAME, BASE_CLASS_NAME, exclude_packages))
 {
 }
 
