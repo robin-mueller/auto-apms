@@ -14,7 +14,7 @@
 
 #include <auto_apms_examples/msg/system_state.hpp>
 
-#include "auto_apms_behavior_tree/node.hpp"
+#include "auto_apms_behavior_tree_core/node.hpp"
 
 #define OUTPUT_KEY_BATTERY "battery_level"
 
@@ -23,7 +23,7 @@ using SystemStateMsg = auto_apms_examples::msg::SystemState;
 namespace auto_apms::ops_engine
 {
 
-class GetSystemState : public auto_apms_behavior_tree::RosSubscriberNode<SystemStateMsg>
+class GetSystemState : public auto_apms_behavior_tree::core::RosSubscriberNode<SystemStateMsg>
 {
   SystemStateMsg last_msg_;
 

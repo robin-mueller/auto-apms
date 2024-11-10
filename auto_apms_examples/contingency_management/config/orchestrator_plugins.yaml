@@ -18,7 +18,7 @@ Takeoff:
   port: takeoff
 
 LaunchExecutor:
-  class_name: auto_apms_behavior_tree::LaunchExecutorAction
+  class_name: auto_apms_behavior_tree::StartExecutorAction
 
 UploadBehaviorTree:
   class_name: auto_apms_behavior_tree::UploadBehaviorTreeAction

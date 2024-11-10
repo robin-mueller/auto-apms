@@ -40,21 +40,21 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, rclcpp::NodeOpt
   start_action_context_(logger_),
   command_action_context_(logger_)
 {
-  const ExecutorParameters params = executor_param_listener_.get_params();
-  node_loader_ptr_ = NodeRegistrationLoader::make_shared(
-    std::set<std::string>(params.node_exclude_packages.begin(), params.node_exclude_packages.end()));
-  build_handler_loader_ptr_ = TreeBuildHandlerLoader::make_unique(
-    std::set<std::string>(params.build_handler_exclude_packages.begin(), params.build_handler_exclude_packages.end()));
+  const ExecutorParameters initial_params = executor_param_listener_.get_params();
+  node_loader_ptr_ = core::NodeRegistrationLoader::make_shared(
+    std::set<std::string>(initial_params.node_exclude_packages.begin(), initial_params.node_exclude_packages.end()));
+  build_handler_loader_ptr_ = TreeBuildHandlerLoader::make_unique(std::set<std::string>(
+    initial_params.build_handler_exclude_packages.begin(), initial_params.build_handler_exclude_packages.end()));
 
   using namespace std::placeholders;
   start_action_ptr_ = rclcpp_action::create_server<StartActionContext::Type>(
-    node_ptr_, name + TREE_EXECUTOR_START_ACTION_NAME_SUFFIX,
+    node_ptr_, name + _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX,
     std::bind(&TreeExecutorServer::handle_start_goal_, this, _1, _2),
     std::bind(&TreeExecutorServer::handle_start_cancel_, this, _1),
     std::bind(&TreeExecutorServer::handle_start_accept_, this, _1));
 
   command_action_ptr_ = rclcpp_action::create_server<CommandActionContext::Type>(
-    node_ptr_, name + TREE_EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
+    node_ptr_, name + _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
     std::bind(&TreeExecutorServer::handle_command_goal_, this, _1, _2),
     std::bind(&TreeExecutorServer::handle_command_cancel_, this, _1),
     std::bind(&TreeExecutorServer::handle_command_accept_, this, _1));
@@ -78,8 +78,9 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, rclcpp::NodeOpt
 
     // Start tree execution with the creator request being the first relevant argument
     const std::string request = relevant_args[0];
-    const ExecutorParameters params = executor_param_listener_.get_params();
-    startExecution(makeTreeConstructor("", params.tree_build_handler, request), params.tick_rate, params.groot2_port);
+    startExecution(
+      makeTreeConstructor("", initial_params.tree_build_handler, request), initial_params.tick_rate,
+      initial_params.groot2_port);
   }
 }
 
@@ -112,27 +113,30 @@ void TreeExecutorServer::setScriptingEnumsFromParameters(TreeBuilder & builder)
 {
   const std::map<std::string, rclcpp::Parameter> enums_param_map = getParametersWithPrefix(SCRIPTING_ENUM_PARAM_PREFIX);
   std::map<std::string, std::string> set_successfully_map;
-  for (const auto & [name, param] : enums_param_map) {
+  for (const auto & [enum_key, param] : enums_param_map) {
     try {
       switch (param.get_type()) {
         case rclcpp::ParameterType::PARAMETER_BOOL:
-          builder.setScriptingEnum(name, static_cast<int>(param.as_bool()));
+          builder.setScriptingEnum(enum_key, static_cast<int>(param.as_bool()));
           break;
         case rclcpp::ParameterType::PARAMETER_INTEGER:
-          builder.setScriptingEnum(name, param.as_int());
+          builder.setScriptingEnum(enum_key, param.as_int());
           break;
         default:
           throw std::runtime_error("Parameter to scripting enum conversion is not defined.");
       }
-      set_successfully_map[name] = param.value_to_string();
+      set_successfully_map[enum_key] = param.value_to_string();
     } catch (const std::exception & e) {
       RCLCPP_ERROR(
-        logger_, "Error setting scripting enum from parameter %s=%s (Type: %s): %s", name.c_str(),
+        logger_, "Error setting scripting enum from parameter %s=%s (Type: %s): %s", enum_key.c_str(),
         param.value_to_string().c_str(), param.get_type_name().c_str(), e.what());
     }
   }
-  RCLCPP_DEBUG(
-    logger_, "Defined scripting enums from parameters: { %s }", auto_apms_util::printMap(set_successfully_map).c_str());
+  if (!set_successfully_map.empty()) {
+    RCLCPP_DEBUG(
+      logger_, "Defined scripting enums from parameters: { %s }",
+      auto_apms_util::printMap(set_successfully_map).c_str());
+  }
 }
 
 void TreeExecutorServer::updateBlackboardFromParameters(TreeBlackboard & bb)
@@ -140,44 +144,44 @@ void TreeExecutorServer::updateBlackboardFromParameters(TreeBlackboard & bb)
   const std::map<std::string, rclcpp::Parameter> bb_param_map = getParametersWithPrefix(BLACKBOARD_PARAM_PREFIX);
   if (bb_param_map_ != bb_param_map) {  // Only update if changed
     std::map<std::string, std::string> set_successfully_map;
-    for (const auto & [name, param] : bb_param_map) {
+    for (const auto & [entry_key, param] : bb_param_map) {
       try {
         switch (param.get_type()) {
           case rclcpp::ParameterType::PARAMETER_BOOL:
-            bb.set(name, param.as_bool());
+            bb.set(entry_key, param.as_bool());
             break;
           case rclcpp::ParameterType::PARAMETER_INTEGER:
-            bb.set(name, param.as_int());
+            bb.set(entry_key, param.as_int());
             break;
           case rclcpp::ParameterType::PARAMETER_DOUBLE:
-            bb.set(name, param.as_double());
+            bb.set(entry_key, param.as_double());
             break;
           case rclcpp::ParameterType::PARAMETER_STRING:
-            bb.set(name, param.as_string());
+            bb.set(entry_key, param.as_string());
             break;
           case rclcpp::ParameterType::PARAMETER_BYTE_ARRAY:
-            bb.set(name, param.as_byte_array());
+            bb.set(entry_key, param.as_byte_array());
             break;
           case rclcpp::ParameterType::PARAMETER_BOOL_ARRAY:
-            bb.set(name, param.as_bool_array());
+            bb.set(entry_key, param.as_bool_array());
             break;
           case rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY:
-            bb.set(name, param.as_integer_array());
+            bb.set(entry_key, param.as_integer_array());
             break;
           case rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY:
-            bb.set(name, param.as_double_array());
+            bb.set(entry_key, param.as_double_array());
             break;
           case rclcpp::ParameterType::PARAMETER_STRING_ARRAY:
-            bb.set(name, param.as_string_array());
+            bb.set(entry_key, param.as_string_array());
             break;
           default:
             throw std::runtime_error("Parameter to blackboard conversion is not defined.");
         }
-        set_successfully_map[name] = param.value_to_string();
-        bb_param_map_[name] = param;
+        set_successfully_map[entry_key] = param.value_to_string();
+        bb_param_map_[entry_key] = param;
       } catch (const std::exception & e) {
         RCLCPP_ERROR(
-          logger_, "Error updating blackboard from parameter %s=%s (Type: %s): %s", name.c_str(),
+          logger_, "Error updating blackboard from parameter %s=%s (Type: %s): %s", entry_key.c_str(),
           param.value_to_string().c_str(), param.get_type_name().c_str(), e.what());
       }
     }
@@ -188,7 +192,7 @@ void TreeExecutorServer::updateBlackboardFromParameters(TreeBlackboard & bb)
 
 TreeConstructor TreeExecutorServer::makeTreeConstructor(
   const std::string & root_tree_name, const std::string & build_handler_class_name,
-  const std::string & build_handler_request, const NodeManifest & node_overrides)
+  const std::string & build_handler_request, const core::NodeManifest & node_overrides)
 {
   // Make sure build handler is available
   if (!build_handler_loader_ptr_->isClassAvailable(build_handler_class_name)) {
@@ -250,7 +254,7 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
     auto create_rejected = [&param_name](const std::string msg) {
       rcl_interfaces::msg::SetParametersResult result;
       result.successful = false;
-      result.reason = "Rejected to set parameter '" + param_name + "': " + msg;
+      result.reason = "Rejected to set parameter '" + param_name + "': " + msg + ".";
       return result;
     };
 
@@ -274,6 +278,51 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
           "auto_apms_behavior_tree_register_build_handlers().");
       }
     }
+
+    // Validate type of blackboad parameters won't change
+    if (const std::string entry_key = stripPrefixFromParameterName(BLACKBOARD_PARAM_PREFIX, param_name);
+        !entry_key.empty()) {
+      if (const std::shared_ptr<BT::Blackboard::Entry> entry_ptr = getGlobalBlackboardPtr()->getEntry(entry_key)) {
+        auto reject_bb_param_type_mismatch = [&]() {
+          return create_rejected(
+            "Type of blackboard entries must not change. Tried to set entry '" + entry_key + "' (Type: " +
+            entry_ptr->info.typeName() + ") to value '" + p.value_to_string() + "' (Type: " + p.get_type_name() + ")");
+        };
+        std::scoped_lock scoped_lock(entry_ptr->entry_mutex);
+        const BT::Any & any = entry_ptr->value;
+        switch (p.get_type()) {
+          case rclcpp::ParameterType::PARAMETER_BOOL:
+            if (!any.isType<bool>()) return reject_bb_param_type_mismatch();
+            break;
+          case rclcpp::ParameterType::PARAMETER_INTEGER:
+            if (!any.isType<int64_t>()) return reject_bb_param_type_mismatch();
+            break;
+          case rclcpp::ParameterType::PARAMETER_DOUBLE:
+            if (!any.isType<double>()) return reject_bb_param_type_mismatch();
+            break;
+          case rclcpp::ParameterType::PARAMETER_STRING:
+            if (!any.isType<std::string>()) return reject_bb_param_type_mismatch();
+            break;
+          case rclcpp::ParameterType::PARAMETER_BYTE_ARRAY:
+            if (!any.isType<std::vector<uint8_t>>()) return reject_bb_param_type_mismatch();
+            break;
+          case rclcpp::ParameterType::PARAMETER_BOOL_ARRAY:
+            if (!any.isType<std::vector<bool>>()) return reject_bb_param_type_mismatch();
+            break;
+          case rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY:
+            if (!any.isType<std::vector<int64_t>>()) return reject_bb_param_type_mismatch();
+            break;
+          case rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY:
+            if (!any.isType<std::vector<double>>()) return reject_bb_param_type_mismatch();
+            break;
+          case rclcpp::ParameterType::PARAMETER_STRING_ARRAY:
+            if (!any.isType<std::vector<std::string>>()) return reject_bb_param_type_mismatch();
+            break;
+          default:
+            return create_rejected("Parameter to blackboard conversion is not defined.");
+        }
+      }
+    }
   }
 
   // If not returned yet, accept to set the parameter
@@ -293,9 +342,9 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  NodeManifest node_overrides;
+  core::NodeManifest node_overrides;
   try {
-    node_overrides = NodeManifest::decode(goal_ptr->node_overrides);
+    node_overrides = core::NodeManifest::decode(goal_ptr->node_overrides);
   } catch (const std::exception & e) {
     RCLCPP_WARN(
       logger_, "Goal %s was REJECTED: Parsing the node override manifest failed: %s",

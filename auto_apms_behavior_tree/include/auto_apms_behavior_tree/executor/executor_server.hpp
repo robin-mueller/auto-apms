@@ -16,8 +16,8 @@
 
 #include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
-#include "auto_apms_behavior_tree/resource/node_registration_loader.hpp"
 #include "auto_apms_behavior_tree/resource/tree_build_handler_loader.hpp"
+#include "auto_apms_behavior_tree_core/resource/node_registration_loader.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_util/action_context.hpp"
@@ -74,7 +74,7 @@ protected:
 
   TreeConstructor makeTreeConstructor(
     const std::string & tree_name, const std::string & tree_creator_name, const std::string & tree_creator_request,
-    const NodeManifest & node_overrides = {});
+    const core::NodeManifest & node_overrides = {});
 
 private:
   /* Executor specific virtual overrides */
@@ -102,7 +102,7 @@ private:
   const rclcpp::Logger logger_;
   ExecutorParameterListener executor_param_listener_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
-  NodeRegistrationLoader::SharedPtr node_loader_ptr_;
+  core::NodeRegistrationLoader::SharedPtr node_loader_ptr_;
   TreeBuildHandlerLoader::UniquePtr build_handler_loader_ptr_;
   TreeBuildHandler::UniquePtr build_handler_ptr_;
   TreeConstructor tree_constructor_;

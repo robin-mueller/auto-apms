@@ -14,7 +14,7 @@
 
 #include <auto_apms_examples/msg/landing_site_status.hpp>
 
-#include "auto_apms_behavior_tree/node.hpp"
+#include "auto_apms_behavior_tree_core/node.hpp"
 
 #define INPUT_KEY_SITE_ID "landing_site_id"
 #define OUTPUT_KEY_SITE_STATUS "landing_site_status"
@@ -24,7 +24,7 @@ using LandingSiteStatusMsg = auto_apms_examples::msg::LandingSiteStatus;
 namespace auto_apms::ops_engine
 {
 
-class IsLandingSiteClear : public auto_apms_behavior_tree::RosSubscriberNode<LandingSiteStatusMsg>
+class IsLandingSiteClear : public auto_apms_behavior_tree::core::RosSubscriberNode<LandingSiteStatusMsg>
 {
 public:
   using RosSubscriberNode::RosSubscriberNode;

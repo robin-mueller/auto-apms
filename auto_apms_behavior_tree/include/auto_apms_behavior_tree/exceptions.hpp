@@ -14,20 +14,11 @@
 
 #pragma once
 
+#include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_util/exceptions.hpp"
 
 namespace auto_apms_behavior_tree::exceptions
 {
-
-struct ResourceIdentityFormatError : public auto_apms_util::exceptions::ExceptionBase
-{
-  using ExceptionBase::ExceptionBase;
-};
-
-struct TreeXMLFormatError : public auto_apms_util::exceptions::ExceptionBase
-{
-  using ExceptionBase::ExceptionBase;
-};
 
 struct TreeBuildError : public auto_apms_util::exceptions::ExceptionBase
 {
@@ -35,11 +26,6 @@ struct TreeBuildError : public auto_apms_util::exceptions::ExceptionBase
 };
 
 struct TreeExecutionError : public auto_apms_util::exceptions::ExceptionBase
-{
-  using ExceptionBase::ExceptionBase;
-};
-
-struct RosNodeError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };

@@ -14,7 +14,7 @@
 
 #include <auto_apms_examples/msg/landing_approach.hpp>
 
-#include "auto_apms_behavior_tree/node.hpp"
+#include "auto_apms_behavior_tree_core/node.hpp"
 
 #define OUTPUT_KEY_SITE_ID "next_landing_site_id"
 
@@ -23,7 +23,7 @@ using LandingApproachMsg = auto_apms_examples::msg::LandingApproach;
 namespace auto_apms::ops_engine
 {
 
-class IsApproachingLanding : public auto_apms_behavior_tree::RosSubscriberNode<LandingApproachMsg>
+class IsApproachingLanding : public auto_apms_behavior_tree::core::RosSubscriberNode<LandingApproachMsg>
 {
 public:
   using RosSubscriberNode::RosSubscriberNode;

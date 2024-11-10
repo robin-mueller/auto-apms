@@ -44,9 +44,9 @@ int main(int argc, char ** argv)
   auto node_ptr = std::make_shared<rclcpp::Node>("run_tree_node_cpp");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
-  NodeRegistrationParams registration_params;
+  core::NodeRegistrationParams registration_params;
   try {
-    registration_params = NodeRegistrationParams::decode(argv[1]);
+    registration_params = core::NodeRegistrationParams::decode(argv[1]);
   } catch (std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument registration_params: %s", e.what());
     return EXIT_FAILURE;

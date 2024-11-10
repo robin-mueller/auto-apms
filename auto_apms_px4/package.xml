@@ -11,8 +11,8 @@
   <buildtool_depend>eigen3_cmake_module</buildtool_depend>
 
   <depend>auto_apms_util</depend>
-  <depend>auto_apms_behavior_tree</depend>
   <depend>auto_apms_interfaces</depend>
+  <depend>auto_apms_behavior_tree_core</depend>
   <depend>rclcpp_components</depend>
   <depend>px4_msgs</depend>
   <depend>px4_ros2_cpp</depend>

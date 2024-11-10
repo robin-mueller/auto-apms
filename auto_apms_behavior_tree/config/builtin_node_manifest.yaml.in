@@ -1,0 +1,22 @@
+Error:
+  class_name: auto_apms_behavior_tree::ThrowException
+
+StartExecutor:
+  class_name: auto_apms_behavior_tree::StartExecutorAction
+  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}
+
+TerminateExecutor:
+  class_name: auto_apms_behavior_tree::TerminateExecutorAction
+  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+
+HaltExecutor:
+  class_name: auto_apms_behavior_tree::HaltExecutorAction
+  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+
+PauseExecutor:
+  class_name: auto_apms_behavior_tree::PauseExecutorAction
+  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+
+ResumeExecutor:
+  class_name: auto_apms_behavior_tree::ResumeExecutorAction
+  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}

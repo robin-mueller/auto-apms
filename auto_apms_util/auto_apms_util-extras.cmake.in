@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# AutoAPMS resource dir must be inside the share dir of each package for pluginlib::ClassLoader to be able to find the corresponding package.xml file
+set(_AUTO_APMS_UTIL__AUTO_APMS_SHARED_RESOURCES_DIR_RELATIVE "share/${PROJECT_NAME}/auto_apms")
+
+# Useful variables
 set(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB "@_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB@")
-set(_AUTO_APMS_UTIL__PACKAGE_SHARED_RESOURCES_DIR_RELATIVE "share/${PROJECT_NAME}/auto_apms_resources")
-set(_AUTO_APMS_UTIL__PACKAGE_BUILD_DIR_RELATIVE "${PROJECT_NAME}")
-set(_AUTO_APMS_UTIL__PACKAGE_BUILD_DIR_ABSOLUTE "${PROJECT_BINARY_DIR}/${_AUTO_APMS_UTIL__PACKAGE_BUILD_DIR_RELATIVE}")
+set(_AUTO_APMS_UTIL__BUILD_DIR_ABSOLUTE "${PROJECT_BINARY_DIR}/@PROJECT_NAME@")
+set(_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_RELATIVE "${PROJECT_NAME}")
+set(_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_ABSOLUTE "${PROJECT_BINARY_DIR}/${_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_RELATIVE}")
 
 include("${@PROJECT_NAME@_DIR}/register_plugins.cmake")
 

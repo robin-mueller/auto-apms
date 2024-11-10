@@ -12,13 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(_AUTO_APMS_BEHAVIOR_TREE__INTERNAL_CLI_INSTALL_DIR "@_AUTO_APMS_BEHAVIOR_TREE__INTERNAL_CLI_INSTALL_DIR@")
-set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE "@_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_DIR_NAME__TREE@")
-set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE "@_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_TYPE_NAME__TREE@")
-
-include("${@PROJECT_NAME@_DIR}/register_nodes.cmake")
-include("${@PROJECT_NAME@_DIR}/register_trees.cmake")
 include("${@PROJECT_NAME@_DIR}/register_build_handlers.cmake")
-
-find_package(ament_cmake_core QUIET REQUIRED)
-ament_register_extension("ament_package" "@PROJECT_NAME@" "register_resources_hook.cmake")

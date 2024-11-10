@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="RootTree">
+  <BehaviorTree ID="RootTree">
+    <KeepRunningUntilFailure>
+      <Error message="{@msg}"
+             _skipIf="@throw == ENUM_THROW"/>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="Error">
+      <input_port name="message"
+                  type="std::string">Error message. Creates a generic error message if empty.</input_port>
+    </Action>
+  </TreeNodesModel>
+
+</root>

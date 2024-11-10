@@ -46,9 +46,10 @@ int main(int argc, char ** argv)
   auto node_ptr = std::make_shared<rclcpp::Node>("run_tree_cpp");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
-  std::unique_ptr<TreeResource> tree_resource_ptr;
+  std::unique_ptr<core::TreeResource> tree_resource_ptr;
   try {
-    tree_resource_ptr = std::make_unique<TreeResource>(TreeResource::selectByFileName(tree_file_name, package_name));
+    tree_resource_ptr =
+      std::make_unique<core::TreeResource>(core::TreeResource::selectByFileName(tree_file_name, package_name));
   } catch (const std::exception & e) {
     RCLCPP_ERROR(
       node_ptr->get_logger(),

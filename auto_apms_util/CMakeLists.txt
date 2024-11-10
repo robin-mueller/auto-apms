@@ -19,23 +19,22 @@ if(AUTO_APMS_UTIL_DEBUG_LOGGING)
     add_compile_definitions(_AUTO_APMS_DEBUG_LOGGING)
 endif()
 
-set(_AUTO_APMS_UTIL_BUILD_DIR_RELATIVE "auto_apms_util")
-
 # ActionWrapper parameter names
 set(_AUTO_APMS_UTIL__ACTION_PARAM_LOOP_RATE "loop_rate")
 set(_AUTO_APMS_UTIL__ACTION_PARAM_FEEDBACK_RATE "feedback_rate")
 
-# Pluginlib conventions
-set(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB "auto_apms_pluginlib")
+# Plugin resource type name according to pluginlib convention.
+# We don't rely on pluginlib's resource parsing, but it's nice to stick to conventions anyways.
+set(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB "auto_apms_util__pluginlib__plugins")
 
 #
 # ------------ Library --------------
 #
 
 # Generate parameter headers employing https://github.com/PickNikRobotics/generate_parameter_library
-configure_file("src/action_wrapper_params.yaml.in" "${CMAKE_CURRENT_BINARY_DIR}/${_AUTO_APMS_UTIL_BUILD_DIR_RELATIVE}/action_wrapper_params.yaml")
+configure_file("config/action_wrapper_params.yaml.in" "${PROJECT_BINARY_DIR}/${PROJECT_NAME}/action_wrapper_params.yaml")
 set(_temp ${CMAKE_CURRENT_SOURCE_DIR})  # WORKAROUND: temporarily change CMAKE_CURRENT_SOURCE_DIR since the function doesn't allow to load the parameter definition file from a different directory
-set(CMAKE_CURRENT_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/${_AUTO_APMS_UTIL_BUILD_DIR_RELATIVE}")
+set(CMAKE_CURRENT_SOURCE_DIR "${PROJECT_BINARY_DIR}/${PROJECT_NAME}")
 generate_parameter_library(action_wrapper_params "action_wrapper_params.yaml")
 set(CMAKE_CURRENT_SOURCE_DIR ${_temp})
 

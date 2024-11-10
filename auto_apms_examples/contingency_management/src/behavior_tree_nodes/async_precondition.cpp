@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/node.hpp"
+#include "auto_apms_behavior_tree_core/node.hpp"
 #include "behaviortree_cpp/scripting/script_parser.hpp"
 
 #define INPUT_KEY_IF "if"

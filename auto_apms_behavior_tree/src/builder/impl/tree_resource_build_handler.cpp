@@ -14,7 +14,7 @@
 
 #include "auto_apms_behavior_tree/builder.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/resource/tree_resource.hpp"
+#include "auto_apms_behavior_tree_core/resource/tree_resource.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -27,7 +27,7 @@ public:
   bool setRequest(const std::string & request) override final
   {
     try {
-      resource_ptr_ = std::make_unique<TreeResource>(TreeResource::fromString(request));
+      resource_ptr_ = std::make_unique<core::TreeResource>(core::TreeResource::fromString(request));
     } catch (const exceptions::ResourceIdentityFormatError & e) {
       RCLCPP_ERROR(logger_, "%s", e.what());
       return false;
@@ -45,7 +45,7 @@ public:
   }
 
 private:
-  std::unique_ptr<TreeResource> resource_ptr_;
+  std::unique_ptr<core::TreeResource> resource_ptr_;
 };
 
 }  // namespace auto_apms_behavior_tree

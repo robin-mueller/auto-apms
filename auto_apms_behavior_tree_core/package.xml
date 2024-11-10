@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>auto_apms_behavior_tree_core</name>
+  <version>0.0.0</version>
+  <description>Core classes and CMake tools for auto_apms_behavior_tree</description>
+  <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>tinyxml2_vendor</depend>
+  <depend>auto_apms_util</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
