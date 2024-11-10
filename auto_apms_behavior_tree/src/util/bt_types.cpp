@@ -14,6 +14,7 @@
 
 #include "auto_apms_behavior_tree/util/bt_types.hpp"
 
+/// @cond
 namespace BT
 {
 
@@ -55,3 +56,4 @@ convertFromString<std::vector<int64_t, std::allocator<int64_t>>>(StringView str)
 }
 
 }  // namespace BT
+/// @endcond

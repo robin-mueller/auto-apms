@@ -16,6 +16,7 @@
 
 #include "behaviortree_cpp/basic_types.h"
 
+/// @cond
 namespace BT
 {
 
@@ -30,3 +31,4 @@ template <>
 convertFromString<std::vector<int64_t, std::allocator<int64_t>>>(StringView str);
 
 }  // namespace BT
+/// @endcond
