@@ -75,7 +75,7 @@ ament_target_dependencies(auto_apms_behavior_tree
     rclcpp
     rclcpp_action
     rclcpp_components
-    TinyXML2
+    tinyxml2_vendor
     auto_apms_util
     auto_apms_interfaces
     auto_apms_behavior_tree_core
@@ -200,7 +200,7 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
     rclcpp
     rclcpp_action
-    TinyXML2
+    tinyxml2_vendor
     auto_apms_util
     auto_apms_interfaces
     auto_apms_behavior_tree_core
