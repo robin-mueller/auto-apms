@@ -56,7 +56,7 @@ int main(int argc, char ** argv)
     }
 
     rclcpp::init(argc, argv);
-    auto node_ptr = std::make_shared<rclcpp::Node>("_generate_node_model_temp_node");
+    auto node_ptr = std::make_shared<rclcpp::Node>("_create_node_model__" + output_file.stem().string());
     auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
     BT::BehaviorTreeFactory factory;

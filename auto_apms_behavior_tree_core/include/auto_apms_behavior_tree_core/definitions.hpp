@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/builder/tree_build_handler.hpp"
+#pragma once
 
-#include "auto_apms_behavior_tree/exceptions.hpp"
+#include "behaviortree_cpp/bt_factory.h"
+
+/**
+ * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
+ * @brief Useful tooling for Behavior Tree development.
+ */
 
 namespace auto_apms_behavior_tree
 {
 
-TreeBuildHandler::TreeBuildHandler(rclcpp::Node::SharedPtr node_ptr)
-: logger_(node_ptr->get_logger()), node_wptr_(node_ptr)
-{
-}
-
-rclcpp::Node::SharedPtr TreeBuildHandler::getNodePtr() const
-{
-  if (node_wptr_.expired()) {
-    throw std::runtime_error("TreeBuildHandler: Weak pointer to rclcpp::Node expired.");
-  }
-  return node_wptr_.lock();
-}
+using Tree = BT::Tree;
+using TreeBlackboard = BT::Blackboard;
+using TreeBlackboardSharedPtr = std::shared_ptr<TreeBlackboard>;
+using TreeConstructor = std::function<Tree(TreeBlackboardSharedPtr)>;
 
 }  // namespace auto_apms_behavior_tree

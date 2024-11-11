@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
+#include "auto_apms_behavior_tree_core/builder.hpp"
 
 #include <regex>
 
-#include "auto_apms_behavior_tree/exceptions.hpp"
+#include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_util/container.hpp"
 #include "auto_apms_util/resource.hpp"
 #include "auto_apms_util/string.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 
-namespace auto_apms_behavior_tree
+namespace auto_apms_behavior_tree::core
 {
 
-TreeBuilder::TreeBuilder(rclcpp::Node::SharedPtr node_ptr, core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr)
+TreeBuilder::TreeBuilder(rclcpp::Node::SharedPtr node_ptr, NodeRegistrationLoader::SharedPtr tree_node_loader_ptr)
 : doc_ptr_(std::make_shared<Document>()), node_wptr_(node_ptr), tree_node_loader_ptr_(tree_node_loader_ptr)
 {
   ElementPtr root_ele = doc_ptr_->NewElement(ROOT_ELEMENT_NAME);
@@ -39,7 +39,7 @@ TreeBuilder & TreeBuilder::setScriptingEnum(const std::string & enum_name, int v
   return *this;
 }
 
-TreeBuilder & TreeBuilder::loadNodePlugins(const core::NodeManifest & node_manifest, bool override)
+TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, bool override)
 {
   rclcpp::Node::SharedPtr node_ptr = node_wptr_.lock();
   if (!node_ptr) {
@@ -74,7 +74,7 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const core::NodeManifest & node_manif
       node_ptr->get_logger(), "Loading behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
       params.class_name.c_str(), tree_node_loader_ptr_->getClassLibraryPath(params.class_name).c_str());
 
-    pluginlib::UniquePtr<core::NodeRegistrationInterface> plugin_instance;
+    pluginlib::UniquePtr<NodeRegistrationInterface> plugin_instance;
     try {
       plugin_instance = tree_node_loader_ptr_->createUniqueInstance(params.class_name);
     } catch (const std::exception & e) {
@@ -88,7 +88,7 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const core::NodeManifest & node_manif
 
     try {
       if (plugin_instance->requiresROSNodeParams()) {
-        core::RosNodeContext ros_node_context(node_ptr, params);
+        RosNodeContext ros_node_context(node_ptr, params);
         plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
       } else {
         plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name);
@@ -165,9 +165,9 @@ TreeBuilder & TreeBuilder::mergeTreesFromFile(const std::string & tree_file_path
   return mergeTreesFromDocument(new_doc);
 }
 
-TreeBuilder & TreeBuilder::mergeTreesFromResource(const core::TreeResource & resource)
+TreeBuilder & TreeBuilder::mergeTreesFromResource(const TreeResource & resource)
 {
-  loadNodePlugins(core::NodeManifest::fromFile(resource.node_manifest_file_path));
+  loadNodePlugins(NodeManifest::fromFile(resource.node_manifest_file_path));
   return mergeTreesFromFile(resource.tree_file_path);
 }
 
@@ -185,11 +185,11 @@ TreeBuilder::ElementPtr TreeBuilder::insertNewTreeElement(const std::string & tr
 }
 
 TreeBuilder::ElementPtr TreeBuilder::insertNewNodeElement(
-  ElementPtr parent_element, const std::string & node_name, const core::NodeRegistrationParams & registration_params)
+  ElementPtr parent_element, const std::string & node_name, const NodeRegistrationParams & registration_params)
 {
   if (!auto_apms_util::contains(getRegisteredNodes(), node_name) && !registration_params.class_name.empty()) {
     // Try to load the node if it isn't registered yet and registration_params was given with a non-empty class name
-    loadNodePlugins(core::NodeManifest({{node_name, registration_params}}));
+    loadNodePlugins(NodeManifest({{node_name, registration_params}}));
   }
   ElementPtr ele = parent_element->InsertNewChildElement(node_name.c_str());
   addNodePortValues(ele);  // Insert default values
@@ -383,4 +383,4 @@ std::string TreeBuilder::writeTreeDocumentToString(const Document & doc)
   return printer.CStr();
 }
 
-}  // namespace auto_apms_behavior_tree
+}  // namespace auto_apms_behavior_tree::core

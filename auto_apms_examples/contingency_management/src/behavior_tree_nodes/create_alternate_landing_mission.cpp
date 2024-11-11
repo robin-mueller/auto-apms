@@ -15,7 +15,7 @@
 #include <regex>
 
 #include "Eigen/Geometry"
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
+#include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "px4_ros2/utils/geodesic.hpp"
 
@@ -85,7 +85,7 @@ public:
     // Read tree template and replace placeholders
     const std::string main_tree_id = "AlternateLandingMission";
     auto resource = auto_apms_behavior_tree::core::TreeResource::selectByTreeName(main_tree_id, "auto_apms_examples");
-    std::string tree_str = auto_apms_behavior_tree::TreeBuilder(nullptr)
+    std::string tree_str = auto_apms_behavior_tree::core::TreeBuilder(nullptr)
                              .mergeTreesFromFile(resource.tree_file_path)
                              .writeTreeDocumentToString();
 

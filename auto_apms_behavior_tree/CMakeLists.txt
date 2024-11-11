@@ -48,12 +48,11 @@ generate_parameter_library(executor_params "executor_params.yaml")
 set(CMAKE_CURRENT_SOURCE_DIR ${_temp})
 
 add_library(auto_apms_behavior_tree SHARED
-    "src/builder/tree_builder.cpp"
-    "src/builder/tree_build_handler.cpp"
+    "src/build_handler/build_handler.cpp"
     "src/executor/state_observer.cpp"
     "src/executor/executor.cpp"
     "src/executor/executor_server.cpp"
-    "src/resource/tree_build_handler_loader.cpp"
+    "src/resource/build_handler_loader.cpp"
     "src/util/bt_types.cpp"
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
@@ -131,7 +130,7 @@ auto_apms_behavior_tree_create_node_metadata("builtin_nodes"
 #
 
 add_library(builtin_build_handlers SHARED
-    "src/builder/impl/tree_resource_build_handler.cpp"
+    "src/build_handler/impl/resource_build_handler.cpp"
 )
 target_link_libraries(builtin_build_handlers auto_apms_behavior_tree)
 

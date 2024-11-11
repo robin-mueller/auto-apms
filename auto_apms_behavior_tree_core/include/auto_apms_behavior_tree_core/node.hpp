@@ -24,6 +24,17 @@
 /**
  * @ingroup auto_apms_behavior_tree
  * @brief Macro for registering a behavior tree node plugin.
+ *
+ * Behavior tree nodes should be created by inheriting from one of
+ *
+ * - auto_apms_behavior_tree::core::RosActionNode
+ *
+ * - auto_apms_behavior_tree::core::RosServiceNode
+ *
+ * - auto_apms_behavior_tree::core::RosPublisherNode
+ *
+ * - auto_apms_behavior_tree::core::RosSubscriberNode
+ *
  * @param type Fully qualified name of the class.
  */
 #define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(type)                \

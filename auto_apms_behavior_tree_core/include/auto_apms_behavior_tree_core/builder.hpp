@@ -18,14 +18,14 @@
 
 #include <memory>
 
-#include "auto_apms_behavior_tree/definitions.hpp"
+#include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
 #include "auto_apms_behavior_tree_core/resource/node_registration_loader.hpp"
 #include "auto_apms_behavior_tree_core/resource/tree_resource.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 
-namespace auto_apms_behavior_tree
+namespace auto_apms_behavior_tree::core
 {
 
 /**
@@ -60,7 +60,7 @@ public:
 
   TreeBuilder(
     rclcpp::Node::SharedPtr node_ptr,
-    core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr = core::NodeRegistrationLoader::make_shared());
+    NodeRegistrationLoader::SharedPtr tree_node_loader_ptr = NodeRegistrationLoader::make_shared());
 
   TreeBuilder & setScriptingEnum(const std::string & enum_name, int val);
 
@@ -75,7 +75,7 @@ public:
    * existing plugin and use the new one instead.
    * @throw exceptions::TreeBuildError if registration fails.
    */
-  TreeBuilder & loadNodePlugins(const core::NodeManifest & node_manifest, bool override = false);
+  TreeBuilder & loadNodePlugins(const NodeManifest & node_manifest, bool override = false);
 
   std::unordered_map<std::string, BT::NodeType> getRegisteredNodesTypeMap() const;
 
@@ -87,13 +87,12 @@ public:
 
   TreeBuilder & mergeTreesFromFile(const std::string & tree_file_path);
 
-  TreeBuilder & mergeTreesFromResource(const core::TreeResource & resource);
+  TreeBuilder & mergeTreesFromResource(const TreeResource & resource);
 
   ElementPtr insertNewTreeElement(const std::string & tree_name);
 
   ElementPtr insertNewNodeElement(
-    ElementPtr parent_element, const std::string & node_name,
-    const core::NodeRegistrationParams & registration_params = {});
+    ElementPtr parent_element, const std::string & node_name, const NodeRegistrationParams & registration_params = {});
 
   /**
    * @brief Adds node port values to the node specified by @p node_element.
@@ -148,7 +147,7 @@ private:
   DocumentSharedPtr doc_ptr_;
   BT::BehaviorTreeFactory factory_;
   rclcpp::Node::WeakPtr node_wptr_;
-  core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
+  NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
 };
 
 // #####################################################################################################################
@@ -162,4 +161,4 @@ TreeBuilder & TreeBuilder::setScriptingEnumsFromType()
   return *this;
 }
 
-}  // namespace auto_apms_behavior_tree
+}  // namespace auto_apms_behavior_tree::core

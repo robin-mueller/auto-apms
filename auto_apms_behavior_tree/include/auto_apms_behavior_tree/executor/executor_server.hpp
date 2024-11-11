@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
-#include "auto_apms_behavior_tree/resource/tree_build_handler_loader.hpp"
+#include "auto_apms_behavior_tree/resource/build_handler_loader.hpp"
+#include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/resource/node_registration_loader.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
@@ -59,7 +59,7 @@ public:
 private:
   /* Virtual methods */
 
-  virtual void prepareTreeBuilder(TreeBuilder & builder);
+  virtual void prepareTreeBuilder(core::TreeBuilder & builder);
 
 protected:
   /* Utility methods */
@@ -68,13 +68,13 @@ protected:
 
   std::string stripPrefixFromParameterName(const std::string & prefix, const std::string & param_name);
 
-  void setScriptingEnumsFromParameters(TreeBuilder & builder);
+  void setScriptingEnumsFromParameters(core::TreeBuilder & builder);
 
   void updateBlackboardFromParameters(TreeBlackboard & bb);
 
   TreeConstructor makeTreeConstructor(
-    const std::string & tree_name, const std::string & tree_creator_name, const std::string & tree_creator_request,
-    const core::NodeManifest & node_overrides = {});
+    const std::string & root_tree_name, const std::string & build_handler_class_name,
+    const std::string & build_handler_request, const core::NodeManifest & node_overrides = {});
 
 private:
   /* Executor specific virtual overrides */

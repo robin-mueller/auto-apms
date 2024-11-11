@@ -23,6 +23,8 @@
 namespace auto_apms_util
 {
 
+const std::string PLUGIN_RESOURCE_TYPE = _AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB;
+
 std::set<std::string> getPackagesWithResource(
   const std::string & resource_type, const std::set<std::string> & exclude_packages)
 {
@@ -35,37 +37,42 @@ std::set<std::string> getPackagesWithResource(
       "Cannot find resources for type '" + resource_type + "' in any installed packages.");
   }
   if (const std::set<std::string> common = getCommonElements(packages, exclude_packages); !common.empty()) {
-    for (const std::string & s : common) packages.erase(s);
+    for (const std::string & package_to_exclude : common) packages.erase(package_to_exclude);
     if (packages.empty()) {
       throw exceptions::ResourceError(
         "Resources for type '" + resource_type +
-        "' are only available in excluded but not in any other installed packages (Relevant excluded packages: [ " +
+        "' are only available in excluded but not in any other installed packages (Excluded packages containing "
+        "resources: [ " +
         rcpputils::join(std::vector<std::string>(common.begin(), common.end()), ", ") + " ]).");
     }
   }
   return packages;
 }
 
-std::vector<std::string> collectPluginXMLPaths(
-  const std::string & resource_type, const std::set<std::string> & exclude_packages)
+std::string getPluginXMLPath(const std::string & package)
+{
+  std::string content;
+  std::string base_path;
+  if (ament_index_cpp::get_resource(PLUGIN_RESOURCE_TYPE, package, content, &base_path)) {
+    std::vector<std::string> paths = splitString(content, "\n", false);
+    if (paths.size() != 1) {
+      throw exceptions::ResourceError(
+        "Invalid '" + PLUGIN_RESOURCE_TYPE + "' resource marker file installed by package '" + package +
+        "'. Must contain a single line with a relative path to the plugins.xml "
+        "manifest file with respect to the package's install prefix.");
+    }
+    return base_path + '/' + paths[0];
+  }
+  throw exceptions::ResourceError(
+    "Cannot find a plugin.xml file in package '" + package + "' (Plugin resource type is: '" + PLUGIN_RESOURCE_TYPE +
+    "').");
+}
+
+std::vector<std::string> collectPluginXMLPaths(const std::set<std::string> & exclude_packages)
 {
   std::vector<std::string> xml_paths;
-  for (const std::string & package : getPackagesWithResource(resource_type, exclude_packages)) {
-    std::string content;
-    std::string base_path;
-    if (ament_index_cpp::get_resource(resource_type, package, content, &base_path)) {
-      std::vector<std::string> paths = splitString(content, "\n", false);
-      if (paths.size() != 1) {
-        throw exceptions::ResourceError(
-          "Invalid resource marker file installed by package: '" + package + "' for resource type '" + resource_type +
-          "'. Must contain a single line with a path to the plugins.xml "
-          "manifest file relative to the package's install prefix.");
-      }
-      xml_paths.push_back(base_path + '/' + paths[0]);
-    } else {
-      throw exceptions::ResourceError(
-        "Cannot find any resources for type '" + resource_type + "' in package '" + package + "'.");
-    }
+  for (const std::string & package : getPackagesWithResource(PLUGIN_RESOURCE_TYPE, exclude_packages)) {
+    xml_paths.push_back(getPluginXMLPath(package));
   }
   return xml_paths;
 }

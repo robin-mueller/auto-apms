@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
-#include "auto_apms_behavior_tree/definitions.hpp"
+#include "auto_apms_behavior_tree_core/builder.hpp"
+#include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 
@@ -23,8 +23,10 @@ namespace auto_apms_behavior_tree
 {
 
 /**
- * @brief Applies the [builder](https://refactoring.guru/design-patterns/builder/cpp/example#lang-features) software
- * design pattern and allows for TreeExecutorServer to be able to dynamically change the way how a tree is created.
+ * @brief Inheriting classes must use the
+ * [builder](https://refactoring.guru/design-patterns/builder/cpp/example#lang-features) API offered by
+ * core::TreeBuilder inside the pure virtual method handleBuild() to configure a behavior tree. Implementing various
+ * TreeBuildHandler classes allows TreeExecutorServer to dynamically change the way how a tree is created.
  */
 class TreeBuildHandler
 {
@@ -37,7 +39,7 @@ public:
 
   virtual bool setRequest(const std::string & request) = 0;
 
-  virtual void handleBuild(TreeBuilder & builder, TreeBlackboard & bb) = 0;
+  virtual void handleBuild(core::TreeBuilder & builder, TreeBlackboard & bb) = 0;
 
   rclcpp::Node::SharedPtr getNodePtr() const;
 

@@ -18,9 +18,9 @@
 #include <functional>
 #include <future>
 
-#include "auto_apms_behavior_tree/definitions.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree/executor/state_observer.hpp"
+#include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "rclcpp/node.hpp"
 

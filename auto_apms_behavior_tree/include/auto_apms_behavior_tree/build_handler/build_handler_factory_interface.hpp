@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_build_handler.hpp"
+#include "auto_apms_behavior_tree/build_handler/build_handler.hpp"
 
 namespace auto_apms_behavior_tree
 {

@@ -38,6 +38,7 @@ add_library(auto_apms_behavior_tree_core SHARED
     "src/node/ros_node_context.cpp"
     "src/resource/tree_resource.cpp"
     "src/resource/node_registration_loader.cpp"
+    "src/builder.cpp"
 )
 target_include_directories(auto_apms_behavior_tree_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

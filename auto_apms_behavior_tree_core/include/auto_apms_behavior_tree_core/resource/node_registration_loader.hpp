@@ -36,7 +36,7 @@ public:
   /**
    * @brief NodeRegistrationLoader constructor.
    * @param exclude_packages Packages to exclude when searching for associated plugin resources.
-   * @throws See auto_apms_util::createUnambiguousPluginClassLoader.
+   * @throws See auto_apms_util::makeUnambiguousPluginClassLoader.
    */
   NodeRegistrationLoader(const std::set<std::string> & exclude_packages = {});
 };

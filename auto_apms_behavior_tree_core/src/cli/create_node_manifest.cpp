@@ -39,10 +39,10 @@ int main(int argc, char ** argv)
 
   try {
     std::vector<std::string> manifest_files;
-    for (const auto & path : auto_apms_util::splitString(argv[1], ";")) {
+    for (const auto & path : auto_apms_util::splitString(argv[1], ";", false)) {
       manifest_files.push_back(std::filesystem::absolute(path).string());
     }
-    const std::vector<std::string> build_infos = auto_apms_util::splitString(argv[2], ";");
+    const std::vector<std::string> build_infos = auto_apms_util::splitString(argv[2], ";", false);
     const std::string build_package_name = argv[3];
     const std::filesystem::path output_file = std::filesystem::absolute(argv[4]);
 
@@ -73,7 +73,7 @@ int main(int argc, char ** argv)
         throw std::runtime_error("Node class '" + class_name + "' is specified multiple times in build infos.");
       }
       library_paths_build_package[class_name] = build_path;  // {class_name: build_path}
-      reserved_names[class_name] = build_package_name;
+      reserved_names[class_name] = build_package_name;       // Additional names for the ambiguity check
     }
 
     // Construct manifest object from input files
@@ -86,18 +86,26 @@ int main(int argc, char ** argv)
      * pluginlib::ClassLoader constructor initially checks wether the package containing the base class is installed.
      * Therefore we MUST avoid triggering this script during build time of auto_apms_behavior_tree_core (Theoretically
      * we could use this script in auto_apms_behavior_tree_core if we only used locally built node plugins, but all
-     * build in nodes are located in auto_apms_behavior_tree).
+     * builtin nodes are located in auto_apms_behavior_tree).
      */
-    core::NodeRegistrationLoader::UniquePtr loader_ptr;
-    const std::set<std::string> exclude_packages = {build_package_name};
+
+    using Loader = auto_apms_util::PluginClassLoader<core::NodeRegistrationInterface>;
+
+    std::unique_ptr<Loader> loader_ptr;
+    std::string error_msg;
     try {
       // Exclude the build package from the list of packages to be searched for resources, because resources from this
       // package are not installed yet. Instead we hold additional build information in the build_infos variable.
-      loader_ptr = core::NodeRegistrationLoader::make_unique(exclude_packages);
+      // Additionally, reserve the class names this package is building when checking for ambiguous definitions.
+      Loader * raw_ptr = new Loader(Loader::makeUnambiguousPluginClassLoader(
+        core::NodeRegistrationLoader::BASE_PACKAGE_NAME, core::NodeRegistrationLoader::BASE_CLASS_NAME,
+        {build_package_name}, reserved_names));
+      loader_ptr = std::unique_ptr<Loader>(raw_ptr);
     } catch (const auto_apms_util::exceptions::ResourceError & e) {
-      // Allow creating node manifests also if no other packages register node resources (Only using resources of the
+      // Allow assembling library paths also if no other packages register node resources (Only using resources of the
       // build package).
       loader_ptr = nullptr;
+      error_msg = e.what();
     }
 
     // Determine shared libraries associated with the node classes required by the manifest files
@@ -110,7 +118,7 @@ int main(int argc, char ** argv)
       }
 
       // Look for class in other already installed packages if it is not provided by the build package
-      if (loader_ptr && loader_ptr->isClassAvailable(params.class_name)) {
+      if (loader_ptr != nullptr && loader_ptr->isClassAvailable(params.class_name)) {
         library_paths.insert(loader_ptr->getClassLibraryPath(params.class_name));
         continue;
       }
@@ -121,13 +129,15 @@ int main(int argc, char ** argv)
         "') cannot be found. It's not being built by this package (" + build_package_name +
         ") and is also not provided by any other package. For a node to be discoverable, "
         "one must register it using auto_apms_behavior_tree_register_nodes() in the "
-        "CMakeLists.txt of a ROS 2 package.");
+        "CMakeLists.txt of a ROS 2 package." +
+        (error_msg.empty() ? "" : ("\nError message trying to create node loader: " + error_msg)));
     }
 
     // Save the manifest (Merged multiple files into s single one)
     output_manifest.toFile(output_file);
 
-    // Print set of libraries to stdout (The trailing ';' is automatically removed when interpreted as a CMake list)
+    // Print the shared library paths associated with the node manifest to stdout (The trailing ';' is automatically
+    // removed when interpreted as a CMake list)
     for (const auto & path : library_paths) std::cout << path << ';';
   } catch (const std::exception & e) {
     std::cerr << "ERROR (create_node_manifest): " << e.what() << "\n";

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/builder.hpp"
+#include "auto_apms_behavior_tree/build_handler.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/resource/tree_resource.hpp"
 
@@ -38,7 +38,7 @@ public:
     return true;
   }
 
-  void handleBuild(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
+  void handleBuild(core::TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
   {
     if (!resource_ptr_) throw exceptions::TreeBuildError("TreeResourceBuildHandler - resource_ptr_ is nullptr.");
     builder.mergeTreesFromResource(*resource_ptr_);

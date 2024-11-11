@@ -53,7 +53,6 @@ macro(auto_apms_behavior_tree_create_node_metadata suffix)
     # Simultaneously, define a variable containing the library paths and generator expressions for node plugin dependencies.
     file(MAKE_DIRECTORY "${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}")
     set(_node_manifest_abs_path__build "${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}/${_node_manifest_file_name}")
-    set(_node_manifest_rel_path__install "${_node_manifest_rel_dir__install}/${_node_manifest_file_name}")
     execute_process(
         COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MANIFEST_CMD}"
             "${ARGS_UNPARSED_ARGUMENTS}" # Paths of the manifest source files
@@ -73,7 +72,7 @@ macro(auto_apms_behavior_tree_create_node_metadata suffix)
     if(_return_code EQUAL 1)
         message(
             FATAL_ERROR
-            "Failed to create node plugin manifest '${suffix}' parsing [${ARGS_UNPARSED_ARGUMENTS}].\n${_error}"
+            "Failed to create node plugin manifest '${suffix}'.\nManifest files:\n[${ARGS_UNPARSED_ARGUMENTS}]\nBuild info:\n[${_AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO}]\nOutput file:\n${_node_manifest_abs_path__build}\n${_error}"
         )
     endif()
 
@@ -94,8 +93,8 @@ macro(auto_apms_behavior_tree_create_node_metadata suffix)
             "\"${_node_model_abs_path__build}\"" # File to write the behavior tree node model to
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${ARGS_NODE_MANIFEST} ${_node_library_paths}
-        COMMENT "Generate behavior tree node model for tree file '${_tree_file_stem}' with libraries [${_node_library_paths}].")
-    add_custom_target(_target_create_node_model__${_node_model_custom_target_suffix} ALL
+        COMMENT "Created behavior tree node model for tree file '${_tree_file_stem}' with libraries [${_node_library_paths}].")
+    add_custom_target(_create_node_model__${_node_model_custom_target_suffix} ALL
         DEPENDS "${_node_model_abs_path__build}")
 
     # Install the generated node plugin manifest file

@@ -14,8 +14,7 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_build_handler_factory_template.hpp"
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
+#include "auto_apms_behavior_tree/build_handler/build_handler_factory_template.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 /**
@@ -23,8 +22,7 @@
  * @brief Macro for registering a behavior tree build handler plugin which may be loaded at runtime to build a
  * behavior tree according to the implementation.
  *
- * Build handler classes should be created by deriving from auto_apms_behavior_tree::TreeBuildHandler and implementing
- * the virtual methods as desired.
+ * Build handler classes should be created by inheriting from auto_apms_behavior_tree::TreeBuildHandler.
  *
  * @param type Fully qualified name of the class.
  */

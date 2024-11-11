@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include "auto_apms_behavior_tree/util/bt_types.hpp"
-#include "behaviortree_cpp/bt_factory.h"
-
-/**
- * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
- * @brief Useful tooling for Behavior Tree development.
- */
+#include "auto_apms_behavior_tree/resource/build_handler_loader.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-using Tree = BT::Tree;
-using TreeBlackboard = BT::Blackboard;
-using TreeBlackboardSharedPtr = std::shared_ptr<TreeBlackboard>;
-using TreeConstructor = std::function<Tree(TreeBlackboardSharedPtr)>;
+const std::string TreeBuildHandlerLoader::BASE_PACKAGE_NAME = "auto_apms_behavior_tree";
+const std::string TreeBuildHandlerLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface";
+
+TreeBuildHandlerLoader::TreeBuildHandlerLoader(const std::set<std::string> & exclude_packages)
+: PluginClassLoader(makeUnambiguousPluginClassLoader(BASE_PACKAGE_NAME, BASE_CLASS_NAME, exclude_packages))
+{
+}
 
 }  // namespace auto_apms_behavior_tree

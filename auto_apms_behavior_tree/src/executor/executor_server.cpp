@@ -17,9 +17,9 @@
 #include <functional>
 #include <regex>
 
-#include "auto_apms_behavior_tree/definitions.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree/util/bt_types.hpp"
+#include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_util/string.hpp"
 
 namespace auto_apms_behavior_tree
@@ -86,7 +86,7 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, rclcpp::NodeOpt
 
 TreeExecutorServer::TreeExecutorServer(rclcpp::NodeOptions options) : TreeExecutorServer(DEFAULT_NODE_NAME, options) {}
 
-void TreeExecutorServer::prepareTreeBuilder(TreeBuilder & /*builder*/) {}
+void TreeExecutorServer::prepareTreeBuilder(core::TreeBuilder & /*builder*/) {}
 
 std::map<std::string, rclcpp::Parameter> TreeExecutorServer::getParametersWithPrefix(const std::string & prefix)
 {
@@ -109,7 +109,7 @@ std::string TreeExecutorServer::stripPrefixFromParameterName(const std::string &
   return "";
 }
 
-void TreeExecutorServer::setScriptingEnumsFromParameters(TreeBuilder & builder)
+void TreeExecutorServer::setScriptingEnumsFromParameters(core::TreeBuilder & builder)
 {
   const std::map<std::string, rclcpp::Parameter> enums_param_map = getParametersWithPrefix(SCRIPTING_ENUM_PARAM_PREFIX);
   std::map<std::string, std::string> set_successfully_map;
@@ -227,7 +227,7 @@ TreeConstructor TreeExecutorServer::makeTreeConstructor(
   // the tree later. Otherwise a segmentation fault would occur since the memory allocated for the arguments is released
   // at the time the method returns.
   return [this, root_tree_name, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
-    TreeBuilder builder(node_ptr_, node_loader_ptr_);
+    core::TreeBuilder builder(node_ptr_, node_loader_ptr_);
 
     // Run build pipeline
     prepareTreeBuilder(builder);

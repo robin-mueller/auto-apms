@@ -21,7 +21,7 @@ const std::string NodeRegistrationLoader::BASE_PACKAGE_NAME = "auto_apms_behavio
 const std::string NodeRegistrationLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::core::NodeRegistrationInterface";
 
 NodeRegistrationLoader::NodeRegistrationLoader(const std::set<std::string> & exclude_packages)
-: PluginClassLoader(createUnambiguousPluginClassLoader(BASE_PACKAGE_NAME, BASE_CLASS_NAME, exclude_packages))
+: PluginClassLoader(makeUnambiguousPluginClassLoader(BASE_PACKAGE_NAME, BASE_CLASS_NAME, exclude_packages))
 {
 }
 

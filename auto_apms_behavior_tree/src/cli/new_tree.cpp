@@ -16,7 +16,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "auto_apms_behavior_tree/builder.hpp"
+#include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -50,26 +50,26 @@ int main(int argc, char ** argv)
   }
 
   rclcpp::init(argc, argv);
-  auto node_ptr = std::make_shared<rclcpp::Node>("_new_tree_temp_node");
+  rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("_new_tree_temp_node");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
   // Prepare document
-  TreeBuilder builder(node_ptr);
+  core::TreeBuilder builder(node_ptr);
   core::NodeManifest node_manifest = core::NodeManifest::fromFiles(node_manifest_file_paths);
   builder.loadNodePlugins(node_manifest);
-  TreeBuilder::ElementPtr tree_ele = builder.insertNewTreeElement(NEW_TREE_NAME);
+  core::TreeBuilder::ElementPtr tree_ele = builder.insertNewTreeElement(NEW_TREE_NAME);
   builder.setRootTreeName(NEW_TREE_NAME);
   builder.insertNewNodeElement(tree_ele, "AlwaysSuccess");
 
   // Get node model
   if (!node_manifest.getInternalMap().empty()) {
-    TreeBuilder::DocumentSharedPtr builder_doc_ptr = builder.getDocumentPtr();
-    TreeBuilder::DocumentSharedPtr model_doc_ptr = builder.getNodeModel(false);  // Structure is already verified
-    TreeBuilder::ElementPtr model_child =
-      model_doc_ptr->RootElement()->FirstChildElement(TreeBuilder::TREE_NODE_MODEL_ELEMENT_NAME);
+    core::TreeBuilder::DocumentSharedPtr builder_doc_ptr = builder.getDocumentPtr();
+    core::TreeBuilder::DocumentSharedPtr model_doc_ptr = builder.getNodeModel(false);  // Structure is already verified
+    core::TreeBuilder::ElementPtr model_child =
+      model_doc_ptr->RootElement()->FirstChildElement(core::TreeBuilder::TREE_NODE_MODEL_ELEMENT_NAME);
 
     // Clone the memory of the node model element to the builder document
-    auto copied_child = model_child->DeepClone(builder_doc_ptr.get());
+    tinyxml2::XMLNode * copied_child = model_child->DeepClone(builder_doc_ptr.get());
 
     // Append the copied child to the root of the builder document
     builder_doc_ptr->RootElement()->InsertEndChild(copied_child);

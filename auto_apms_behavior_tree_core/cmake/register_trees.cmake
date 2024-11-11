@@ -44,11 +44,11 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
             "auto_apms_behavior_tree_register_trees(): Behavior tree file ${_tree_abs_path__source} doesn't specify any valid behavior trees"
         )
     endif()
-    set(_file_tree_names "")
+    set(_tree_file_tree_names "")
     foreach(_match ${_matches})
         string(REGEX MATCH "<BehaviorTree ID=\"([A-Za-z0-9_]+)\">" _ "${_match}")
         set(_tree_name ${CMAKE_MATCH_1})
-        # Verify no duplicates in tree IDs
+        # Verify no duplicate tree IDs
         if("${_tree_name}" IN_LIST _all_tree_names)
             message(
                 FATAL_ERROR
@@ -56,7 +56,7 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
             )
         endif()
         list(APPEND _all_tree_names "${_tree_name}")
-        list(APPEND _file_tree_names "${_tree_name}")
+        list(APPEND _tree_file_tree_names "${_tree_name}")
     endforeach()
 
     # Parse arguments
@@ -66,8 +66,8 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     set(_tree_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_DIR_RELATIVE__TREE}")
-    set(_node_manifest_rel_path__install "")
-    set(_node_manifest_file_name "node_model_${_tree_file_stem}.xml")
+    set(_node_manifest_rel_path__install "") # Empty string if no manifest is given
+    set(_node_manifest_file_name "node_manifest_${_tree_file_stem}.xml")
 
     if(NOT ${ARGS_NODE_MANIFEST} STREQUAL "")
         auto_apms_behavior_tree_create_node_metadata("${_tree_file_stem}"
@@ -82,7 +82,7 @@ macro(auto_apms_behavior_tree_register_trees xml_file_path)
         FILES "${_tree_abs_path__source}"
         DESTINATION "${_tree_rel_dir__install}")
 
-    # Fill meta info
-    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_manifest_rel_path__install}|${_file_tree_names}\n")
+    # Fill resource info
+    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_manifest_rel_path__install}|${_tree_file_tree_names}\n")
 
 endmacro()

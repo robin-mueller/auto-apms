@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/builder/tree_build_handler_factory_interface.hpp"
+#include "auto_apms_behavior_tree/build_handler/build_handler_factory_interface.hpp"
 #include "auto_apms_util/resource.hpp"
 #include "rclcpp/macros.hpp"
 
@@ -36,7 +36,7 @@ public:
   /**
    * @brief TreeBuildHandlerLoader constructor.
    * @param exclude_packages Packages to exclude when searching for associated plugin resources.
-   * @throws See auto_apms_util::createUnambiguousPluginClassLoader.
+   * @throws See auto_apms_util::makeUnambiguousPluginClassLoader.
    */
   TreeBuildHandlerLoader(const std::set<std::string> & exclude_packages = {});
 };

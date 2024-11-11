@@ -39,27 +39,38 @@ namespace auto_apms_util
  *
  * @param resource_type Name of the resource type.
  * @param exclude_packages Packages to exclude when searching for resources.
- * @return Package names.
+ * @return List of all packages that register resources of type @p resource_type excluding @p exclude_packages.
  * @throws auto_apms_util::exceptions::ResourceError if no resources of type @p resource_type were found.
  */
 std::set<std::string> getPackagesWithResource(
   const std::string & resource_type, const std::set<std::string> & exclude_packages = {});
 
 /**
- * @brief Collect the paths of plugin.xml manifest files used for initializing pluginlib::ClassLoader objects.
+ * @brief Get the path of a plugin.xml manifest file used for initializing pluginlib::ClassLoader objects.
  *
- * This function requires packages to install plugins.xml manifest files and register them as an `ament_index` resource.
- * The resource marker file must contain the path to the plugins.xml manifest file relative to the package's install
- * prefix.
+ * This function requires packages to install plugins.xml manifest files and register them as an `ament_index` resource
+ * using the CMake macro auto_apms_util_register_plugins().
  *
- * @param resource_type Name of the `ament_index` resource type associated with the plugins.xml file paths to collect.
- * @param exclude_packages Packages to exclude when searching for plugins.xml file paths.
- * @return Absolute paths to `pluginlib` plugin manifest xml files.
+ * @param package Name of the package registering AutoAPMS plugin resources.
+ * @return Absolute path to the `pluginlib`-style plugin manifest xml file.
  * @throws auto_apms_util::exceptions::ResourceError if failed to find a plugin manifest file.
  * @throw auto_apms_util::exceptions::ResourceError if an `ament_index` resource marker file is invalid.
  */
-std::vector<std::string> collectPluginXMLPaths(
-  const std::string & resource_type, const std::set<std::string> & exclude_packages = {});
+std::string getPluginXMLPath(const std::string & package);
+
+/**
+ * @brief Collect the paths of plugin.xml manifest files used for initializing pluginlib::ClassLoader objects.
+ *
+ * This function requires packages to install plugins.xml manifest files and register them as an `ament_index` resource
+ * using the CMake macro auto_apms_util_register_plugins().
+ *
+ * @param resource_type Name of the `ament_index` resource type associated with the plugins.xml file paths to collect.
+ * @param exclude_packages Packages to exclude when searching for plugins.xml file paths.
+ * @return Absolute paths to the `pluginlib`-style plugin manifest xml files.
+ * @throws auto_apms_util::exceptions::ResourceError if failed to find a plugin manifest file.
+ * @throw auto_apms_util::exceptions::ResourceError if an `ament_index` resource marker file is invalid.
+ */
+std::vector<std::string> collectPluginXMLPaths(const std::set<std::string> & exclude_packages = {});
 
 /// @}
 
@@ -76,7 +87,7 @@ public:
    * @brief Standard PluginClassLoader constructor.
    *
    * Alternatively, if you want to verify that only unique class names are loaded, have a look at
-   * auto_apms_util::createUnambiguousPluginClassLoader.
+   * auto_apms_util::makeUnambiguousPluginClassLoader.
    *
    * @param base_package Name of the package containing the @p base_class. Will throw an error if it is not
    * installed.
@@ -113,7 +124,7 @@ public:
    * @throws auto_apms_util::exceptions::ResourceError if multiple packages register a resource using the same class
    * name (or a name in @p reserved_names is found).
    */
-  static PluginClassLoader createUnambiguousPluginClassLoader(
+  static PluginClassLoader makeUnambiguousPluginClassLoader(
     const std::string & base_package, const std::string & base_class,
     const std::set<std::string> & exclude_packages = {},
     const std::map<std::string, std::string> & reserved_names = {});
@@ -126,14 +137,12 @@ public:
 template <typename BaseT>
 inline PluginClassLoader<BaseT>::PluginClassLoader(
   const std::string & base_package, const std::string & base_class, const std::set<std::string> & exclude_packages)
-: pluginlib::ClassLoader<BaseT>(
-    base_package, base_class, "",
-    collectPluginXMLPaths(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB, exclude_packages))
+: pluginlib::ClassLoader<BaseT>(base_package, base_class, "", collectPluginXMLPaths(exclude_packages))
 {
 }
 
 template <typename BaseT>
-inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::createUnambiguousPluginClassLoader(
+inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::makeUnambiguousPluginClassLoader(
   const std::string & base_package, const std::string & base_class, const std::set<std::string> & exclude_packages,
   const std::map<std::string, std::string> & reserved_names)
 {
@@ -141,18 +150,16 @@ inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::createUnambiguousPlugi
   const std::set<std::string> packages =
     getPackagesWithResource(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB, exclude_packages);
   for (const auto & package : packages) {
-    std::set<std::string> exclude = packages;
-    exclude.erase(package);
-    const std::vector<std::string> package_declared_classes =
-      PluginClassLoader<BaseT>(base_package, base_class, exclude).getDeclaredClasses();
-    for (const auto & class_name : package_declared_classes) {
+    auto single_package_loader =
+      pluginlib::ClassLoader<BaseT>(base_package, base_class, "", {getPluginXMLPath(package)});
+    for (const auto & class_name : single_package_loader.getDeclaredClasses()) {
       packages_for_class_name[class_name].push_back(package);
     }
   }
 
-  // Include reserved names in map
+  // Reserved class names are considered as declared
   for (const auto & [class_name, package] : reserved_names) {
-    packages_for_class_name[class_name].push_back(package);
+    packages_for_class_name[class_name].push_back(package + "(Build package)");
   }
 
   // Determine if there are duplicate class names
@@ -166,7 +173,7 @@ inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::createUnambiguousPlugi
   if (!error_details.empty()) {
     throw exceptions::ResourceError(
       "Ambiguous class names found! PluginClassLoader (Base: '" + base_class +
-      "') created with createUnambiguousPluginClassLoader() won't register resources from packages "
+      "') created with makeUnambiguousPluginClassLoader() won't register resources from packages "
       "that use already existing lookup names. Found the following duplicates:\n" +
       rcpputils::join(error_details, "\n"));
   }

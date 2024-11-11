@@ -16,8 +16,8 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/builder/tree_builder.hpp"
 #include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "auto_apms_util/yaml.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -52,7 +52,7 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  TreeBuilder::PortValues port_values;
+  core::TreeBuilder::PortValues port_values;
   if (argc > 2) {
     try {
       port_values = auto_apms_util::yamlToMap(argv[2]);
@@ -63,7 +63,7 @@ int main(int argc, char ** argv)
   }
 
   const std::string tree_name = "RunTreeNodeCPP";
-  TreeBuilder builder(node_ptr);
+  core::TreeBuilder builder(node_ptr);
   try {
     auto tree_element = builder.insertNewTreeElement(tree_name);
     auto node_element =

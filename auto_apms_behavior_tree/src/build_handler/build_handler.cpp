@@ -12,17 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/resource/tree_build_handler_loader.hpp"
+#include "auto_apms_behavior_tree/build_handler/build_handler.hpp"
+
+#include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-const std::string TreeBuildHandlerLoader::BASE_PACKAGE_NAME = "auto_apms_behavior_tree";
-const std::string TreeBuildHandlerLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface";
-
-TreeBuildHandlerLoader::TreeBuildHandlerLoader(const std::set<std::string> & exclude_packages)
-: PluginClassLoader(createUnambiguousPluginClassLoader(BASE_PACKAGE_NAME, BASE_CLASS_NAME, exclude_packages))
+TreeBuildHandler::TreeBuildHandler(rclcpp::Node::SharedPtr node_ptr)
+: logger_(node_ptr->get_logger()), node_wptr_(node_ptr)
 {
+}
+
+rclcpp::Node::SharedPtr TreeBuildHandler::getNodePtr() const
+{
+  if (node_wptr_.expired()) {
+    throw std::runtime_error("TreeBuildHandler: Weak pointer to rclcpp::Node expired.");
+  }
+  return node_wptr_.lock();
 }
 
 }  // namespace auto_apms_behavior_tree
