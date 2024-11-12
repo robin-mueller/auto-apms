@@ -39,10 +39,10 @@ int main(int argc, char ** argv)
 
   try {
     std::vector<std::string> manifest_files;
-    for (const auto & path : auto_apms_util::splitString(argv[1], ";", false)) {
+    for (const auto & path : auto_apms_util::splitString(argv[1], ";")) {
       manifest_files.push_back(std::filesystem::absolute(path).string());
     }
-    const std::vector<std::string> build_infos = auto_apms_util::splitString(argv[2], ";", false);
+    const std::vector<std::string> build_infos = auto_apms_util::splitString(argv[2], ";");
     const std::string build_package_name = argv[3];
     const std::filesystem::path output_file = std::filesystem::absolute(argv[4]);
 
@@ -77,7 +77,7 @@ int main(int argc, char ** argv)
     }
 
     // Construct manifest object from input files
-    auto output_manifest = core::NodeManifest::fromFiles(manifest_files);
+    const core::NodeManifest output_manifest = core::NodeManifest::fromFiles(manifest_files);
 
     /**
      * Trying to construct NodeRegistrationLoader will work completely fine during build time for all packages
@@ -91,21 +91,25 @@ int main(int argc, char ** argv)
 
     using Loader = auto_apms_util::PluginClassLoader<core::NodeRegistrationInterface>;
 
-    std::unique_ptr<Loader> loader_ptr;
-    std::string error_msg;
+    std::set<std::string> exclude_build_package{build_package_name};
+    std::set<std::string> other_pacakges_with_node_plugins;
     try {
       // Exclude the build package from the list of packages to be searched for resources, because resources from this
       // package are not installed yet. Instead we hold additional build information in the build_infos variable.
-      // Additionally, reserve the class names this package is building when checking for ambiguous definitions.
-      Loader * raw_ptr = new Loader(Loader::makeUnambiguousPluginClassLoader(
-        core::NodeRegistrationLoader::BASE_PACKAGE_NAME, core::NodeRegistrationLoader::BASE_CLASS_NAME,
-        {build_package_name}, reserved_names));
-      loader_ptr = std::unique_ptr<Loader>(raw_ptr);
+      other_pacakges_with_node_plugins = auto_apms_util::getPackagesWithPluginResources(exclude_build_package);
     } catch (const auto_apms_util::exceptions::ResourceError & e) {
       // Allow assembling library paths also if no other packages register node resources (Only using resources of the
       // build package).
-      loader_ptr = nullptr;
-      error_msg = e.what();
+      other_pacakges_with_node_plugins = {};
+    }
+    std::unique_ptr<Loader> loader_ptr = nullptr;
+    if (!other_pacakges_with_node_plugins.empty()) {
+      // When creating the node plugin loader, reserve the class names this package is building when checking for
+      // ambiguous declarations. This forces us to use the auto_apms_util::PluginClassLoader constructor.
+      Loader * ptr = new Loader(Loader::makeUnambiguousPluginClassLoader(
+        core::NodeRegistrationLoader::BASE_PACKAGE_NAME, core::NodeRegistrationLoader::BASE_CLASS_NAME,
+        exclude_build_package, reserved_names));
+      loader_ptr = std::unique_ptr<Loader>(ptr);
     }
 
     // Determine shared libraries associated with the node classes required by the manifest files
@@ -128,9 +132,8 @@ int main(int argc, char ** argv)
         "Node '" + node_name + "' (Class '" + params.class_name +
         "') cannot be found. It's not being built by this package (" + build_package_name +
         ") and is also not provided by any other package. For a node to be discoverable, "
-        "one must register it using auto_apms_behavior_tree_register_nodes() in the "
-        "CMakeLists.txt of a ROS 2 package." +
-        (error_msg.empty() ? "" : ("\nError message trying to create node loader: " + error_msg)));
+        "one must register it using auto_apms_behavior_tree_declare_nodes() in the "
+        "CMakeLists.txt of a ROS 2 package.");
     }
 
     // Save the manifest (Merged multiple files into s single one)

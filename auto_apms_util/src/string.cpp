@@ -21,7 +21,7 @@
 namespace auto_apms_util
 {
 
-std::vector<std::string> splitString(const std::string & str, const std::string & delimiter, bool preserve_empty)
+std::vector<std::string> splitString(const std::string & str, const std::string & delimiter, bool remove_empty)
 {
   std::vector<std::string> parts;
   size_t start = 0;
@@ -35,8 +35,15 @@ std::vector<std::string> splitString(const std::string & str, const std::string 
   parts.push_back(str.substr(start));
 
   // Remove empty strings if desired
-  if (!preserve_empty) parts.erase(std::remove(parts.begin(), parts.end(), ""), parts.end());
-
+  if (remove_empty) {
+    auto it = parts.begin();
+    while (it != parts.end()) {
+      if (*it == "")
+        it = parts.erase(it);
+      else
+        ++it;
+    }
+  }
   return parts;
 }
 

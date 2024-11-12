@@ -35,7 +35,7 @@ public:
   std::string tree_file_stem;
   std::string tree_file_path;
   std::string package_name;
-  std::string node_manifest_file_path;
+  std::vector<std::string> node_manifest_file_paths;
   std::set<std::string> tree_names;
 
   /**

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Macro that registers behavior tree build handler plugins from a specific target
-macro(auto_apms_behavior_tree_register_build_handlers target)
+macro(auto_apms_behavior_tree_declare_build_handlers target)
     auto_apms_util_register_plugins(
         ${target}
         "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface"

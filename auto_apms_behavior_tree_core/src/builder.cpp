@@ -66,7 +66,7 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
         "Node '" + node_name + " (Class: " + params.class_name +
         ")' cannot be loaded, because the class name is not known to the class loader. "
         "Make sure that it's spelled correctly and registered by calling "
-        "auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
+        "auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
         "corresponding package.");
     }
 
@@ -167,7 +167,7 @@ TreeBuilder & TreeBuilder::mergeTreesFromFile(const std::string & tree_file_path
 
 TreeBuilder & TreeBuilder::mergeTreesFromResource(const TreeResource & resource)
 {
-  loadNodePlugins(NodeManifest::fromFile(resource.node_manifest_file_path));
+  loadNodePlugins(NodeManifest::fromFiles(resource.node_manifest_file_paths));
   return mergeTreesFromFile(resource.tree_file_path);
 }
 

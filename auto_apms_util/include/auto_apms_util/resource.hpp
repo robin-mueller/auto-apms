@@ -40,10 +40,24 @@ namespace auto_apms_util
  * @param resource_type Name of the resource type.
  * @param exclude_packages Packages to exclude when searching for resources.
  * @return List of all packages that register resources of type @p resource_type excluding @p exclude_packages.
- * @throws auto_apms_util::exceptions::ResourceError if no resources of type @p resource_type were found.
+ * @throws auto_apms_util::exceptions::ResourceError if no resources of type @p resource_type were found in any of the
+ * intalled packages.
  */
-std::set<std::string> getPackagesWithResource(
+std::set<std::string> getPackagesWithResourceType(
   const std::string & resource_type, const std::set<std::string> & exclude_packages = {});
+
+/**
+ * @brief Get a list of all package names that register AutoAPMS plugin resources.
+ *
+ * \note This function determines what packages register resources by parsing the install directory, so any resources
+ * that are not installed at the time this function is called won't be considered.
+ *
+ * @param exclude_packages Packages to exclude when searching for resources.
+ * @return List of all packages that register AutoAPMS plugins excluding @p exclude_packages.
+ * @throws auto_apms_util::exceptions::ResourceError if no AutoAPMS plugin resources were found in any of the installed
+ * packages.
+ */
+std::set<std::string> getPackagesWithPluginResources(const std::set<std::string> & exclude_packages = {});
 
 /**
  * @brief Get the path of a plugin.xml manifest file used for initializing pluginlib::ClassLoader objects.
@@ -148,7 +162,7 @@ inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::makeUnambiguousPluginC
 {
   std::map<std::string, std::vector<std::string>> packages_for_class_name;
   const std::set<std::string> packages =
-    getPackagesWithResource(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB, exclude_packages);
+    getPackagesWithResourceType(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB, exclude_packages);
   for (const auto & package : packages) {
     auto single_package_loader =
       pluginlib::ClassLoader<BaseT>(base_package, base_class, "", {getPluginXMLPath(package)});

@@ -25,7 +25,7 @@ namespace auto_apms_util
 
 const std::string PLUGIN_RESOURCE_TYPE = _AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB;
 
-std::set<std::string> getPackagesWithResource(
+std::set<std::string> getPackagesWithResourceType(
   const std::string & resource_type, const std::set<std::string> & exclude_packages)
 {
   std::set<std::string> packages;
@@ -34,14 +34,14 @@ std::set<std::string> getPackagesWithResource(
   }
   if (packages.empty()) {
     throw exceptions::ResourceError(
-      "Cannot find resources for type '" + resource_type + "' in any installed packages.");
+      "Cannot find resources for type '" + resource_type + "' in any of the installed packages.");
   }
   if (const std::set<std::string> common = getCommonElements(packages, exclude_packages); !common.empty()) {
     for (const std::string & package_to_exclude : common) packages.erase(package_to_exclude);
     if (packages.empty()) {
       throw exceptions::ResourceError(
         "Resources for type '" + resource_type +
-        "' are only available in excluded but not in any other installed packages (Excluded packages containing "
+        "' are only available in excluded but not in any other of the installed packages (Excluded packages containing "
         "resources: [ " +
         rcpputils::join(std::vector<std::string>(common.begin(), common.end()), ", ") + " ]).");
     }
@@ -49,12 +49,17 @@ std::set<std::string> getPackagesWithResource(
   return packages;
 }
 
+std::set<std::string> getPackagesWithPluginResources(const std::set<std::string> & exclude_packages)
+{
+  return getPackagesWithResourceType(PLUGIN_RESOURCE_TYPE, exclude_packages);
+}
+
 std::string getPluginXMLPath(const std::string & package)
 {
   std::string content;
   std::string base_path;
   if (ament_index_cpp::get_resource(PLUGIN_RESOURCE_TYPE, package, content, &base_path)) {
-    std::vector<std::string> paths = splitString(content, "\n", false);
+    std::vector<std::string> paths = splitString(content, "\n");
     if (paths.size() != 1) {
       throw exceptions::ResourceError(
         "Invalid '" + PLUGIN_RESOURCE_TYPE + "' resource marker file installed by package '" + package +
@@ -71,7 +76,7 @@ std::string getPluginXMLPath(const std::string & package)
 std::vector<std::string> collectPluginXMLPaths(const std::set<std::string> & exclude_packages)
 {
   std::vector<std::string> xml_paths;
-  for (const std::string & package : getPackagesWithResource(PLUGIN_RESOURCE_TYPE, exclude_packages)) {
+  for (const std::string & package : getPackagesWithResourceType(PLUGIN_RESOURCE_TYPE, exclude_packages)) {
     xml_paths.push_back(getPluginXMLPath(package));
   }
   return xml_paths;

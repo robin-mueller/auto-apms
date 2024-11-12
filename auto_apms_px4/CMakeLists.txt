@@ -94,7 +94,7 @@ ament_target_dependencies(px4_behavior_tree_nodes
     auto_apms_interfaces
     auto_apms_behavior_tree_core
 )
-auto_apms_behavior_tree_register_nodes(px4_behavior_tree_nodes
+auto_apms_behavior_tree_declare_nodes(px4_behavior_tree_nodes
     "auto_apms_px4::ArmAction"
     "auto_apms_px4::DisarmAction"
     "auto_apms_px4::EnableHoldAction"

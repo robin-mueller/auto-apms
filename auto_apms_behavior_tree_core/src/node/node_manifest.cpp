@@ -25,7 +25,13 @@ NodeManifest::NodeManifest(const ParamMap & param_map) : param_map_{param_map} {
 
 NodeManifest NodeManifest::fromFile(const std::string & file_path)
 {
-  return YAML::LoadFile(file_path).as<NodeManifest>();
+  try {
+    return YAML::LoadFile(file_path).as<NodeManifest>();
+  } catch (const YAML::ParserException & e) {
+    throw exceptions::YAMLFormatError("Error creating node manifest from file: " + std::string(e.what()));
+  } catch (const YAML::BadFile & e) {
+    throw YAML::BadFile("Error creating node manifest from file: " + std::string(e.what()));
+  }
 }
 
 NodeManifest NodeManifest::fromFiles(const std::vector<std::string> & file_paths)

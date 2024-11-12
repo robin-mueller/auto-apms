@@ -74,7 +74,7 @@ install(
     RUNTIME DESTINATION bin)
 
 # Behavior tree resources
-auto_apms_behavior_tree_register_nodes(behavior_tree_nodes
+auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
     "auto_apms::ops_engine::AsyncPrecondition"
     "auto_apms::ops_engine::CreateAlternateLandingMission"
     "auto_apms::ops_engine::IsApproachingLanding"
@@ -82,23 +82,23 @@ auto_apms_behavior_tree_register_nodes(behavior_tree_nodes
     "auto_apms::ops_engine::GetSystemState"
 )
 
-# auto_apms_behavior_tree_register_trees("contingency_management/trees/contingency_manager.xml"
+# auto_apms_behavior_tree_declare_trees("contingency_management/trees/contingency_manager.xml"
 #     NODE_MANIFEST
 #     "contingency_management/config/contingency_manager_plugins.yaml"
 # )
-# auto_apms_behavior_tree_register_trees("contingency_management/trees/flight_orchestrator.xml"
+# auto_apms_behavior_tree_declare_trees("contingency_management/trees/flight_orchestrator.xml"
 #     NODE_MANIFEST
 #     "contingency_management/config/orchestrator_plugins.yaml"
 # )
-auto_apms_behavior_tree_register_trees("contingency_management/trees/nominal_mission.xml"
+auto_apms_behavior_tree_declare_trees("contingency_management/trees/nominal_mission.xml"
     NODE_MANIFEST
     "contingency_management/config/mission_manager_plugins.yaml"
 )
-auto_apms_behavior_tree_register_trees("contingency_management/trees/safety_monitor.xml"
+auto_apms_behavior_tree_declare_trees("contingency_management/trees/safety_monitor.xml"
     NODE_MANIFEST
     "contingency_management/config/safety_monitor_plugins.yaml"
 )
-auto_apms_behavior_tree_register_trees("contingency_management/trees/alternate_landing_mission.xml")
+auto_apms_behavior_tree_declare_trees("contingency_management/trees/alternate_landing_mission.xml")
 
 install(
     DIRECTORY contingency_management/launch
@@ -124,7 +124,7 @@ add_and_install_example_executable("src/task_ex1.cpp" auto_apms_util auto_apms_i
 # ------------ Example Behavior Trees --------------
 #
 
-auto_apms_behavior_tree_register_trees(
+auto_apms_behavior_tree_declare_trees(
     "example_trees/relative_goto/relative_goto.xml"
     NODE_MANIFEST
     "example_trees/relative_goto/node_plugins.yaml"

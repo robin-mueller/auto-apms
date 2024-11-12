@@ -19,9 +19,9 @@ set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_DIR_RELATIVE__TREE "${_AUTO_APMS_UTI
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_DIR_RELATIVE__METADATA "${_AUTO_APMS_UTIL__AUTO_APMS_SHARED_RESOURCES_DIR_RELATIVE}/@PROJECT_NAME@/metadata")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE "@_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE@")
 
-include("${@PROJECT_NAME@_DIR}/create_node_metadata.cmake")
-include("${@PROJECT_NAME@_DIR}/register_nodes.cmake")
-include("${@PROJECT_NAME@_DIR}/register_trees.cmake")
+include("${@PROJECT_NAME@_DIR}/generate_node_metadata.cmake")
+include("${@PROJECT_NAME@_DIR}/declare_nodes.cmake")
+include("${@PROJECT_NAME@_DIR}/declare_trees.cmake")
 
 find_package(ament_cmake_core QUIET REQUIRED)
-ament_register_extension("ament_package" "@PROJECT_NAME@" "register_resources_hook.cmake")
+ament_register_extension("ament_package" "@PROJECT_NAME@" "register_resource_hook.cmake")

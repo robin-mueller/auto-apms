@@ -106,7 +106,7 @@ ament_target_dependencies(builtin_nodes
     auto_apms_interfaces
     auto_apms_behavior_tree_core
 )
-auto_apms_behavior_tree_register_nodes(builtin_nodes
+auto_apms_behavior_tree_declare_nodes(builtin_nodes
     "auto_apms_behavior_tree::ThrowException"
     "auto_apms_behavior_tree::StartExecutorAction"
     "auto_apms_behavior_tree::TerminateExecutorAction"
@@ -114,15 +114,8 @@ auto_apms_behavior_tree_register_nodes(builtin_nodes
     "auto_apms_behavior_tree::PauseExecutorAction"
     "auto_apms_behavior_tree::ResumeExecutorAction"
     "auto_apms_behavior_tree::LoadBehaviorTreeAction"
-)
-
-# Generic node manifest for builtin node plugins
-configure_file("config/builtin_node_manifest.yaml.in" "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}/builtin_node_manifest.yaml")
-
-auto_apms_behavior_tree_create_node_metadata("builtin_nodes"
-    "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}/builtin_node_manifest.yaml"
-    MANIFEST_FILE_NAME "builtin_node_manifest"
-    MODEL_FILE_NAME "builtin_node_model"
+    NODE_MANIFEST
+    "config/builtin_nodes.yaml.in"
 )
 
 #
@@ -136,8 +129,8 @@ target_link_libraries(builtin_build_handlers auto_apms_behavior_tree)
 
 # In the original package, we need to manually include this before being able to call the macro.
 # However, it is automatically available for all downstream packages.
-include("cmake/register_build_handlers.cmake")
-auto_apms_behavior_tree_register_build_handlers(builtin_build_handlers
+include("cmake/declare_build_handlers.cmake")
+auto_apms_behavior_tree_declare_build_handlers(builtin_build_handlers
     "auto_apms_behavior_tree::TreeResourceBuildHandler"
 )
 
@@ -164,10 +157,10 @@ target_link_libraries(new_tree auto_apms_behavior_tree)
 if(BUILD_TESTING)
     find_package(ament_cmake_gtest REQUIRED)
 
-    auto_apms_behavior_tree_register_trees(
+    auto_apms_behavior_tree_declare_trees(
         "test/trees/infinite_w_bb_flags.xml"
         NODE_MANIFEST
-        "${_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE}/builtin_node_manifest.yaml"
+        builtin_nodes # We can pass the target that was previously associated with the generation of node metadata for refering to the manifest files.
     )
 
     # ament_add_gtest(${PROJECT_NAME}_unit_tests

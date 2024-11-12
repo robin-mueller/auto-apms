@@ -41,16 +41,16 @@ enum class TextColor
  * @brief Split a string into multiple tokens using a specific delimiter string (Delimiter may consist of multiple
  * characters).
  *
- * Will preserve empty strings if @p preserve_empty is `true` (Default), so for example with the delimiter being
- * `::` passing the string `::foo` will output a vector with two elements {"", "foo"}.
+ * Will remove empty strings if @p remove_empty is `true` (Default). So for example with the delimiter being
+ * `::` passing the string `::foo` will output a vector with one elements {"foo"}. If you want {"", "foo"}, you must set
+ * @p remove_empty to `false`.
  *
  * @param[in] str String to split into multiple tokens.
  * @param[in] delimiter Delimiter string at which the string shall be split.
- * @param[in] preserve_empty Preserve empty string tokens in the result vector.
+ * @param[in] remove_empty Remove empty string tokens in the result vector.
  * @return Vector of string representing the string's tokens without the delimiter.
  */
-std::vector<std::string> splitString(
-  const std::string & str, const std::string & delimiter, bool preserve_empty = true);
+std::vector<std::string> splitString(const std::string & str, const std::string & delimiter, bool remove_empty = true);
 
 std::string printMap(
   const std::map<std::string, std::string> & map, const std::string & key_val_sep = "=",

@@ -34,18 +34,20 @@ std::vector<TreeResource> TreeResource::collectFromPackage(const std::string & p
   std::vector<TreeResource> resources;
   if (ament_index_cpp::get_resource(
         _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE, package_name, content, &base_path)) {
-    std::vector<std::string> lines = auto_apms_util::splitString(content, "\n", false);
+    std::vector<std::string> lines = auto_apms_util::splitString(content, "\n");
     auto make_absolute_path = [base_path](const std::string & s) { return base_path + "/" + s; };
     for (const auto & line : lines) {
-      std::vector<std::string> parts = auto_apms_util::splitString(line, "|");
+      std::vector<std::string> parts = auto_apms_util::splitString(line, "|", false);
       if (parts.size() != 4) {
-        throw std::runtime_error("Invalid behavior tree resource file (Package: '" + package_name + "').");
+        throw std::runtime_error(
+          "Invalid behavior tree resource file (Package: '" + package_name + "'). Invalid line: " + line + ".");
       }
       TreeResource r;
       r.tree_file_stem = parts[0];
       r.tree_file_path = make_absolute_path(parts[1]);
       r.package_name = package_name;
-      r.node_manifest_file_path = make_absolute_path(parts[2]);
+      for (const std::string & path : auto_apms_util::splitString(parts[2], ";"))
+        r.node_manifest_file_paths.push_back(make_absolute_path(path));
       std::vector<std::string> tree_ids_vec = auto_apms_util::splitString(parts[3], ";");
       r.tree_names = {tree_ids_vec.begin(), tree_ids_vec.end()};
       resources.push_back(r);
@@ -60,7 +62,8 @@ TreeResource TreeResource::selectByTreeName(const std::string & tree_name, const
   if (!package_name.empty()) {
     search_packages.insert(package_name);
   } else {
-    search_packages = auto_apms_util::getPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE);
+    search_packages =
+      auto_apms_util::getPackagesWithResourceType(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE);
   }
 
   std::vector<TreeResource> matching_resources;
@@ -92,7 +95,8 @@ TreeResource TreeResource::selectByFileName(const std::string & file_name, const
   if (!package_name.empty()) {
     search_packages.insert(package_name);
   } else {
-    search_packages = auto_apms_util::getPackagesWithResource(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE);
+    search_packages =
+      auto_apms_util::getPackagesWithResourceType(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE);
   }
 
   std::vector<TreeResource> matching_resources;
@@ -120,7 +124,7 @@ TreeResource TreeResource::selectByFileName(const std::string & file_name, const
 
 TreeResource TreeResource::fromString(const std::string & identity)
 {
-  const auto tokens = auto_apms_util::splitString(identity, "::");
+  const auto tokens = auto_apms_util::splitString(identity, "::", false);
   if (tokens.size() != 3) {
     throw auto_apms_behavior_tree::exceptions::ResourceIdentityFormatError(
       "Identity string '" + identity +

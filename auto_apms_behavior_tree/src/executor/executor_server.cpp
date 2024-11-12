@@ -199,7 +199,7 @@ TreeConstructor TreeExecutorServer::makeTreeConstructor(
     throw exceptions::TreeBuildError(
       "There is no tree build handler class named '" + build_handler_class_name +
       "'. Make sure that it's spelled correctly and registered by calling "
-      "auto_apms_behavior_tree_register_build_handlers() in the CMakeLists.txt of the "
+      "auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of the "
       "corresponding package.");
   }
 
@@ -275,7 +275,7 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
         return create_rejected(
           "There is no build handler class named '" + class_name +
           "'. Make sure it is registered using the CMake macro "
-          "auto_apms_behavior_tree_register_build_handlers().");
+          "auto_apms_behavior_tree_declare_build_handlers().");
       }
     }
 

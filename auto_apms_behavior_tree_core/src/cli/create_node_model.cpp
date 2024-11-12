@@ -39,12 +39,15 @@ int main(int argc, char ** argv)
 
   try {
     const std::string manifest_file = std::filesystem::absolute(argv[1]).string();
-    const std::vector<std::string> library_paths = auto_apms_util::splitString(argv[2], ";", false);
+    const std::vector<std::string> library_paths = auto_apms_util::splitString(argv[2], ";");
     const std::filesystem::path output_file = std::filesystem::absolute(argv[3]);
 
     // Ensure that arguments are not empty
     if (manifest_file.empty()) {
       throw std::runtime_error("Argument manifest_file must not be empty.");
+    }
+    if (library_paths.empty()) {
+      throw std::runtime_error("Argument library_paths must not be empty.");
     }
     if (output_file.empty()) {
       throw std::runtime_error("Argument output_file must not be empty.");
@@ -56,7 +59,7 @@ int main(int argc, char ** argv)
     }
 
     rclcpp::init(argc, argv);
-    auto node_ptr = std::make_shared<rclcpp::Node>("_create_node_model__" + output_file.stem().string());
+    auto node_ptr = std::make_shared<rclcpp::Node>("create_node_model__" + output_file.stem().string());
     auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
     BT::BehaviorTreeFactory factory;
@@ -78,11 +81,9 @@ int main(int argc, char ** argv)
         "auto_apms_behavior_tree::core::NodeRegistrationTemplate<" + params.class_name + ">";
 
       class_loader::ClassLoader * loader = nullptr;
-      size_t index = 0;
-      do {
-        loader = class_loaders.at(index++).get();
-      } while (index < class_loaders.size() &&
-               !loader->isClassAvailable<core::NodeRegistrationInterface>(required_class_name));
+      for (const auto & l : class_loaders) {
+        if (l->isClassAvailable<core::NodeRegistrationInterface>(required_class_name)) loader = l.get();
+      }
 
       if (!loader) {
         throw std::runtime_error(
@@ -90,7 +91,7 @@ int main(int argc, char ** argv)
           ")' cannot be loaded, because the required registration class '" + required_class_name +
           "' couldn't be found. Check that the class name is spelled correctly and "
           "registered "
-          "by calling auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
+          "by calling auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
           "corresponding package. Also make sure that you called the "
           "AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE macro in the source file.");
       }
