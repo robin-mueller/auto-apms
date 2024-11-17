@@ -27,6 +27,15 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
         )
     endif()
 
+    if(metadata_id IN_LIST _AUTO_APMS_BEHAVIOR_TREE_CORE__METADATA_IDS)
+        message(
+        FATAL_ERROR
+        "auto_apms_behavior_tree_generate_node_metadata(): Metadata with ID '${metadata_id}' has already been generated before.")
+    endif()
+
+    # Append metadata id to a list to keep track of all registered ids
+    list(APPEND _AUTO_APMS_BEHAVIOR_TREE_CORE__METADATA_IDS "${metadata_id}")
+
     # Default names
     set(_generated_node_manifest_file_name "node_manifest_${metadata_id}.yaml")
     set(_generated_node_model_file_name "node_model_${metadata_id}.xml")
@@ -120,7 +129,8 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
         DESTINATION "${_generated_node_model_rel_dir__install}"
     )
 
-    # Save the metadata_id name associated with the metadata for reusing it during auto_apms_behavior_tree_declare_trees()
+    # Store the metadata information for reusing it during auto_apms_behavior_tree_declare_trees()
     list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_BUILD_INFO "${metadata_id}@${_generated_node_manifest_abs_path__build}")
+    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE_MANIFEST "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE_MANIFEST}${metadata_id}|${_generated_node_manifest_rel_dir__install}/${_generated_node_manifest_file_name}\n")
 
 endmacro()

@@ -1,10 +1,9 @@
 # Request
-string root_tree_name
-string tree_build_handler
 string tree_build_request
+string root_tree_name
 string node_overrides
 bool attach true
-bool clear_blackboard false
+bool clear_blackboard true
 ---
 # Result
 uint8 TREE_RESULT_NOT_SET=0

@@ -76,6 +76,8 @@ public:
    */
   virtual bool setMessage(MessageT & msg);
 
+  std::string getTopicName() const;
+
   const rclcpp::Logger logger_;
 
 private:
@@ -172,6 +174,12 @@ template <class MessageT>
 inline bool RosPublisherNode<MessageT>::setMessage(MessageT & /*msg*/)
 {
   return true;
+}
+
+template <class MessageT>
+inline std::string RosPublisherNode<MessageT>::getTopicName() const
+{
+  return topic_name_;
 }
 
 }  // namespace auto_apms_behavior_tree::core

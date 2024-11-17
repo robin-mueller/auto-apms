@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if(DEFINED _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE_MANIFEST)
+    ament_index_register_resource(
+        "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST}"
+        CONTENT
+        "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE_MANIFEST}"
+    )
+endif()
+
 if(DEFINED _AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE)
     ament_index_register_resource(
         "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE}"

@@ -113,6 +113,8 @@ public:
    */
   virtual BT::NodeStatus onMessageReceived(const MessageT & msg);
 
+  std::string getTopicName() const;
+
   const rclcpp::Logger logger_;
 
 private:
@@ -272,6 +274,12 @@ template <class MessageT>
 inline BT::NodeStatus RosSubscriberNode<MessageT>::onMessageReceived(const MessageT & /*msg*/)
 {
   return BT::NodeStatus::SUCCESS;
+}
+
+template <class MessageT>
+inline std::string RosSubscriberNode<MessageT>::getTopicName() const
+{
+  return topic_name_;
 }
 
 template <class MessageT>

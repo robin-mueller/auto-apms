@@ -46,8 +46,10 @@ std::vector<TreeResource> TreeResource::collectFromPackage(const std::string & p
       r.tree_file_stem = parts[0];
       r.tree_file_path = make_absolute_path(parts[1]);
       r.package_name = package_name;
-      for (const std::string & path : auto_apms_util::splitString(parts[2], ";"))
-        r.node_manifest_file_paths.push_back(make_absolute_path(path));
+      for (const std::string & path : auto_apms_util::splitString(parts[2], ";")) {
+        r.node_manifest_file_paths.push_back(
+          std::filesystem::path(path).is_absolute() ? path : make_absolute_path(path));
+      }
       std::vector<std::string> tree_ids_vec = auto_apms_util::splitString(parts[3], ";");
       r.tree_names = {tree_ids_vec.begin(), tree_ids_vec.end()};
       resources.push_back(r);

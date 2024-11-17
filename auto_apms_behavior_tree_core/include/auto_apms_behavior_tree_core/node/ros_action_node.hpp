@@ -95,6 +95,8 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
+  inline static const std::string INPUT_KEY_ACTION_PORT = "action_name";
+
   explicit RosActionNode(const std::string & instance_name, const Config & config, const Context & context);
 
   virtual ~RosActionNode() = default;
@@ -108,7 +110,7 @@ public:
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
-    BT::PortsList basic = {BT::InputPort<std::string>("action_name", "", "Action server name")};
+    BT::PortsList basic = {BT::InputPort<std::string>(INPUT_KEY_ACTION_PORT, "", "Action server name")};
     basic.insert(addition.begin(), addition.end());
     return basic;
   }
@@ -160,6 +162,8 @@ public:
   /// Can be used to change the name of the action programmatically
   void setActionName(const std::string & action_name);
 
+  std::string getActionName() const;
+
   const rclcpp::Logger logger_;
 
 private:
@@ -207,7 +211,7 @@ inline RosActionNode<ActionT>::RosActionNode(
   // - we use the action_name in the port and it is blackboard entry.
 
   // check port remapping
-  auto portIt = config.input_ports.find("action_name");
+  auto portIt = config.input_ports.find(INPUT_KEY_ACTION_PORT);
   if (portIt != config.input_ports.end()) {
     const std::string & bb_service_name = portIt->second;
 
@@ -349,7 +353,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
   // otherwise, create a new client
   if (!client_instance_ || (status() == BT::NodeStatus::IDLE && action_name_should_be_checked_)) {
     std::string action_name;
-    getInput("action_name", action_name);
+    getInput(INPUT_KEY_ACTION_PORT, action_name);
     if (action_name_ != action_name) {
       createClient(action_name);
     }
@@ -463,6 +467,12 @@ inline void RosActionNode<T>::setActionName(const std::string & action_name)
 {
   action_name_ = action_name;
   createClient(action_name);
+}
+
+template <class ActionT>
+inline std::string RosActionNode<ActionT>::getActionName() const
+{
+  return action_name_;
 }
 
 template <class ActionT>

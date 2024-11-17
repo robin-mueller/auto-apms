@@ -27,54 +27,88 @@
 namespace auto_apms_behavior_tree
 {
 
+class TreeExecutorServerOptions
+{
+public:
+  TreeExecutorServerOptions(const rclcpp::NodeOptions & ros_node_options);
+
+  TreeExecutorServerOptions & allowOtherBuildHandlers(bool allow);
+
+  TreeExecutorServerOptions & enableScriptingEnumParameters(bool enable);
+
+  TreeExecutorServerOptions & enableBlackboardParameters(bool enable);
+
+  TreeExecutorServerOptions & enableBlackboardParametersDuringExecution(bool enable);
+
+  rclcpp::NodeOptions getROSNodeOptions();
+
+private:
+  friend class TreeExecutorServer;
+
+  rclcpp::NodeOptions ros_node_options_;
+  bool allow_other_build_handlers_ = true;
+  bool scripting_enum_parameters_ = true;
+  bool blackboard_parameters_ = true;
+  bool blackboard_parameters_during_execution_ = true;
+};
+
 class TreeExecutorServer : public TreeExecutor
 {
 public:
+  using Options = TreeExecutorServerOptions;
   using ExecutorParameters = executor_params::Params;
   using ExecutorParameterListener = executor_params::ParamListener;
   using StartActionContext = auto_apms_util::ActionContext<auto_apms_interfaces::action::StartTreeExecutor>;
   using CommandActionContext = auto_apms_util::ActionContext<auto_apms_interfaces::action::CommandTreeExecutor>;
+  using TreeBuilder = core::TreeBuilder;
 
-  static const std::string PARAM_NAME_TREE_BUILDER;
+  static const std::string PARAM_NAME_TREE_BUILD_HANDLER;
   static const std::string PARAM_NAME_TICK_RATE;
   static const std::string PARAM_NAME_GROOT2_PORT;
   static const std::string PARAM_NAME_STATE_CHANGE_LOGGER;
+  inline static const std::string PARAM_VALUE_NO_BUILD_HANDLER = "none";
   inline static const std::string DEFAULT_NODE_NAME = "tree_executor";
   inline static const std::string SCRIPTING_ENUM_PARAM_PREFIX = "enum";
   inline static const std::string BLACKBOARD_PARAM_PREFIX = "bb";
 
   /**
-   * @brief Constructor for TreeExecutorServer with custom name.
+   * @brief Constructor for TreeExecutorServer allowing to specify a default node name and executor options.
    * @param[in] name Name of the rclcpp::Node instance.
-   * @param[in] options Options forwarded to rclcpp::Node constructor.
+   * @param[in] executor_options Executor specific options. Simply pass a rclcpp::NodeOptions instance to use the
+   * default options.
    */
-  TreeExecutorServer(const std::string & name, rclcpp::NodeOptions options);
+  TreeExecutorServer(const std::string & name, TreeExecutorServerOptions executor_options);
 
   /**
-   * @brief Constructor for TreeExecutorServer with default name TreeExecutorServer::DEFAULT_NODE_NAME.
+   * @brief Constructor for TreeExecutorServer with default name TreeExecutorServer::DEFAULT_NODE_NAME and default
+   * TreeExecutorServerOptions.
    * @param[in] options Options forwarded to rclcpp::Node constructor.
    */
-  TreeExecutorServer(rclcpp::NodeOptions options);
+  explicit TreeExecutorServer(rclcpp::NodeOptions options);
 
 private:
   /* Virtual methods */
 
-  virtual void prepareTreeBuilder(core::TreeBuilder & builder);
+  virtual void setUpBuilder(TreeBuilder & builder);
 
 protected:
   /* Utility methods */
 
-  std::map<std::string, rclcpp::Parameter> getParametersWithPrefix(const std::string & prefix);
+  std::map<std::string, rclcpp::ParameterValue> getParameterValuesWithPrefix(const std::string & prefix);
 
   std::string stripPrefixFromParameterName(const std::string & prefix, const std::string & param_name);
 
-  void setScriptingEnumsFromParameters(core::TreeBuilder & builder);
+  bool updateScriptingEnumsWithParameterValues(
+    const std::map<std::string, rclcpp::ParameterValue> & value_map, bool simulate = false);
 
-  void updateBlackboardFromParameters(TreeBlackboard & bb);
+  bool updateBlackboardWithParameterValues(
+    const std::map<std::string, rclcpp::ParameterValue> & value_map, TreeBlackboard & bb, bool simulate = false);
+
+  void loadBuildHandler(const std::string & name);
 
   TreeConstructor makeTreeConstructor(
-    const std::string & root_tree_name, const std::string & build_handler_class_name,
-    const std::string & build_handler_request, const core::NodeManifest & node_overrides = {});
+    const std::string & build_handler_request, const std::string & root_tree_name,
+    const core::NodeManifest & node_overrides = {});
 
 private:
   /* Executor specific virtual overrides */
@@ -88,6 +122,8 @@ private:
   rcl_interfaces::msg::SetParametersResult on_set_parameters_callback_(
     const std::vector<rclcpp::Parameter> & parameters);
 
+  void parameter_event_callback_(const rcl_interfaces::msg::ParameterEvent & event);
+
   rclcpp_action::GoalResponse handle_start_goal_(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const StartActionContext::Goal> goal_ptr);
   rclcpp_action::CancelResponse handle_start_cancel_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr);
@@ -99,20 +135,22 @@ private:
     std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
   void handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
 
+  const TreeExecutorServerOptions executor_options_;
   const rclcpp::Logger logger_;
   ExecutorParameterListener executor_param_listener_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_ptr_;
+  std::shared_ptr<rclcpp::ParameterEventHandler> parameter_event_handler_ptr_;
+  rclcpp::ParameterEventCallbackHandle::SharedPtr parameter_event_callback_handle_ptr_;
   core::NodeRegistrationLoader::SharedPtr node_loader_ptr_;
   TreeBuildHandlerLoader::UniquePtr build_handler_loader_ptr_;
   TreeBuildHandler::UniquePtr build_handler_ptr_;
+  std::map<std::string, int> scripting_enum_buffer_;
   TreeConstructor tree_constructor_;
-  std::map<std::string, rclcpp::Parameter> bb_param_map_;
 
   // Interface objects
   rclcpp_action::Server<StartActionContext::Type>::SharedPtr start_action_ptr_;
   StartActionContext start_action_context_;
   rclcpp_action::Server<CommandActionContext::Type>::SharedPtr command_action_ptr_;
-  CommandActionContext command_action_context_;
   rclcpp::TimerBase::SharedPtr command_timer_ptr_;
 };
 

@@ -78,27 +78,6 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
   return promise_ptr->get_future();
 }
 
-bool TreeExecutor::isBusy() { return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled(); }
-
-TreeExecutor::ExecutionState TreeExecutor::getExecutionState()
-{
-  if (isBusy()) {
-    if (!tree_ptr_) throw std::logic_error("tree_ptr_ cannot be nullptr when execution is started.");
-    if (tree_ptr_->rootNode()->status() == BT::NodeStatus::IDLE) {
-      // The root node being IDLE here means that the tree hasn't been ticked yet since its creation or was halted
-      return execution_stopped_ ? ExecutionState::STARTING : ExecutionState::HALTED;
-    }
-    return execution_stopped_ ? ExecutionState::PAUSED : ExecutionState::RUNNING;
-  }
-  return ExecutionState::IDLE;
-}
-
-std::string TreeExecutor::getTreeName()
-{
-  if (tree_ptr_) return tree_ptr_->subtrees[0]->tree_ID;
-  return "NO_TREE_NAME";
-}
-
 void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
 {
   const ExecutionState this_execution_state = getExecutionState();
@@ -217,14 +196,37 @@ void TreeExecutor::onTermination(const ExecutionResult & /*result*/) {}
 
 void TreeExecutor::setControlCommand(ControlCommand cmd) { control_command_ = cmd; }
 
-rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutor::get_node_base_interface()
+bool TreeExecutor::isBusy() { return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled(); }
+
+TreeExecutor::ExecutionState TreeExecutor::getExecutionState()
 {
-  return node_ptr_->get_node_base_interface();
+  if (isBusy()) {
+    if (!tree_ptr_) throw std::logic_error("tree_ptr_ cannot be nullptr when execution is started.");
+    if (tree_ptr_->rootNode()->status() == BT::NodeStatus::IDLE) {
+      // The root node being IDLE here means that the tree hasn't been ticked yet since its creation or was halted
+      return execution_stopped_ ? ExecutionState::STARTING : ExecutionState::HALTED;
+    }
+    return execution_stopped_ ? ExecutionState::PAUSED : ExecutionState::RUNNING;
+  }
+  return ExecutionState::IDLE;
+}
+
+std::string TreeExecutor::getTreeName()
+{
+  if (tree_ptr_) return tree_ptr_->subtrees[0]->tree_ID;
+  return "NO_TREE_NAME";
 }
 
 TreeBlackboardSharedPtr TreeExecutor::getGlobalBlackboardPtr() { return global_blackboard_ptr_; }
 
+void TreeExecutor::clearGlobalBlackboard() { global_blackboard_ptr_ = TreeBlackboard::create(); }
+
 TreeStateObserver & TreeExecutor::getStateObserver() { return *state_observer_ptr_; }
+
+rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutor::get_node_base_interface()
+{
+  return node_ptr_->get_node_base_interface();
+}
 
 std::string toStr(TreeExecutor::ExecutionState state)
 {

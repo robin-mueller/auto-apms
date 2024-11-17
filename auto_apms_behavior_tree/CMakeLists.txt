@@ -73,7 +73,6 @@ target_link_libraries(auto_apms_behavior_tree
 ament_target_dependencies(auto_apms_behavior_tree
     rclcpp
     rclcpp_action
-    rclcpp_components
     tinyxml2_vendor
     auto_apms_util
     auto_apms_interfaces
@@ -84,7 +83,18 @@ ament_target_dependencies(auto_apms_behavior_tree
 ament_generate_version_header(auto_apms_behavior_tree HEADER_PATH "${PROJECT_NAME}/version.hpp")
 
 # Default tree executor server node. Available as a typical ROS node component and a standalone executable.
-rclcpp_components_register_node(auto_apms_behavior_tree
+# We create a seperate shared library for that since it's best practive when using class_loader::ClassLoader 
+# for loading plugins as you can read here https://wiki.ros.org/class_loader under section 2.8.
+add_library(tree_executor_server SHARED
+    "src/executor/executor_server_component.cpp"
+)
+target_link_libraries(tree_executor_server
+    auto_apms_behavior_tree
+)
+ament_target_dependencies(tree_executor_server
+    rclcpp_components
+)
+rclcpp_components_register_node(tree_executor_server
     PLUGIN "auto_apms_behavior_tree::TreeExecutorServer"
     EXECUTABLE "tree_executor"
 )
@@ -119,7 +129,7 @@ auto_apms_behavior_tree_declare_nodes(builtin_nodes
 )
 
 #
-# ------------ Tree Build handlers --------------
+# ------------ Tree build handlers --------------
 #
 
 add_library(builtin_build_handlers SHARED
@@ -204,6 +214,7 @@ install(
     TARGETS
     builtin_nodes
     builtin_build_handlers
+    tree_executor_server
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin

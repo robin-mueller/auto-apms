@@ -91,6 +91,8 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
+  inline static const std::string INPUT_KEY_SERVICE_PORT = "service_name";
+
   explicit RosServiceNode(const std::string & instance_name, const Config & config, const Context & context);
 
   virtual ~RosServiceNode() = default;
@@ -104,7 +106,7 @@ public:
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
-    BT::PortsList basic = {BT::InputPort<std::string>("service_name", "", "Service name")};
+    BT::PortsList basic = {BT::InputPort<std::string>(INPUT_KEY_SERVICE_PORT, "", "Service name")};
     basic.insert(addition.begin(), addition.end());
     return basic;
   }
@@ -142,6 +144,8 @@ public:
 
   // method to set the service name programmatically
   void setServiceName(const std::string & service_name);
+
+  std::string getServiceName() const;
 
   const rclcpp::Logger logger_;
 
@@ -185,7 +189,7 @@ inline RosServiceNode<ServiceT>::RosServiceNode(
 : BT::ActionNodeBase(instance_name, config), logger_(context.getLogger()), context_(context)
 {
   // check port remapping
-  auto portIt = config.input_ports.find("service_name");
+  auto portIt = config.input_ports.find(INPUT_KEY_SERVICE_PORT);
   if (portIt != config.input_ports.end()) {
     const std::string & bb_service_name = portIt->second;
 
@@ -255,7 +259,7 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
   // otherwise, create a new client
   if (!srv_instance_ || (status() == BT::NodeStatus::IDLE && service_name_should_be_checked_)) {
     std::string service_name;
-    getInput("service_name", service_name);
+    getInput(INPUT_KEY_SERVICE_PORT, service_name);
     if (service_name_ != service_name) {
       createClient(service_name);
     }
@@ -371,6 +375,12 @@ inline void RosServiceNode<ServiceT>::setServiceName(const std::string & service
 {
   service_name_ = service_name;
   createClient(service_name);
+}
+
+template <class ServiceT>
+inline std::string RosServiceNode<ServiceT>::getServiceName() const
+{
+  return service_name_;
 }
 
 template <class ServiceT>

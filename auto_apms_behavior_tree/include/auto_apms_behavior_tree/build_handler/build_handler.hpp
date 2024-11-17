@@ -33,13 +33,15 @@ class TreeBuildHandler
 public:
   RCLCPP_SMART_PTR_ALIASES_ONLY(TreeBuildHandler)
 
+  using TreeBuilder = core::TreeBuilder;
+
   TreeBuildHandler(rclcpp::Node::SharedPtr node_ptr);
 
   virtual ~TreeBuildHandler() = default;
 
   virtual bool setRequest(const std::string & request) = 0;
 
-  virtual void handleBuild(core::TreeBuilder & builder, TreeBlackboard & bb) = 0;
+  virtual void handleBuild(TreeBuilder & builder, TreeBlackboard & bb) = 0;
 
   rclcpp::Node::SharedPtr getNodePtr() const;
 

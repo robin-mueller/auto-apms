@@ -72,12 +72,6 @@ public:
     TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate,
     unsigned int groot2_port = 1667);
 
-  bool isBusy();
-
-  ExecutionState getExecutionState();
-
-  std::string getTreeName();
-
 private:
   void execution_routine_(TerminationCallback termination_callback);
 
@@ -92,25 +86,32 @@ private:
   virtual void onTermination(const ExecutionResult & result);
 
 public:
-  /* Setter methods */
-
   void setControlCommand(ControlCommand cmd);
 
-  /* Getter methods */
+  bool isBusy();
 
-  /// Get the node's base interface. Is required to be able to register derived classes as ROS2 components.
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface();
+  ExecutionState getExecutionState();
+
+  std::string getTreeName();
 
   /**
-   * @brief Get a pointer to the global blackboard instance.
+   * @brief Get a shared pointer to the global blackboard instance.
    *
    * The global blackboard is used as a root blackboard on every tree that is being created. This means, that all
    * entries of the global blackboard are publicly available to the trees at runtime and can be queried using the '@'
    * prefix.
+   *
+   * \note This method creates a copy of the internal shared pointer object, so you are not able to modify the internal
+   * pointer variable itself.
    */
   TreeBlackboardSharedPtr getGlobalBlackboardPtr();
 
+  void clearGlobalBlackboard();
+
   TreeStateObserver & getStateObserver();
+
+  /// Get the node's base interface. Is required to be able to register derived classes as ROS2 components.
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface();
 
 protected:
   rclcpp::Node::SharedPtr node_ptr_;

@@ -38,7 +38,7 @@ public:
     return true;
   }
 
-  void handleBuild(core::TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
+  void handleBuild(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
   {
     if (!resource_ptr_) throw exceptions::TreeBuildError("TreeResourceBuildHandler - resource_ptr_ is nullptr.");
     builder.mergeTreesFromResource(*resource_ptr_);

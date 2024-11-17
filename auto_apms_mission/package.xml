@@ -9,6 +9,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>rclcpp_components</depend>
   <depend>auto_apms_behavior_tree</depend>
 
   <export>
