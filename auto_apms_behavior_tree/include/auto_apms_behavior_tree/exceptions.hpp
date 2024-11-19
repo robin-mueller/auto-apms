@@ -20,7 +20,7 @@
 namespace auto_apms_behavior_tree::exceptions
 {
 
-struct TreeExecutionError : public auto_apms_util::exceptions::ExceptionBase
+struct TreeExecutorError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };

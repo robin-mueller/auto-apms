@@ -19,9 +19,9 @@
 namespace auto_apms_behavior_tree
 {
 
-inline core::TreeResource findTreeResource(const std::string & identifier)
+inline core::TreeResource findTreeResource(const std::string & identity)
 {
-  return core::TreeResource::fromString(identifier);
+  return core::TreeResource::fromResourceIdentity(identity);
 }
 
 }  // namespace auto_apms_behavior_tree

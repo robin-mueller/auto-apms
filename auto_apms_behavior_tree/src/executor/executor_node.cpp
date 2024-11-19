@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/executor/executor_server.hpp"
+#include "auto_apms_behavior_tree/executor/executor_node.hpp"
 
 #include <functional>
 #include <regex>
@@ -21,56 +21,39 @@
 #include "auto_apms_behavior_tree/util/bt_types.hpp"
 #include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_util/string.hpp"
+#include "rclcpp/utilities.hpp"
 
 namespace auto_apms_behavior_tree
 {
-TreeExecutorServerOptions::TreeExecutorServerOptions(const rclcpp::NodeOptions & ros_node_options)
+TreeExecutorNodeOptions::TreeExecutorNodeOptions(const rclcpp::NodeOptions & ros_node_options)
 : ros_node_options_(ros_node_options)
 {
 }
 
-TreeExecutorServerOptions & TreeExecutorServerOptions::allowOtherBuildHandlers(bool allow)
+TreeExecutorNodeOptions & TreeExecutorNodeOptions::enableScriptingEnumParameters(bool from_overrides, bool dynamic)
 {
-  allow_other_build_handlers_ = allow;
+  scripting_enum_parameters_from_overrides_ = from_overrides;
+  scripting_enum_parameters_dynamic_ = dynamic;
   return *this;
 }
 
-TreeExecutorServerOptions & TreeExecutorServerOptions::enableScriptingEnumParameters(bool enable)
+TreeExecutorNodeOptions & TreeExecutorNodeOptions::enableBlackboardParameters(bool from_overrides, bool dynamic)
 {
-  scripting_enum_parameters_ = enable;
+  blackboard_parameters_from_overrides_ = from_overrides;
+  blackboard_parameters_dynamic_ = dynamic;
   return *this;
 }
 
-TreeExecutorServerOptions & TreeExecutorServerOptions::enableBlackboardParameters(bool enable)
-{
-  blackboard_parameters_ = enable;
-  return *this;
-}
-
-TreeExecutorServerOptions & TreeExecutorServerOptions::enableBlackboardParametersDuringExecution(bool enable)
-{
-  blackboard_parameters_during_execution_ = enable;
-  return *this;
-}
-
-rclcpp::NodeOptions TreeExecutorServerOptions::getROSNodeOptions()
+rclcpp::NodeOptions TreeExecutorNodeOptions::getROSNodeOptions()
 {
   ros_node_options_.automatically_declare_parameters_from_overrides(
-    scripting_enum_parameters_ || blackboard_parameters_);
-  ros_node_options_.allow_undeclared_parameters(
-    scripting_enum_parameters_ || (blackboard_parameters_ && blackboard_parameters_during_execution_));
+    scripting_enum_parameters_from_overrides_ || blackboard_parameters_from_overrides_);
+  ros_node_options_.allow_undeclared_parameters(scripting_enum_parameters_dynamic_ || blackboard_parameters_dynamic_);
   return ros_node_options_;
 }
 
-// clang-format off
-const std::string TreeExecutorServer::PARAM_NAME_TREE_BUILD_HANDLER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER;
-const std::string TreeExecutorServer::PARAM_NAME_TICK_RATE = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE;
-const std::string TreeExecutorServer::PARAM_NAME_GROOT2_PORT = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT;
-const std::string TreeExecutorServer::PARAM_NAME_STATE_CHANGE_LOGGER = _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER;
-// clang-format on
-
-TreeExecutorServer::TreeExecutorServer(const std::string & name, TreeExecutorServerOptions executor_options)
-: TreeExecutor(std::make_shared<rclcpp::Node>(name, executor_options.getROSNodeOptions())),
+TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOptions executor_options)
+: TreeExecutorBase(std::make_shared<rclcpp::Node>(name, executor_options.getROSNodeOptions())),
   executor_options_(executor_options),
   logger_(node_ptr_->get_logger()),
   executor_param_listener_(node_ptr_),
@@ -87,24 +70,44 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, TreeExecutorSer
     initial_params.build_handler_exclude_packages.begin(), initial_params.build_handler_exclude_packages.end()));
 
   // Instantiate behavior tree build handler
-  loadBuildHandler(initial_params.tree_build_handler);
+  loadBuildHandler(initial_params.build_handler);
 
   // Collect scripting enum and blackboard parameters from initial parameters
-  updateScriptingEnumsWithParameterValues(getParameterValuesWithPrefix(SCRIPTING_ENUM_PARAM_PREFIX));
-  updateBlackboardWithParameterValues(getParameterValuesWithPrefix(BLACKBOARD_PARAM_PREFIX), *getGlobalBlackboardPtr());
+  const auto initial_scripting_enums = getParameterValuesWithPrefix(SCRIPTING_ENUM_PARAM_PREFIX);
+  if (!initial_scripting_enums.empty()) {
+    if (executor_options_.scripting_enum_parameters_from_overrides_) {
+      updateScriptingEnumsWithParameterValues(initial_scripting_enums);
+    } else {
+      RCLCPP_WARN(
+        logger_,
+        "Initial scripting enums have been provided, but the 'Scripting enums from overrides' option is disabled. "
+        "Ignoring.");
+    }
+  }
+  const auto initial_blackboard = getParameterValuesWithPrefix(BLACKBOARD_PARAM_PREFIX);
+  if (!initial_blackboard.empty()) {
+    if (executor_options_.blackboard_parameters_from_overrides_) {
+      updateBlackboardWithParameterValues(initial_blackboard, *getGlobalBlackboardPtr());
+    } else {
+      RCLCPP_WARN(
+        logger_,
+        "Initial blackboard entries have been provided, but the 'Blackboard from overrides' option is disabled. "
+        "Ignoring.");
+    }
+  }
 
   using namespace std::placeholders;
   start_action_ptr_ = rclcpp_action::create_server<StartActionContext::Type>(
-    node_ptr_, name + _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX,
-    std::bind(&TreeExecutorServer::handle_start_goal_, this, _1, _2),
-    std::bind(&TreeExecutorServer::handle_start_cancel_, this, _1),
-    std::bind(&TreeExecutorServer::handle_start_accept_, this, _1));
+    node_ptr_, std::string(node_ptr_->get_name()) + _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX,
+    std::bind(&TreeExecutorNode::handle_start_goal_, this, _1, _2),
+    std::bind(&TreeExecutorNode::handle_start_cancel_, this, _1),
+    std::bind(&TreeExecutorNode::handle_start_accept_, this, _1));
 
   command_action_ptr_ = rclcpp_action::create_server<CommandActionContext::Type>(
-    node_ptr_, name + _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
-    std::bind(&TreeExecutorServer::handle_command_goal_, this, _1, _2),
-    std::bind(&TreeExecutorServer::handle_command_cancel_, this, _1),
-    std::bind(&TreeExecutorServer::handle_command_accept_, this, _1));
+    node_ptr_, std::string(node_ptr_->get_name()) + _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX,
+    std::bind(&TreeExecutorNode::handle_command_goal_, this, _1, _2),
+    std::bind(&TreeExecutorNode::handle_command_cancel_, this, _1),
+    std::bind(&TreeExecutorNode::handle_command_accept_, this, _1));
 
   // Adding the local on_set_parameters_callback after the parameter listeners from generate_parameters_library
   // are created makes sure that this callback will be evaluated before the listener callbacks.
@@ -122,9 +125,18 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, TreeExecutorSer
   parameter_event_callback_handle_ptr_ = parameter_event_handler_ptr_->add_parameter_event_callback(
     [this](const rcl_interfaces::msg::ParameterEvent & event) { this->parameter_event_callback_(event); });
 
-  // Evaluate possible cli argument dictating to start executing a specific tree immediately.
-  // First argument is always path of executable.
-  if (const std::vector<std::string> args = executor_options.getROSNodeOptions().arguments(); args.size() > 1) {
+  // Make sure ROS arguments are removed. When applying composition, this is typically not the case.
+  std::vector<std::string> args_with_ros_arguments = executor_options.getROSNodeOptions().arguments();
+  int argc = args_with_ros_arguments.size();
+  char ** argv = new char *[argc + 1];  // +1 for the null terminator
+  for (int i = 0; i < argc; ++i) {
+    argv[i] = const_cast<char *>(args_with_ros_arguments[i].c_str());
+  }
+  argv[argc] = nullptr;  // Null-terminate the array as required for argv[]
+
+  // Evaluate possible cli argument dictating to start executing with a specific build request immediately.
+  // Note: First argument is always path of executable.
+  if (const std::vector<std::string> args = rclcpp::remove_ros_arguments(argc, argv); args.size() > 1) {
     // Log relevant arguments. First argument is executable name (argv[0]) and won't be considered.
     std::vector<std::string> relevant_args{args.begin() + 1, args.end()};
     RCLCPP_DEBUG(
@@ -135,15 +147,14 @@ TreeExecutorServer::TreeExecutorServer(const std::string & name, TreeExecutorSer
   }
 }
 
-TreeExecutorServer::TreeExecutorServer(rclcpp::NodeOptions options)
-: TreeExecutorServer(DEFAULT_NODE_NAME, TreeExecutorServerOptions(options))
+TreeExecutorNode::TreeExecutorNode(rclcpp::NodeOptions options)
+: TreeExecutorNode(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NODE_NAME, TreeExecutorNodeOptions(options))
 {
 }
 
-void TreeExecutorServer::setUpBuilder(core::TreeBuilder & /*builder*/) {}
+void TreeExecutorNode::setUpBuilder(core::TreeBuilder & /*builder*/) {}
 
-std::map<std::string, rclcpp::ParameterValue> TreeExecutorServer::getParameterValuesWithPrefix(
-  const std::string & prefix)
+std::map<std::string, rclcpp::ParameterValue> TreeExecutorNode::getParameterValuesWithPrefix(const std::string & prefix)
 {
   // Get all parameters with prefix <prefix> and separator depth 2 (Will match all names like <prefix>.<suffix> but not
   // <prefix>.<suffix1>.<suffix2> and deeper)
@@ -157,14 +168,14 @@ std::map<std::string, rclcpp::ParameterValue> TreeExecutorServer::getParameterVa
   return value_map;
 }
 
-std::string TreeExecutorServer::stripPrefixFromParameterName(const std::string & prefix, const std::string & param_name)
+std::string TreeExecutorNode::stripPrefixFromParameterName(const std::string & prefix, const std::string & param_name)
 {
   const std::regex reg("^" + prefix + "\\.(\\S+)");
   if (std::smatch match; std::regex_match(param_name, match, reg)) return match[1].str();
   return "";
 }
 
-bool TreeExecutorServer::updateScriptingEnumsWithParameterValues(
+bool TreeExecutorNode::updateScriptingEnumsWithParameterValues(
   const std::map<std::string, rclcpp::ParameterValue> & value_map, bool simulate)
 {
   std::map<std::string, std::string> set_successfully_map;
@@ -198,7 +209,7 @@ bool TreeExecutorServer::updateScriptingEnumsWithParameterValues(
   return true;
 }
 
-bool TreeExecutorServer::updateBlackboardWithParameterValues(
+bool TreeExecutorNode::updateBlackboardWithParameterValues(
   const std::map<std::string, rclcpp::ParameterValue> & value_map, TreeBlackboard & bb, bool simulate)
 {
   std::map<std::string, std::string> set_successfully_map;
@@ -313,24 +324,32 @@ bool TreeExecutorServer::updateBlackboardWithParameterValues(
   return true;
 }
 
-void TreeExecutorServer::loadBuildHandler(const std::string & name)
+void TreeExecutorNode::loadBuildHandler(const std::string & name)
 {
+  if (build_handler_ptr_ && !executor_param_listener_.get_params().allow_other_build_handlers) {
+    throw std::logic_error(
+      "Executor option 'Allow other build handlers' is disabled, but loadBuildHandler() was called again after "
+      "instantiating '" +
+      current_build_handler_name_ + "'.");
+  }
+  if (current_build_handler_name_ == name) return;
   if (name == PARAM_VALUE_NO_BUILD_HANDLER) {
     build_handler_ptr_.reset();
-    return;
+  } else {
+    try {
+      build_handler_ptr_ = build_handler_loader_ptr_->createUniqueInstance(name)->makeUnique(node_ptr_);
+    } catch (const std::exception & e) {
+      throw exceptions::TreeBuildError(
+        "An error occured when trying to create an instance of tree build handler class '" + name +
+        "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER macro must be "
+        "called in the source file for the class to be discoverable. Error message: " +
+        e.what());
+    }
   }
-  try {
-    build_handler_ptr_ = build_handler_loader_ptr_->createUniqueInstance(name)->makeUnique(node_ptr_);
-  } catch (const std::exception & e) {
-    throw exceptions::TreeBuildError(
-      "An error occured when trying to create an instance of tree build handler class '" + name +
-      "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER macro must be "
-      "called in the source file for the class to be discoverable. Error message: " +
-      e.what());
-  }
+  current_build_handler_name_ = name;
 }
 
-TreeConstructor TreeExecutorServer::makeTreeConstructor(
+TreeConstructor TreeExecutorNode::makeTreeConstructor(
   const std::string & build_handler_request, const std::string & root_tree_name,
   const core::NodeManifest & node_overrides)
 {
@@ -338,7 +357,7 @@ TreeConstructor TreeExecutorServer::makeTreeConstructor(
   if (build_handler_ptr_ && !build_handler_ptr_->setRequest(build_handler_request)) {
     throw exceptions::TreeBuildError(
       "Request to create tree '" + build_handler_request + "' was denied by '" +
-      executor_param_listener_.get_params().tree_build_handler + "' (setRequest() returned false).");
+      executor_param_listener_.get_params().build_handler + "' (setRequest() returned false).");
   }
 
   // By passing the the local variables to the callback's captures by value they live on and can be used for creating
@@ -357,11 +376,12 @@ TreeConstructor TreeExecutorServer::makeTreeConstructor(
   };
 }
 
-rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_callback_(
+rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_callback_(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   // Parameters allowed to be set while busy
-  const std::set<std::string> allowed_while_busy{PARAM_NAME_STATE_CHANGE_LOGGER};
+  const std::set<std::string> allowed_while_busy{_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER};
+  const ExecutorParameters params = executor_param_listener_.get_params();
 
   // Iterate through parameters and individually decide wether to reject the change
   for (const auto & p : parameters) {
@@ -379,13 +399,12 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
     // Check if parameter is a scripting enum
     if (const std::string enum_key = stripPrefixFromParameterName(SCRIPTING_ENUM_PARAM_PREFIX, param_name);
         !enum_key.empty()) {
-      if (!executor_options_.scripting_enum_parameters_) {
-        return create_rejected(
-          "Cannot set scripting enum parameter '" + enum_key +
-          "', because the option enableScriptingEnumParameters is disabled");
-      }
       if (isBusy()) {
-        return create_rejected("Scripting enums are constant while tree executor is running");
+        return create_rejected("Scripting enums cannot change while tree executor is running");
+      }
+      if (!executor_options_.scripting_enum_parameters_dynamic_ || !params.allow_dynamic_scripting_enums) {
+        return create_rejected(
+          "Cannot set scripting enum '" + enum_key + "', because the 'Dynamic scripting enums' option is disabled");
       }
       // Validate type of scripting enum parameters
       if (!updateScriptingEnumsWithParameterValues({{enum_key, p.get_parameter_value()}}, true)) {
@@ -400,15 +419,9 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
     // Check if parameter is a blackboard parameter
     if (const std::string entry_key = stripPrefixFromParameterName(BLACKBOARD_PARAM_PREFIX, param_name);
         !entry_key.empty()) {
-      if (!executor_options_.blackboard_parameters_) {
+      if (!executor_options_.blackboard_parameters_dynamic_ || !params.allow_dynamic_blackboard) {
         return create_rejected(
-          "Cannot set blackboard parameter '" + entry_key +
-          "', because the option enableBlackboardParameters is disabled");
-      }
-      if (isBusy() && !executor_options_.blackboard_parameters_during_execution_) {
-        return create_rejected(
-          "Cannot set blackboard parameter '" + entry_key +
-          "', because the executor is busy and the option enableBlackboardParametersDuringExecution is disabled");
+          "Cannot set blackboard entry '" + entry_key + "', because the 'Dynamic blackboard' option is disabled");
       }
       // Validate type of blackboad parameters won't change
       if (!updateBlackboardWithParameterValues(
@@ -428,12 +441,12 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
     }
 
     // Check if build handler is allowed to change and valid
-    if (param_name == PARAM_NAME_TREE_BUILD_HANDLER) {
-      if (!executor_options_.allow_other_build_handlers_) {
+    if (param_name == _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER) {
+      if (!params.allow_other_build_handlers) {
         return create_rejected(
-          "This executor operates with tree build handler '" +
-          executor_param_listener_.get_params().tree_build_handler +
-          "' and doesn't allow other instances since the option allowOtherBuildHandlers is disabled.");
+          "This executor operates with tree build handler '" + executor_param_listener_.get_params().build_handler +
+          "' and doesn't allow other build handlers to be loaded since the 'Allow other build handlers' option is "
+          "disabled.");
       }
       const std::string class_name = p.as_string();
       if (class_name != PARAM_VALUE_NO_BUILD_HANDLER && !build_handler_loader_ptr_->isClassAvailable(class_name)) {
@@ -452,7 +465,7 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorServer::on_set_parameters_c
   return result;
 }
 
-void TreeExecutorServer::parameter_event_callback_(const rcl_interfaces::msg::ParameterEvent & event)
+void TreeExecutorNode::parameter_event_callback_(const rcl_interfaces::msg::ParameterEvent & event)
 {
   // Look for any updates to parameters of this node
   std::regex re(node_ptr_->get_fully_qualified_name());
@@ -474,14 +487,14 @@ void TreeExecutorServer::parameter_event_callback_(const rcl_interfaces::msg::Pa
       }
 
       // Change tree build handler instance
-      if (param_name == PARAM_NAME_TREE_BUILD_HANDLER) {
+      if (param_name == _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER) {
         loadBuildHandler(p.as_string());
       }
     }
   }
 }
 
-rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
+rclcpp_action::GoalResponse TreeExecutorNode::handle_start_goal_(
   const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const StartActionContext::Goal> goal_ptr)
 {
   // Reject if a tree is already executing
@@ -490,6 +503,26 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
       logger_, "Goal %s was REJECTED: Tree '%s' is currently executing.", rclcpp_action::to_string(uuid).c_str(),
       getTreeName().c_str());
     return rclcpp_action::GoalResponse::REJECT;
+  }
+
+  if (!goal_ptr->build_handler.empty()) {
+    if (executor_param_listener_.get_params().allow_other_build_handlers) {
+      try {
+        loadBuildHandler(goal_ptr->build_handler);
+      } catch (const std::exception & e) {
+        RCLCPP_WARN(
+          logger_, "Goal %s was REJECTED: Loading tree build handler '%s' failed: %s",
+          rclcpp_action::to_string(uuid).c_str(), goal_ptr->build_handler.c_str(), e.what());
+        return rclcpp_action::GoalResponse::REJECT;
+      }
+    } else if (goal_ptr->build_handler != current_build_handler_name_) {
+      RCLCPP_WARN(
+        logger_,
+        "Goal %s was REJECTED: Current tree build handler '%s' must not change since the 'Allow other build handlers' "
+        "option is disabled.",
+        rclcpp_action::to_string(uuid).c_str(), current_build_handler_name_.c_str());
+      return rclcpp_action::GoalResponse::REJECT;
+    }
   }
 
   core::NodeManifest node_overrides;
@@ -503,7 +536,7 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
   }
 
   try {
-    tree_constructor_ = makeTreeConstructor(goal_ptr->tree_build_request, goal_ptr->root_tree_name, node_overrides);
+    tree_constructor_ = makeTreeConstructor(goal_ptr->build_request, goal_ptr->root_tree, node_overrides);
   } catch (const std::exception & e) {
     RCLCPP_WARN(
       logger_, "Goal %s was REJECTED: Error making the tree constructor: %s", rclcpp_action::to_string(uuid).c_str(),
@@ -513,14 +546,14 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_start_goal_(
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-rclcpp_action::CancelResponse TreeExecutorServer::handle_start_cancel_(
+rclcpp_action::CancelResponse TreeExecutorNode::handle_start_cancel_(
   std::shared_ptr<StartActionContext::GoalHandle> /*goal_handle_ptr*/)
 {
   setControlCommand(ControlCommand::TERMINATE);
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void TreeExecutorServer::handle_start_accept_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr)
+void TreeExecutorNode::handle_start_accept_(std::shared_ptr<StartActionContext::GoalHandle> goal_handle_ptr)
 {
   // Clear blackboard parameters if desired
   if (goal_handle_ptr->get_goal()->clear_blackboard) {
@@ -559,7 +592,7 @@ void TreeExecutorServer::handle_start_accept_(std::shared_ptr<StartActionContext
   }
 }
 
-rclcpp_action::GoalResponse TreeExecutorServer::handle_command_goal_(
+rclcpp_action::GoalResponse TreeExecutorNode::handle_command_goal_(
   const rclcpp_action::GoalUUID & /*uuid*/, std::shared_ptr<const CommandActionContext::Goal> goal_ptr)
 {
   if (command_timer_ptr_ && !command_timer_ptr_->is_canceled()) {
@@ -620,13 +653,13 @@ rclcpp_action::GoalResponse TreeExecutorServer::handle_command_goal_(
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-rclcpp_action::CancelResponse TreeExecutorServer::handle_command_cancel_(
+rclcpp_action::CancelResponse TreeExecutorNode::handle_command_cancel_(
   std::shared_ptr<CommandActionContext::GoalHandle> /*goal_handle_ptr*/)
 {
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void TreeExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr)
+void TreeExecutorNode::handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr)
 {
   const auto command_request = goal_handle_ptr->get_goal()->command;
   ExecutionState requested_state;
@@ -682,7 +715,7 @@ void TreeExecutorServer::handle_command_accept_(std::shared_ptr<CommandActionCon
     });
 }
 
-bool TreeExecutorServer::onTick()
+bool TreeExecutorNode::onTick()
 {
   const ExecutorParameters params = executor_param_listener_.get_params();
   auto & state_observer = getStateObserver();
@@ -715,7 +748,7 @@ bool TreeExecutorServer::onTick()
   return true;
 }
 
-void TreeExecutorServer::onTermination(const ExecutionResult & result)
+void TreeExecutorNode::onTermination(const ExecutionResult & result)
 {
   if (!start_action_context_.isValid())  // Do nothing if started in detached mode
     return;

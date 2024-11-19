@@ -17,10 +17,26 @@
 #include <algorithm>
 #include <boost/core/demangle.hpp>
 #include <map>
+#include <string>
 
+#include "auto_apms_util/exceptions.hpp"
 #include "yaml-cpp/yaml.h"
 
-#define AUTO_APMS_DEFINE_YAML_INTERPRETER_METHODS(ClassType)                                                      \
+#define AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(ClassType)                                                  \
+  static ClassType fromFile(const std::string & file_path)                                                        \
+  {                                                                                                               \
+    try {                                                                                                         \
+      return YAML::LoadFile(file_path).as<ClassType>();                                                           \
+    } catch (const YAML::ParserException & e) {                                                                   \
+      throw auto_apms_util::exceptions::YAMLFormatError(                                                          \
+        "Format error when creating " + boost::core::demangle(typeid(ClassType).name()) +                         \
+        " from file: " + std::string(e.what()));                                                                  \
+    } catch (const YAML::BadFile & e) {                                                                           \
+      throw YAML::BadFile(                                                                                        \
+        "Bad file error when creating " + boost::core::demangle(typeid(ClassType).name()) +                       \
+        " from file: " + std::string(e.what()));                                                                  \
+    }                                                                                                             \
+  }                                                                                                               \
   static ClassType decode(const std::string & str)                                                                \
   {                                                                                                               \
     const bool empty = std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isspace(c); });      \
@@ -38,10 +54,3 @@
     }                                                                                                             \
     return out.c_str();                                                                                           \
   }
-
-namespace auto_apms_util
-{
-
-std::map<std::string, std::string> yamlToMap(const std::string & str);
-
-}

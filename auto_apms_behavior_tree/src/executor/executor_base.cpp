@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/executor/executor_base.hpp"
 
 #include <chrono>
 
@@ -21,7 +21,7 @@
 namespace auto_apms_behavior_tree
 {
 
-TreeExecutor::TreeExecutor(rclcpp::Node::SharedPtr node_ptr)
+TreeExecutorBase::TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr)
 : node_ptr_(node_ptr),
   global_blackboard_ptr_(TreeBlackboard::create()),
   control_command_(ControlCommand::RUN),
@@ -30,11 +30,11 @@ TreeExecutor::TreeExecutor(rclcpp::Node::SharedPtr node_ptr)
   auto_apms_util::exposeToDebugLogging(node_ptr_->get_logger());
 }
 
-std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
+std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExecution(
   TreeConstructor make_tree, double tick_rate_sec, unsigned int groot2_port)
 {
   if (isBusy()) {
-    throw exceptions::TreeExecutionError(
+    throw exceptions::TreeExecutorError(
       "Cannot start execution with tree '" + getTreeName() + "' currently executing.");
   }
 
@@ -46,7 +46,12 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
   }
 
   groot2_publisher_ptr_.reset();
-  groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, groot2_port);
+  try {
+    groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, groot2_port);
+  } catch (const std::exception & e) {
+    throw exceptions::TreeExecutorError(
+      "Failed to initialize Groot2 publisher with port " + std::to_string(groot2_port) + ": " + e.what());
+  }
   state_observer_ptr_.reset();
   state_observer_ptr_ = std::make_unique<TreeStateObserver>(*tree_ptr_, node_ptr_->get_logger());
   state_observer_ptr_->enableTransitionToIdle(false);
@@ -78,7 +83,7 @@ std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
   return promise_ptr->get_future();
 }
 
-void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
+void TreeExecutorBase::execution_routine_(TerminationCallback termination_callback)
 {
   const ExecutionState this_execution_state = getExecutionState();
   if (prev_execution_state_ != this_execution_state) {
@@ -186,19 +191,22 @@ void TreeExecutor::execution_routine_(TerminationCallback termination_callback)
   throw std::logic_error("Execution routine is not intended to proceed to this statement.");
 }
 
-bool TreeExecutor::onInitialTick() { return true; }
+bool TreeExecutorBase::onInitialTick() { return true; }
 
-bool TreeExecutor::onTick() { return true; }
+bool TreeExecutorBase::onTick() { return true; }
 
-TreeExecutor::TreeExitBehavior TreeExecutor::onTreeExit(bool /*success*/) { return TreeExitBehavior::TERMINATE; }
+TreeExecutorBase::TreeExitBehavior TreeExecutorBase::onTreeExit(bool /*success*/)
+{
+  return TreeExitBehavior::TERMINATE;
+}
 
-void TreeExecutor::onTermination(const ExecutionResult & /*result*/) {}
+void TreeExecutorBase::onTermination(const ExecutionResult & /*result*/) {}
 
-void TreeExecutor::setControlCommand(ControlCommand cmd) { control_command_ = cmd; }
+void TreeExecutorBase::setControlCommand(ControlCommand cmd) { control_command_ = cmd; }
 
-bool TreeExecutor::isBusy() { return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled(); }
+bool TreeExecutorBase::isBusy() { return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled(); }
 
-TreeExecutor::ExecutionState TreeExecutor::getExecutionState()
+TreeExecutorBase::ExecutionState TreeExecutorBase::getExecutionState()
 {
   if (isBusy()) {
     if (!tree_ptr_) throw std::logic_error("tree_ptr_ cannot be nullptr when execution is started.");
@@ -211,76 +219,76 @@ TreeExecutor::ExecutionState TreeExecutor::getExecutionState()
   return ExecutionState::IDLE;
 }
 
-std::string TreeExecutor::getTreeName()
+std::string TreeExecutorBase::getTreeName()
 {
   if (tree_ptr_) return tree_ptr_->subtrees[0]->tree_ID;
   return "NO_TREE_NAME";
 }
 
-TreeBlackboardSharedPtr TreeExecutor::getGlobalBlackboardPtr() { return global_blackboard_ptr_; }
+TreeBlackboardSharedPtr TreeExecutorBase::getGlobalBlackboardPtr() { return global_blackboard_ptr_; }
 
-void TreeExecutor::clearGlobalBlackboard() { global_blackboard_ptr_ = TreeBlackboard::create(); }
+void TreeExecutorBase::clearGlobalBlackboard() { global_blackboard_ptr_ = TreeBlackboard::create(); }
 
-TreeStateObserver & TreeExecutor::getStateObserver() { return *state_observer_ptr_; }
+TreeStateObserver & TreeExecutorBase::getStateObserver() { return *state_observer_ptr_; }
 
-rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutor::get_node_base_interface()
+rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutorBase::get_node_base_interface()
 {
   return node_ptr_->get_node_base_interface();
 }
 
-std::string toStr(TreeExecutor::ExecutionState state)
+std::string toStr(TreeExecutorBase::ExecutionState state)
 {
   switch (state) {
-    case TreeExecutor::ExecutionState::IDLE:
+    case TreeExecutorBase::ExecutionState::IDLE:
       return "IDLE";
-    case TreeExecutor::ExecutionState::STARTING:
+    case TreeExecutorBase::ExecutionState::STARTING:
       return "STARTING";
-    case TreeExecutor::ExecutionState::RUNNING:
+    case TreeExecutorBase::ExecutionState::RUNNING:
       return "RUNNING";
-    case TreeExecutor::ExecutionState::PAUSED:
+    case TreeExecutorBase::ExecutionState::PAUSED:
       return "PAUSED";
-    case TreeExecutor::ExecutionState::HALTED:
+    case TreeExecutorBase::ExecutionState::HALTED:
       return "HALTED";
   }
   return "undefined";
 }
 
-std::string toStr(TreeExecutor::ControlCommand cmd)
+std::string toStr(TreeExecutorBase::ControlCommand cmd)
 {
   switch (cmd) {
-    case TreeExecutor::ControlCommand::RUN:
+    case TreeExecutorBase::ControlCommand::RUN:
       return "RUN";
-    case TreeExecutor::ControlCommand::PAUSE:
+    case TreeExecutorBase::ControlCommand::PAUSE:
       return "PAUSE";
-    case TreeExecutor::ControlCommand::HALT:
+    case TreeExecutorBase::ControlCommand::HALT:
       return "HALT";
-    case TreeExecutor::ControlCommand::TERMINATE:
+    case TreeExecutorBase::ControlCommand::TERMINATE:
       return "TERMINATE";
   }
   return "undefined";
 }
 
-std::string toStr(TreeExecutor::TreeExitBehavior behavior)
+std::string toStr(TreeExecutorBase::TreeExitBehavior behavior)
 {
   switch (behavior) {
-    case TreeExecutor::TreeExitBehavior::TERMINATE:
+    case TreeExecutorBase::TreeExitBehavior::TERMINATE:
       return "TERMINATE";
-    case TreeExecutor::TreeExitBehavior::RESTART:
+    case TreeExecutorBase::TreeExitBehavior::RESTART:
       return "RESTART";
   }
   return "undefined";
 }
 
-std::string toStr(TreeExecutor::ExecutionResult result)
+std::string toStr(TreeExecutorBase::ExecutionResult result)
 {
   switch (result) {
-    case TreeExecutor::ExecutionResult::TREE_SUCCEEDED:
+    case TreeExecutorBase::ExecutionResult::TREE_SUCCEEDED:
       return "TREE_SUCCEEDED";
-    case TreeExecutor::ExecutionResult::TREE_FAILED:
+    case TreeExecutorBase::ExecutionResult::TREE_FAILED:
       return "TREE_FAILED";
-    case TreeExecutor::ExecutionResult::TERMINATED_PREMATURELY:
+    case TreeExecutorBase::ExecutionResult::TERMINATED_PREMATURELY:
       return "TERMINATED_PREMATURELY";
-    case TreeExecutor::ExecutionResult::ERROR:
+    case TreeExecutorBase::ExecutionResult::ERROR:
       return "ERROR";
   }
   return "undefined";

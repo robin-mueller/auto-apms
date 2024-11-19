@@ -142,6 +142,8 @@ public:
     const std::string & base_package, const std::string & base_class,
     const std::set<std::string> & exclude_packages = {},
     const std::map<std::string, std::string> & reserved_names = {});
+
+  std::map<std::string, std::string> getClassPackageMap();
 };
 
 // #####################################################################################################################
@@ -192,6 +194,16 @@ inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::makeUnambiguousPluginC
       rcpputils::join(error_details, "\n"));
   }
   return {base_package, base_class, exclude_packages};
+}
+
+template <typename BaseT>
+inline std::map<std::string, std::string> PluginClassLoader<BaseT>::getClassPackageMap()
+{
+  std::map<std::string, std::string> map;
+  for (const std::string & class_name : this->getDeclaredClasses()) {
+    map[class_name] = this->getClassPackage(class_name);
+  }
+  return map;
 }
 
 }  // namespace auto_apms_util

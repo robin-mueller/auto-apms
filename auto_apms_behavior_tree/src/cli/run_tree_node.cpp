@@ -16,7 +16,7 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/executor/executor_base.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "auto_apms_util/yaml.hpp"
@@ -55,7 +55,7 @@ int main(int argc, char ** argv)
   core::TreeBuilder::PortValues port_values;
   if (argc > 2) {
     try {
-      port_values = auto_apms_util::yamlToMap(argv[2]);
+      port_values = YAML::Load(argv[2]).as<std::map<std::string, std::string>>();
     } catch (std::exception & e) {
       RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument port_values: %s", e.what());
       return EXIT_FAILURE;
@@ -65,9 +65,8 @@ int main(int argc, char ** argv)
   const std::string tree_name = "RunTreeNodeCPP";
   core::TreeBuilder builder(node_ptr);
   try {
-    auto tree_element = builder.insertNewTreeElement(tree_name);
-    auto node_element =
-      builder.insertNewNodeElement(tree_element, registration_params.class_name.c_str(), registration_params);
+    auto tree_element = builder.insertTree(tree_name);
+    auto node_element = builder.insertNode(tree_element, registration_params.class_name.c_str(), registration_params);
     builder.addNodePortValues(node_element, port_values, true);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR inserting tree node: %s", e.what());
@@ -77,7 +76,7 @@ int main(int argc, char ** argv)
   RCLCPP_INFO(
     node_ptr->get_logger(), "Creating a tree with a single node:\n%s", builder.writeTreeDocumentToString().c_str());
 
-  TreeExecutor executor(node_ptr);
+  TreeExecutorBase executor(node_ptr);
   auto future = executor.startExecution(
     [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiateTree(tree_name, bb); });
 
@@ -94,7 +93,7 @@ int main(int argc, char ** argv)
         }
       } else if (termination_requested) {
         termination_start = node_ptr->now();
-        executor.setControlCommand(TreeExecutor::ControlCommand::TERMINATE);
+        executor.setControlCommand(TreeExecutorBase::ControlCommand::TERMINATE);
         termination_started = true;
         RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");
       }

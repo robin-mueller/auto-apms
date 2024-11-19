@@ -18,7 +18,7 @@
 #include <map>
 #include <string>
 
-#include "auto_apms_behavior_tree_core/exceptions.hpp"
+#include "auto_apms_util/exceptions.hpp"
 #include "auto_apms_util/yaml.hpp"
 
 namespace auto_apms_behavior_tree::core
@@ -53,7 +53,9 @@ struct NodeRegistrationParams
   static const std::string PARAM_NAME_WAIT_TIMEOUT;
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
 
-  AUTO_APMS_DEFINE_YAML_INTERPRETER_METHODS(NodeRegistrationParams)
+  NodeRegistrationParams() = default;
+
+  AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(NodeRegistrationParams)
 
   std::string class_name;
   std::string port;
@@ -72,17 +74,17 @@ namespace YAML
 {
 inline Node convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::encode(const Params & rhs)
 {
-  Node node;
+  Node node(NodeType::Map);
   node[Params::PARAM_NAME_CLASS] = rhs.class_name;
   node[Params::PARAM_NAME_PORT] = rhs.port;
   node[Params::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
   node[Params::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
   return node;
 }
-inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::decode(const Node & node, Params & lhs)
+inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::decode(const Node & node, Params & rhs)
 {
   if (!node.IsMap())
-    throw auto_apms_behavior_tree::exceptions::YAMLFormatError(
+    throw auto_apms_util::exceptions::YAMLFormatError(
       "YAML::Node for auto_apms_behavior_tree::core::NodeRegistrationParams must be map but is type " +
       std::to_string(node.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
@@ -90,28 +92,28 @@ inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::deco
     const std::string key = it->first.as<std::string>();
     const Node & val = it->second;
     if (!val.IsScalar())
-      throw auto_apms_behavior_tree::exceptions::YAMLFormatError(
+      throw auto_apms_util::exceptions::YAMLFormatError(
         "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
         " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
     if (key == Params::PARAM_NAME_CLASS) {
-      lhs.class_name = val.as<std::string>();
+      rhs.class_name = val.as<std::string>();
       continue;
     }
     if (key == Params::PARAM_NAME_PORT) {
-      lhs.port = val.as<std::string>();
+      rhs.port = val.as<std::string>();
       continue;
     }
     if (key == Params::PARAM_NAME_WAIT_TIMEOUT) {
-      lhs.wait_timeout = std::chrono::duration<double>(val.as<double>());
+      rhs.wait_timeout = std::chrono::duration<double>(val.as<double>());
       continue;
     }
     if (key == Params::PARAM_NAME_REQUEST_TIMEOUT) {
-      lhs.request_timeout = std::chrono::duration<double>(val.as<double>());
+      rhs.request_timeout = std::chrono::duration<double>(val.as<double>());
       continue;
     }
     // Unkown parameter
-    throw auto_apms_behavior_tree::exceptions::YAMLFormatError("Unkown parameter name '" + key + "'.");
+    throw auto_apms_util::exceptions::YAMLFormatError("Unkown parameter name '" + key + "'.");
   }
   return true;
 }

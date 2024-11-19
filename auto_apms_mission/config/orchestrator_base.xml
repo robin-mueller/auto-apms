@@ -1,15 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<root BTCPP_format="4">
+<root BTCPP_format="4"
+      main_tree_to_execute="MissionOrchestrator">
+  <BehaviorTree ID="BringUp">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
   <BehaviorTree ID="MissionOrchestrator">
     <SequenceWithMemory>
-      <SubTree ID="PowerUp"/>
-      <SubTree ID="RunMission"/>
+      <Script name="Init"
+              code="mission_exit := false"/>
+      <SubTree ID="BringUp"/>
+      <Parallel failure_count="1"
+                success_count="-1">
+        <SubTree ID="RunMission"
+                 _post="mission_exit = true"/>
+        <SubTree ID="MonitorContingencies"
+                 _while="mission_exit != true"/>
+      </Parallel>
       <SubTree ID="ShutDown"/>
     </SequenceWithMemory>
   </BehaviorTree>
 
-  <BehaviorTree ID="PowerUp">
-    <AlwaysSuccess/>
+  <BehaviorTree ID="MonitorContingencies">
+    <KeepRunningUntilFailure>
+      <SequenceWithMemory>
+        <AlwaysSuccess/>
+      </SequenceWithMemory>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+  <BehaviorTree ID="RunMission">
+    <SequenceWithMemory>
+      <AlwaysSuccess/>
+    </SequenceWithMemory>
   </BehaviorTree>
 
   <BehaviorTree ID="ShutDown">

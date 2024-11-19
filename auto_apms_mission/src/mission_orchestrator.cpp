@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/executor/executor_server.hpp"
+#include "auto_apms_behavior_tree/executor/executor_node.hpp"
 #include "auto_apms_behavior_tree/tree.hpp"
 
-inline const std::string BASE_TREE_RESOURCE_ID = "orchestrator_base::MissionOrchestrator::auto_apms_mission";
+inline const std::string BASE_TREE_RESOURCE_ID = "auto_apms_mission::orchestrator_base::MissionOrchestrator";
 
 namespace auto_apms_mission
 {
 
-class MissionOrchestrator : public auto_apms_behavior_tree::TreeExecutorServer
+class MissionOrchestrator : public auto_apms_behavior_tree::TreeExecutorNode
 {
 public:
   explicit MissionOrchestrator(rclcpp::NodeOptions options);
 
 private:
-  void setUpBuilder(TreeBuilder& builder) override final;
+  void setUpBuilder(TreeBuilder & builder) override final;
 };
 
 // #####################################################################################################################
@@ -34,12 +34,15 @@ private:
 // #####################################################################################################################
 
 MissionOrchestrator::MissionOrchestrator(rclcpp::NodeOptions options)
-: TreeExecutorServer("mission_orchestrator", options)
+: TreeExecutorNode("mission_orchestrator", options)
 {
 }
 
-void MissionOrchestrator::setUpBuilder(TreeBuilder & builder) {
-  builder.mergeTreesFromResource(auto_apms_behavior_tree::findTreeResource(BASE_TREE_RESOURCE_ID));
+void MissionOrchestrator::setUpBuilder(TreeBuilder & builder)
+{
+  const auto resource = auto_apms_behavior_tree::findTreeResource(BASE_TREE_RESOURCE_ID);
+  builder.setRootTreeName(resource.getRootTreeName(TreeBuilder::ROOT_TREE_ATTRIBUTE_NAME));
+  builder.mergeTreesFromResource(resource);
 }
 
 }  // namespace auto_apms_mission

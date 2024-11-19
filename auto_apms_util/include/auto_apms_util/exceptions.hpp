@@ -33,4 +33,14 @@ struct ResourceError : public ExceptionBase
   using ExceptionBase::ExceptionBase;
 };
 
+struct ResourceIdentityFormatError : public ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
+};
+
+struct YAMLFormatError : public ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
+};
+
 }  // namespace auto_apms_util::exceptions

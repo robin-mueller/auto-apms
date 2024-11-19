@@ -26,14 +26,15 @@ namespace auto_apms_behavior_tree
  * @brief Inheriting classes must use the
  * [builder](https://refactoring.guru/design-patterns/builder/cpp/example#lang-features) API offered by
  * core::TreeBuilder inside the pure virtual method handleBuild() to configure a behavior tree. Implementing various
- * TreeBuildHandler classes allows TreeExecutorServer to dynamically change the way how a tree is created.
+ * TreeBuildHandler classes allows TreeExecutorNode to dynamically change the way how a tree is created.
  */
 class TreeBuildHandler
 {
 public:
   RCLCPP_SMART_PTR_ALIASES_ONLY(TreeBuildHandler)
 
-  using TreeBuilder = core::TreeBuilder;
+  using TreeBuilder = auto_apms_behavior_tree::core::TreeBuilder;
+  using TreeBlackboard = auto_apms_behavior_tree::TreeBlackboard;
 
   TreeBuildHandler(rclcpp::Node::SharedPtr node_ptr);
 

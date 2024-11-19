@@ -1,4 +1,20 @@
 auto_apms_behavior_tree::executor_params:
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS}:
+    type: bool
+    default_value: true
+    read_only: true
+    description: Option whether to allow dynamic loading/unloading of tree build handler plugins.
+
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_SCRIPTING_ENUMS}:
+    type: bool
+    default_value: true
+    description: Option whether to allow dynamically changing scripting enum parameters.
+
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_BLACKBOARD}:
+    type: bool
+    default_value: true
+    description: Option whether to allow dynamically changing blackboard parameters.
+
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_NODE}:
     type: string_array
     default_value: []

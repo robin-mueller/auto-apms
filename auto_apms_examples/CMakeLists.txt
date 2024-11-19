@@ -6,12 +6,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(auto_apms_util REQUIRED)
-find_package(auto_apms_behavior_tree REQUIRED)
-find_package(auto_apms_interfaces REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(px4_ros2_cpp REQUIRED)
+find_package(auto_apms_util REQUIRED)
+find_package(auto_apms_interfaces REQUIRED)
+find_package(auto_apms_behavior_tree REQUIRED)
+find_package(auto_apms_mission REQUIRED)
 
 ######### Contingency Management
 
@@ -56,9 +57,6 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} rosidl_type
 #     "auto_apms::ops_engine::ContingencyManagerExecutor"
 #     "auto_apms::ops_engine::MissionManagerExecutor")
 
-# rclcpp_components_register_node(contingency_management PLUGIN "auto_apms::ops_engine::FlightRecorderNode" EXECUTABLE flight_recorder)
-# rclcpp_components_register_node(contingency_management PLUGIN "auto_apms::ops_engine::MissionManagerExecutor" EXECUTABLE debug_node)
-
 add_library(behavior_tree_nodes SHARED
     contingency_management/src/behavior_tree_nodes/async_precondition.cpp
     contingency_management/src/behavior_tree_nodes/create_alternate_landing_mission.cpp
@@ -66,7 +64,7 @@ add_library(behavior_tree_nodes SHARED
     contingency_management/src/behavior_tree_nodes/landing_site_status.cpp
     contingency_management/src/behavior_tree_nodes/system_state.cpp)
 target_link_libraries(behavior_tree_nodes "${cpp_typesupport_target}")
-ament_target_dependencies(behavior_tree_nodes auto_apms_behavior_tree px4_ros2_cpp)
+ament_target_dependencies(behavior_tree_nodes auto_apms_behavior_tree_core px4_ros2_cpp)
 install(
     TARGETS behavior_tree_nodes
     LIBRARY DESTINATION lib
@@ -110,12 +108,11 @@ install(
 #
 
 macro(add_and_install_example_executable source_file)
-    cmake_parse_arguments(ARGS "" "" "" ${ARGN})
     get_filename_component(example_target_name "${source_file}" NAME_WE)
     add_executable(${example_target_name} ${source_file})
-    ament_target_dependencies(${example_target_name} ${ARGS_UNPARSED_ARGUMENTS})
+    ament_target_dependencies(${example_target_name} ${ARGN})
     target_compile_definitions(${example_target_name} PRIVATE EXAMPLE_NAME="${example_target_name}")
-    install(TARGETS ${example_target_name} DESTINATION lib/${PROJECT_NAME})
+    install(TARGETS ${example_target_name} DESTINATION "lib/${PROJECT_NAME}")
 endmacro()
 
 add_and_install_example_executable("src/task_ex1.cpp" auto_apms_util auto_apms_interfaces)
@@ -125,11 +122,18 @@ add_and_install_example_executable("src/task_ex1.cpp" auto_apms_util auto_apms_i
 #
 
 auto_apms_behavior_tree_declare_trees(
-    "example_trees/relative_goto/relative_goto.xml"
+    "config/behavior_tree/relative_goto/relative_goto.xml"
     NODE_MANIFEST
-    "example_trees/relative_goto/node_plugins.yaml"
+    "config/behavior_tree/relative_goto/node_plugins.yaml"
 )
 
+#
+# ------------ Example Missions --------------
+#
+
+auto_apms_mission_register_missions(
+    "config/mission/contingency_mission.yaml"
+)
 
 
 ament_package()

@@ -26,7 +26,10 @@ namespace auto_apms_behavior_tree::core
 {
 
 TreeBuilder::TreeBuilder(rclcpp::Node::SharedPtr node_ptr, NodeRegistrationLoader::SharedPtr tree_node_loader_ptr)
-: doc_ptr_(std::make_shared<Document>()), node_wptr_(node_ptr), tree_node_loader_ptr_(tree_node_loader_ptr)
+: doc_ptr_(std::make_shared<Document>()),
+  node_wptr_(node_ptr),
+  tree_node_loader_ptr_(tree_node_loader_ptr),
+  all_node_classes_package_map_(auto_apms_behavior_tree::core::NodeRegistrationLoader().getClassPackageMap())
 {
   ElementPtr root_ele = doc_ptr_->NewElement(ROOT_ELEMENT_NAME);
   root_ele->SetAttribute("BTCPP_format", "4");
@@ -46,28 +49,44 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
     throw exceptions::TreeBuildError("Cannot load nodes because node_ptr is null.");
   }
 
-  const auto registered_nodes = getRegisteredNodesTypeMap();
+  const auto registered_nodes = getRegisteredNodes();
   for (const auto & [node_name, params] : node_manifest.getInternalMap()) {
     // If the node is already registered
-    if (registered_nodes.find(node_name) != registered_nodes.end()) {
-      if (override) {
+    if (auto_apms_util::contains(registered_nodes, node_name)) {
+      // Check whether the specified node class is different from the currently registered one.
+      if (registered_node_class_names_map_[node_name] == params.class_name) {
+        // We assume that the manifest entry refers to the exact same node plugin, because all NodeRegistrationLoader
+        // instances verify that there are no ambigious class names during initialization. Since the node is already
+        // registered, we may skip loading it as there's nothing new to do.
+        return *this;
+      } else if (override) {
+        // If it's actually a different class and override is true, register the new node plugin instead of the current
+        // one.
         factory_.unregisterBuilder(node_name);
       } else {
+        // If it's actually a different class and override is false, we must throw.
         throw exceptions::TreeBuildError(
-          "Node '" + node_name +
-          "' is already registered. Set override = true to allow for "
-          "overriding previously registered nodes.");
+          "The name '" + node_name +
+          "' of a previously registered node (Class: " + registered_node_class_names_map_[node_name] +
+          ")' is also discovered parsing another node manifest, but with a different class name (" + params.class_name +
+          "). You must explicitly set override=true to allow for overriding previously registered nodes.");
       }
     }
 
     // Check if the class we search for is actually available with the loader.
     if (!tree_node_loader_ptr_->isClassAvailable(params.class_name)) {
+      if (all_node_classes_package_map_.find(params.class_name) == all_node_classes_package_map_.end()) {
+        throw exceptions::TreeBuildError(
+          "Node '" + node_name + " (Class: " + params.class_name +
+          ")' cannot be loaded, because the class name is not known to the class loader. "
+          "Make sure that it's spelled correctly and registered by calling "
+          "auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
+          "corresponding package.");
+      }
       throw exceptions::TreeBuildError(
         "Node '" + node_name + " (Class: " + params.class_name +
-        ")' cannot be loaded, because the class name is not known to the class loader. "
-        "Make sure that it's spelled correctly and registered by calling "
-        "auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
-        "corresponding package.");
+        ")' cannot be loaded, because the corresponding resource belongs to excluded package '" +
+        all_node_classes_package_map_.at(params.class_name) + "'.");
     }
 
     RCLCPP_DEBUG(
@@ -86,17 +105,14 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
         e.what() + ".");
     }
 
+    RosNodeContext ros_node_context(node_ptr, params);
     try {
-      if (plugin_instance->requiresROSNodeParams()) {
-        RosNodeContext ros_node_context(node_ptr, params);
-        plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
-      } else {
-        plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name);
-      }
+      plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
     } catch (const std::exception & e) {
       throw exceptions::TreeBuildError(
         "Failed to register node '" + node_name + " (Class: " + params.class_name + ")': " + e.what() + ".");
     }
+    registered_node_class_names_map_[node_name] = params.class_name;
   }
   return *this;
 }
@@ -111,7 +127,7 @@ std::unordered_map<std::string, BT::NodeType> TreeBuilder::getRegisteredNodesTyp
 std::vector<std::string> TreeBuilder::getRegisteredNodes() const
 {
   std::vector<std::string> vec;
-  for (const auto & it : factory_.manifests()) vec.push_back(it.first);
+  for (const auto & it : registered_node_class_names_map_) vec.push_back(it.first);
   return vec;
 }
 
@@ -122,8 +138,6 @@ TreeBuilder & TreeBuilder::mergeTreesFromDocument(const Document & doc)
   if (strcmp(other_root->Name(), ROOT_ELEMENT_NAME) != 0)
     throw exceptions::TreeBuildError(
       "Cannot merge trees: Root element of other document is not named '" + std::string(ROOT_ELEMENT_NAME) + "'.");
-  // Overwrite main tree in current document
-  if (const char * name = other_root->Attribute(ROOT_TREE_ATTRIBUTE_NAME)) setRootTreeName(name);
 
   const auto this_tree_names = getAllTreeNames();
   const auto other_tree_names = getAllTreeNames(doc);
@@ -132,7 +146,8 @@ TreeBuilder & TreeBuilder::mergeTreesFromDocument(const Document & doc)
   const auto common_tree_names = auto_apms_util::getCommonElements(this_tree_names, other_tree_names);
   if (!common_tree_names.empty()) {
     throw exceptions::TreeBuildError(
-      "Cannot merge trees: The following trees are already defined: " + rcpputils::join(common_tree_names, ", ") + ".");
+      "Cannot merge trees: The following trees are already defined: [ " + rcpputils::join(common_tree_names, ", ") +
+      " ].");
   }
 
   // Iterate over all the children of other root
@@ -141,6 +156,10 @@ TreeBuilder & TreeBuilder::mergeTreesFromDocument(const Document & doc)
     throw exceptions::TreeBuildError("Cannot merge trees: Other document has no children.");
   }
   for (; child != nullptr; child = child->NextSiblingElement()) {
+    if (strcmp(child->Name(), TREE_NODE_MODEL_ELEMENT_NAME) == 0) {
+      // Disregard tree node model elements
+      continue;
+    }
     auto copied_child = child->DeepClone(doc_ptr_.get());   // Clone the child element to this document
     doc_ptr_->RootElement()->InsertEndChild(copied_child);  // Append the copied child to this document's root
   }
@@ -171,7 +190,7 @@ TreeBuilder & TreeBuilder::mergeTreesFromResource(const TreeResource & resource)
   return mergeTreesFromFile(resource.tree_file_path);
 }
 
-TreeBuilder::ElementPtr TreeBuilder::insertNewTreeElement(const std::string & tree_name)
+TreeBuilder::ElementPtr TreeBuilder::insertTree(const std::string & tree_name)
 {
   if (isExistingTreeName(tree_name)) {
     throw exceptions::TreeBuildError(
@@ -184,15 +203,33 @@ TreeBuilder::ElementPtr TreeBuilder::insertNewTreeElement(const std::string & tr
   throw exceptions::TreeBuildError("Root element has no children named '" + std::string(TREE_ELEMENT_NAME) + "'.");
 }
 
-TreeBuilder::ElementPtr TreeBuilder::insertNewNodeElement(
+TreeBuilder::ElementPtr TreeBuilder::insertNode(
   ElementPtr parent_element, const std::string & node_name, const NodeRegistrationParams & registration_params)
 {
-  if (!auto_apms_util::contains(getRegisteredNodes(), node_name) && !registration_params.class_name.empty()) {
+  if (!auto_apms_util::contains(getRegisteredNodes(), node_name)) {
+    if (registration_params.class_name.empty()) {
+      throw exceptions::TreeBuildError(
+        "Cannot insert unkown node '" + node_name +
+        "'. The TreeBuilder must have registered a node before you may insert it using insertNode(). To prevent this "
+        "error, make sure loadNodePlugins() is being called with a corresponding node manifest or provide the "
+        "additional argument registration_params of insertNode().");
+    }
     // Try to load the node if it isn't registered yet and registration_params was given with a non-empty class name
     loadNodePlugins(NodeManifest({{node_name, registration_params}}));
   }
   ElementPtr ele = parent_element->InsertNewChildElement(node_name.c_str());
   addNodePortValues(ele);  // Insert default values
+  return ele;
+}
+
+TreeBuilder::ElementPtr TreeBuilder::insertSubTree(ElementPtr parent_element, const std::string & tree_name)
+{
+  if (!isExistingTreeName(tree_name)) {
+    throw exceptions::TreeBuildError("Cannot insert subtree, because tree '" + tree_name + "' doesn't exist.");
+  }
+  ElementPtr ele = parent_element->InsertNewChildElement(SUBTREE_ELEMENT_NAME);
+  ele->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
+  addNodePortValues(ele);
   return ele;
 }
 
@@ -205,9 +242,9 @@ TreeBuilder & TreeBuilder::addNodePortValues(ElementPtr node_element, PortValues
       std::string(TREE_ELEMENT_NAME) + "> element.");
   }
 
-  // Extract the port names and default values from the model
-  DocumentSharedPtr model_doc_ptr =
-    getNodeModel(true);  // The basic structure of the document has already been verified
+  // Extract the port names and default values from the model.
+  // Note: The basic structure of the document has already been verified.
+  DocumentSharedPtr model_doc_ptr = getNodeModel(true);
   ConstElementPtr node_ele =
     model_doc_ptr->RootElement()->FirstChildElement(TREE_NODE_MODEL_ELEMENT_NAME)->FirstChildElement();
   while (node_ele && !node_ele->Attribute("ID", node_name)) {

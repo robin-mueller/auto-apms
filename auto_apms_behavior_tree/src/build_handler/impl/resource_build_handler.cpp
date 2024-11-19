@@ -27,8 +27,8 @@ public:
   bool setRequest(const std::string & request) override final
   {
     try {
-      resource_ptr_ = std::make_unique<core::TreeResource>(core::TreeResource::fromString(request));
-    } catch (const exceptions::ResourceIdentityFormatError & e) {
+      resource_ptr_ = std::make_unique<core::TreeResource>(core::TreeResource::fromResourceIdentity(request));
+    } catch (const auto_apms_util::exceptions::ResourceIdentityFormatError & e) {
       RCLCPP_ERROR(logger_, "%s", e.what());
       return false;
     } catch (const auto_apms_util::exceptions::ResourceError & e) {

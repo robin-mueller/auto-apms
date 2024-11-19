@@ -43,7 +43,6 @@ add_library(auto_apms_util SHARED
     "src/string.cpp"
     "src/resource.cpp"
     "src/logging.cpp"
-    "src/yaml.cpp"
 )
 target_include_directories(auto_apms_util PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

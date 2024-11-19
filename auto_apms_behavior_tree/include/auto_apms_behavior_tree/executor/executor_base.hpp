@@ -27,7 +27,7 @@
 namespace auto_apms_behavior_tree
 {
 
-class TreeExecutor
+class TreeExecutorBase
 {
 public:
   enum class ExecutionState : uint8_t
@@ -62,7 +62,7 @@ private:
   using TerminationCallback = std::function<void(ExecutionResult, const std::string &)>;
 
 public:
-  TreeExecutor(rclcpp::Node::SharedPtr node_ptr);
+  TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr);
 
   std::shared_future<ExecutionResult> startExecution(
     TreeConstructor make_tree, double tick_rate_sec = 0.25, unsigned int groot2_port = 1667);
@@ -128,20 +128,20 @@ private:
   std::string termination_reason_;
 };
 
-std::string toStr(TreeExecutor::ExecutionState state);
+std::string toStr(TreeExecutorBase::ExecutionState state);
 
-std::string toStr(TreeExecutor::ControlCommand cmd);
+std::string toStr(TreeExecutorBase::ControlCommand cmd);
 
-std::string toStr(TreeExecutor::TreeExitBehavior behavior);
+std::string toStr(TreeExecutorBase::TreeExitBehavior behavior);
 
-std::string toStr(TreeExecutor::ExecutionResult result);
+std::string toStr(TreeExecutorBase::ExecutionResult result);
 
 // #####################################################################################################################
 // ################################              DEFINITIONS              ##############################################
 // #####################################################################################################################
 
 template <typename TimeRepT, typename TimeT>
-inline std::shared_future<TreeExecutor::ExecutionResult> TreeExecutor::startExecution(
+inline std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExecution(
   TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, unsigned int groot2_port)
 {
   return startExecution(

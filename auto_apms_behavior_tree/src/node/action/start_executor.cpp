@@ -15,7 +15,8 @@
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 
-#define INPUT_KEY_TREE_BUILD_REQUEST "request"
+#define INPUT_KEY_TREE_BUILD_REQUEST "build_request"
+#define INPUT_KEY_TREE_BUILD_HANDLER "build_handler"
 #define INPUT_KEY_ROOT_TREE_NAME "root_tree"
 #define INPUT_KEY_NODE_OVERRIDES "node_overrides"
 #define INPUT_KEY_ATTACH "attach"
@@ -34,6 +35,9 @@ public:
     return providedBasicPorts(
       {BT::InputPort<std::string>(
          INPUT_KEY_TREE_BUILD_REQUEST, "String passed to the tree build handler defining which tree is to be built."),
+       BT::InputPort<std::string>(
+         INPUT_KEY_TREE_BUILD_HANDLER, "",
+         "Fully qualified class name of the build handler that is supposed to take care of the request."),
        BT::InputPort<std::string>(INPUT_KEY_ROOT_TREE_NAME, "", "Name of the root tree."),
        BT::InputPort<std::string>(
          INPUT_KEY_NODE_OVERRIDES, "",
@@ -48,8 +52,9 @@ public:
 
   bool setGoal(Goal & goal) override final
   {
-    goal.tree_build_request = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST).value();
-    goal.root_tree_name = getInput<std::string>(INPUT_KEY_ROOT_TREE_NAME).value();
+    goal.build_request = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST).value();
+    goal.build_handler = getInput<std::string>(INPUT_KEY_TREE_BUILD_HANDLER).value();
+    goal.root_tree = getInput<std::string>(INPUT_KEY_ROOT_TREE_NAME).value();
     goal.node_overrides = getInput<std::string>(INPUT_KEY_NODE_OVERRIDES).value();
     goal.attach = getInput<bool>(INPUT_KEY_ATTACH).value();
     goal.clear_blackboard = getInput<bool>(INPUT_KEY_CLEAR_BB).value();

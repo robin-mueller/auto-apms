@@ -1,6 +1,7 @@
 # Request
-string tree_build_request
-string root_tree_name
+string build_request
+string build_handler
+string root_tree
 string node_overrides
 bool attach true
 bool clear_blackboard true

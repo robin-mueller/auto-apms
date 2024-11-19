@@ -16,7 +16,7 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/executor/executor_base.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -70,7 +70,7 @@ int main(int argc, char ** argv)
   }
   builder.setRootTreeName(tree_name);
 
-  TreeExecutor executor(node_ptr);
+  TreeExecutorBase executor(node_ptr);
   auto future =
     executor.startExecution([&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiateTree(bb); });
 
@@ -91,7 +91,7 @@ int main(int argc, char ** argv)
         }
       } else if (termination_requested) {
         termination_start = node_ptr->now();
-        executor.setControlCommand(TreeExecutor::ControlCommand::TERMINATE);
+        executor.setControlCommand(TreeExecutorBase::ControlCommand::TERMINATE);
         termination_started = true;
         RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");
       }

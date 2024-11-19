@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "auto_apms_behavior_tree_core/node/node_registration_params.hpp"
+#include "auto_apms_util/exceptions.hpp"
 #include "auto_apms_util/yaml.hpp"
 
 namespace auto_apms_behavior_tree::core
@@ -56,19 +57,15 @@ public:
 
   NodeManifest(const ParamMap & param_map = {});
 
-  AUTO_APMS_DEFINE_YAML_INTERPRETER_METHODS(NodeManifest)
-
-  /**
-   * @brief Create a node plugin manifest from a file.
-   * @param file_path Path to the manifest file.
-   */
-  static NodeManifest fromFile(const std::string & file_path);
+  AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(NodeManifest)
 
   /**
    * @brief Create a node plugin manifest from multiple files. They are loaded in the given order.
    * @param file_paths Paths to the manifest files.
    */
   static NodeManifest fromFiles(const std::vector<std::string> & file_paths);
+
+  static NodeManifest fromResourceIdentity(const std::string & identity);
 
   void toFile(const std::string & file_path) const;
 
@@ -100,23 +97,23 @@ namespace YAML
 {
 inline Node convert<auto_apms_behavior_tree::core::NodeManifest>::encode(const Manifest & rhs)
 {
-  Node node;
+  Node node(NodeType::Map);
   for (const auto & [name, params] : rhs.getInternalMap()) node[name] = params;
   return node;
 }
-inline bool convert<auto_apms_behavior_tree::core::NodeManifest>::decode(const Node & node, Manifest & lhs)
+inline bool convert<auto_apms_behavior_tree::core::NodeManifest>::decode(const Node & node, Manifest & rhs)
 {
   if (!node.IsMap())
-    throw auto_apms_behavior_tree::exceptions::YAMLFormatError(
+    throw auto_apms_util::exceptions::YAMLFormatError(
       "YAML::Node for auto_apms_behavior_tree::core::NodeManifest must be map but is type " +
       std::to_string(node.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
   for (auto it = node.begin(); it != node.end(); ++it) {
     const auto & name = it->first.as<std::string>();
     try {
-      lhs.add(name, it->second.as<Manifest::Params>());
+      rhs.add(name, it->second.as<Manifest::Params>());
     } catch (const std::exception & e) {
-      throw auto_apms_behavior_tree::exceptions::YAMLFormatError(
+      throw auto_apms_util::exceptions::YAMLFormatError(
         "Node registration parameters for node '" + name + "' are invalid: " + e.what());
     }
   }

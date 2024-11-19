@@ -27,11 +27,15 @@ endif()
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE "${_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_ABSOLUTE}")
 
 # Behavior tree executor defaults
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NODE_NAME "tree_executor")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX "/start")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX "/cmd")
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS "allow_other_build_handlers")
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_BLACKBOARD "allow_dynamic_blackboard")
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_SCRIPTING_ENUMS "allow_dynamic_scripting_enums")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_NODE "node_exclude_packages")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_BUILD "build_handler_exclude_packages")
-set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER "tree_build_handler")
+set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER "build_handler")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE "tick_rate")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT "groot2_port")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER "state_change_logger")
@@ -50,8 +54,8 @@ set(CMAKE_CURRENT_SOURCE_DIR ${_temp})
 add_library(auto_apms_behavior_tree SHARED
     "src/build_handler/build_handler.cpp"
     "src/executor/state_observer.cpp"
-    "src/executor/executor.cpp"
-    "src/executor/executor_server.cpp"
+    "src/executor/executor_base.cpp"
+    "src/executor/executor_node.cpp"
     "src/resource/build_handler_loader.cpp"
     "src/util/bt_types.cpp"
 )
@@ -59,12 +63,13 @@ target_include_directories(auto_apms_behavior_tree PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-target_compile_definitions(auto_apms_behavior_tree PRIVATE
+target_compile_definitions(auto_apms_behavior_tree PUBLIC
+    _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NODE_NAME="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NODE_NAME}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}"
+)
+target_compile_definitions(auto_apms_behavior_tree PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER}"
-    _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}"
-    _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER}"
 )
 target_link_libraries(auto_apms_behavior_tree
@@ -83,20 +88,27 @@ ament_target_dependencies(auto_apms_behavior_tree
 ament_generate_version_header(auto_apms_behavior_tree HEADER_PATH "${PROJECT_NAME}/version.hpp")
 
 # Default tree executor server node. Available as a typical ROS node component and a standalone executable.
-# We create a seperate shared library for that since it's best practive when using class_loader::ClassLoader 
+# We create a seperate shared library for that since it's best practive when using class_loader::ClassLoader
 # for loading plugins as you can read here https://wiki.ros.org/class_loader under section 2.8.
-add_library(tree_executor_server SHARED
-    "src/executor/executor_server_component.cpp"
+add_library(executor_node_components SHARED
+    "src/executor/executor_node_components.cpp"
 )
-target_link_libraries(tree_executor_server
+target_link_libraries(executor_node_components
     auto_apms_behavior_tree
 )
-ament_target_dependencies(tree_executor_server
+ament_target_dependencies(executor_node_components
     rclcpp_components
 )
-rclcpp_components_register_node(tree_executor_server
-    PLUGIN "auto_apms_behavior_tree::TreeExecutorServer"
+rclcpp_components_register_node(executor_node_components
+    PLUGIN "auto_apms_behavior_tree::TreeExecutorNode"
     EXECUTABLE "tree_executor"
+)
+rclcpp_components_register_nodes(executor_node_components
+    "auto_apms_behavior_tree::NoUndeclaredParamsExecutorNode"
+    "auto_apms_behavior_tree::OnlyScriptingEnumParamsExecutorNode"
+    "auto_apms_behavior_tree::OnlyBlackboardParamsExecutorNode"
+    "auto_apms_behavior_tree::OnlyInitialScriptingEnumParamsExecutorNode"
+    "auto_apms_behavior_tree::OnlyInitialBlackboardParamsExecutorNode"
 )
 
 #
@@ -110,7 +122,6 @@ add_library(builtin_nodes SHARED
     "src/node/action/halt_executor.cpp"
     "src/node/action/pause_executor.cpp"
     "src/node/action/resume_executor.cpp"
-    "src/node/action/load_bt.cpp"
 )
 ament_target_dependencies(builtin_nodes
     auto_apms_interfaces
@@ -123,7 +134,6 @@ auto_apms_behavior_tree_declare_nodes(builtin_nodes
     "auto_apms_behavior_tree::HaltExecutorAction"
     "auto_apms_behavior_tree::PauseExecutorAction"
     "auto_apms_behavior_tree::ResumeExecutorAction"
-    "auto_apms_behavior_tree::LoadBehaviorTreeAction"
     NODE_MANIFEST
     "config/builtin_nodes.yaml.in"
 )
@@ -170,7 +180,7 @@ if(BUILD_TESTING)
     auto_apms_behavior_tree_declare_trees(
         "test/trees/infinite_w_bb_flags.xml"
         NODE_MANIFEST
-        builtin_nodes # We can pass the target that was previously associated with the generation of node metadata for refering to the manifest files.
+        builtin_nodes # We can pass the target name that was previously associated with the generation of node metadata for refering to the manifest files.
     )
 
     # ament_add_gtest(${PROJECT_NAME}_unit_tests
@@ -214,7 +224,7 @@ install(
     TARGETS
     builtin_nodes
     builtin_build_handlers
-    tree_executor_server
+    executor_node_components
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin

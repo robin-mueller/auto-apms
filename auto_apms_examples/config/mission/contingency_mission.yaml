@@ -1,0 +1,9 @@
+BRINGUP: []
+
+MISSION: [infinite_w_bb_flags]
+
+# CONTINGENCY:
+#   abc: []
+#   def: []
+
+SHUTDOWN: []

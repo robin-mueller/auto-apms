@@ -47,6 +47,7 @@ public:
   static inline const char ROOT_ELEMENT_NAME[] = "root";
   static inline const char ROOT_TREE_ATTRIBUTE_NAME[] = "main_tree_to_execute";
   static inline const char TREE_ELEMENT_NAME[] = "BehaviorTree";
+  static inline const char SUBTREE_ELEMENT_NAME[] = "SubTree";
   static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
   static inline const char TREE_NODE_MODEL_ELEMENT_NAME[] = "TreeNodesModel";
 
@@ -89,10 +90,12 @@ public:
 
   TreeBuilder & mergeTreesFromResource(const TreeResource & resource);
 
-  ElementPtr insertNewTreeElement(const std::string & tree_name);
+  ElementPtr insertTree(const std::string & tree_name);
 
-  ElementPtr insertNewNodeElement(
+  ElementPtr insertNode(
     ElementPtr parent_element, const std::string & node_name, const NodeRegistrationParams & registration_params = {});
+
+  ElementPtr insertSubTree(ElementPtr parent_element, const std::string & tree_name);
 
   /**
    * @brief Adds node port values to the node specified by @p node_element.
@@ -148,6 +151,8 @@ private:
   BT::BehaviorTreeFactory factory_;
   rclcpp::Node::WeakPtr node_wptr_;
   NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
+  const std::map<std::string, std::string> all_node_classes_package_map_;
+  std::map<std::string, std::string> registered_node_class_names_map_;
 };
 
 // #####################################################################################################################

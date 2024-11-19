@@ -57,9 +57,9 @@ int main(int argc, char ** argv)
   core::TreeBuilder builder(node_ptr);
   core::NodeManifest node_manifest = core::NodeManifest::fromFiles(node_manifest_file_paths);
   builder.loadNodePlugins(node_manifest);
-  core::TreeBuilder::ElementPtr tree_ele = builder.insertNewTreeElement(NEW_TREE_NAME);
+  core::TreeBuilder::ElementPtr tree_ele = builder.insertTree(NEW_TREE_NAME);
   builder.setRootTreeName(NEW_TREE_NAME);
-  builder.insertNewNodeElement(tree_ele, "AlwaysSuccess");
+  builder.insertNode(tree_ele, "AlwaysSuccess");
 
   // Get node model
   if (!node_manifest.getInternalMap().empty()) {

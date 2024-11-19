@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree/executor/executor.hpp"
+#include "auto_apms_behavior_tree/executor/executor_base.hpp"
 #include "auto_apms_behavior_tree/resource/build_handler_loader.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/resource/node_registration_loader.hpp"
@@ -27,64 +27,55 @@
 namespace auto_apms_behavior_tree
 {
 
-class TreeExecutorServerOptions
+class TreeExecutorNodeOptions
 {
 public:
-  TreeExecutorServerOptions(const rclcpp::NodeOptions & ros_node_options);
+  TreeExecutorNodeOptions(const rclcpp::NodeOptions & ros_node_options);
 
-  TreeExecutorServerOptions & allowOtherBuildHandlers(bool allow);
+  TreeExecutorNodeOptions & enableScriptingEnumParameters(bool from_overrides, bool dynamic);
 
-  TreeExecutorServerOptions & enableScriptingEnumParameters(bool enable);
-
-  TreeExecutorServerOptions & enableBlackboardParameters(bool enable);
-
-  TreeExecutorServerOptions & enableBlackboardParametersDuringExecution(bool enable);
+  TreeExecutorNodeOptions & enableBlackboardParameters(bool from_overrides, bool dynamic);
 
   rclcpp::NodeOptions getROSNodeOptions();
 
 private:
-  friend class TreeExecutorServer;
+  friend class TreeExecutorNode;
 
   rclcpp::NodeOptions ros_node_options_;
-  bool allow_other_build_handlers_ = true;
-  bool scripting_enum_parameters_ = true;
-  bool blackboard_parameters_ = true;
-  bool blackboard_parameters_during_execution_ = true;
+  bool scripting_enum_parameters_from_overrides_ = true;
+  bool scripting_enum_parameters_dynamic_ = true;
+  bool blackboard_parameters_from_overrides_ = true;
+  bool blackboard_parameters_dynamic_ = true;
 };
 
-class TreeExecutorServer : public TreeExecutor
+class TreeExecutorNode : public TreeExecutorBase
 {
 public:
-  using Options = TreeExecutorServerOptions;
+  using Options = TreeExecutorNodeOptions;
   using ExecutorParameters = executor_params::Params;
   using ExecutorParameterListener = executor_params::ParamListener;
   using StartActionContext = auto_apms_util::ActionContext<auto_apms_interfaces::action::StartTreeExecutor>;
   using CommandActionContext = auto_apms_util::ActionContext<auto_apms_interfaces::action::CommandTreeExecutor>;
   using TreeBuilder = core::TreeBuilder;
 
-  static const std::string PARAM_NAME_TREE_BUILD_HANDLER;
-  static const std::string PARAM_NAME_TICK_RATE;
-  static const std::string PARAM_NAME_GROOT2_PORT;
-  static const std::string PARAM_NAME_STATE_CHANGE_LOGGER;
   inline static const std::string PARAM_VALUE_NO_BUILD_HANDLER = "none";
-  inline static const std::string DEFAULT_NODE_NAME = "tree_executor";
   inline static const std::string SCRIPTING_ENUM_PARAM_PREFIX = "enum";
   inline static const std::string BLACKBOARD_PARAM_PREFIX = "bb";
 
   /**
-   * @brief Constructor for TreeExecutorServer allowing to specify a default node name and executor options.
+   * @brief Constructor for TreeExecutorNode allowing to specify a default node name and executor options.
    * @param[in] name Name of the rclcpp::Node instance.
    * @param[in] executor_options Executor specific options. Simply pass a rclcpp::NodeOptions instance to use the
    * default options.
    */
-  TreeExecutorServer(const std::string & name, TreeExecutorServerOptions executor_options);
+  TreeExecutorNode(const std::string & name, TreeExecutorNodeOptions executor_options);
 
   /**
-   * @brief Constructor for TreeExecutorServer with default name TreeExecutorServer::DEFAULT_NODE_NAME and default
-   * TreeExecutorServerOptions.
+   * @brief Constructor for TreeExecutorNode with default name TreeExecutorNode::DEFAULT_NODE_NAME and default
+   * TreeExecutorNodeOptions.
    * @param[in] options Options forwarded to rclcpp::Node constructor.
    */
-  explicit TreeExecutorServer(rclcpp::NodeOptions options);
+  explicit TreeExecutorNode(rclcpp::NodeOptions options);
 
 private:
   /* Virtual methods */
@@ -113,9 +104,9 @@ protected:
 private:
   /* Executor specific virtual overrides */
 
-  virtual bool onTick() override;
+  virtual bool onTick() override final;
 
-  virtual void onTermination(const ExecutionResult & result) override;
+  virtual void onTermination(const ExecutionResult & result) override final;
 
   /* Internal callbacks */
 
@@ -135,7 +126,7 @@ private:
     std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
   void handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
 
-  const TreeExecutorServerOptions executor_options_;
+  const TreeExecutorNodeOptions executor_options_;
   const rclcpp::Logger logger_;
   ExecutorParameterListener executor_param_listener_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_ptr_;
@@ -144,6 +135,7 @@ private:
   core::NodeRegistrationLoader::SharedPtr node_loader_ptr_;
   TreeBuildHandlerLoader::UniquePtr build_handler_loader_ptr_;
   TreeBuildHandler::UniquePtr build_handler_ptr_;
+  std::string current_build_handler_name_;
   std::map<std::string, int> scripting_enum_buffer_;
   TreeConstructor tree_constructor_;
 

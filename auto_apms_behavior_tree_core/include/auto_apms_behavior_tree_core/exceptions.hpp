@@ -19,17 +19,7 @@
 namespace auto_apms_behavior_tree::exceptions
 {
 
-struct ResourceIdentityFormatError : public auto_apms_util::exceptions::ExceptionBase
-{
-  using ExceptionBase::ExceptionBase;
-};
-
 struct TreeXMLFormatError : public auto_apms_util::exceptions::ExceptionBase
-{
-  using ExceptionBase::ExceptionBase;
-};
-
-struct YAMLFormatError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };
@@ -40,6 +30,11 @@ struct RosNodeError : public auto_apms_util::exceptions::ExceptionBase
 };
 
 struct TreeBuildError : public auto_apms_util::exceptions::ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
+};
+
+struct NodeManifestError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };
