@@ -54,6 +54,7 @@ public:
   SendCommandResult SyncSendVehicleCommand(
     uint32_t command, float param1 = NAN, float param2 = NAN, float param3 = NAN, float param4 = NAN,
     float param5 = NAN, float param6 = NAN, float param7 = NAN) const;
+
   // Send a vehicle command synchronously
   SendCommandResult SyncSendVehicleCommand(const VehicleCommand & cmd) const;
 
@@ -61,9 +62,9 @@ public:
   bool Disarm() const;
 
   /**
-   *   \brief (Re)starts the uploaded mission plan.
+   * @brief (Re)starts the uploaded mission plan.
    *
-   *   If you want to resume a mission, use SyncActivateFlightMode(FlightMode::Mission) instead.
+   * If you want to resume a mission, use SyncActivateFlightMode(FlightMode::Mission) instead.
    */
   bool StartMission() const;
 

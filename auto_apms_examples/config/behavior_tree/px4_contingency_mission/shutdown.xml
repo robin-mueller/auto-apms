@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="PX4ContingencyMissionShutDown">
+  <BehaviorTree ID="PX4ContingencyMissionShutDown">
+    <SequenceWithMemory>
+      <Land action_name=""/>
+      <Disarm action_name=""/>
+    </SequenceWithMemory>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="Disarm">
+      <input_port name="action_name"
+                  type="std::string">Action server name</input_port>
+    </Action>
+    <Action ID="Land">
+      <input_port name="action_name"
+                  type="std::string">Action server name</input_port>
+    </Action>
+  </TreeNodesModel>
+
+</root>

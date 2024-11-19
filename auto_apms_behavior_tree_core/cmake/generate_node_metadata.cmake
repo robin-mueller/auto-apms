@@ -20,7 +20,7 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
     set(multiValueArgs "")
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    if(${ARGS_UNPARSED_ARGUMENTS} STREQUAL "")
+    if("${ARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(
             FATAL_ERROR
             "auto_apms_behavior_tree_generate_node_metadata(): You didn't provide any node manifest yaml files."
@@ -40,12 +40,12 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
     set(_generated_node_manifest_file_name "node_manifest_${metadata_id}.yaml")
     set(_generated_node_model_file_name "node_model_${metadata_id}.xml")
 
-    if(NOT ${ARGS_GENERATED_MANIFEST_FILE_NAME} STREQUAL "")
+    if(NOT "${ARGS_GENERATED_MANIFEST_FILE_NAME}" STREQUAL "")
         get_filename_component(_generated_node_manifest_file_stem "${ARGS_GENERATED_MANIFEST_FILE_NAME}" NAME_WE)
         set(_generated_node_manifest_file_name "${_generated_node_manifest_file_stem}.yaml")
     endif()
 
-    if(NOT ${ARGS_GENERATED_MODEL_FILE_NAME} STREQUAL "")
+    if(NOT "${ARGS_GENERATED_MODEL_FILE_NAME}" STREQUAL "")
         get_filename_component(_generated_node_model_file_stem "${ARGS_GENERATED_MODEL_FILE_NAME}" NAME_WE)
         set(_generated_node_model_file_name "${_generated_node_model_file_stem}.xml")
     endif()

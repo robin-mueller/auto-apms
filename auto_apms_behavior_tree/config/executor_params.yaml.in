@@ -23,7 +23,7 @@ auto_apms_behavior_tree::executor_params:
     validation:
       unique<>: []
 
-  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_BUILD}:
+  ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_BUILD_HANDLER}:
     type: string_array
     default_value: []
     read_only: true

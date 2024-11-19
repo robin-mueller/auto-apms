@@ -44,9 +44,30 @@ int main(int argc, char ** argv)
     node_manifest_file_paths.push_back(path);
   }
 
-  // Ensure correct extensions
+  // Make sure path is not empty
+  if (tree_file_path.empty()) {
+    throw std::runtime_error("Argument tree_file_path is empty.");
+  }
+
+  // Require correct extensions
   if (tree_file_path.extension() != ".xml") {
     throw std::runtime_error("Output file '" + tree_file_path.string() + "' has wrong extension. Must be '.xml'.");
+  }
+
+  // Make sure that there is no content inside the file
+  if (std::filesystem::exists(tree_file_path)) {
+    std::ifstream file(tree_file_path);
+    if (!file.is_open()) {
+      throw std::runtime_error("Couldn't open output file'" + tree_file_path.string() + "' to check if it is empty.");
+    }
+    // Read the file character by character
+    char ch;
+    while (file.get(ch)) {
+      if (!std::isspace(static_cast<unsigned char>(ch))) {
+        // Found a non-whitespace character
+        throw std::runtime_error("Output file '" + tree_file_path.string() + "' is not empty.");
+      }
+    }
   }
 
   rclcpp::init(argc, argv);
@@ -83,5 +104,8 @@ int main(int argc, char ** argv)
   } else {
     throw std::runtime_error("Error opening behavior tree output file '" + tree_file_path.string() + "'.");
   }
+
+  std::cout << "Wrote behavior tree to file " << tree_file_path << std::endl;
+
   return EXIT_SUCCESS;
 }

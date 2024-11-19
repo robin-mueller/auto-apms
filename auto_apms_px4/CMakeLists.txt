@@ -21,6 +21,14 @@ if(AUTO_APMS_PX4_DEBUG_LOGGING)
     add_compile_definitions(_AUTO_APMS_DEBUG_LOGGING)
 endif()
 
+set(_AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME "arm_disarm")
+set(_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME "enable_hold")
+set(_AUTO_APMS_PX4__GOTO_ACTION_NAME "go_to")
+set(_AUTO_APMS_PX4__LAND_ACTION_NAME "land")
+set(_AUTO_APMS_PX4__RTL_ACTION_NAME "rtl")
+set(_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME "takeoff")
+set(_AUTO_APMS_PX4__MISSION_ACTION_NAME "mission")
+
 #
 # ------------ Library --------------
 #
@@ -56,7 +64,18 @@ add_library(px4_tasks SHARED
     "src/task/rtl.cpp"
     "src/task/mission.cpp"
 )
-target_link_libraries(px4_tasks auto_apms_px4)
+target_link_libraries(px4_tasks
+    auto_apms_px4
+)
+target_compile_definitions(px4_tasks PRIVATE
+    _AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME="${_AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME}"
+    _AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME="${_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME}"
+    _AUTO_APMS_PX4__GOTO_ACTION_NAME="${_AUTO_APMS_PX4__GOTO_ACTION_NAME}"
+    _AUTO_APMS_PX4__LAND_ACTION_NAME="${_AUTO_APMS_PX4__LAND_ACTION_NAME}"
+    _AUTO_APMS_PX4__RTL_ACTION_NAME="${_AUTO_APMS_PX4__RTL_ACTION_NAME}"
+    _AUTO_APMS_PX4__TAKEOFF_ACTION_NAME="${_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME}"
+    _AUTO_APMS_PX4__MISSION_ACTION_NAME="${_AUTO_APMS_PX4__MISSION_ACTION_NAME}"
+)
 ament_target_dependencies(px4_tasks
     rclcpp_components
     tf2_eigen
@@ -105,6 +124,8 @@ auto_apms_behavior_tree_declare_nodes(px4_behavior_tree_nodes
     "auto_apms_px4::RTLAction"
     "auto_apms_px4::TakeoffAction"
     "auto_apms_px4::ReadGlobalPosition"
+    NODE_MANIFEST
+    "config/px4_behavior_tree_nodes.yaml.in"
 )
 
 #

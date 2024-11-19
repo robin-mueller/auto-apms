@@ -50,6 +50,7 @@ public:
   static inline const char SUBTREE_ELEMENT_NAME[] = "SubTree";
   static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
   static inline const char TREE_NODE_MODEL_ELEMENT_NAME[] = "TreeNodesModel";
+  static inline const char NODE_INSTANCE_NAME_ATTRIBUTE_NAME[] = "name";
 
   RCLCPP_SMART_PTR_DEFINITIONS_NOT_COPYABLE(TreeBuilder)
 
@@ -78,9 +79,9 @@ public:
    */
   TreeBuilder & loadNodePlugins(const NodeManifest & node_manifest, bool override = false);
 
-  std::unordered_map<std::string, BT::NodeType> getRegisteredNodesTypeMap() const;
+  std::unordered_map<std::string, BT::NodeType> getRegisteredNodesTypeMap(bool include_native = false) const;
 
-  std::vector<std::string> getRegisteredNodes() const;
+  std::vector<std::string> getRegisteredNodes(bool include_native = false) const;
 
   TreeBuilder & mergeTreesFromDocument(const Document & doc);
 
@@ -119,7 +120,9 @@ public:
 
   bool isExistingTreeName(const std::string & tree_name);
 
-  ElementPtr getTreeElement(const std::string & tree_name);
+  ElementPtr findTree(const std::string & tree_name);
+
+  ElementPtr findFirstNode(const ElementPtr parent_element, const std::string & name);
 
   static std::vector<std::string> getAllTreeNames(const Document & doc);
 
@@ -138,20 +141,29 @@ public:
   // Verify the structure of this tree document and that all mentioned nodes are registered with the factory
   bool verifyTree() const;
 
-  [[nodiscard]] DocumentSharedPtr getNodeModel(bool include_builtins = false) const;
+  [[nodiscard]] DocumentSharedPtr getNodeModel(bool include_native = false) const;
 
   DocumentSharedPtr getDocumentPtr() const;
 
-  Tree instantiateTree(const std::string root_tree_name, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
+  Tree instantiate(const std::string root_tree_name, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
-  Tree instantiateTree(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
+  Tree instantiate(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
 private:
+  static std::string getNodeRegistrationName(ConstElementPtr node_element);
+
+  static std::string getNodeInstanceName(ConstElementPtr node_element);
+
+  static std::string getFullyQualifiedNodeName(ConstElementPtr node_element);
+
+  ElementPtr findFirstNodeImpl(ElementPtr ele, const std::string & name);
+
   DocumentSharedPtr doc_ptr_;
   BT::BehaviorTreeFactory factory_;
   rclcpp::Node::WeakPtr node_wptr_;
   NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
   const std::map<std::string, std::string> all_node_classes_package_map_;
+  const std::unordered_map<std::string, BT::TreeNodeManifest> internal_node_manifest_;
   std::map<std::string, std::string> registered_node_class_names_map_;
 };
 

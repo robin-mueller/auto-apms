@@ -35,5 +35,13 @@
             "group": "test",
             "problemMatcher": "$gcc"
         },
+        // Behavior tree related tasks
+        {
+            "label": "New behavior tree",
+            "detail": "Write a generic and empty behavior tree to the opened .xml file",
+            "type": "shell",
+            "command": "ros2 run auto_apms_behavior_tree new_tree ${file}",
+            "problemMatcher": "$gcc"
+        },
     ]
 }

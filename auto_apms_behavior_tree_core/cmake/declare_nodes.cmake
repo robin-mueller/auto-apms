@@ -35,7 +35,7 @@ macro(auto_apms_behavior_tree_declare_nodes target)
     endforeach()
 
     # Automatically create node metadata if any manifest files are provided
-    if(NOT ${ARGS_NODE_MANIFEST} STREQUAL "")
+    if(NOT "${ARGS_NODE_MANIFEST}" STREQUAL "")
         auto_apms_behavior_tree_generate_node_metadata("${target}" ${ARGS_NODE_MANIFEST})
     endif()
 

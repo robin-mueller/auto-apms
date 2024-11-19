@@ -46,16 +46,14 @@ int main(int argc, char ** argv)
   auto node_ptr = std::make_shared<rclcpp::Node>("run_tree_cpp");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
+  const std::string tree_identity = package_name + "::" + tree_file_name + "::" + tree_name;
   std::unique_ptr<core::TreeResource> tree_resource_ptr;
   try {
-    tree_resource_ptr =
-      std::make_unique<core::TreeResource>(core::TreeResource::selectByFileName(tree_file_name, package_name));
+    tree_resource_ptr = std::make_unique<core::TreeResource>(tree_identity);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(
-      node_ptr->get_logger(),
-      "ERROR searching for corresponding behavior tree resource with arguments tree_file_name: '%s', "
-      "package_name: '%s': %s",
-      tree_file_name.c_str(), package_name.c_str(), e.what());
+      node_ptr->get_logger(), "ERROR searching for behavior tree resource with identity '%s': %s",
+      tree_identity.c_str(), e.what());
     return EXIT_FAILURE;
   }
 
@@ -64,19 +62,19 @@ int main(int argc, char ** argv)
     builder.mergeTreesFromResource(*tree_resource_ptr);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(
-      node_ptr->get_logger(), "ERROR loading behavior tree '%s' from resource %s: %s", tree_name.c_str(),
+      node_ptr->get_logger(), "ERROR loading behavior tree '%s' from file %s: %s", tree_name.c_str(),
       tree_resource_ptr->tree_file_path.c_str(), e.what());
     return EXIT_FAILURE;
   }
-  builder.setRootTreeName(tree_name);
+  builder.setRootTreeName(tree_resource_ptr->getRootTreeName());
 
   TreeExecutorBase executor(node_ptr);
   auto future =
-    executor.startExecution([&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiateTree(bb); });
+    executor.startExecution([&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiate(bb); });
 
   RCLCPP_INFO(
-    node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.", tree_resource_ptr->tree_file_stem.c_str(),
-    builder.getRootTreeName().c_str(), tree_resource_ptr->package_name.c_str());
+    node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.", tree_resource_ptr->package_name.c_str(),
+    tree_resource_ptr->tree_file_stem.c_str(), builder.getRootTreeName().c_str());
 
   const auto termination_timeout = std::chrono::duration<double>(1.5);
   rclcpp::Time termination_start;

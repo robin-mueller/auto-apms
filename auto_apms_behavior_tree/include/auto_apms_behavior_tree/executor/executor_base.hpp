@@ -65,12 +65,12 @@ public:
   TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr);
 
   std::shared_future<ExecutionResult> startExecution(
-    TreeConstructor make_tree, double tick_rate_sec = 0.25, unsigned int groot2_port = 1667);
+    TreeConstructor make_tree, double tick_rate_sec = 0.25, unsigned int groot2_port = 5555);
 
   template <typename TimeRepT = int64_t, typename TimeT = std::milli>
   std::shared_future<ExecutionResult> startExecution(
     TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate,
-    unsigned int groot2_port = 1667);
+    unsigned int groot2_port = 5555);
 
 private:
   void execution_routine_(TerminationCallback termination_callback);

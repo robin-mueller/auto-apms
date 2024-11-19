@@ -105,9 +105,9 @@ public:
 protected:
   rclcpp::Node::SharedPtr node_ptr_;
   std::shared_ptr<ActionContextType> action_context_ptr_;
+  const ParamListener param_listener_;
 
 private:
-  ParamListener param_listener_;
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_ptr_;
   rclcpp::TimerBase::SharedPtr execution_timer_ptr_;
   rclcpp::Time last_feedback_ts_;

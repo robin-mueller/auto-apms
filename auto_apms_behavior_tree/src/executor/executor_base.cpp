@@ -64,12 +64,17 @@ std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExe
   termination_reason_ = "";
   execution_stopped_ = true;
 
-  // Create promise for asnychronous execution and configure termination callback
+  // Create promise for asynchronous execution and configure termination callback
   auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
   TerminationCallback termination_callback = [this, promise_ptr](ExecutionResult result, const std::string & msg) {
     RCLCPP_INFO(
-      node_ptr_->get_logger(), "Terminating behavior tree execution from state %s. Reason: %s.",
-      toStr(getExecutionState()).c_str(), msg.c_str());
+      node_ptr_->get_logger(), "Terminating tree '%s' from state %s.", getTreeName().c_str(),
+      toStr(getExecutionState()).c_str());
+    if (result == ExecutionResult::ERROR) {
+      RCLCPP_ERROR(node_ptr_->get_logger(), "Termination reason: %s.", msg.c_str());
+    } else {
+      RCLCPP_INFO(node_ptr_->get_logger(), "Termination reason: %s.", msg.c_str());
+    }
     onTermination(result);  // is evaluated before the timer is cancelled, which means the execution state has not
                             // changed yet during the callback and can be evaluated to inspect the terminal state.
     promise_ptr->set_value(result);
@@ -125,7 +130,7 @@ void TreeExecutorBase::execution_routine_(TerminationCallback termination_callba
       if (this_execution_state == ExecutionState::HALTED) {
         termination_callback(
           ExecutionResult::TERMINATED_PREMATURELY,
-          termination_reason_.empty() ? "Terminated by control command" : termination_reason_);
+          termination_reason_.empty() ? "Control command was set to TERMINATE" : termination_reason_);
         return;
       }
 
@@ -160,7 +165,7 @@ void TreeExecutorBase::execution_routine_(TerminationCallback termination_callba
     try {
       tree_ptr_->haltTree();  // Try to halt tree before aborting
     } catch (const std::exception & e) {
-      msg += "\nDuring haltTree(), another exception occured: " + std::string(e.what());
+      msg += "\nDuring haltTree(), another exception occurred: " + std::string(e.what());
     }
     termination_callback(ExecutionResult::ERROR, msg);
     return;

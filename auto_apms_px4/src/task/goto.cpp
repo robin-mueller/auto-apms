@@ -17,7 +17,6 @@
 #include <Eigen/Core>
 
 #include "auto_apms_interfaces/action/go_to.hpp"
-#include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/mode_executor.hpp"
 #include "px4_ros2/utils/geodesic.hpp"
 #include "tf2_eigen/tf2_eigen.hpp"
@@ -98,7 +97,10 @@ private:
 class GoToTask : public ModeExecutorFactory<GoToActionType, GoToMode>
 {
 public:
-  explicit GoToTask(const rclcpp::NodeOptions & options) : ModeExecutorFactory{GO_TO_TASK_NAME, options} {}
+  explicit GoToTask(const rclcpp::NodeOptions & options)
+  : ModeExecutorFactory{_AUTO_APMS_PX4__GOTO_ACTION_NAME, options}
+  {
+  }
 };
 
 }  // namespace auto_apms_px4

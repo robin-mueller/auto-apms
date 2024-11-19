@@ -14,7 +14,6 @@
 
 #include "auto_apms_interfaces/action/rtl.hpp"
 
-#include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/mode_executor.hpp"
 
 namespace auto_apms_px4
@@ -23,7 +22,10 @@ namespace auto_apms_px4
 class RTLTask : public ModeExecutor<auto_apms_interfaces::action::RTL>
 {
 public:
-  explicit RTLTask(const rclcpp::NodeOptions & options) : ModeExecutor{RTL_TASK_NAME, options, FlightMode::RTL} {}
+  explicit RTLTask(const rclcpp::NodeOptions & options)
+  : ModeExecutor{_AUTO_APMS_PX4__RTL_ACTION_NAME, options, FlightMode::RTL}
+  {
+  }
 
 private:
   // PX4 seems to not always give a completed signal for RTL, so check for disarmed as a fallback completed state

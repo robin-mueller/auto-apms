@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/executor/executor_node.hpp"
-#include "auto_apms_behavior_tree/tree.hpp"
 
 inline const std::string BASE_TREE_RESOURCE_ID = "auto_apms_mission::orchestrator_base::MissionOrchestrator";
 
@@ -40,7 +39,7 @@ MissionOrchestrator::MissionOrchestrator(rclcpp::NodeOptions options)
 
 void MissionOrchestrator::setUpBuilder(TreeBuilder & builder)
 {
-  const auto resource = auto_apms_behavior_tree::findTreeResource(BASE_TREE_RESOURCE_ID);
+  const auto resource = auto_apms_behavior_tree::core::TreeResource(BASE_TREE_RESOURCE_ID);
   builder.setRootTreeName(resource.getRootTreeName(TreeBuilder::ROOT_TREE_ATTRIBUTE_NAME));
   builder.mergeTreesFromResource(resource);
 }

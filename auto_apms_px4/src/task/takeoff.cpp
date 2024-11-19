@@ -14,7 +14,6 @@
 
 #include "auto_apms_interfaces/action/takeoff.hpp"
 
-#include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/mode_executor.hpp"
 
 namespace auto_apms_px4
@@ -24,7 +23,7 @@ class TakeoffTask : public ModeExecutor<auto_apms_interfaces::action::Takeoff>
 {
 public:
   explicit TakeoffTask(const rclcpp::NodeOptions & options)
-  : ModeExecutor{TAKEOFF_TASK_NAME, options, FlightMode::Takeoff}
+  : ModeExecutor{_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME, options, FlightMode::Takeoff}
   {
   }
 

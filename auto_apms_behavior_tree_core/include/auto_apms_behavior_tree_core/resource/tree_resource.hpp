@@ -21,34 +21,13 @@
 namespace auto_apms_behavior_tree::core
 {
 
-/**
- * @brief Struct containing behavior tree resource data
- * @ingroup auto_apms_behavior_tree
- */
-struct TreeResource
+struct TreeResourceIdentity
 {
-private:
-  TreeResource() = default;
-
-public:
-  TreeResource(const std::string & identity);
-
   /**
-   * @brief Collect all behavior tree resources registered by a certain package.
-   * @param package_name Name of the package to search for resources.
-   * @return Collection of all resources found in @p package_name.
-   */
-  static std::vector<TreeResource> collectFromPackage(const std::string & package_name);
-
-  static TreeResource selectByTreeName(const std::string & tree_name, const std::string & package_name = "");
-
-  static TreeResource selectByFileName(const std::string & file_name, const std::string & package_name = "");
-
-  /**
-   * @brief Find a behavior tree resource using an identity string.
+   * @brief Constructor of a tree resource identity object.
    *
-   * To uniquely identify the resource, the @p identity string may contain the
-   * `<package_name>`, the `<tree_file_stem>` and the `<tree_name>` seperated by `::` in that order. Depending on the
+   * To uniquely identify a resource, the @p identity string may contain the
+   * `<package_name>`, the `<tree_file_stem>` and the `<tree_name>` separated by `::` in that order. Depending on the
    * registered resources, it might be convenient to use shorter, less precise signatures. Additionally, if the
    * delimiter `::` is not present, it's assumed that the string contains the stem of a behavior tree file
    * `<tree_file_stem>`. All possible identity strings are listed below:
@@ -82,23 +61,56 @@ public:
    * @note The delimiter `::` must be kept when tokens are omitted, except when searching for resources using only the
    * file stem.
    *
-   * @param identity Identity string with formatting compliant to the signatures above.
-   * @return Corresponding TreeResource object.
+   * @param identity Identity string formatted like one of the above.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
-   * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
-   * identity string.
    */
-  static TreeResource fromResourceIdentity(const std::string & identity);
+  TreeResourceIdentity(const std::string & identity);
+
+  std::string str() const;
+
+  std::string package_name;
+  std::string file_stem;
+  std::string tree_name;
+};
+
+/**
+ * @brief Struct containing behavior tree resource data
+ * @ingroup auto_apms_behavior_tree
+ */
+struct TreeResource
+{
+private:
+  TreeResource() = default;
+
+public:
+  /**
+   * @brief Construct a behavior tree resource using a TreeResourceIdentity.
+   * @param identity Tree resource identity.
+   * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
+   * identity.
+   */
+  TreeResource(const TreeResourceIdentity & identity);
+
+  /**
+   * @brief Collect all behavior tree resources registered by a certain package.
+   * @param package_name Name of the package to search for resources.
+   * @return Collection of all resources found in @p package_name.
+   */
+  static std::vector<TreeResource> collectFromPackage(const std::string & package_name);
+
+  static TreeResource selectByTreeName(const std::string & tree_name, const std::string & package_name = "");
+
+  static TreeResource selectByFileName(const std::string & file_name, const std::string & package_name = "");
 
   std::string getRootTreeName(const std::string & root_tree_attribute_name = "main_tree_to_execute") const;
 
   std::string writeTreeToString() const;
 
-  std::string tree_file_stem;
-  std::string tree_file_path;
   std::string package_name;
-  std::vector<std::string> node_manifest_file_paths;
+  std::string tree_file_stem;
   std::set<std::string> tree_names;
+  std::string tree_file_path;
+  std::vector<std::string> node_manifest_file_paths;
 };
 
 }  // namespace auto_apms_behavior_tree::core

@@ -1,3 +1,8 @@
+# NOTE:
+# The ROS2 namespace concept (https://design.ros2.org/articles/topic_and_service_names.html)
+# applies to 'port'. That is, you can specify both relative and absolute names.
+#
+
 Error:
   class_name: auto_apms_behavior_tree::ThrowException
 

@@ -78,7 +78,7 @@ int main(int argc, char ** argv)
 
   TreeExecutorBase executor(node_ptr);
   auto future = executor.startExecution(
-    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiateTree(tree_name, bb); });
+    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiate(tree_name, bb); });
 
   const auto termination_timeout = std::chrono::duration<double>(1.5);
   rclcpp::Time termination_start;

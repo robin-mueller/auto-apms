@@ -82,6 +82,8 @@ private:
   bool mode_completed_{false};
   bool deactivation_command_sent_{false};
   State state_{State::REQUEST_ACTIVATION};
+  rclcpp::Time activation_command_sent_time_;
+  rclcpp::Duration activation_timeout_{0, 0};
 };
 
 template <class ActionT>
@@ -148,7 +150,7 @@ auto_apms_util::ActionStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
     if (is_holding) {
       auto & clock = *this->node_ptr_->get_clock();
       RCLCPP_DEBUG_THROTTLE(
-        this->node_ptr_->get_logger(), clock, 200, "Waiting for flight mode %i to become active before deactivating...",
+        this->node_ptr_->get_logger(), clock, 250, "Waiting for flight mode %i to become active before deactivating...",
         mode_id_);
       return ActionStatus::RUNNING;
     } else {
@@ -182,6 +184,7 @@ bool ModeExecutor<ActionT>::onGoalRequest(const std::shared_ptr<const Goal> goal
   state_ = State::REQUEST_ACTIVATION;
   deactivation_command_sent_ = false;
   mode_completed_ = false;
+  activation_timeout_ = rclcpp::Duration::from_seconds(fmin(this->param_listener_.get_params().loop_rate * 15, 1.5));
   return true;
 }
 
@@ -193,9 +196,9 @@ bool ModeExecutor<ActionT>::onCancelRequest(std::shared_ptr<const Goal> goal_ptr
   if (deactivate_before_completion_) {
     // To deactivate current flight mode, enable HOLD mode.
     RCLCPP_DEBUG(
-      this->node_ptr_->get_logger(), "Cancelation requested! Will deactivate before termination (Enter HOLD)...");
+      this->node_ptr_->get_logger(), "Cancellation requested! Will deactivate before termination (Enter HOLD)...");
   } else {
-    RCLCPP_DEBUG(this->node_ptr_->get_logger(), "Cancelation requested!");
+    RCLCPP_DEBUG(this->node_ptr_->get_logger(), "Cancellation requested!");
   }
   return true;
 }
@@ -238,7 +241,7 @@ auto_apms_util::ActionStatus ModeExecutor<ActionT>::executeGoal(
       // Force to consider only new status messages after sending new command
       last_vehicle_status_ptr_ = nullptr;
       state_ = State::WAIT_FOR_ACTIVATION;
-
+      activation_command_sent_time_ = this->node_ptr_->now();
       RCLCPP_DEBUG(
         this->node_ptr_->get_logger(), "Activation command for flight mode %i was sent successfully", mode_id_);
       return ActionStatus::RUNNING;
@@ -246,6 +249,9 @@ auto_apms_util::ActionStatus ModeExecutor<ActionT>::executeGoal(
       if (isCurrentNavState(mode_id_)) {
         RCLCPP_DEBUG(this->node_ptr_->get_logger(), "Flight mode %i is active", mode_id_);
         state_ = State::WAIT_FOR_COMPLETION_SIGNAL;
+      } else if (this->node_ptr_->now() - activation_command_sent_time_ > activation_timeout_) {
+        RCLCPP_ERROR(this->node_ptr_->get_logger(), "Timeout activating flight mode %i. Aborting...", mode_id_);
+        return ActionStatus::FAILURE;
       }
       return ActionStatus::RUNNING;
     case State::WAIT_FOR_COMPLETION_SIGNAL:

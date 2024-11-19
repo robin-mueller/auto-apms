@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="ContingencyHandler">
+    <Sequence>
+      <EnableHold action_name=""/>
+      <RetryUntilSuccessful num_attempts="-1">
+        <ScriptCondition code="@enable_hold == false"/>
+      </RetryUntilSuccessful>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="ContingencyMonitor">
+    <ScriptCondition code="@contingency == true"/>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="EnableHold">
+      <input_port name="action_name"
+                  type="std::string">Action server name</input_port>
+    </Action>
+  </TreeNodesModel>
+
+</root>

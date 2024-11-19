@@ -14,7 +14,6 @@
 
 #include "auto_apms_interfaces/action/enable_hold.hpp"
 
-#include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/mode_executor.hpp"
 
 namespace auto_apms_px4
@@ -24,7 +23,7 @@ class EnableHoldTask : public ModeExecutor<auto_apms_interfaces::action::EnableH
 {
 public:
   explicit EnableHoldTask(const rclcpp::NodeOptions & options)
-  : ModeExecutor{ENABLE_HOLD_TASK_NAME, options, FlightMode::Hold, false}
+  : ModeExecutor{_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME, options, FlightMode::Hold, false}
   {
   }
 

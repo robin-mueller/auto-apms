@@ -27,7 +27,8 @@ public:
   bool setRequest(const std::string & request) override final
   {
     try {
-      resource_ptr_ = std::make_unique<core::TreeResource>(core::TreeResource::fromResourceIdentity(request));
+      resource_identity_ptr_ = std::make_unique<core::TreeResourceIdentity>(request);
+      resource_ptr_ = std::make_unique<core::TreeResource>(*resource_identity_ptr_);
     } catch (const auto_apms_util::exceptions::ResourceIdentityFormatError & e) {
       RCLCPP_ERROR(logger_, "%s", e.what());
       return false;
@@ -40,11 +41,19 @@ public:
 
   void handleBuild(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
   {
+    if (!resource_identity_ptr_)
+      throw exceptions::TreeBuildError("TreeResourceBuildHandler - resource_identity_ptr_ is nullptr.");
     if (!resource_ptr_) throw exceptions::TreeBuildError("TreeResourceBuildHandler - resource_ptr_ is nullptr.");
     builder.mergeTreesFromResource(*resource_ptr_);
+    if (!resource_identity_ptr_->tree_name.empty()) {
+      builder.setRootTreeName(resource_identity_ptr_->tree_name);
+    } else {
+      builder.setRootTreeName(resource_ptr_->getRootTreeName(TreeBuilder::ROOT_TREE_ATTRIBUTE_NAME));
+    }
   }
 
 private:
+  std::unique_ptr<core::TreeResourceIdentity> resource_identity_ptr_;
   std::unique_ptr<core::TreeResource> resource_ptr_;
 };
 

@@ -14,7 +14,6 @@
 
 #include "auto_apms_interfaces/action/mission.hpp"
 
-#include "auto_apms_px4/constants.hpp"
 #include "auto_apms_px4/mode_executor.hpp"
 
 namespace auto_apms_px4
@@ -24,7 +23,7 @@ class MissionTask : public ModeExecutor<auto_apms_interfaces::action::Mission>
 {
 public:
   explicit MissionTask(const rclcpp::NodeOptions & options)
-  : ModeExecutor{MISSION_TASK_NAME, options, FlightMode::Mission}
+  : ModeExecutor{_AUTO_APMS_PX4__MISSION_ACTION_NAME, options, FlightMode::Mission}
   {
   }
 

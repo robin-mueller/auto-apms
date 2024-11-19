@@ -25,6 +25,22 @@
 
 namespace auto_apms_behavior_tree
 {
+
+const std::vector<std::string> EXPLICITLY_ALLOWED_PARAMETERS{
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_BLACKBOARD,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_SCRIPTING_ENUMS,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_NODE,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_EXCLUDE_PACKAGES_BUILD_HANDLER,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER};
+
+const std::vector<std::string> EXPLICITLY_ALLOWED_PARAMETERS_WHILE_BUSY{
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_BLACKBOARD,
+  _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER};
+
 TreeExecutorNodeOptions::TreeExecutorNodeOptions(const rclcpp::NodeOptions & ros_node_options)
 : ros_node_options_(ros_node_options)
 {
@@ -60,6 +76,30 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
   start_action_context_(logger_)
 {
   const ExecutorParameters initial_params = executor_param_listener_.get_params();
+
+  // Remove all unkown parameters provided via parameter overrides
+  rcl_interfaces::msg::ListParametersResult res = node_ptr_->list_parameters({}, 0);
+  std::vector<std::string> unkown_param_names;
+  for (const std::string & param_name : res.names) {
+    if (!stripPrefixFromParameterName(SCRIPTING_ENUM_PARAM_PREFIX, param_name).empty()) continue;
+    if (!stripPrefixFromParameterName(BLACKBOARD_PARAM_PREFIX, param_name).empty()) continue;
+    if (auto_apms_util::contains(EXPLICITLY_ALLOWED_PARAMETERS, param_name)) continue;
+    try {
+      node_ptr_->undeclare_parameter(param_name);
+    } catch (const rclcpp::exceptions::ParameterImmutableException & e) {
+      // Allow all builtin read only parameters
+      continue;
+    } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
+      // Allow all builtin statically typed parameters
+      continue;
+    }
+    unkown_param_names.push_back(param_name);
+  }
+  if (!unkown_param_names.empty()) {
+    RCLCPP_WARN(
+      logger_, "The following initial parameters are not supported and have been removed: [ %s ].",
+      rcpputils::join(unkown_param_names, ", ").c_str());
+  }
 
   // Create behavior tree node loader
   node_loader_ptr_ = core::NodeRegistrationLoader::make_shared(
@@ -340,7 +380,7 @@ void TreeExecutorNode::loadBuildHandler(const std::string & name)
       build_handler_ptr_ = build_handler_loader_ptr_->createUniqueInstance(name)->makeUnique(node_ptr_);
     } catch (const std::exception & e) {
       throw exceptions::TreeBuildError(
-        "An error occured when trying to create an instance of tree build handler class '" + name +
+        "An error occurred when trying to create an instance of tree build handler class '" + name +
         "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER macro must be "
         "called in the source file for the class to be discoverable. Error message: " +
         e.what());
@@ -356,7 +396,7 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   // Request the tree identity
   if (build_handler_ptr_ && !build_handler_ptr_->setRequest(build_handler_request)) {
     throw exceptions::TreeBuildError(
-      "Request to create tree '" + build_handler_request + "' was denied by '" +
+      "Build request '" + build_handler_request + "' was denied by '" +
       executor_param_listener_.get_params().build_handler + "' (setRequest() returned false).");
   }
 
@@ -372,23 +412,18 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
     }
     if (build_handler_ptr_) build_handler_ptr_->handleBuild(builder, *bb_ptr);
     builder.loadNodePlugins(node_overrides, true);
-    return builder.instantiateTree(root_tree_name, bb_ptr);
+    return builder.instantiate(root_tree_name, bb_ptr);
   };
 }
 
 rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_callback_(
   const std::vector<rclcpp::Parameter> & parameters)
 {
-  // Parameters allowed to be set while busy
-  const std::set<std::string> allowed_while_busy{_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER};
   const ExecutorParameters params = executor_param_listener_.get_params();
 
   // Iterate through parameters and individually decide wether to reject the change
   for (const auto & p : parameters) {
     const std::string param_name = p.get_name();
-    auto not_in_list = [&param_name](const std::set<std::string> & list) {
-      return list.find(param_name) == list.end();
-    };
     auto create_rejected = [&param_name](const std::string msg) {
       rcl_interfaces::msg::SetParametersResult result;
       result.successful = false;
@@ -423,7 +458,7 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
         return create_rejected(
           "Cannot set blackboard entry '" + entry_key + "', because the 'Dynamic blackboard' option is disabled");
       }
-      // Validate type of blackboad parameters won't change
+      // Validate type of blackboard parameters won't change
       if (!updateBlackboardWithParameterValues(
             {{entry_key, p.get_parameter_value()}}, *getGlobalBlackboardPtr(), true)) {
         return create_rejected(
@@ -436,7 +471,7 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
     }
 
     // Check for other parameters which are not allowed during execution
-    if (isBusy() && not_in_list(allowed_while_busy)) {
+    if (isBusy() && !auto_apms_util::contains(EXPLICITLY_ALLOWED_PARAMETERS_WHILE_BUSY, param_name)) {
       return create_rejected("Parameter is not allowed to change while tree executor is running");
     }
 
@@ -456,6 +491,11 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
           "auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of the "
           "corresponding package");
       }
+    }
+
+    // At this point, if the parameter hasn't been declared, we do not support it.
+    if (!node_ptr_->has_parameter(param_name)) {
+      return create_rejected("Not one of the supported parameter names");
     }
   }
 
@@ -538,9 +578,7 @@ rclcpp_action::GoalResponse TreeExecutorNode::handle_start_goal_(
   try {
     tree_constructor_ = makeTreeConstructor(goal_ptr->build_request, goal_ptr->root_tree, node_overrides);
   } catch (const std::exception & e) {
-    RCLCPP_WARN(
-      logger_, "Goal %s was REJECTED: Error making the tree constructor: %s", rclcpp_action::to_string(uuid).c_str(),
-      e.what());
+    RCLCPP_WARN(logger_, "Goal %s was REJECTED: %s", rclcpp_action::to_string(uuid).c_str(), e.what());
     return rclcpp_action::GoalResponse::REJECT;
   }
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -569,7 +607,7 @@ void TreeExecutorNode::handle_start_accept_(std::shared_ptr<StartActionContext::
     startExecution(tree_constructor_, params.tick_rate, params.groot2_port);
   } catch (const std::exception & e) {
     auto result_ptr = std::make_shared<StartActionContext::Result>();
-    result_ptr->message = "An error occured trying to start execution: " + std::string(e.what());
+    result_ptr->message = "An error occurred trying to start execution: " + std::string(e.what());
     result_ptr->tree_result = StartActionContext::Result::TREE_RESULT_NOT_SET;
     goal_handle_ptr->abort(result_ptr);
     RCLCPP_ERROR_STREAM(logger_, result_ptr->message);
@@ -700,7 +738,7 @@ void TreeExecutorNode::handle_command_accept_(std::shared_ptr<CommandActionConte
       // If the execution state has become IDLE in the mean time, request failed if termination was not desired
       if (requested_state != ExecutionState::IDLE && current_state == ExecutionState::IDLE) {
         RCLCPP_ERROR(
-          logger_, "Failed to reach requested state %s due to cancelation of executon timer. Aborting.",
+          logger_, "Failed to reach requested state %s due to cancellation of execution timer. Aborting.",
           toStr(requested_state).c_str());
         goal_handle_ptr->abort(action_result_ptr);
         command_timer_ptr_->cancel();
@@ -778,7 +816,7 @@ void TreeExecutorNode::onTermination(const ExecutionResult & result)
       break;
     case ExecutionResult::ERROR:
       result_ptr->tree_result = StartActionContext::Result::TREE_RESULT_NOT_SET;
-      result_ptr->message = "An unexpected error occured during tree execution";
+      result_ptr->message = "An unexpected error occurred during tree execution";
       start_action_context_.abort();
       break;
     default:
