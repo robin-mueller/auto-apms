@@ -52,15 +52,31 @@ struct NodeRegistrationParams
   static const std::string PARAM_NAME_PORT;
   static const std::string PARAM_NAME_WAIT_TIMEOUT;
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
+  static const std::string PARAM_NAME_ALLOW_UNREACHABLE;
 
   NodeRegistrationParams() = default;
 
   AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(NodeRegistrationParams)
 
+  /// Fully qualified name of the behavior tree node plugin class.
   std::string class_name;
+  /**
+   * @brief Default port name of the corresponding ROS 2 communication interface.
+   *
+   * This has different meaning based on the context:
+   * - RosActionNode: Name of the action server
+   * - RosServiceNode: Name of the service
+   * - RosPublisherNode: Name of the topic to publish to
+   * - RosSubscriberNode: Name of the topic to subscribe to
+   */
   std::string port;
+  /// Timeout [s] for initially discovering the associated ROS2 node.
   std::chrono::duration<double> wait_timeout = std::chrono::duration<double>(3);
+  /// Timeout [s] for waiting for a response for the requested service or goal.
   std::chrono::duration<double> request_timeout = std::chrono::duration<double>(1.5);
+  /// Flag whether to tolerate if the action/service node is unreachable when trying to create the client. If set to
+  /// `true`, a warning is written to the logger. Otherwise, an exception is raised.
+  bool allow_unreachable = false;
 };
 
 }  // namespace auto_apms_behavior_tree::core
@@ -79,6 +95,7 @@ inline Node convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::enco
   node[Params::PARAM_NAME_PORT] = rhs.port;
   node[Params::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
   node[Params::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
+  node[Params::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
   return node;
 }
 inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::decode(const Node & node, Params & rhs)
@@ -110,6 +127,10 @@ inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::deco
     }
     if (key == Params::PARAM_NAME_REQUEST_TIMEOUT) {
       rhs.request_timeout = std::chrono::duration<double>(val.as<double>());
+      continue;
+    }
+    if (key == Params::PARAM_NAME_ALLOW_UNREACHABLE) {
+      rhs.allow_unreachable = val.as<bool>();
       continue;
     }
     // Unkown parameter

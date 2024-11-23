@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "rclcpp/macros.hpp"
@@ -25,7 +27,7 @@ namespace auto_apms_behavior_tree
 /**
  * @brief Inheriting classes must use the
  * [builder](https://refactoring.guru/design-patterns/builder/cpp/example#lang-features) API offered by
- * core::TreeBuilder inside the pure virtual method handleBuild() to configure a behavior tree. Implementing various
+ * core::TreeBuilder inside the pure virtual method buildTree() to configure a behavior tree. Implementing various
  * TreeBuildHandler classes allows TreeExecutorNode to dynamically change the way how a tree is created.
  */
 class TreeBuildHandler
@@ -33,16 +35,21 @@ class TreeBuildHandler
 public:
   RCLCPP_SMART_PTR_ALIASES_ONLY(TreeBuildHandler)
 
-  using TreeBuilder = auto_apms_behavior_tree::core::TreeBuilder;
+  /* Convenience aliases for deriving classes */
+
   using TreeBlackboard = auto_apms_behavior_tree::TreeBlackboard;
+  using TreeResource = core::TreeResource;
+  using TreeBuilder = core::TreeBuilder;
+  using TreeElement = core::TreeDocument::TreeElement;
+  using NodeElement = core::TreeDocument::NodeElement;
 
   TreeBuildHandler(rclcpp::Node::SharedPtr node_ptr);
 
   virtual ~TreeBuildHandler() = default;
 
-  virtual bool setRequest(const std::string & request) = 0;
+  virtual bool setBuildRequest(const std::string & build_request, const std::string & root_tree_name) = 0;
 
-  virtual void handleBuild(TreeBuilder & builder, TreeBlackboard & bb) = 0;
+  virtual TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) = 0;
 
   rclcpp::Node::SharedPtr getNodePtr() const;
 
@@ -50,7 +57,7 @@ protected:
   const rclcpp::Logger logger_;
 
 private:
-  rclcpp::Node::WeakPtr node_wptr_;
+  rclcpp::Node::WeakPtr ros_node_wptr_;
 };
 
 }  // namespace auto_apms_behavior_tree

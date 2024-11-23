@@ -22,6 +22,7 @@ const std::string NodeRegistrationParams::PARAM_NAME_CLASS = _AUTO_APMS_BEHAVIOR
 const std::string NodeRegistrationParams::PARAM_NAME_PORT = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT;
 const std::string NodeRegistrationParams::PARAM_NAME_REQUEST_TIMEOUT = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT;
 const std::string NodeRegistrationParams::PARAM_NAME_WAIT_TIMEOUT = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT;
+const std::string NodeRegistrationParams::PARAM_NAME_ALLOW_UNREACHABLE = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE;
 // clang-format on
 
 }  // namespace auto_apms_behavior_tree::core

@@ -37,7 +37,9 @@ public:
   {
     if (auto any_locked = getLockedPortContent(INPUT_KEY_VEC)) {
       if (any_locked->empty()) {
-        RCLCPP_ERROR(logger_, "%s - Value at blackboard entry {%s} is empty", name().c_str(), INPUT_KEY_VEC);
+        RCLCPP_ERROR(
+          context_.getLogger(), "%s - Value at blackboard entry {%s} is empty", context_.getFullName(this).c_str(),
+          INPUT_KEY_VEC);
         return false;
       } else if (Eigen::Vector3d * vec_ptr = any_locked->castPtr<Eigen::Vector3d>()) {
         goal.lat = vec_ptr->x();
@@ -46,11 +48,14 @@ public:
         goal.head_towards_destination = true;
         return true;
       } else {
-        RCLCPP_ERROR(logger_, "%s - Failed to cast pointer {%s}", name().c_str(), INPUT_KEY_VEC);
+        RCLCPP_ERROR(
+          context_.getLogger(), "%s - Failed to cast pointer {%s}", context_.getFullName(this).c_str(), INPUT_KEY_VEC);
         return false;
       }
     }
-    RCLCPP_ERROR(logger_, "%s - getLockedPortContent() failed for argument %s", name().c_str(), INPUT_KEY_VEC);
+    RCLCPP_ERROR(
+      context_.getLogger(), "%s - getLockedPortContent() failed for argument %s", context_.getFullName(this).c_str(),
+      INPUT_KEY_VEC);
     return false;
   }
 };

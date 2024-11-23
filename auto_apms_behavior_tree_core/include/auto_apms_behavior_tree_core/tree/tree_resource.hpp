@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 
+#include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
+
 namespace auto_apms_behavior_tree::core
 {
 
@@ -74,43 +76,46 @@ struct TreeResourceIdentity
 };
 
 /**
- * @brief Struct containing behavior tree resource data
+ * @brief Class containing behavior tree resource data
  * @ingroup auto_apms_behavior_tree
  */
-struct TreeResource
+class TreeResource
 {
-private:
-  TreeResource() = default;
+  friend class TreeDocument;
+  friend class TreeBuilder;
 
 public:
+  using Identity = TreeResourceIdentity;
+
   /**
    * @brief Construct a behavior tree resource using a TreeResourceIdentity.
    * @param identity Tree resource identity.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
    * identity.
    */
-  TreeResource(const TreeResourceIdentity & identity);
+  explicit TreeResource(const TreeResourceIdentity & identity);
 
-  /**
-   * @brief Collect all behavior tree resources registered by a certain package.
-   * @param package_name Name of the package to search for resources.
-   * @return Collection of all resources found in @p package_name.
-   */
-  static std::vector<TreeResource> collectFromPackage(const std::string & package_name);
+  TreeResource(const std::string & identity);
+
+  TreeResource(const char * identity);
 
   static TreeResource selectByTreeName(const std::string & tree_name, const std::string & package_name = "");
 
   static TreeResource selectByFileName(const std::string & file_name, const std::string & package_name = "");
 
-  std::string getRootTreeName(const std::string & root_tree_attribute_name = "main_tree_to_execute") const;
+  std::string getRootTreeName() const;
 
-  std::string writeTreeToString() const;
+  NodeManifest getNodeManifest() const;
 
-  std::string package_name;
-  std::string tree_file_stem;
-  std::set<std::string> tree_names;
-  std::string tree_file_path;
-  std::vector<std::string> node_manifest_file_paths;
+  std::string getPackageName() const;
+
+  std::string getFileStem() const;
+
+private:
+  const TreeResourceIdentity identity_;
+  std::string package_name_;
+  std::string tree_file_path_;
+  std::vector<std::string> node_manifest_file_paths_;
 };
 
 }  // namespace auto_apms_behavior_tree::core

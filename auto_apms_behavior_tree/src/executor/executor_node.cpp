@@ -71,7 +71,6 @@ rclcpp::NodeOptions TreeExecutorNodeOptions::getROSNodeOptions()
 TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOptions executor_options)
 : TreeExecutorBase(std::make_shared<rclcpp::Node>(name, executor_options.getROSNodeOptions())),
   executor_options_(executor_options),
-  logger_(node_ptr_->get_logger()),
   executor_param_listener_(node_ptr_),
   start_action_context_(logger_)
 {
@@ -188,7 +187,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
 }
 
 TreeExecutorNode::TreeExecutorNode(rclcpp::NodeOptions options)
-: TreeExecutorNode(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NODE_NAME, TreeExecutorNodeOptions(options))
+: TreeExecutorNode(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME, TreeExecutorNodeOptions(options))
 {
 }
 
@@ -223,10 +222,10 @@ bool TreeExecutorNode::updateScriptingEnumsWithParameterValues(
     try {
       switch (pval.get_type()) {
         case rclcpp::ParameterType::PARAMETER_BOOL:
-          if (!simulate) scripting_enum_buffer_[enum_key] = static_cast<int>(pval.get<bool>());
+          if (!simulate) scripting_enums_[enum_key] = static_cast<int>(pval.get<bool>());
           break;
         case rclcpp::ParameterType::PARAMETER_INTEGER:
-          if (!simulate) scripting_enum_buffer_[enum_key] = pval.get<int64_t>();
+          if (!simulate) scripting_enums_[enum_key] = pval.get<int64_t>();
           break;
         default:
           throw std::runtime_error("Parameter to scripting enum conversion is not defined.");
@@ -394,10 +393,10 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   const core::NodeManifest & node_overrides)
 {
   // Request the tree identity
-  if (build_handler_ptr_ && !build_handler_ptr_->setRequest(build_handler_request)) {
+  if (build_handler_ptr_ && !build_handler_ptr_->setBuildRequest(build_handler_request, root_tree_name)) {
     throw exceptions::TreeBuildError(
       "Build request '" + build_handler_request + "' was denied by '" +
-      executor_param_listener_.get_params().build_handler + "' (setRequest() returned false).");
+      executor_param_listener_.get_params().build_handler + "' (setBuildRequest() returned false).");
   }
 
   // By passing the the local variables to the callback's captures by value they live on and can be used for creating
@@ -405,14 +404,24 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   // released at the time the method returns.
   return [this, root_tree_name, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
     TreeBuilder builder(node_ptr_, node_loader_ptr_);
-    // Run build pipeline
+
+    // Allow executor to set up the builder independently from the build handler
     setUpBuilder(builder);
-    for (const auto & [enum_key, val] : scripting_enum_buffer_) {
-      builder.setScriptingEnum(enum_key, val);
+
+    // Make scripting enums available to tree instance
+    for (const auto & [enum_key, val] : scripting_enums_) builder.setScriptingEnum(enum_key, val);
+
+    // If a build handler is specified, let it configure the builder and determine which tree is to be instantiated
+    std::string instantiate_name = root_tree_name;
+    if (build_handler_ptr_) {
+      instantiate_name = build_handler_ptr_->buildTree(builder, *bb_ptr).getName();
     }
-    if (build_handler_ptr_) build_handler_ptr_->handleBuild(builder, *bb_ptr);
+
+    // Allow for overriding selected node instances
     builder.loadNodePlugins(node_overrides, true);
-    return builder.instantiate(root_tree_name, bb_ptr);
+
+    // Finally, instantiate the tree
+    return builder.instantiate(instantiate_name, bb_ptr);
   };
 }
 
@@ -578,7 +587,9 @@ rclcpp_action::GoalResponse TreeExecutorNode::handle_start_goal_(
   try {
     tree_constructor_ = makeTreeConstructor(goal_ptr->build_request, goal_ptr->root_tree, node_overrides);
   } catch (const std::exception & e) {
-    RCLCPP_WARN(logger_, "Goal %s was REJECTED: %s", rclcpp_action::to_string(uuid).c_str(), e.what());
+    RCLCPP_WARN(
+      logger_, "Goal %s was REJECTED: Error during makeTreeConstructor(): %s", rclcpp_action::to_string(uuid).c_str(),
+      e.what());
     return rclcpp_action::GoalResponse::REJECT;
   }
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;

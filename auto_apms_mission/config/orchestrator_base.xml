@@ -2,17 +2,19 @@
 <root BTCPP_format="4"
       main_tree_to_execute="MissionOrchestrator">
   <BehaviorTree ID="BringUp">
-    <AlwaysSuccess/>
+    <SequenceWithMemory>
+      <AlwaysSuccess/>
+    </SequenceWithMemory>
   </BehaviorTree>
 
   <BehaviorTree ID="MissionOrchestrator">
     <SequenceWithMemory>
-      <Script name="Init"
-              code="mission_exit := false"/>
-      <SubTree ID="BringUp"/>
+      <SubTree ID="BringUp"
+               _onSuccess="mission_exit := false"/>
       <Parallel failure_count="1"
                 success_count="-1">
         <SubTree ID="RunMission"
+                 name="NominalMission"
                  _post="mission_exit = true"/>
         <SubTree ID="MonitorContingencies"
                  _while="mission_exit != true"/>
@@ -36,7 +38,9 @@
   </BehaviorTree>
 
   <BehaviorTree ID="ShutDown">
-    <AlwaysSuccess/>
+    <SequenceWithMemory>
+      <AlwaysSuccess/>
+    </SequenceWithMemory>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->

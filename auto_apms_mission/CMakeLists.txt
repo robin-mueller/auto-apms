@@ -8,9 +8,15 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(auto_apms_util REQUIRED)
+find_package(auto_apms_interfaces REQUIRED)
 find_package(auto_apms_behavior_tree REQUIRED)
 
 set(_AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG "auto_apms_mission__config")
+
+set(_AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME "orchestrator")
+set(_AUTO_APMS_MISSION__MISSION_EXECUTOR_NAME "mission")
+set(_AUTO_APMS_MISSION__EVENT_MONITOR_EXECUTOR_NAME "event_monitor")
+set(_AUTO_APMS_MISSION__EVENT_HANDLER_EXECUTOR_NAME "event_handler")
 
 #
 # ------------ Library --------------
@@ -18,6 +24,7 @@ set(_AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG "auto_apms_mission__c
 
 add_library(auto_apms_mission SHARED
     "src/mission_configuration.cpp"
+    "src/mission_builder_base.cpp"
 )
 target_include_directories(auto_apms_mission PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -26,35 +33,45 @@ target_include_directories(auto_apms_mission PUBLIC
 target_compile_definitions(auto_apms_mission PRIVATE
     _AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG="${_AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG}"
 )
+target_compile_definitions(auto_apms_mission PUBLIC
+    _AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME="${_AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME}"
+    _AUTO_APMS_MISSION__MISSION_EXECUTOR_NAME="${_AUTO_APMS_MISSION__MISSION_EXECUTOR_NAME}"
+    _AUTO_APMS_MISSION__EVENT_MONITOR_EXECUTOR_NAME="${_AUTO_APMS_MISSION__EVENT_MONITOR_EXECUTOR_NAME}"
+    _AUTO_APMS_MISSION__EVENT_HANDLER_EXECUTOR_NAME="${_AUTO_APMS_MISSION__EVENT_HANDLER_EXECUTOR_NAME}"
+)
 ament_target_dependencies(auto_apms_mission
     auto_apms_util
+    auto_apms_interfaces
+    auto_apms_behavior_tree
 )
 
 #
 # ------------ Generic mission orchestrator --------------
 #
 
-add_library(mission_orchestrator SHARED
-    "src/mission_orchestrator.cpp"
-    "src/mission_build_handler.cpp"
+add_library(mission_components SHARED
+    "src/executor_components.cpp"
+    "src/mission_builder.cpp"
 )
-target_link_libraries(mission_orchestrator
+target_link_libraries(mission_components
     auto_apms_mission
 )
-ament_target_dependencies(mission_orchestrator
+ament_target_dependencies(mission_components
     rclcpp_components
-    auto_apms_behavior_tree
 )
-rclcpp_components_register_nodes(mission_orchestrator
-    "auto_apms_mission::MissionOrchestrator"
+rclcpp_components_register_nodes(mission_components
+    "auto_apms_mission::OrchestratorExecutor"
+    "auto_apms_mission::MissionExecutor"
+    "auto_apms_mission::EventMonitorExecutor"
+    "auto_apms_mission::EventHandlerExecutor"
 )
 auto_apms_behavior_tree_declare_trees(
     "config/orchestrator_base.xml"
     NODE_MANIFEST
     "auto_apms_behavior_tree::builtin_nodes"
 )
-auto_apms_behavior_tree_declare_build_handlers(mission_orchestrator
-    "auto_apms_mission::MissionBuildHandler"
+auto_apms_behavior_tree_declare_build_handlers(mission_components
+    "auto_apms_mission::MissionBuilder"
 )
 
 #
@@ -78,7 +95,7 @@ ament_export_dependencies(
 ###### Plugins ######
 install(
     TARGETS
-    mission_orchestrator
+    mission_components
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin

@@ -78,12 +78,13 @@ public:
 
   std::string getTopicName() const;
 
-  const rclcpp::Logger logger_;
+protected:
+  const Context context_;
 
 private:
   bool createPublisher(const std::string & topic_name);
 
-  const Context context_;
+  const rclcpp::Logger logger_;
   const rclcpp::QoS qos_;
   std::string topic_name_;
   bool topic_name_should_be_checked_ = false;
@@ -97,7 +98,7 @@ private:
 template <class MessageT>
 inline RosPublisherNode<MessageT>::RosPublisherNode(
   const std::string & instance_name, const Config & config, const Context & context, const rclcpp::QoS & qos)
-: BT::ConditionNode(instance_name, config), logger_(context.getLogger()), context_(context), qos_{qos}
+: BT::ConditionNode(instance_name, config), context_(context), logger_(context.getLogger()), qos_{qos}
 {
   // check port remapping
   auto portIt = config.input_ports.find("topic_name");
@@ -113,8 +114,8 @@ inline RosPublisherNode<MessageT>::RosPublisherNode(
     }
   }
   // no port value or it is empty. Use the default port value
-  if (!publisher_ && !context.default_port_name.empty()) {
-    createPublisher(context.default_port_name);
+  if (!publisher_ && !context_.registration_params_.port.empty()) {
+    createPublisher(context_.registration_params_.port);
   }
 }
 
@@ -126,7 +127,7 @@ inline bool RosPublisherNode<MessageT>::createPublisher(const std::string & topi
       context_.getFullName(this) + " - Argument topic_name is empty when trying to create a client.");
   }
 
-  auto node = context_.nh.lock();
+  auto node = context_.nh_.lock();
   if (!node) {
     throw exceptions::RosNodeError(
       context_.getFullName(this) +

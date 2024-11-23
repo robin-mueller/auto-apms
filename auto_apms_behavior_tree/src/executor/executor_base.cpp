@@ -23,15 +23,16 @@ namespace auto_apms_behavior_tree
 
 TreeExecutorBase::TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr)
 : node_ptr_(node_ptr),
+  logger_(node_ptr_->get_logger()),
   global_blackboard_ptr_(TreeBlackboard::create()),
   control_command_(ControlCommand::RUN),
   execution_stopped_(true)
 {
-  auto_apms_util::exposeToDebugLogging(node_ptr_->get_logger());
+  auto_apms_util::exposeToDebugLogging(logger_);
 }
 
 std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExecution(
-  TreeConstructor make_tree, double tick_rate_sec, unsigned int groot2_port)
+  TreeConstructor make_tree, double tick_rate_sec, int groot2_port)
 {
   if (isBusy()) {
     throw exceptions::TreeExecutorError(
@@ -45,15 +46,20 @@ std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExe
       "Cannot start execution because creating the tree failed: " + std::string(e.what()));
   }
 
+  // Groot2 publisher
   groot2_publisher_ptr_.reset();
-  try {
-    groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, groot2_port);
-  } catch (const std::exception & e) {
-    throw exceptions::TreeExecutorError(
-      "Failed to initialize Groot2 publisher with port " + std::to_string(groot2_port) + ": " + e.what());
+  if (groot2_port != -1) {
+    try {
+      groot2_publisher_ptr_ = std::make_unique<BT::Groot2Publisher>(*tree_ptr_, groot2_port);
+    } catch (const std::exception & e) {
+      throw exceptions::TreeExecutorError(
+        "Failed to initialize Groot2 publisher with port " + std::to_string(groot2_port) + ": " + e.what());
+    }
   }
+
+  // Tree state observer
   state_observer_ptr_.reset();
-  state_observer_ptr_ = std::make_unique<TreeStateObserver>(*tree_ptr_, node_ptr_->get_logger());
+  state_observer_ptr_ = std::make_unique<TreeStateObserver>(*tree_ptr_, logger_);
   state_observer_ptr_->enableTransitionToIdle(false);
 
   /* Start execution timer */
@@ -68,12 +74,11 @@ std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExe
   auto promise_ptr = std::make_shared<std::promise<ExecutionResult>>();
   TerminationCallback termination_callback = [this, promise_ptr](ExecutionResult result, const std::string & msg) {
     RCLCPP_INFO(
-      node_ptr_->get_logger(), "Terminating tree '%s' from state %s.", getTreeName().c_str(),
-      toStr(getExecutionState()).c_str());
+      logger_, "Terminating tree '%s' from state %s.", getTreeName().c_str(), toStr(getExecutionState()).c_str());
     if (result == ExecutionResult::ERROR) {
-      RCLCPP_ERROR(node_ptr_->get_logger(), "Termination reason: %s.", msg.c_str());
+      RCLCPP_ERROR(logger_, "Termination reason: %s.", msg.c_str());
     } else {
-      RCLCPP_INFO(node_ptr_->get_logger(), "Termination reason: %s.", msg.c_str());
+      RCLCPP_INFO(logger_, "Termination reason: %s.", msg.c_str());
     }
     onTermination(result);  // is evaluated before the timer is cancelled, which means the execution state has not
                             // changed yet during the callback and can be evaluated to inspect the terminal state.
@@ -93,7 +98,7 @@ void TreeExecutorBase::execution_routine_(TerminationCallback termination_callba
   const ExecutionState this_execution_state = getExecutionState();
   if (prev_execution_state_ != this_execution_state) {
     RCLCPP_DEBUG(
-      node_ptr_->get_logger(), "Executor for tree '%s' changed state from '%s' to '%s'.", getTreeName().c_str(),
+      logger_, "Executor for tree '%s' changed state from '%s' to '%s'.", getTreeName().c_str(),
       toStr(prev_execution_state_).c_str(), toStr(this_execution_state).c_str());
     prev_execution_state_ = this_execution_state;
   }

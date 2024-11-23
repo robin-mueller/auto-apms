@@ -28,20 +28,16 @@ int main(int argc, char ** argv)
 {
   if (argc < 2) {
     std::cerr << "new_tree: Missing inputs! The program requires: \n\t1.) The path of the new behavior tree xml "
-                 "file.\n\t2.) Optional: Node plugin manifest files used to create the node model. Any arguments after "
-                 "the first one are interpreted as node plugin manifest paths.\n";
-    std::cerr << "Usage: new_tree <tree_file_path> [<node_manifest_file_path> ...].\n";
+                 "file.\n\t2.) Optional: Node plugin manifest identities of installed resources used to create the "
+                 "node model. Any arguments after the first one are interpreted as resource identities.\n";
+    std::cerr << "Usage: new_tree <tree_file_path> [<node_manifest_identity> ...].\n";
     return EXIT_FAILURE;
   }
 
   const std::filesystem::path tree_file_path = std::filesystem::absolute(argv[1]);
-  std::vector<std::string> node_manifest_file_paths;
+  core::NodeManifest node_manifest;
   for (int i = 2; i < argc; ++i) {
-    const std::filesystem::path path = std::filesystem::absolute(argv[i]);
-    if (!std::filesystem::exists(path)) {
-      throw std::runtime_error("Node plugin manifest path '" + path.string() + "' doesn't exist.");
-    }
-    node_manifest_file_paths.push_back(path);
+    node_manifest.merge(core::NodeManifest::fromResourceIdentity(argv[i]));
   }
 
   // Make sure path is not empty
@@ -74,26 +70,17 @@ int main(int argc, char ** argv)
   rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("_new_tree_temp_node");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
-  // Prepare document
+  // Prepare template document
   core::TreeBuilder builder(node_ptr);
-  core::NodeManifest node_manifest = core::NodeManifest::fromFiles(node_manifest_file_paths);
   builder.loadNodePlugins(node_manifest);
-  core::TreeBuilder::ElementPtr tree_ele = builder.insertTree(NEW_TREE_NAME);
-  builder.setRootTreeName(NEW_TREE_NAME);
-  builder.insertNode(tree_ele, "AlwaysSuccess");
+  core::TreeBuilder::TreeElement tree = builder.newTree(NEW_TREE_NAME).makeRoot();
 
-  // Get node model
+  // Insert template children
+  tree.insertNode("AlwaysSuccess");
+
+  // Add node model
   if (!node_manifest.getInternalMap().empty()) {
-    core::TreeBuilder::DocumentSharedPtr builder_doc_ptr = builder.getDocumentPtr();
-    core::TreeBuilder::DocumentSharedPtr model_doc_ptr = builder.getNodeModel(false);  // Structure is already verified
-    core::TreeBuilder::ElementPtr model_child =
-      model_doc_ptr->RootElement()->FirstChildElement(core::TreeBuilder::TREE_NODE_MODEL_ELEMENT_NAME);
-
-    // Clone the memory of the node model element to the builder document
-    tinyxml2::XMLNode * copied_child = model_child->DeepClone(builder_doc_ptr.get());
-
-    // Append the copied child to the root of the builder document
-    builder_doc_ptr->RootElement()->InsertEndChild(copied_child);
+    builder.addNodeModelToDocument(false);
   }
 
   // Write tree

@@ -16,7 +16,7 @@
                action_name=""/>
       <GoTo lat="{lat}"
             lon="{new_lon}"
-            alt="{alt}"
+            alt="{new_alt}"
             action_name=""/>
       <Land action_name=""/>
       <Disarm action_name=""/>

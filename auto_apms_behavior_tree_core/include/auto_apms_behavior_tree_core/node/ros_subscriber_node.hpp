@@ -115,7 +115,8 @@ public:
 
   std::string getTopicName() const;
 
-  const rclcpp::Logger logger_;
+protected:
+  const Context context_;
 
 private:
   static std::mutex & registryMutex();
@@ -125,7 +126,7 @@ private:
 
   bool createSubscriber(const std::string & topic_name);
 
-  const Context context_;
+  const rclcpp::Logger logger_;
   const rclcpp::QoS qos_;
   std::string topic_name_;
   bool topic_name_should_be_checked_ = false;
@@ -161,7 +162,7 @@ inline RosSubscriberNode<MessageT>::SubscriberInstance::SubscriberInstance(
 template <class MessageT>
 inline RosSubscriberNode<MessageT>::RosSubscriberNode(
   const std::string & instance_name, const Config & config, const Context & context, const rclcpp::QoS & qos)
-: BT::ConditionNode{instance_name, config}, logger_(context.getLogger()), context_{context}, qos_{qos}
+: BT::ConditionNode{instance_name, config}, context_{context}, logger_(context.getLogger()), qos_{qos}
 {
   // check port remapping
   auto portIt = config.input_ports.find("topic_name");
@@ -177,8 +178,8 @@ inline RosSubscriberNode<MessageT>::RosSubscriberNode(
     }
   }
   // no port value or it is empty. Use the default port value
-  if (!sub_instance_ && !context.default_port_name.empty()) {
-    createSubscriber(context.default_port_name);
+  if (!sub_instance_ && !context_.registration_params_.port.empty()) {
+    createSubscriber(context_.registration_params_.port);
   }
 }
 
@@ -196,7 +197,7 @@ inline bool RosSubscriberNode<MessageT>::createSubscriber(const std::string & to
   // find SubscriberInstance in the registry
   std::unique_lock lk(registryMutex());
 
-  auto node = context_.nh.lock();
+  auto node = context_.nh_.lock();
   if (!node) {
     throw exceptions::RosNodeError(
       context_.getFullName(this) +

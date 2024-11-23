@@ -14,14 +14,13 @@
 
 #pragma once
 
-#include <tinyxml2.h>
-
 #include <memory>
 
 #include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
-#include "auto_apms_behavior_tree_core/resource/node_registration_loader.hpp"
-#include "auto_apms_behavior_tree_core/resource/tree_resource.hpp"
+#include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
+#include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
+#include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 
@@ -43,26 +42,53 @@ namespace auto_apms_behavior_tree::core
  */
 class TreeBuilder
 {
+  friend class TreeDocument;
+
 public:
-  static inline const char ROOT_ELEMENT_NAME[] = "root";
-  static inline const char ROOT_TREE_ATTRIBUTE_NAME[] = "main_tree_to_execute";
-  static inline const char TREE_ELEMENT_NAME[] = "BehaviorTree";
-  static inline const char SUBTREE_ELEMENT_NAME[] = "SubTree";
-  static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
-  static inline const char TREE_NODE_MODEL_ELEMENT_NAME[] = "TreeNodesModel";
-  static inline const char NODE_INSTANCE_NAME_ATTRIBUTE_NAME[] = "name";
+  using TreeElement = TreeDocument::TreeElement;
+  using NodeElement = TreeDocument::NodeElement;
 
   RCLCPP_SMART_PTR_DEFINITIONS_NOT_COPYABLE(TreeBuilder)
-
-  using Document = tinyxml2::XMLDocument;
-  using DocumentSharedPtr = std::shared_ptr<tinyxml2::XMLDocument>;
-  using ElementPtr = tinyxml2::XMLElement *;
-  using ConstElementPtr = const tinyxml2::XMLElement *;
-  using PortValues = std::map<std::string, std::string>;
 
   TreeBuilder(
     rclcpp::Node::SharedPtr node_ptr,
     NodeRegistrationLoader::SharedPtr tree_node_loader_ptr = NodeRegistrationLoader::make_shared());
+
+  /* TreeDocument methods */
+
+  TreeBuilder & mergeTreeDocument(const TreeDocument & other, bool adopt_root_tree = false);
+
+  TreeElement newTree(const std::string & tree_name);
+
+  TreeElement newTreeFromDocument(const TreeDocument & other, const std::string & tree_name = "");
+
+  TreeElement newTreeFromString(const std::string & tree_str, const std::string & tree_name = "");
+
+  TreeElement newTreeFromFile(const std::string & path, const std::string & tree_name = "");
+
+  TreeElement newTreeFromResource(const TreeResource & resource, const std::string & tree_name = "");
+
+  bool hasTree(const std::string & tree_name);
+
+  TreeElement getTree(const std::string & tree_name);
+
+  TreeBuilder & setRootTreeName(const std::string & tree_name);
+
+  TreeBuilder & setRootTreeName(const TreeElement & tree);
+
+  bool hasRootTree();
+
+  TreeElement getRootTree();
+
+  TreeBuilder & removeTree(const std::string & tree_name);
+
+  TreeBuilder & removeTree(const TreeElement & tree);
+
+  std::vector<std::string> getAllTreeNames() const;
+
+  std::string writeTreeDocumentToString() const;
+
+  /* Factory related member funtions */
 
   TreeBuilder & setScriptingEnum(const std::string & enum_name, int val);
 
@@ -79,91 +105,32 @@ public:
    */
   TreeBuilder & loadNodePlugins(const NodeManifest & node_manifest, bool override = false);
 
-  std::unordered_map<std::string, BT::NodeType> getRegisteredNodesTypeMap(bool include_native = false) const;
+  std::unordered_map<std::string, BT::NodeType> getRegisteredNodeTypeMap(bool include_native = false) const;
 
-  std::vector<std::string> getRegisteredNodes(bool include_native = false) const;
+  std::set<std::string> getAvailableNodeNames(bool include_native = false) const;
 
-  TreeBuilder & mergeTreesFromDocument(const Document & doc);
+  TreeBuilder & addNodeModelToDocument(bool include_native = false);
 
-  TreeBuilder & mergeTreesFromString(const std::string & tree_str);
+  // Verify the structure of this tree document and that all nodes are registered with the factory
+  bool verify() const;
 
-  TreeBuilder & mergeTreesFromFile(const std::string & tree_file_path);
+  /* Create a tree instance */
 
-  TreeBuilder & mergeTreesFromResource(const TreeResource & resource);
+  Tree instantiate(const std::string & root_tree_name, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
-  ElementPtr insertTree(const std::string & tree_name);
-
-  ElementPtr insertNode(
-    ElementPtr parent_element, const std::string & node_name, const NodeRegistrationParams & registration_params = {});
-
-  ElementPtr insertSubTree(ElementPtr parent_element, const std::string & tree_name);
-
-  /**
-   * @brief Adds node port values to the node specified by @p node_element.
-   *
-   * Will use each port's default value if one is implemented and the corresponding key doesn't exist in @p port_values.
-   * If the argument is omitted, only default values will be used.
-   *
-   * If @p verify is `true`, the method additionally verifies that @p port_values complies with the node's port model
-   * and throws an exception if there are any values for unkown port names. If set to `false`, no error is raised in
-   * such a case and values for unkown port names are silently discarded thus won't appear in the element's list of port
-   * attributes.
-   *
-   * @param node_element Pointer to the node element.
-   * @param port_values Port values to be used to fill the corresponding attributes of the node element.
-   * @param verify Flag wether to verify that @p port_values complies with the node's port model.
-   * @return Reference to the modified TreeBuilder object.
-   * @throws exceptions::TreeBuildError if @p verify is set to `true` and @p port_values contains keys that are not
-   * associated with the node.
-   */
-  TreeBuilder & addNodePortValues(ElementPtr node_element, PortValues port_values = {}, bool verify = true);
-
-  bool isExistingTreeName(const std::string & tree_name);
-
-  ElementPtr findTree(const std::string & tree_name);
-
-  ElementPtr findFirstNode(const ElementPtr parent_element, const std::string & name);
-
-  static std::vector<std::string> getAllTreeNames(const Document & doc);
-
-  std::vector<std::string> getAllTreeNames() const;
-
-  bool hasRootTreeName() const;
-
-  std::string getRootTreeName() const;
-
-  TreeBuilder & setRootTreeName(const std::string & root_tree_name);
-
-  static std::string writeTreeDocumentToString(const Document & doc);
-
-  std::string writeTreeDocumentToString() const;
-
-  // Verify the structure of this tree document and that all mentioned nodes are registered with the factory
-  bool verifyTree() const;
-
-  [[nodiscard]] DocumentSharedPtr getNodeModel(bool include_native = false) const;
-
-  DocumentSharedPtr getDocumentPtr() const;
-
-  Tree instantiate(const std::string root_tree_name, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
+  Tree instantiate(const TreeElement & tree, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
   Tree instantiate(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
 private:
-  static std::string getNodeRegistrationName(ConstElementPtr node_element);
+  void getNodeModel(tinyxml2::XMLDocument & doc, bool include_native = false) const;
 
-  static std::string getNodeInstanceName(ConstElementPtr node_element);
-
-  static std::string getFullyQualifiedNodeName(ConstElementPtr node_element);
-
-  ElementPtr findFirstNodeImpl(ElementPtr ele, const std::string & name);
-
-  DocumentSharedPtr doc_ptr_;
+  TreeDocument doc_;
   BT::BehaviorTreeFactory factory_;
-  rclcpp::Node::WeakPtr node_wptr_;
+  rclcpp::Node::WeakPtr ros_node_wptr_;
   NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
   const std::map<std::string, std::string> all_node_classes_package_map_;
-  const std::unordered_map<std::string, BT::TreeNodeManifest> internal_node_manifest_;
+  const std::set<std::string> native_node_names_;
   std::map<std::string, std::string> registered_node_class_names_map_;
 };
 

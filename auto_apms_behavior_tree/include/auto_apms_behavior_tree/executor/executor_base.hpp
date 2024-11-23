@@ -65,12 +65,11 @@ public:
   TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr);
 
   std::shared_future<ExecutionResult> startExecution(
-    TreeConstructor make_tree, double tick_rate_sec = 0.25, unsigned int groot2_port = 5555);
+    TreeConstructor make_tree, double tick_rate_sec = 0.25, int groot2_port = -1);
 
   template <typename TimeRepT = int64_t, typename TimeT = std::milli>
   std::shared_future<ExecutionResult> startExecution(
-    TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate,
-    unsigned int groot2_port = 5555);
+    TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, int groot2_port = -1);
 
 private:
   void execution_routine_(TerminationCallback termination_callback);
@@ -115,6 +114,7 @@ public:
 
 protected:
   rclcpp::Node::SharedPtr node_ptr_;
+  const rclcpp::Logger logger_;
 
 private:
   TreeBlackboardSharedPtr global_blackboard_ptr_;
@@ -142,7 +142,7 @@ std::string toStr(TreeExecutorBase::ExecutionResult result);
 
 template <typename TimeRepT, typename TimeT>
 inline std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExecution(
-  TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, unsigned int groot2_port)
+  TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, int groot2_port)
 {
   return startExecution(
     make_tree, std::chrono::duration_cast<std::chrono::duration<double>>(tick_rate).count(), groot2_port);

@@ -63,7 +63,7 @@ public:
    * @brief Create a node plugin manifest from multiple files. They are loaded in the given order.
    * @param file_paths Paths to the manifest files.
    */
-  static NodeManifest fromFiles(const std::vector<std::string> & file_paths);
+  static NodeManifest fromFiles(const std::vector<std::string> & paths);
 
   static NodeManifest fromResourceIdentity(const std::string & identity);
 

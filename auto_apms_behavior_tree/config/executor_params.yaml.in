@@ -45,10 +45,10 @@ auto_apms_behavior_tree::executor_params:
 
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT}:
     type: int
-    default_value: 5555
-    description: Server port for the Groot2 publisher.
+    default_value: -1
+    description: Server port for the Groot2 publisher. -1 means no Groot2 publisher will be created.
     validation:
-      gt_eq<>: [0]
+      gt_eq<>: [-1]
 
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER}:
     type: bool

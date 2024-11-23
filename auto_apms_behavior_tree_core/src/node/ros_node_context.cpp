@@ -16,17 +16,14 @@
 
 namespace auto_apms_behavior_tree::core
 {
-RosNodeContext::RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams & tree_node_params)
-: nh(node_ptr),
-  default_port_name(tree_node_params.port),
-  wait_for_server_timeout(tree_node_params.wait_timeout),
-  request_timeout(tree_node_params.request_timeout)
+RosNodeContext::RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams & registration_params)
+: nh_(node_ptr), registration_params_(registration_params)
 {
 }
 
 rclcpp::Logger RosNodeContext::getLogger() const
 {
-  if (const auto node = nh.lock()) {
+  if (const auto node = nh_.lock()) {
     return node->get_logger();
   }
   return rclcpp::get_logger("RosTreeNode");
@@ -34,19 +31,21 @@ rclcpp::Logger RosNodeContext::getLogger() const
 
 rclcpp::Time RosNodeContext::getCurrentTime() const
 {
-  if (const auto node = nh.lock()) {
+  if (const auto node = nh_.lock()) {
     return node->now();
   }
   return rclcpp::Clock(RCL_ROS_TIME).now();
 }
 
-std::string RosNodeContext::getFullName(const BT::TreeNode * node)
+std::string RosNodeContext::getFullName(const BT::TreeNode * node) const
 {
   // NOTE: registrationName() is empty during construction as this member is frist set after the factory constructed the
   // object
-  if (node->registrationName().empty()) return node->name();
-  if (node->name() == node->registrationName()) return node->name();
-  return node->name() + " (Type: " + node->registrationName() + ")";
+  const std::string instance_name = node->name();
+  const std::string registration_name = node->registrationName();
+  if (registration_name.empty() || instance_name == registration_name)
+    return instance_name + " (" + registration_params_.class_name + ")";
+  return instance_name + " (" + registration_name + " : " + registration_params_.class_name + ")";
 }
 
 }  // namespace auto_apms_behavior_tree::core

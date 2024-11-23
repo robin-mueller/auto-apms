@@ -147,7 +147,8 @@ public:
 
   std::string getServiceName() const;
 
-  const rclcpp::Logger logger_;
+protected:
+  const Context context_;
 
 private:
   static std::mutex & getMutex();
@@ -158,7 +159,7 @@ private:
   static ClientsRegistry & getRegistry();
 
 private:
-  const Context context_;
+  const rclcpp::Logger logger_;
   std::string service_name_;
   bool service_name_should_be_checked_ = false;
   std::shared_ptr<ServiceClientInstance> srv_instance_;
@@ -186,7 +187,7 @@ inline RosServiceNode<ServiceT>::ServiceClientInstance::ServiceClientInstance(
 template <class ServiceT>
 inline RosServiceNode<ServiceT>::RosServiceNode(
   const std::string & instance_name, const Config & config, const Context & context)
-: BT::ActionNodeBase(instance_name, config), logger_(context.getLogger()), context_(context)
+: BT::ActionNodeBase(instance_name, config), context_(context), logger_(context.getLogger())
 {
   // check port remapping
   auto portIt = config.input_ports.find(INPUT_KEY_SERVICE_PORT);
@@ -202,8 +203,8 @@ inline RosServiceNode<ServiceT>::RosServiceNode(
     }
   }
   // no port value or it is empty. Use the default port value
-  if (!srv_instance_ && !context.default_port_name.empty()) {
-    createClient(context.default_port_name);
+  if (!srv_instance_ && !context_.registration_params_.port.empty()) {
+    createClient(context_.registration_params_.port);
   }
 }
 
@@ -216,7 +217,7 @@ inline bool RosServiceNode<ServiceT>::createClient(const std::string & service_n
   }
 
   std::unique_lock lk(getMutex());
-  auto node = context_.nh.lock();
+  auto node = context_.nh_.lock();
   if (!node) {
     throw exceptions::RosNodeError(
       context_.getFullName(this) +
@@ -237,11 +238,15 @@ inline bool RosServiceNode<ServiceT>::createClient(const std::string & service_n
   }
   service_name_ = service_name;
 
-  bool found = srv_instance_->service_client->wait_for_service(context_.wait_for_server_timeout);
+  bool found = srv_instance_->service_client->wait_for_service(context_.registration_params_.wait_timeout);
   if (!found) {
-    RCLCPP_WARN(
-      logger_, "%s - Service with name '%s' is not reachable.", context_.getFullName(this).c_str(),
-      service_name_.c_str());
+    std::string msg = context_.getFullName(this) + " - Service with name '" + service_name_ + "' is not reachable.";
+    if (context_.registration_params_.allow_unreachable) {
+      RCLCPP_WARN_STREAM(logger_, msg);
+    } else {
+      RCLCPP_ERROR_STREAM(logger_, msg);
+      throw exceptions::RosNodeError(msg);
+    }
   }
   return found;
 }
@@ -314,7 +319,7 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
       auto ret = srv_instance_->callback_executor.spin_until_future_complete(future_response_, std::chrono::seconds(0));
 
       if (ret != rclcpp::FutureReturnCode::SUCCESS) {
-        if ((context_.getCurrentTime() - time_request_sent_) > context_.request_timeout) {
+        if ((context_.getCurrentTime() - time_request_sent_) > context_.registration_params_.request_timeout) {
           return check_status(onFailure(SERVICE_TIMEOUT));
         } else {
           return BT::NodeStatus::RUNNING;

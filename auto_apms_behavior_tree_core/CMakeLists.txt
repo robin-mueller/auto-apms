@@ -22,12 +22,15 @@ if(AUTO_APMS_BEHAVIOR_TREE_CORE_DEBUG_LOGGING)
 endif()
 
 # Core resources
+set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST "auto_apms_behavior_tree_core__node_manifest")
+set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE "auto_apms_behavior_tree_core__tree")
+
+# Node manifest registration parameters
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_CLASS "class_name")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT "port")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT "wait_timeout")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT "request_timeout")
-set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST "auto_apms_behavior_tree_core__node_manifest")
-set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE "auto_apms_behavior_tree_core__tree")
+set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE "allow_unreachable")
 
 #
 # ------------ Library --------------
@@ -37,8 +40,9 @@ add_library(auto_apms_behavior_tree_core SHARED
     "src/node/node_registration_params.cpp"
     "src/node/node_manifest.cpp"
     "src/node/ros_node_context.cpp"
-    "src/resource/tree_resource.cpp"
-    "src/resource/node_registration_loader.cpp"
+    "src/node/node_registration_loader.cpp"
+    "src/tree/tree_resource.cpp"
+    "src/tree/tree_document.cpp"
     "src/builder.cpp"
 )
 target_include_directories(auto_apms_behavior_tree_core PUBLIC
@@ -52,6 +56,7 @@ target_compile_definitions(auto_apms_behavior_tree_core PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT}"
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT}"
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT}"
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE}"
 )
 ament_target_dependencies(auto_apms_behavior_tree_core
     rclcpp

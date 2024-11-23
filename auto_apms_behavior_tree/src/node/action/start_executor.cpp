@@ -64,7 +64,7 @@ public:
   BT::NodeStatus onResultReceived(const WrappedResult & wr) override final
   {
     RCLCPP_DEBUG(
-      logger_, "%s - Received response %i from server %s: %s", Context::getFullName(this).c_str(),
+      context_.getLogger(), "%s - Received response %i from server %s: %s", context_.getFullName(this).c_str(),
       wr.result->tree_result, getActionName().c_str(), wr.result->message.c_str());
     if (getInput<bool>(INPUT_KEY_ATTACH).value()) {
       if (wr.result->tree_result == ActionType::Result::TREE_RESULT_SUCCESS) return BT::NodeStatus::SUCCESS;

@@ -52,7 +52,7 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  core::TreeBuilder::PortValues port_values;
+  core::TreeDocument::NodeElement::PortValues port_values;
   if (argc > 2) {
     try {
       port_values = YAML::Load(argv[2]).as<std::map<std::string, std::string>>();
@@ -65,15 +65,15 @@ int main(int argc, char ** argv)
   const std::string tree_name = "RunTreeNodeCPP";
   core::TreeBuilder builder(node_ptr);
   try {
-    auto tree_element = builder.insertTree(tree_name);
-    auto node_element = builder.insertNode(tree_element, registration_params.class_name.c_str(), registration_params);
-    builder.addNodePortValues(node_element, port_values, true);
+    builder.newTree(tree_name)
+      .loadAndInsertNode(registration_params.class_name.c_str(), registration_params)
+      .setPorts(port_values, true);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR inserting tree node: %s", e.what());
     return EXIT_FAILURE;
   }
 
-  RCLCPP_INFO(
+  RCLCPP_DEBUG(
     node_ptr->get_logger(), "Creating a tree with a single node:\n%s", builder.writeTreeDocumentToString().c_str());
 
   TreeExecutorBase executor(node_ptr);

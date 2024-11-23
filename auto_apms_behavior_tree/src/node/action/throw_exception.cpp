@@ -32,11 +32,10 @@ public:
   BT::NodeStatus tick() final
   {
     auto input = getInput<std::string>(INPUT_KEY_MSG);
-    auto prefix = core::RosNodeContext::getFullName(this);
-    if (input.has_value()) {
-      throw exceptions::RosNodeError(prefix + " - " + input.value());
-    }
-    throw exceptions::RosNodeError(prefix + " - Tree ran into an exception");
+    auto prefix = name() == registrationName() ? name() : (name() + " (" + registrationName() + ")");
+    std::string msg =
+      input.has_value() ? (prefix + " - " + input.value()) : (prefix + " - Tree ran into an exception.");
+    throw exceptions::RosNodeError(msg);
   }
 };
 

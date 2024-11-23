@@ -17,7 +17,7 @@
 #include <set>
 
 #include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
-#include "auto_apms_behavior_tree_core/resource/node_registration_loader.hpp"
+#include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
 #include "auto_apms_util/exceptions.hpp"
 #include "auto_apms_util/resource.hpp"
 #include "auto_apms_util/string.hpp"

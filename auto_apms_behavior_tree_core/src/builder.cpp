@@ -25,17 +25,120 @@
 namespace auto_apms_behavior_tree::core
 {
 
+std::set<std::string> getNativeNodeNames()
+{
+  std::set<std::string> names;
+  BT::BehaviorTreeFactory default_factory;
+  for (const auto & [name, _] : default_factory.manifests()) {
+    names.insert(name);
+  }
+  return names;
+}
+
 TreeBuilder::TreeBuilder(rclcpp::Node::SharedPtr node_ptr, NodeRegistrationLoader::SharedPtr tree_node_loader_ptr)
-: doc_ptr_(std::make_shared<Document>()),
-  node_wptr_(node_ptr),
+: doc_(),
+  ros_node_wptr_(node_ptr),
   tree_node_loader_ptr_(tree_node_loader_ptr),
   all_node_classes_package_map_(auto_apms_behavior_tree::core::NodeRegistrationLoader().getClassPackageMap()),
-  internal_node_manifest_(BT::BehaviorTreeFactory().manifests())
+  native_node_names_(getNativeNodeNames())
 {
-  ElementPtr root_ele = doc_ptr_->NewElement(ROOT_ELEMENT_NAME);
-  root_ele->SetAttribute("BTCPP_format", "4");
-  doc_ptr_->InsertFirstChild(root_ele);
 }
+
+TreeBuilder & TreeBuilder::mergeTreeDocument(const TreeDocument & other, bool adopt_root_tree)
+{
+  doc_.merge(other, adopt_root_tree);
+  return *this;
+}
+
+TreeBuilder::TreeElement TreeBuilder::newTree(const std::string & tree_name)
+{
+  if (doc_.isExistingTreeName(tree_name)) {
+    throw exceptions::TreeBuildError("Cannot create new tree with name '" + tree_name + "' because it already exists.");
+  }
+  if (TreeDocument::XMLElementPtr ele = doc_.RootElement()->InsertNewChildElement(TreeDocument::TREE_ELEMENT_NAME)) {
+    ele->SetAttribute(TreeDocument::TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
+    return TreeElement(this, ele);
+  }
+  throw exceptions::TreeBuildError(
+    "Root element has no children named '" + std::string(TreeDocument::TREE_ELEMENT_NAME) + "'.");
+}
+
+TreeBuilder::TreeElement TreeBuilder::newTreeFromDocument(const TreeDocument & other, const std::string & tree_name)
+{
+  std::string name;
+  if (tree_name.empty()) {
+    name = other.getRootTreeName();
+  } else if (other.isExistingTreeName(tree_name)) {
+    name = tree_name;
+  } else {
+    throw exceptions::TreeBuildError(
+      "Cannot create new tree element because tree name '" + tree_name + "' doesn't exist.");
+  }
+  doc_.merge(other, false);
+  return getTree(name);
+}
+
+TreeBuilder::TreeElement TreeBuilder::newTreeFromString(const std::string & tree_str, const std::string & tree_name)
+{
+  TreeDocument new_doc;
+  new_doc.mergeString(tree_str, true);
+  return newTreeFromDocument(new_doc, tree_name);
+}
+
+TreeBuilder::TreeElement TreeBuilder::newTreeFromFile(const std::string & path, const std::string & tree_name)
+{
+  TreeDocument new_doc;
+  new_doc.mergeFile(path, true);
+  return newTreeFromDocument(new_doc, tree_name);
+}
+
+TreeBuilder::TreeElement TreeBuilder::newTreeFromResource(const TreeResource & resource, const std::string & tree_name)
+{
+  TreeDocument new_doc(resource);
+  TreeElement ele = newTreeFromDocument(new_doc, tree_name);
+  loadNodePlugins(resource.getNodeManifest(), false);
+  return ele;
+}
+
+bool TreeBuilder::hasTree(const std::string & tree_name) { return doc_.isExistingTreeName(tree_name); }
+
+TreeBuilder::TreeElement TreeBuilder::getTree(const std::string & tree_name)
+{
+  if (!tree_name.empty()) return TreeElement(this, doc_.getTreeElementPtr(tree_name));
+  throw exceptions::TreeBuildError("Cannot get tree with empty tree name.");
+}
+
+TreeBuilder & TreeBuilder::setRootTreeName(const std::string & tree_name)
+{
+  doc_.setRootTreeName(tree_name);
+  return *this;
+}
+
+TreeBuilder & TreeBuilder::setRootTreeName(const TreeElement & tree)
+{
+  doc_.setRootTreeName(tree.getName());
+  return *this;
+}
+
+bool TreeBuilder::hasRootTree() { return doc_.hasRootTreeName(); }
+
+TreeBuilder::TreeElement TreeBuilder::getRootTree() { return getTree(doc_.getRootTreeName()); }
+
+TreeBuilder & TreeBuilder::removeTree(const std::string & tree_name)
+{
+  doc_.removeTreeWithName(tree_name);
+  return *this;
+}
+
+TreeBuilder & TreeBuilder::removeTree(const TreeElement & tree)
+{
+  doc_.removeTreeWithName(tree.getName());
+  return *this;
+}
+
+std::vector<std::string> TreeBuilder::getAllTreeNames() const { return doc_.getAllTreeNames(); }
+
+std::string TreeBuilder::writeTreeDocumentToString() const { return doc_.str(); }
 
 TreeBuilder & TreeBuilder::setScriptingEnum(const std::string & enum_name, int val)
 {
@@ -45,9 +148,21 @@ TreeBuilder & TreeBuilder::setScriptingEnum(const std::string & enum_name, int v
 
 TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, bool override)
 {
-  rclcpp::Node::SharedPtr node_ptr = node_wptr_.lock();
+  rclcpp::Node::SharedPtr node_ptr = ros_node_wptr_.lock();
   if (!node_ptr) {
     throw exceptions::TreeBuildError("Cannot load nodes because node_ptr is nullptr.");
+  }
+
+  // Make sure that there are no node names that are reserved for native nodes
+  std::set<std::string> all_registration_names;
+  for (const auto & [name, _] : node_manifest.getInternalMap()) all_registration_names.insert(name);
+  if (const std::set<std::string> common =
+        auto_apms_util::getCommonElements(all_registration_names, native_node_names_);
+      !common.empty()) {
+    throw exceptions::TreeBuildError(
+      "Found reserved node registration names in the node manifest. The following names are not allowed, because they "
+      "refer to native behavior tree nodes: [ " +
+      rcpputils::join(std::vector<std::string>(common.begin(), common.end()), ", ") + " ].");
   }
 
   for (const auto & [node_name, params] : node_manifest.getInternalMap()) {
@@ -60,8 +175,8 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
         // instances verify that there are no ambiguous class names during initialization. Since the node is already
         // registered, we may skip loading it as there's nothing new to do.
         RCLCPP_DEBUG(
-          node_ptr->get_logger(), "loadNodePlugins() - Skipping already registered Node '%s' (Class: %s).",
-          node_name.c_str(), params.class_name.c_str());
+          node_ptr->get_logger(), "loadNodePlugins() - Skipping already registered Node '%s' (%s).", node_name.c_str(),
+          params.class_name.c_str());
         continue;
       } else if (override) {
         // If it's actually a different class and override is true, register the new node plugin instead of the current
@@ -70,8 +185,8 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
       } else {
         // If it's actually a different class and override is false, we must throw.
         throw exceptions::TreeBuildError(
-          "The name '" + node_name +
-          "' of a previously registered node (Class: " + registered_node_class_names_map_[node_name] +
+          "The name '" + node_name + "' of a previously registered node (" +
+          registered_node_class_names_map_[node_name] +
           ")' is also discovered parsing another node manifest, but with a different class name (" + params.class_name +
           "). You must explicitly set override=true to allow for overriding previously registered nodes.");
       }
@@ -81,20 +196,20 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
     if (!tree_node_loader_ptr_->isClassAvailable(params.class_name)) {
       if (all_node_classes_package_map_.find(params.class_name) == all_node_classes_package_map_.end()) {
         throw exceptions::TreeBuildError(
-          "Node '" + node_name + " (Class: " + params.class_name +
+          "Node '" + node_name + " (" + params.class_name +
           ")' cannot be loaded, because the class name is not known to the class loader. "
           "Make sure that it's spelled correctly and registered by calling "
           "auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
           "corresponding package.");
       }
       throw exceptions::TreeBuildError(
-        "Node '" + node_name + " (Class: " + params.class_name +
+        "Node '" + node_name + " (" + params.class_name +
         ")' cannot be loaded, because the corresponding resource belongs to excluded package '" +
         all_node_classes_package_map_.at(params.class_name) + "'.");
     }
 
     RCLCPP_DEBUG(
-      node_ptr->get_logger(), "loadNodePlugins() - Loading behavior tree node '%s' (Class: %s) from library %s.",
+      node_ptr->get_logger(), "loadNodePlugins() - Loading behavior tree node '%s' (%s) from library %s.",
       node_name.c_str(), params.class_name.c_str(),
       tree_node_loader_ptr_->getClassLibraryPath(params.class_name).c_str());
 
@@ -103,7 +218,7 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
       plugin_instance = tree_node_loader_ptr_->createUniqueInstance(params.class_name);
     } catch (const std::exception & e) {
       throw exceptions::TreeBuildError(
-        "Failed to create an instance of node '" + node_name + " (Class: " + params.class_name +
+        "Failed to create an instance of node '" + node_name + " (" + params.class_name +
         ")'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE "
         "macro must be called in the source file for the node class to be discoverable. "
         "Error message: " +
@@ -115,309 +230,61 @@ TreeBuilder & TreeBuilder::loadNodePlugins(const NodeManifest & node_manifest, b
       plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
     } catch (const std::exception & e) {
       throw exceptions::TreeBuildError(
-        "Failed to register node '" + node_name + " (Class: " + params.class_name + ")': " + e.what() + ".");
+        "Failed to register node '" + node_name + " (" + params.class_name + ")': " + e.what() + ".");
     }
     registered_node_class_names_map_[node_name] = params.class_name;
   }
   return *this;
 }
 
-std::unordered_map<std::string, BT::NodeType> TreeBuilder::getRegisteredNodesTypeMap(bool include_native) const
+std::unordered_map<std::string, BT::NodeType> TreeBuilder::getRegisteredNodeTypeMap(bool include_native) const
 {
   std::unordered_map<std::string, BT::NodeType> map;
   for (const auto & it : factory_.manifests()) {
-    if (!include_native && internal_node_manifest_.find(it.first) != internal_node_manifest_.end()) continue;
+    if (!include_native && native_node_names_.find(it.first) != native_node_names_.end()) continue;
     map.insert({it.first, it.second.type});
   };
   return map;
 }
 
-std::vector<std::string> TreeBuilder::getRegisteredNodes(bool include_native) const
+std::set<std::string> TreeBuilder::getAvailableNodeNames(bool include_native) const
 {
-  std::vector<std::string> vec;
-  for (const auto & it : registered_node_class_names_map_) vec.push_back(it.first);
-  if (include_native) {
-    for (const auto & it : internal_node_manifest_) vec.push_back(it.first);
-  }
-  return vec;
-}
-
-TreeBuilder & TreeBuilder::mergeTreesFromDocument(const Document & doc)
-{
-  ConstElementPtr other_root = doc.RootElement();
-  if (!other_root) throw exceptions::TreeBuildError("Cannot merge trees: other_root is nullptr.");
-  if (strcmp(other_root->Name(), ROOT_ELEMENT_NAME) != 0)
-    throw exceptions::TreeBuildError(
-      "Cannot merge trees: Root element of other document is not named '" + std::string(ROOT_ELEMENT_NAME) + "'.");
-
-  const auto this_tree_names = getAllTreeNames();
-  const auto other_tree_names = getAllTreeNames(doc);
-
-  // Verify that there are no duplicate tree names
-  const auto common_tree_names = auto_apms_util::getCommonElements(this_tree_names, other_tree_names);
-  if (!common_tree_names.empty()) {
-    throw exceptions::TreeBuildError(
-      "Cannot merge trees: The following trees are already defined: [ " + rcpputils::join(common_tree_names, ", ") +
-      " ].");
-  }
-
-  // Iterate over all the children of other root
-  ConstElementPtr child = other_root->FirstChildElement();  // Allow include tags
-  if (!child) {
-    throw exceptions::TreeBuildError("Cannot merge trees: Other document has no children.");
-  }
-  for (; child != nullptr; child = child->NextSiblingElement()) {
-    if (strcmp(child->Name(), TREE_NODE_MODEL_ELEMENT_NAME) == 0) {
-      // Disregard tree node model elements
-      continue;
-    }
-    auto copied_child = child->DeepClone(doc_ptr_.get());   // Clone the child element to this document
-    doc_ptr_->RootElement()->InsertEndChild(copied_child);  // Append the copied child to this document's root
-  }
-  return *this;
-}
-
-TreeBuilder & TreeBuilder::mergeTreesFromString(const std::string & tree_str)
-{
-  Document new_doc;
-  if (new_doc.Parse(tree_str.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-    throw exceptions::TreeBuildError("Cannot add tree: " + std::string(new_doc.ErrorStr()));
-  }
-  return mergeTreesFromDocument(new_doc);
-}
-
-TreeBuilder & TreeBuilder::mergeTreesFromFile(const std::string & tree_file_path)
-{
-  Document new_doc;
-  if (new_doc.LoadFile(tree_file_path.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-    throw exceptions::TreeBuildError("Cannot add tree: " + std::string(new_doc.ErrorStr()));
-  }
-  return mergeTreesFromDocument(new_doc);
-}
-
-TreeBuilder & TreeBuilder::mergeTreesFromResource(const TreeResource & resource)
-{
-  loadNodePlugins(NodeManifest::fromFiles(resource.node_manifest_file_paths));
-  return mergeTreesFromFile(resource.tree_file_path);
-}
-
-TreeBuilder::ElementPtr TreeBuilder::insertTree(const std::string & tree_name)
-{
-  if (isExistingTreeName(tree_name)) {
-    throw exceptions::TreeBuildError(
-      "Cannot insert a tree element with name '" + tree_name + "' because it is already existing.");
-  }
-  if (ElementPtr ele = doc_ptr_->RootElement()->InsertNewChildElement(TREE_ELEMENT_NAME)) {
-    ele->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
-    return ele;
-  }
-  throw exceptions::TreeBuildError("Root element has no children named '" + std::string(TREE_ELEMENT_NAME) + "'.");
-}
-
-TreeBuilder::ElementPtr TreeBuilder::insertNode(
-  ElementPtr parent_element, const std::string & node_name, const NodeRegistrationParams & registration_params)
-{
-  if (!auto_apms_util::contains(getRegisteredNodes(true), node_name)) {
-    if (registration_params.class_name.empty()) {
-      throw exceptions::TreeBuildError(
-        "Cannot insert unkown node '" + node_name +
-        "'. The TreeBuilder must have registered a node before you may insert it using insertNode(). To prevent this "
-        "error, make sure loadNodePlugins() is being called with a corresponding node manifest or provide the "
-        "additional argument registration_params of insertNode().");
-    }
-    // Try to load the node if it isn't registered yet and registration_params was given with a non-empty class name
-    loadNodePlugins(NodeManifest({{node_name, registration_params}}));
-  }
-  ElementPtr ele = parent_element->InsertNewChildElement(node_name.c_str());
-  addNodePortValues(ele);  // Insert default values
-  return ele;
-}
-
-TreeBuilder::ElementPtr TreeBuilder::insertSubTree(ElementPtr parent_element, const std::string & tree_name)
-{
-  if (!isExistingTreeName(tree_name)) {
-    throw exceptions::TreeBuildError("Cannot insert subtree, because tree '" + tree_name + "' doesn't exist.");
-  }
-  ElementPtr ele = parent_element->InsertNewChildElement(SUBTREE_ELEMENT_NAME);
-  ele->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
-  addNodePortValues(ele);
-  return ele;
-}
-
-TreeBuilder & TreeBuilder::addNodePortValues(ElementPtr node_element, PortValues port_values, bool verify)
-{
-  const char * node_name = node_element->Name();
-  if (strcmp(node_name, TREE_ELEMENT_NAME) == 0) {
-    throw exceptions::TreeBuildError(
-      "Cannot add default node ports to element with name '" + std::string(node_name) + "'. Must not be a <" +
-      std::string(TREE_ELEMENT_NAME) + "> element.");
-  }
-
-  // Extract the port names and default values from the model.
-  // Note: The basic structure of the document has already been verified.
-  DocumentSharedPtr model_doc_ptr = getNodeModel(true);
-  ConstElementPtr node_ele =
-    model_doc_ptr->RootElement()->FirstChildElement(TREE_NODE_MODEL_ELEMENT_NAME)->FirstChildElement();
-  while (node_ele && !node_ele->Attribute("ID", node_name)) {
-    node_ele = node_ele->NextSiblingElement();
-  }
-  if (!node_ele) {
-    throw exceptions::TreeBuildError(
-      "Cannot add default node ports to '" + std::string(node_name) +
-      "' because the node wasn't found in tree nodes model.");
-  }
-  std::vector<std::string> port_names;
-  PortValues default_values;
-  for (ConstElementPtr port_ele = node_ele->FirstChildElement(); port_ele != nullptr;
-       port_ele = port_ele->NextSiblingElement()) {
-    if (std::regex_match(port_ele->Name(), std::regex("input_port|output_port|inout_port"))) {
-      const char * port_name = port_ele->Attribute("name");
-      const char * port_default = port_ele->Attribute("default");
-      port_names.push_back(port_name);
-      if (port_name && port_default) {
-        default_values[port_name] = port_default;
-      }
-    }
-  }
-
-  // Verify port_values
-  if (verify) {
-    std::vector<std::string> unkown_keys;
-    for (const auto & [key, val] : port_values) {
-      if (!auto_apms_util::contains(port_names, key)) unkown_keys.push_back(key);
-    }
-    if (!unkown_keys.empty()) {
-      throw exceptions::TreeBuildError(
-        "Verification of argument port_values failed. The following keys are not associated with node '" +
-        std::string(node_name) + "': [" + rcpputils::join(unkown_keys, ", ") + "].");
-    }
-  }
-
-  // Populate the node's attributes
-  for (const auto & name : port_names) {
-    if (port_values.find(name) != port_values.end()) {
-      node_element->SetAttribute(name.c_str(), port_values[name].c_str());
-    } else if (default_values.find(name) != default_values.end()) {
-      node_element->SetAttribute(name.c_str(), default_values[name].c_str());
-    }
-    // If key neither exists in port_values nor in default_values, don't set port attribute (has_value() will be false)
-  }
-
-  return *this;
-}
-
-bool TreeBuilder::isExistingTreeName(const std::string & tree_name)
-{
-  if (auto_apms_util::contains(getAllTreeNames(), tree_name)) return true;
-  return false;
-}
-
-TreeBuilder::ElementPtr TreeBuilder::findTree(const std::string & tree_name)
-{
-  if (!isExistingTreeName(tree_name)) {
-    throw exceptions::TreeBuildError("Cannot get tree element with name '" + tree_name + "' because it doesn't exist.");
-  }
-  ElementPtr ele = doc_ptr_->RootElement()->FirstChildElement(TREE_ELEMENT_NAME);
-  while (ele && !ele->Attribute(TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str())) {
-    ele = ele->NextSiblingElement();
-  }
-  if (!ele) {
-    throw std::logic_error(
-      "Unexpected error trying to find a tree element with name '" + tree_name +
-      "'. Since isExistingTreeName() returned true, there MUST be a corresponding element.");
-  }
-  return ele;
-}
-
-TreeBuilder::ElementPtr TreeBuilder::findFirstNode(const ElementPtr parent_element, const std::string & name)
-{
-  if (ElementPtr ele = findFirstNodeImpl(parent_element->FirstChildElement(), name)) return ele;
-  throw exceptions::TreeBuildError(
-    "Couldn't find node '" + name + "' in parent element '" + parent_element->Name() + "'.");
-}
-
-std::vector<std::string> TreeBuilder::getAllTreeNames(const Document & doc)
-{
-  std::vector<std::string> names;
-  if (const auto root = doc.RootElement()) {
-    for (ConstElementPtr child = root->FirstChildElement(); child != nullptr; child = child->NextSiblingElement()) {
-      if (strcmp(TREE_ELEMENT_NAME, child->Name()) == 0) {
-        if (const auto name = child->Attribute(TREE_NAME_ATTRIBUTE_NAME)) {
-          names.push_back(name);
-        } else {
-          throw exceptions::TreeBuildError(
-            "Cannot get tree name, because required attribute '" + std::string(TREE_NAME_ATTRIBUTE_NAME) +
-            "' is missing.");
-        }
-      }
-    }
-  }
+  std::set<std::string> names;
+  if (include_native) names = native_node_names_;
+  for (const auto & it : registered_node_class_names_map_) names.insert(it.first);
   return names;
 }
 
-std::vector<std::string> TreeBuilder::getAllTreeNames() const { return getAllTreeNames(*doc_ptr_); }
-
-bool TreeBuilder::hasRootTreeName() const
+TreeBuilder & TreeBuilder::addNodeModelToDocument(bool include_native)
 {
-  if (doc_ptr_->RootElement()->Attribute(ROOT_TREE_ATTRIBUTE_NAME)) return true;
-  return false;
-}
+  tinyxml2::XMLDocument model_doc;
+  getNodeModel(model_doc, include_native);  // Structure is already verified
+  const tinyxml2::XMLElement * model_child =
+    model_doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
 
-std::string TreeBuilder::getRootTreeName() const
-{
-  if (const auto root_tree_name = doc_ptr_->RootElement()->Attribute(ROOT_TREE_ATTRIBUTE_NAME)) return root_tree_name;
-  throw exceptions::TreeBuildError(
-    "Cannot get root tree name because the document's root element has no attribute '" +
-    std::string(ROOT_TREE_ATTRIBUTE_NAME) + "'.");
-}
+  // Clone the memory of the node model element to the builder document
+  tinyxml2::XMLNode * copied_child = model_child->DeepClone(&doc_);
 
-TreeBuilder & TreeBuilder::setRootTreeName(const std::string & root_tree_name)
-{
-  if (!root_tree_name.empty()) doc_ptr_->RootElement()->SetAttribute(ROOT_TREE_ATTRIBUTE_NAME, root_tree_name.c_str());
+  // Append the copied child to the root of the builder document
+  doc_.RootElement()->InsertEndChild(copied_child);
   return *this;
 }
 
-std::string TreeBuilder::writeTreeDocumentToString() const { return writeTreeDocumentToString(*doc_ptr_); }
-
-bool TreeBuilder::verifyTree() const
+bool TreeBuilder::verify() const
 {
   try {
-    BT::VerifyXML(writeTreeDocumentToString(), getRegisteredNodesTypeMap());
+    BT::VerifyXML(doc_.str(), getRegisteredNodeTypeMap());
   } catch (const BT::RuntimeError & e) {
     return false;
   }
   return true;
 }
 
-TreeBuilder::DocumentSharedPtr TreeBuilder::getNodeModel(bool include_native) const
-{
-  // Load tree nodes model
-  DocumentSharedPtr model_doc_ptr = std::make_shared<Document>();
-  if (
-    model_doc_ptr->Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) !=
-    tinyxml2::XMLError::XML_SUCCESS) {
-    throw exceptions::TreeBuildError(
-      "Error parsing the model of the currently loaded node plugins: " + std::string(model_doc_ptr->ErrorStr()));
-  }
-  ConstElementPtr root = model_doc_ptr->RootElement();
-  if (!root) {
-    throw exceptions::TreeBuildError("Node model document has no root element.");
-  }
-  ConstElementPtr model_ele = model_doc_ptr->RootElement()->FirstChildElement(TREE_NODE_MODEL_ELEMENT_NAME);
-  if (!model_ele) {
-    throw exceptions::TreeBuildError(
-      "Element <" + std::string(TREE_NODE_MODEL_ELEMENT_NAME) + "> doesn't exist in node model document.");
-  }
-  return model_doc_ptr;
-}
-
-TreeBuilder::DocumentSharedPtr TreeBuilder::getDocumentPtr() const { return doc_ptr_; }
-
-Tree TreeBuilder::instantiate(const std::string root_tree_name, TreeBlackboardSharedPtr bb_ptr)
+Tree TreeBuilder::instantiate(const std::string & root_tree_name, TreeBlackboardSharedPtr bb_ptr)
 {
   Tree tree;
   try {
-    factory_.registerBehaviorTreeFromText(writeTreeDocumentToString());
+    factory_.registerBehaviorTreeFromText(doc_.str());
     tree = factory_.createTree(root_tree_name, bb_ptr);
     factory_.clearRegisteredBehaviorTrees();
   } catch (const std::exception & e) {
@@ -426,53 +293,40 @@ Tree TreeBuilder::instantiate(const std::string root_tree_name, TreeBlackboardSh
   return tree;
 }
 
+Tree TreeBuilder::instantiate(const TreeElement & tree, TreeBlackboardSharedPtr bb_ptr)
+{
+  return instantiate(tree.getName(), bb_ptr);
+}
+
 Tree TreeBuilder::instantiate(TreeBlackboardSharedPtr bb_ptr)
 {
-  if (hasRootTreeName()) return instantiate(getRootTreeName(), bb_ptr);
+  if (doc_.hasRootTreeName()) return instantiate(doc_.getRootTreeName(), bb_ptr);
   throw exceptions::TreeBuildError(
     "Cannot instantiate tree without a root tree name. You must either specify the attribute '" +
-    std::string(ROOT_TREE_ATTRIBUTE_NAME) +
+    std::string(TreeDocument::ROOT_TREE_ATTRIBUTE_NAME) +
     "' of the tree document's root element or call setRootTreeName() to define the root tree. Alternatively, you may "
     "call a different signature of instantiate().");
 }
 
-std::string TreeBuilder::getNodeRegistrationName(ConstElementPtr node_element) { return node_element->Name(); }
-
-std::string TreeBuilder::getNodeInstanceName(ConstElementPtr node_element)
+void TreeBuilder::getNodeModel(tinyxml2::XMLDocument & doc, bool include_native) const
 {
-  if (const char * name = node_element->Attribute(NODE_INSTANCE_NAME_ATTRIBUTE_NAME)) return name;
-  return "";
-}
-
-std::string TreeBuilder::getFullyQualifiedNodeName(ConstElementPtr node_element)
-{
-  std::string registration_name = getNodeRegistrationName(node_element);
-  std::string instance_name = getNodeInstanceName(node_element);
-  if (instance_name.empty()) return registration_name;
-  if (registration_name == instance_name) return registration_name;
-  return instance_name + " (Type: " + registration_name + ")";
-}
-
-TreeBuilder::ElementPtr TreeBuilder::findFirstNodeImpl(ElementPtr ele, const std::string & name)
-{
-  if (!ele) return nullptr;
-
-  // Check if the current element's name matches
-  if (getNodeRegistrationName(ele) == name) return ele;
-  if (getNodeInstanceName(ele) == name) return ele;
-
-  // Recursively search in the child elements
-  if (ElementPtr child = findFirstNodeImpl(ele->FirstChildElement(), name)) return child;
-
-  // Search in the siblings if not found in children
-  return findFirstNodeImpl(ele->NextSiblingElement(), name);
-}
-
-std::string TreeBuilder::writeTreeDocumentToString(const Document & doc)
-{
-  tinyxml2::XMLPrinter printer;
-  doc.Print(&printer);
-  return printer.CStr();
+  // Load tree nodes model
+  doc.Clear();
+  if (doc.Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+    throw exceptions::TreeBuildError(
+      "Error parsing the model of the currently loaded node plugins: " + std::string(doc.ErrorStr()));
+  }
+  const tinyxml2::XMLElement * root = doc.RootElement();
+  if (!root) {
+    throw exceptions::TreeBuildError("Node model document has no root element.");
+  }
+  const tinyxml2::XMLElement * model_ele =
+    doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
+  if (!model_ele) {
+    throw exceptions::TreeBuildError(
+      "Element <" + std::string(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME) +
+      "> doesn't exist in node model document.");
+  }
 }
 
 }  // namespace auto_apms_behavior_tree::core

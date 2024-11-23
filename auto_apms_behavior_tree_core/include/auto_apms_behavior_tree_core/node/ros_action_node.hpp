@@ -164,7 +164,8 @@ public:
 
   std::string getActionName() const;
 
-  const rclcpp::Logger logger_;
+protected:
+  const Context context_;
 
 private:
   static std::mutex & getMutex();
@@ -174,7 +175,7 @@ private:
 
   bool createClient(const std::string & action_name);
 
-  const Context context_;
+  const rclcpp::Logger logger_;
   std::string action_name_;
   std::shared_ptr<ActionClientInstance> client_instance_;
   bool action_name_should_be_checked_ = false;
@@ -203,7 +204,7 @@ RosActionNode<ActionT>::ActionClientInstance::ActionClientInstance(
 template <class ActionT>
 inline RosActionNode<ActionT>::RosActionNode(
   const std::string & instance_name, const Config & config, const Context & context)
-: BT::ActionNodeBase(instance_name, config), logger_(context.getLogger()), context_(context)
+: BT::ActionNodeBase(instance_name, config), context_(context), logger_(context.getLogger())
 {
   // Three cases:
   // - we use the default action_name in RosNodeContext when port is empty
@@ -224,8 +225,8 @@ inline RosActionNode<ActionT>::RosActionNode(
     }
   }
   // no port value or it is empty. Use the default value
-  if (!client_instance_ && !context_.default_port_name.empty()) {
-    createClient(context_.default_port_name);
+  if (!client_instance_ && !context_.registration_params_.port.empty()) {
+    createClient(context_.registration_params_.port);
   }
 }
 
@@ -238,7 +239,7 @@ inline bool RosActionNode<ActionT>::createClient(const std::string & action_name
   }
 
   std::unique_lock lk(getMutex());
-  auto node = context_.nh.lock();
+  auto node = context_.nh_.lock();
   if (!node) {
     throw exceptions::RosNodeError(
       context_.getFullName(this) +
@@ -260,11 +261,16 @@ inline bool RosActionNode<ActionT>::createClient(const std::string & action_name
 
   action_name_ = action_name;
 
-  bool found = client_instance_->action_client->wait_for_action_server(context_.wait_for_server_timeout);
+  bool found = client_instance_->action_client->wait_for_action_server(context_.registration_params_.wait_timeout);
   if (!found) {
-    RCLCPP_ERROR(
-      logger_, "%s - Action server with name '%s' is not reachable.", context_.getFullName(this).c_str(),
-      action_name_.c_str());
+    std::string msg =
+      context_.getFullName(this) + " - Action server with name '" + action_name_ + "' is not reachable.";
+    if (context_.registration_params_.allow_unreachable) {
+      RCLCPP_WARN_STREAM(logger_, msg);
+    } else {
+      RCLCPP_ERROR_STREAM(logger_, msg);
+      throw exceptions::RosNodeError(msg);
+    }
   }
   return found;
 }
@@ -306,7 +312,7 @@ inline void RosActionNode<T>::cancelGoal()
   auto & executor = client_instance_->callback_executor;
   if (!goal_response_ && future_goal_handle_.valid()) {
     // Here the discussion is if we should block or put a timer for the waiting
-    auto ret = executor.spin_until_future_complete(future_goal_handle_, context_.request_timeout);
+    auto ret = executor.spin_until_future_complete(future_goal_handle_, context_.registration_params_.request_timeout);
     if (ret != rclcpp::FutureReturnCode::SUCCESS) {
       // Do nothing in case of INTERRUPT or TIMEOUT since we must return rather quickly
       return;
@@ -323,7 +329,8 @@ inline void RosActionNode<T>::cancelGoal()
    */
 
   auto future_cancel = client_instance_->action_client->async_cancel_goal(goal_handle_);
-  if (const auto code = executor.spin_until_future_complete(future_cancel, context_.request_timeout);
+  if (const auto code =
+        executor.spin_until_future_complete(future_cancel, context_.registration_params_.request_timeout);
       code != rclcpp::FutureReturnCode::SUCCESS) {
     RCLCPP_WARN(
       logger_, "%s - Failed to wait until cancellation of action '%s' is complete (Received: %s). Ignoring.",
@@ -433,7 +440,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
       auto ret =
         client_instance_->callback_executor.spin_until_future_complete(future_goal_handle_, std::chrono::seconds(0));
       if (ret != rclcpp::FutureReturnCode::SUCCESS) {
-        if ((context_.getCurrentTime() - time_goal_sent_) > context_.request_timeout) {
+        if ((context_.getCurrentTime() - time_goal_sent_) > context_.registration_params_.request_timeout) {
           return check_status(onFailure(SEND_GOAL_TIMEOUT));
         }
         return BT::NodeStatus::RUNNING;

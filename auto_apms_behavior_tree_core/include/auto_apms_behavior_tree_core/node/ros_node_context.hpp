@@ -24,32 +24,31 @@
 namespace auto_apms_behavior_tree::core
 {
 
-struct RosNodeContext
+class RosNodeContext
 {
-  RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams & tree_node_params);
+  template <typename>
+  friend class RosActionNode;
+  template <typename>
+  friend class RosServiceNode;
+  template <typename>
+  friend class RosSubscriberNode;
+  template <typename>
+  friend class RosPublisherNode;
 
-  /// Handle for the ROS2 node.
-  std::weak_ptr<rclcpp::Node> nh;
-  /**
-   * @brief Default port name of the corresponding ROS 2 communication interface.
-   *
-   * This has different meaning based on the context:
-   * - RosActionNode: Name of the action server
-   * - RosServiceNode: Name of the service
-   * - RosPublisherNode: Name of the topic to publish to
-   * - RosSubscriberNode: Name of the topic to subscribe to
-   */
-  std::string default_port_name;
-  /// Timeout [s] for initially discovering the associated ROS2 node.
-  std::chrono::duration<double> wait_for_server_timeout;
-  /// Timeout [s] for waiting for a response for the requested service or goal.
-  std::chrono::duration<double> request_timeout;
+public:
+  RosNodeContext(rclcpp::Node::SharedPtr node_ptr, const NodeRegistrationParams & registration_params);
 
   rclcpp::Logger getLogger() const;
 
   rclcpp::Time getCurrentTime() const;
 
-  static std::string getFullName(const BT::TreeNode * node);
+  std::string getFullName(const BT::TreeNode * node) const;
+
+private:
+  /// Handle for the ROS2 node.
+  std::weak_ptr<rclcpp::Node> nh_;
+  /// Node specific registration parameters.
+  const NodeRegistrationParams registration_params_;
 };
 
 }  // namespace auto_apms_behavior_tree::core

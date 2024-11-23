@@ -25,10 +25,10 @@ namespace auto_apms_behavior_tree::core
 
 NodeManifest::NodeManifest(const ParamMap & param_map) : param_map_{param_map} {}
 
-NodeManifest NodeManifest::fromFiles(const std::vector<std::string> & file_paths)
+NodeManifest NodeManifest::fromFiles(const std::vector<std::string> & paths)
 {
   NodeManifest manifest;
-  for (const auto & path : file_paths) {
+  for (const auto & path : paths) {
     try {
       manifest.merge(fromFile(path));
     } catch (const std::exception & e) {

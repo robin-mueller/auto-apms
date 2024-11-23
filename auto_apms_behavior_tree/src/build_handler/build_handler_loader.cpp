@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree_core/resource/node_registration_loader.hpp"
+#include "auto_apms_behavior_tree/build_handler/build_handler_loader.hpp"
 
-namespace auto_apms_behavior_tree::core
+namespace auto_apms_behavior_tree
 {
 
-const std::string NodeRegistrationLoader::BASE_PACKAGE_NAME = "auto_apms_behavior_tree_core";
-const std::string NodeRegistrationLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::core::NodeRegistrationInterface";
+const std::string TreeBuildHandlerLoader::BASE_PACKAGE_NAME = "auto_apms_behavior_tree";
+const std::string TreeBuildHandlerLoader::BASE_CLASS_NAME = "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface";
 
-NodeRegistrationLoader::NodeRegistrationLoader(const std::set<std::string> & exclude_packages)
+TreeBuildHandlerLoader::TreeBuildHandlerLoader(const std::set<std::string> & exclude_packages)
 : PluginClassLoader(makeUnambiguousPluginClassLoader(BASE_PACKAGE_NAME, BASE_CLASS_NAME, exclude_packages))
 {
 }
 
-}  // namespace auto_apms_behavior_tree::core
+}  // namespace auto_apms_behavior_tree

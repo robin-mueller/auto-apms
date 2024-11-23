@@ -23,10 +23,10 @@
 #include "yaml-cpp/yaml.h"
 
 #define AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(ClassType)                                                  \
-  static ClassType fromFile(const std::string & file_path)                                                        \
+  static ClassType fromFile(const std::string & path)                                                             \
   {                                                                                                               \
     try {                                                                                                         \
-      return YAML::LoadFile(file_path).as<ClassType>();                                                           \
+      return YAML::LoadFile(path).as<ClassType>();                                                                \
     } catch (const YAML::ParserException & e) {                                                                   \
       throw auto_apms_util::exceptions::YAMLFormatError(                                                          \
         "Format error when creating " + boost::core::demangle(typeid(ClassType).name()) +                         \

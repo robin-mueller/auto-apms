@@ -15,6 +15,7 @@
 #pragma once
 
 #include <algorithm>
+#include <set>
 #include <vector>
 
 namespace auto_apms_util

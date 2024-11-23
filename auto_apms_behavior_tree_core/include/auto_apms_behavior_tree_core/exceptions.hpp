@@ -19,7 +19,7 @@
 namespace auto_apms_behavior_tree::exceptions
 {
 
-struct TreeXMLFormatError : public auto_apms_util::exceptions::ExceptionBase
+struct TreeDocumentError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };

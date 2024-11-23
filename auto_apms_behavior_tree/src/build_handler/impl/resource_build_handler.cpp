@@ -14,7 +14,7 @@
 
 #include "auto_apms_behavior_tree/build_handler.hpp"
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree_core/resource/tree_resource.hpp"
+#include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -24,36 +24,52 @@ class TreeResourceBuildHandler : public TreeBuildHandler
 public:
   using TreeBuildHandler::TreeBuildHandler;
 
-  bool setRequest(const std::string & request) override final
+  bool setBuildRequest(const std::string & build_request, const std::string & root_tree_name) override final
   {
-    try {
-      resource_identity_ptr_ = std::make_unique<core::TreeResourceIdentity>(request);
-      resource_ptr_ = std::make_unique<core::TreeResource>(*resource_identity_ptr_);
-    } catch (const auto_apms_util::exceptions::ResourceIdentityFormatError & e) {
-      RCLCPP_ERROR(logger_, "%s", e.what());
-      return false;
-    } catch (const auto_apms_util::exceptions::ResourceError & e) {
-      RCLCPP_ERROR(logger_, "%s", e.what());
-      return false;
+    core::TreeResourceIdentity resource_identity(build_request);
+    resource_ptr_ = std::make_unique<core::TreeResource>(resource_identity);
+
+    // We don't want to set the root tree yet
+    resource_doc_.reset().mergeResource(*resource_ptr_, false);
+
+    // Try to set root tree name
+    std::string name = root_tree_name;
+    if (root_tree_name.empty()) {
+      try {
+        name = resource_ptr_->getRootTreeName();
+      } catch (const auto_apms_util::exceptions::ResourceError & e) {
+        // Cannot determine root tree
+        RCLCPP_WARN(
+          logger_,
+          "Cannot determine root tree from tree resource identity '%s'. You must either specify the root_tree_name "
+          "argument with a non empty string or provide an identity that includes a tree name.",
+          resource_identity.str().c_str());
+        return false;
+      }
     }
+    resource_doc_.setRootTreeName(name);
     return true;
   }
 
-  void handleBuild(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
+  TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
   {
-    if (!resource_identity_ptr_)
-      throw exceptions::TreeBuildError("TreeResourceBuildHandler - resource_identity_ptr_ is nullptr.");
-    if (!resource_ptr_) throw exceptions::TreeBuildError("TreeResourceBuildHandler - resource_ptr_ is nullptr.");
-    builder.mergeTreesFromResource(*resource_ptr_);
-    if (!resource_identity_ptr_->tree_name.empty()) {
-      builder.setRootTreeName(resource_identity_ptr_->tree_name);
-    } else {
-      builder.setRootTreeName(resource_ptr_->getRootTreeName(TreeBuilder::ROOT_TREE_ATTRIBUTE_NAME));
+    if (!resource_ptr_) {
+      throw exceptions::TreeBuildError("TreeResourceBuildHandler - resource_ptr_ is nullptr.");
     }
+
+    // Merge document and adopt root tree
+    builder.mergeTreeDocument(resource_doc_, true);
+
+    // Reset the local tree document, as the tree moved to the builder document
+    resource_doc_.reset();
+
+    // Load all node plugins associated with the resource
+    builder.loadNodePlugins(resource_ptr_->getNodeManifest());
+    return builder.getRootTree();
   }
 
 private:
-  std::unique_ptr<core::TreeResourceIdentity> resource_identity_ptr_;
+  core::TreeDocument resource_doc_;
   std::unique_ptr<core::TreeResource> resource_ptr_;
 };
 

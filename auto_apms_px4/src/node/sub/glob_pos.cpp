@@ -64,7 +64,9 @@ public:
       any_locked.assign(pos);
       return BT::NodeStatus::SUCCESS;
     }
-    RCLCPP_ERROR(logger_, "%s - getLockedPortContent() failed for argument %s", name().c_str(), OUTPUT_KEY_POS);
+    RCLCPP_ERROR(
+      context_.getLogger(), "%s - getLockedPortContent() failed for argument %s", context_.getFullName(this).c_str(),
+      OUTPUT_KEY_POS);
     return BT::NodeStatus::FAILURE;
   }
 };

@@ -34,37 +34,52 @@ def generate_launch_description():
         executable="component_container_mt",
         composable_node_descriptions=[
             ComposableNode(
-                package="auto_apms_mission",
                 namespace=namespace,
-                plugin="auto_apms_mission::MissionOrchestrator",
+                package="auto_apms_mission",
+                plugin="auto_apms_mission::OrchestratorExecutor",
                 parameters=[
                     {
-                        "build_handler": "auto_apms_mission::MissionBuildHandler",
+                        "build_handler": "auto_apms_mission::MissionBuilder",
                         "allow_other_build_handlers": False,
                         "groot2_port": 5555,
                     }
                 ],
             ),
             ComposableNode(
-                name="safety_monitor",
                 namespace=namespace,
-                package="auto_apms_behavior_tree",
-                plugin="auto_apms_behavior_tree::TreeExecutorNode",
-                parameters=[{"groot2_port": 5666}],
+                package="auto_apms_mission",
+                plugin="auto_apms_mission::MissionExecutor",
+                parameters=[
+                    {
+                        "build_handler": "auto_apms_behavior_tree::TreeResourceBuildHandler",
+                        "allow_other_build_handlers": False,
+                        "groot2_port": 5666,
+                    }
+                ],
             ),
             ComposableNode(
-                name="contingency_handler",
                 namespace=namespace,
-                package="auto_apms_behavior_tree",
-                plugin="auto_apms_behavior_tree::TreeExecutorNode",
-                parameters=[{"groot2_port": 5777}],
+                package="auto_apms_mission",
+                plugin="auto_apms_mission::EventMonitorExecutor",
+                parameters=[
+                    {
+                        "build_handler": "auto_apms_behavior_tree::TreeResourceBuildHandler",
+                        "allow_other_build_handlers": False,
+                        "groot2_port": 5777,
+                    }
+                ],
             ),
             ComposableNode(
-                name="nominal_mission",
                 namespace=namespace,
-                package="auto_apms_behavior_tree",
-                plugin="auto_apms_behavior_tree::TreeExecutorNode",
-                parameters=[{"groot2_port": 5888}],
+                package="auto_apms_mission",
+                plugin="auto_apms_mission::EventHandlerExecutor",
+                parameters=[
+                    {
+                        "build_handler": "auto_apms_behavior_tree::TreeResourceBuildHandler",
+                        "allow_other_build_handlers": False,
+                        "groot2_port": 5888,
+                    }
+                ],
             ),
         ],
         output="screen",

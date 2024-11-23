@@ -14,10 +14,10 @@
 
 #pragma once
 
+#include "auto_apms_behavior_tree/build_handler/build_handler_loader.hpp"
 #include "auto_apms_behavior_tree/executor/executor_base.hpp"
-#include "auto_apms_behavior_tree/resource/build_handler_loader.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
-#include "auto_apms_behavior_tree_core/resource/node_registration_loader.hpp"
+#include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_util/action_context.hpp"
@@ -127,7 +127,6 @@ private:
   void handle_command_accept_(std::shared_ptr<CommandActionContext::GoalHandle> goal_handle_ptr);
 
   const TreeExecutorNodeOptions executor_options_;
-  const rclcpp::Logger logger_;
   ExecutorParameterListener executor_param_listener_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_ptr_;
   std::shared_ptr<rclcpp::ParameterEventHandler> parameter_event_handler_ptr_;
@@ -136,7 +135,7 @@ private:
   TreeBuildHandlerLoader::UniquePtr build_handler_loader_ptr_;
   TreeBuildHandler::UniquePtr build_handler_ptr_;
   std::string current_build_handler_name_;
-  std::map<std::string, int> scripting_enum_buffer_;
+  std::map<std::string, int> scripting_enums_;
   TreeConstructor tree_constructor_;
 
   // Interface objects
