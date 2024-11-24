@@ -30,8 +30,8 @@ class TreeBuilder;
 class TreeDocument : private tinyxml2::XMLDocument
 {
   friend class TreeBuilder;
-  using XMLElementPtr = tinyxml2::XMLElement *;
-  using ConstXMLElementPtr = const tinyxml2::XMLElement *;
+
+  using XMLElement = tinyxml2::XMLElement;
 
 public:
   static inline const char ROOT_ELEMENT_NAME[] = "root";
@@ -50,7 +50,7 @@ public:
     using PortValues = std::map<std::string, std::string>;
 
   protected:
-    NodeElement(TreeBuilder * builder_ptr, XMLElementPtr ele_ptr);
+    NodeElement(TreeBuilder * builder_ptr, XMLElement * ele_ptr);
 
   public:
     NodeElement insertNode(const std::string & name, const NodeElement * before_this = nullptr);
@@ -61,12 +61,27 @@ public:
 
     NodeElement insertSubTreeNode(const std::string & tree_name, const NodeElement * before_this = nullptr);
 
-    NodeElement insertTreeRoot(const TreeElement & tree, const NodeElement * before_this = nullptr);
+    NodeElement insertTree(const TreeElement & tree, const NodeElement * before_this = nullptr);
 
-    NodeElement insertTreeRoot(
+    NodeElement insertTreeFromDocument(
+      TreeDocument & doc, const std::string & tree_name, const NodeElement * before_this = nullptr);
+
+    NodeElement insertTreeFromDocument(TreeDocument & doc, const NodeElement * before_this = nullptr);
+
+    NodeElement insertTreeFromString(
+      const std::string & tree_str, const std::string & tree_name, const NodeElement * before_this = nullptr);
+
+    NodeElement insertTreeFromString(const std::string & tree_str, const NodeElement * before_this = nullptr);
+
+    NodeElement insertTreeFromFile(
+      const std::string & path, const std::string & tree_name, const NodeElement * before_this = nullptr);
+
+    NodeElement insertTreeFromFile(const std::string & path, const NodeElement * before_this = nullptr);
+
+    NodeElement insertTreeFromResource(
       const TreeResource & resource, const std::string & tree_name, const NodeElement * before_this = nullptr);
 
-    NodeElement insertTreeRoot(const TreeResource & resource, const NodeElement * before_this = nullptr);
+    NodeElement insertTreeFromResource(const TreeResource & resource, const NodeElement * before_this = nullptr);
 
     /**
      * @brief Set the node's ports.
@@ -102,11 +117,11 @@ public:
     std::string getFullyQualifiedName() const;
 
   private:
-    NodeElement insertBeforeImpl(const NodeElement * before_this, XMLElementPtr add_this);
+    NodeElement insertBeforeImpl(const NodeElement * before_this, XMLElement * add_this);
 
-    NodeElement insertTreeRootImpl(ConstXMLElementPtr ele, const NodeElement * before_this = nullptr);
+    NodeElement insertTreeImpl(const XMLElement * tree_root, const NodeElement * before_this = nullptr);
 
-    static XMLElementPtr getFirstNodeImpl(XMLElementPtr ele, const std::string & name);
+    static XMLElement * getFirstNodeImpl(XMLElement * ele, const std::string & name);
 
   protected:
     TreeBuilder * builder_ptr_;
@@ -116,6 +131,7 @@ public:
   class TreeElement : public NodeElement
   {
     friend class TreeBuilder;
+
     using NodeElement::NodeElement;
 
   public:
@@ -132,9 +148,9 @@ public:
 
   TreeDocument & merge(const XMLDocument & other, bool adopt_root_tree = false);
 
-  TreeDocument & mergeFile(const std::string & path, bool adopt_root_tree = false);
-
   TreeDocument & mergeString(const std::string & tree_str, bool adopt_root_tree = false);
+
+  TreeDocument & mergeFile(const std::string & path, bool adopt_root_tree = false);
 
   TreeDocument & mergeResource(const TreeResource & resource, bool adopt_root_tree = false);
 
@@ -157,7 +173,7 @@ public:
   TreeDocument & reset(const TreeDocument & new_doc);
 
 private:
-  XMLElementPtr getTreeElementPtr(const std::string & tree_name);
+  XMLElement * getXMLElementForTreeWithName(const std::string & tree_name);
 };
 
 }  // namespace auto_apms_behavior_tree::core

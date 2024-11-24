@@ -55,7 +55,7 @@ TreeBuilder::TreeElement TreeBuilder::newTree(const std::string & tree_name)
   if (doc_.isExistingTreeName(tree_name)) {
     throw exceptions::TreeBuildError("Cannot create new tree with name '" + tree_name + "' because it already exists.");
   }
-  if (TreeDocument::XMLElementPtr ele = doc_.RootElement()->InsertNewChildElement(TreeDocument::TREE_ELEMENT_NAME)) {
+  if (TreeDocument::XMLElement * ele = doc_.RootElement()->InsertNewChildElement(TreeDocument::TREE_ELEMENT_NAME)) {
     ele->SetAttribute(TreeDocument::TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
     return TreeElement(this, ele);
   }
@@ -104,7 +104,7 @@ bool TreeBuilder::hasTree(const std::string & tree_name) { return doc_.isExistin
 
 TreeBuilder::TreeElement TreeBuilder::getTree(const std::string & tree_name)
 {
-  if (!tree_name.empty()) return TreeElement(this, doc_.getTreeElementPtr(tree_name));
+  if (!tree_name.empty()) return TreeElement(this, doc_.getXMLElementForTreeWithName(tree_name));
   throw exceptions::TreeBuildError("Cannot get tree with empty tree name.");
 }
 

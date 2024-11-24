@@ -49,7 +49,7 @@ std::vector<std::string> getAllTreeNamesImpl(const tinyxml2::XMLDocument & doc)
   return names;
 }
 
-TreeDocument::NodeElement::NodeElement(TreeBuilder * builder_ptr, XMLElementPtr ele_ptr)
+TreeDocument::NodeElement::NodeElement(TreeBuilder * builder_ptr, XMLElement * ele_ptr)
 : builder_ptr_(builder_ptr), ele_ptr_(ele_ptr)
 {
 }
@@ -65,7 +65,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
       "error, make sure loadNodePlugins() is being called with a corresponding node manifest or provide the "
       "additional argument registration_params of insertNode().");
   }
-  XMLElementPtr ele = builder_ptr_->doc_.NewElement(node_name.c_str());
+  XMLElement * ele = builder_ptr_->doc_.NewElement(node_name.c_str());
   return insertBeforeImpl(before_this, ele).setPorts();  // Additionally add default port values
 }
 
@@ -86,29 +86,73 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertSubTreeNode(
   return insertNode(SUBTREE_ELEMENT_NAME, before_this).setPorts({{TREE_NAME_ATTRIBUTE_NAME, tree_name}}, false);
 }
 
-TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeRoot(
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTree(
   const TreeElement & tree, const NodeElement * before_this)
 {
-  return insertTreeRootImpl(tree.ele_ptr_, before_this);
+  return insertTreeImpl(tree.ele_ptr_, before_this);
 }
 
-TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeRoot(
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
+  TreeDocument & doc, const std::string & tree_name, const NodeElement * before_this)
+{
+  const XMLElement * ele = doc.getXMLElementForTreeWithName(tree_name);
+  if (doc.getAllTreeNames().size() > 1) {
+    // Merge additional trees into this document to support potential subtree nodes within other
+    builder_ptr_->doc_.merge(doc.removeTreeWithName(tree_name));
+  }
+  return insertTreeImpl(ele, before_this);
+}
+
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
+  TreeDocument & doc, const NodeElement * before_this)
+{
+  return insertTreeFromDocument(doc, doc.getRootTreeName());
+}
+
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromString(
+  const std::string & tree_str, const std::string & tree_name, const NodeElement * before_this)
+{
+  TreeDocument insert_doc;
+  insert_doc.mergeString(tree_str);
+  return insertTreeFromDocument(insert_doc, tree_name);
+}
+
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromString(
+  const std::string & tree_str, const NodeElement * before_this)
+{
+  TreeDocument insert_doc;
+  insert_doc.mergeString(tree_str);
+  return insertTreeFromDocument(insert_doc);
+}
+
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromFile(
+  const std::string & path, const std::string & tree_name, const NodeElement * before_this)
+{
+  TreeDocument insert_doc;
+  insert_doc.mergeFile(path);
+  return insertTreeFromDocument(insert_doc, tree_name);
+}
+
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromFile(
+  const std::string & path, const NodeElement * before_this)
+{
+  TreeDocument insert_doc;
+  insert_doc.mergeFile(path);
+  return insertTreeFromDocument(insert_doc);
+}
+
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromResource(
   const TreeResource & resource, const std::string & tree_name, const NodeElement * before_this)
 {
-  TreeDocument other;
-  other.mergeFile(resource.tree_file_path_);
-  ConstXMLElementPtr ele = other.getTreeElementPtr(tree_name);
-  if (other.getAllTreeNames().size() > 1) {
-    // Merge additional trees into this document to support potential subtree nodes within other
-    builder_ptr_->doc_.merge(other.removeTreeWithName(tree_name));
-  }
-  return insertTreeRootImpl(ele, before_this);
+  TreeDocument insert_doc;
+  insert_doc.mergeFile(resource.tree_file_path_);
+  return insertTreeFromDocument(insert_doc, tree_name);
 }
 
-TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeRoot(
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromResource(
   const TreeResource & resource, const NodeElement * before_this)
 {
-  return insertTreeRoot(resource, resource.getRootTreeName(), before_this);
+  return insertTreeFromResource(resource, resource.getRootTreeName(), before_this);
 }
 
 TreeDocument::NodeElement & TreeDocument::NodeElement::setPorts(const PortValues & port_values, bool verify)
@@ -136,7 +180,7 @@ TreeDocument::NodeElement & TreeDocument::NodeElement::setPorts(const PortValues
   // Note: The basic structure of the document has already been verified.
   tinyxml2::XMLDocument model_doc;
   builder_ptr_->getNodeModel(model_doc, true);
-  ConstXMLElementPtr node_ele =
+  const XMLElement * node_ele =
     model_doc.RootElement()->FirstChildElement(TREE_NODE_MODEL_ELEMENT_NAME)->FirstChildElement();
   while (node_ele && !node_ele->Attribute("ID", node_name)) {
     node_ele = node_ele->NextSiblingElement();
@@ -146,7 +190,7 @@ TreeDocument::NodeElement & TreeDocument::NodeElement::setPorts(const PortValues
       "Cannot set ports to node '" + std::string(node_name) + "' because it cannot be found in tree nodes model.");
   }
   PortValues default_values;
-  for (ConstXMLElementPtr port_ele = node_ele->FirstChildElement(); port_ele != nullptr;
+  for (const XMLElement * port_ele = node_ele->FirstChildElement(); port_ele != nullptr;
        port_ele = port_ele->NextSiblingElement()) {
     if (std::regex_match(port_ele->Name(), std::regex("input_port|output_port|inout_port"))) {
       const char * port_key = port_ele->Attribute("name");
@@ -194,7 +238,7 @@ TreeDocument::NodeElement & TreeDocument::NodeElement::setPorts(const PortValues
 TreeDocument::NodeElement TreeDocument::NodeElement::getFirstNode(const std::string & name) const
 {
   if (name.empty()) return NodeElement(builder_ptr_, ele_ptr_->FirstChildElement());
-  if (XMLElementPtr ele = getFirstNodeImpl(ele_ptr_->FirstChildElement(), name)) return NodeElement(builder_ptr_, ele);
+  if (XMLElement * ele = getFirstNodeImpl(ele_ptr_->FirstChildElement(), name)) return NodeElement(builder_ptr_, ele);
   throw exceptions::TreeDocumentError(
     "Cannot find node '" + name + "' in parent element '" + getRegistrationName() + "'.");
 }
@@ -230,11 +274,11 @@ std::string TreeDocument::NodeElement::getFullyQualifiedName() const
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertBeforeImpl(
-  const NodeElement * before_this, XMLElementPtr add_this)
+  const NodeElement * before_this, XMLElement * add_this)
 {
   if (before_this) {
-    XMLElementPtr prev = nullptr;
-    XMLElementPtr curr = ele_ptr_->FirstChildElement();
+    XMLElement * prev = nullptr;
+    XMLElement * curr = ele_ptr_->FirstChildElement();
 
     // Traverse through siblings of first child to find the before_this node.
     // If there are no siblings, add the first child to this;
@@ -264,19 +308,19 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertBeforeImpl(
   return NodeElement(builder_ptr_, add_this);
 }
 
-TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeRootImpl(
-  ConstXMLElementPtr ele, const NodeElement * before_this)
+TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeImpl(
+  const XMLElement * tree_root, const NodeElement * before_this)
 {
-  ConstXMLElementPtr child = ele->FirstChildElement();
+  const XMLElement * child = tree_root->FirstChildElement();
   if (!child) {
     throw exceptions::TreeDocumentError("Cannot insert tree without children.");
   }
   // Make sure the memory is managed by this document
-  XMLElementPtr copied_child = child->DeepClone(&builder_ptr_->doc_)->ToElement();
+  XMLElement * copied_child = child->DeepClone(&builder_ptr_->doc_)->ToElement();
   return insertBeforeImpl(before_this, copied_child);
 }
 
-TreeDocument::XMLElementPtr TreeDocument::NodeElement::getFirstNodeImpl(XMLElementPtr ele, const std::string & name)
+TreeDocument::XMLElement * TreeDocument::NodeElement::getFirstNodeImpl(XMLElement * ele, const std::string & name)
 {
   if (!ele) return nullptr;
 
@@ -287,7 +331,7 @@ TreeDocument::XMLElementPtr TreeDocument::NodeElement::getFirstNodeImpl(XMLEleme
   if (NodeElement(nullptr, ele).getName() == name) return ele;
 
   // Recursively search in the child elements
-  if (XMLElementPtr child = getFirstNodeImpl(ele->FirstChildElement(), name)) return child;
+  if (XMLElement * child = getFirstNodeImpl(ele->FirstChildElement(), name)) return child;
 
   // Search in the siblings if not found in children
   return getFirstNodeImpl(ele->NextSiblingElement(), name);
@@ -319,7 +363,7 @@ TreeDocument::TreeDocument(const TreeResource & resource) : TreeDocument() { mer
 
 TreeDocument & TreeDocument::merge(const XMLDocument & other, bool adopt_root_tree)
 {
-  ConstXMLElementPtr other_root = other.RootElement();
+  const XMLElement * other_root = other.RootElement();
   if (!other_root) {
     throw exceptions::TreeDocumentError("Cannot merge tree documents: other_root is nullptr.");
   };
@@ -336,7 +380,7 @@ TreeDocument & TreeDocument::merge(const XMLDocument & other, bool adopt_root_tr
 
   if (strcmp(other_root->Name(), ROOT_ELEMENT_NAME) == 0) {
     // Iterate over all the children of other root.
-    ConstXMLElementPtr child = other_root->FirstChildElement();  // Allow include tags
+    const XMLElement * child = other_root->FirstChildElement();  // Allow include tags
     if (!child) {
       throw exceptions::TreeDocumentError(
         "Cannot merge tree documents: Root element of other document has no children.");
@@ -372,20 +416,20 @@ TreeDocument & TreeDocument::merge(const XMLDocument & other, bool adopt_root_tr
   return *this;
 }
 
-TreeDocument & TreeDocument::mergeFile(const std::string & path, bool adopt_root_tree)
-{
-  XMLDocument other_doc;
-  if (other_doc.LoadFile(path.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-    throw exceptions::TreeDocumentError("Cannot create tree document from file " + path + ": " + other_doc.ErrorStr());
-  }
-  return merge(other_doc, adopt_root_tree);
-}
-
 TreeDocument & TreeDocument::mergeString(const std::string & tree_str, bool adopt_root_tree)
 {
   XMLDocument other_doc;
   if (other_doc.Parse(tree_str.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
     throw exceptions::TreeDocumentError("Cannot merge tree document from string: " + std::string(other_doc.ErrorStr()));
+  }
+  return merge(other_doc, adopt_root_tree);
+}
+
+TreeDocument & TreeDocument::mergeFile(const std::string & path, bool adopt_root_tree)
+{
+  XMLDocument other_doc;
+  if (other_doc.LoadFile(path.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+    throw exceptions::TreeDocumentError("Cannot create tree document from file " + path + ": " + other_doc.ErrorStr());
   }
   return merge(other_doc, adopt_root_tree);
 }
@@ -439,7 +483,7 @@ std::string TreeDocument::str() const
 
 TreeDocument & TreeDocument::removeTreeWithName(const std::string & tree_name)
 {
-  RootElement()->DeleteChild(getTreeElementPtr(tree_name));
+  RootElement()->DeleteChild(getXMLElementForTreeWithName(tree_name));
   return *this;
 }
 
@@ -456,12 +500,12 @@ TreeDocument & TreeDocument::reset(const TreeDocument & new_doc)
   return merge(new_doc);
 }
 
-TreeDocument::XMLElementPtr TreeDocument::getTreeElementPtr(const std::string & tree_name)
+TreeDocument::XMLElement * TreeDocument::getXMLElementForTreeWithName(const std::string & tree_name)
 {
   if (!isExistingTreeName(tree_name)) {
     throw exceptions::TreeDocumentError("Cannot get tree with name '" + tree_name + "' because it doesn't exist.");
   }
-  XMLElementPtr ele = RootElement()->FirstChildElement(TREE_ELEMENT_NAME);
+  XMLElement * ele = RootElement()->FirstChildElement(TREE_ELEMENT_NAME);
   while (ele && !ele->Attribute(TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str())) {
     ele = ele->NextSiblingElement();
   }

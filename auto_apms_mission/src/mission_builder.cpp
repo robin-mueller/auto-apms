@@ -101,7 +101,7 @@ private:
 void MissionBuilder::buildBringUp(NodeElement & sequence, TreeResourceVector trees)
 {
   for (const TreeResource & r : trees) {
-    sequence.insertTreeRoot(r);
+    sequence.insertTreeFromResource(r);
   }
 }
 
@@ -110,7 +110,7 @@ void MissionBuilder::buildMission(NodeElement & sequence, TreeResourceVector tre
 void MissionBuilder::buildShutDown(NodeElement & sequence, TreeResourceVector trees)
 {
   for (const TreeResource & r : trees) {
-    sequence.insertTreeRoot(r);
+    sequence.insertTreeFromResource(r);
   }
 }
 
