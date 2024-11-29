@@ -45,7 +45,7 @@ public:
   virtual ~RosPublisherNode() = default;
 
   /**
-   * @brief Any subclass of RosPublisherNode that has additinal ports must provide a
+   * @brief Any subclass of RosPublisherNode that has additional ports must provide a
    * providedPorts method and call providedBasicPorts in it.
    *
    * @param addition Additional ports to add to BT port list
@@ -53,7 +53,7 @@ public:
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
-    BT::PortsList basic = {BT::InputPort<std::string>("topic_name", "", "Topic name")};
+    BT::PortsList basic = {BT::InputPort<std::string>("port", "Name of the ROS 2 topic to publish to.")};
     basic.insert(addition.begin(), addition.end());
     return basic;
   }
@@ -76,18 +76,18 @@ public:
    */
   virtual bool setMessage(MessageT & msg);
 
+  bool createPublisher(const std::string & topic_name);
+
   std::string getTopicName() const;
 
 protected:
   const Context context_;
 
 private:
-  bool createPublisher(const std::string & topic_name);
-
   const rclcpp::Logger logger_;
   const rclcpp::QoS qos_;
   std::string topic_name_;
-  bool topic_name_should_be_checked_ = false;
+  bool dynamic_client_instance_ = false;
   std::shared_ptr<Publisher> publisher_;
 };
 
@@ -100,22 +100,13 @@ inline RosPublisherNode<MessageT>::RosPublisherNode(
   const std::string & instance_name, const Config & config, const Context & context, const rclcpp::QoS & qos)
 : BT::ConditionNode(instance_name, config), context_(context), logger_(context.getLogger()), qos_{qos}
 {
-  // check port remapping
-  auto portIt = config.input_ports.find("topic_name");
-  if (portIt != config.input_ports.end()) {
-    const std::string & bb_topic_name = portIt->second;
-
-    if (isBlackboardPointer(bb_topic_name)) {
-      // unknown value at construction time. postpone to tick
-      topic_name_should_be_checked_ = true;
-    } else if (!bb_topic_name.empty()) {
-      // "hard-coded" name in the bb_topic_name. Use it.
-      createPublisher(bb_topic_name);
-    }
-  }
-  // no port value or it is empty. Use the default port value
-  if (!publisher_ && !context_.registration_params_.port.empty()) {
-    createPublisher(context_.registration_params_.port);
+  if (const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this)) {
+    createPublisher(expected_name.value());
+  } else {
+    // We assume that determining the communication port requires a blackboard pointer, which cannot be evaluated at
+    // construction time. The expression will be evaluated each time before the node is ticked the first time after
+    // successful execution.
+    dynamic_client_instance_ = true;
   }
 }
 
@@ -124,43 +115,61 @@ inline bool RosPublisherNode<MessageT>::createPublisher(const std::string & topi
 {
   if (topic_name.empty()) {
     throw exceptions::RosNodeError(
-      context_.getFullName(this) + " - Argument topic_name is empty when trying to create a client.");
+      context_.getFullyQualifiedTreeNodeName(this) + " - Argument topic_name is empty when trying to create a client.");
   }
 
-  auto node = context_.nh_.lock();
+  // Check if the publisher with given name is already set up
+  if (publisher_ && topic_name_ == topic_name) return true;
+
+  rclcpp::Node::SharedPtr node = context_.nh_.lock();
   if (!node) {
     throw exceptions::RosNodeError(
-      context_.getFullName(this) +
-      " - The shared pointer to the ROS node went out of scope. The tree node doesn't "
-      "take the ownership of the node.");
+      context_.getFullyQualifiedTreeNodeName(this) +
+      " - The weak pointer to the ROS 2 node expired. The tree node doesn't "
+      "take ownership of it.");
   }
 
   publisher_ = node->template create_publisher<MessageT>(topic_name, qos_);
   topic_name_ = topic_name;
   RCLCPP_DEBUG(
-    logger_, "%s - Created publisher for topic '%s'.", context_.getFullName(this).c_str(), topic_name.c_str());
+    logger_, "%s - Created publisher for topic '%s'.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+    topic_name.c_str());
   return true;
 }
 
 template <class MessageT>
 inline BT::NodeStatus RosPublisherNode<MessageT>::tick()
 {
-  // First, check if the subscriber_ is valid and that the name of the
-  // topic_name in the port didn't change.
-  // otherwise, create a new subscriber
-  if (!publisher_ || (status() == BT::NodeStatus::IDLE && topic_name_should_be_checked_)) {
-    std::string topic_name;
-    getInput("topic_name", topic_name);
-    if (topic_name_ != topic_name) {
-      createPublisher(topic_name);
+  if (!rclcpp::ok()) {
+    halt();
+    return BT::NodeStatus::FAILURE;
+  }
+
+  // If client has been set up in derived constructor, event though this constructor couldn't, we discard the intention
+  // of dynamically creating the client
+  if (dynamic_client_instance_ && publisher_) {
+    dynamic_client_instance_ = false;
+  }
+
+  // Try again to create the client on first tick if this was not possible during construction or if client should be
+  // created from a blackboard entry on the start of every iteration
+  if (status() == BT::NodeStatus::IDLE && dynamic_client_instance_) {
+    const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this);
+    if (expected_name) {
+      createPublisher(expected_name.value());
+    } else {
+      throw exceptions::RosNodeError(
+        context_.getFullyQualifiedTreeNodeName(this) +
+        " - Cannot create the publisher because the topic name couldn't be resolved using "
+        "the communication port expression specified by the node's "
+        "registration parameters (" +
+        NodeRegistrationParams::PARAM_NAME_PORT + ": " + context_.registration_params_.port +
+        "). Error message: " + expected_name.error());
     }
   }
 
   if (!publisher_) {
-    throw exceptions::RosNodeError(
-      context_.getFullName(this) +
-      " - You must specify a service name either by using a default value or by "
-      "passing a value to the corresponding dynamic input port.");
+    throw exceptions::RosNodeError(context_.getFullyQualifiedTreeNodeName(this) + " - publisher_ is nullptr.");
   }
 
   MessageT msg;

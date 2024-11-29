@@ -48,13 +48,14 @@ class RosSubscriberNode : public BT::ConditionNode
 
   struct SubscriberInstance
   {
-    SubscriberInstance(std::shared_ptr<rclcpp::Node> node, const std::string & topic_name, const rclcpp::QoS & qos);
+    SubscriberInstance(
+      rclcpp::Node::SharedPtr node, rclcpp::CallbackGroup::SharedPtr group, const std::string & topic_name,
+      const rclcpp::QoS & qos);
 
     std::shared_ptr<Subscriber> subscriber;
-    rclcpp::CallbackGroup::SharedPtr callback_group;
-    rclcpp::executors::SingleThreadedExecutor callback_group_executor;
     boost::signals2::signal<void(const std::shared_ptr<MessageT>)> broadcaster;
     std::shared_ptr<MessageT> last_msg;
+    std::string name;
   };
 
   using SubscribersRegistry = std::unordered_map<std::string, std::weak_ptr<SubscriberInstance>>;
@@ -77,7 +78,7 @@ public:
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
-    BT::PortsList basic = {BT::InputPort<std::string>("topic_name", "", "Topic name")};
+    BT::PortsList basic = {BT::InputPort<std::string>("port", "Name of the ROS 2 topic to subscribe to.")};
     basic.insert(addition.begin(), addition.end());
     return basic;
   }
@@ -113,6 +114,8 @@ public:
    */
   virtual BT::NodeStatus onMessageReceived(const MessageT & msg);
 
+  bool createSubscriber(const std::string & topic_name);
+
   std::string getTopicName() const;
 
 protected:
@@ -124,12 +127,10 @@ private:
   // contains the fully-qualified name of the node and the name of the topic
   static SubscribersRegistry & getRegistry();
 
-  bool createSubscriber(const std::string & topic_name);
-
   const rclcpp::Logger logger_;
   const rclcpp::QoS qos_;
   std::string topic_name_;
-  bool topic_name_should_be_checked_ = false;
+  bool dynamic_client_instance_ = false;
   std::shared_ptr<SubscriberInstance> sub_instance_;
   std::shared_ptr<MessageT> last_msg_;
   boost::signals2::connection signal_connection_;
@@ -142,21 +143,19 @@ private:
 
 template <class MessageT>
 inline RosSubscriberNode<MessageT>::SubscriberInstance::SubscriberInstance(
-  std::shared_ptr<rclcpp::Node> node, const std::string & topic_name, const rclcpp::QoS & qos)
+  rclcpp::Node::SharedPtr node, rclcpp::CallbackGroup::SharedPtr group, const std::string & topic_name,
+  const rclcpp::QoS & qos)
 {
-  // create a callback group for this particular instance
-  callback_group = node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
-  callback_group_executor.add_callback_group(callback_group, node->get_node_base_interface());
-
   rclcpp::SubscriptionOptions option;
-  option.callback_group = callback_group;
+  option.callback_group = group;
 
   // The callback will broadcast to all the instances of RosSubscriberNode<MessageT>
   auto callback = [this](const std::shared_ptr<MessageT> msg) {
-    last_msg = msg;
-    broadcaster(msg);
+    this->last_msg = msg;
+    this->broadcaster(msg);
   };
   subscriber = node->create_subscription<MessageT>(topic_name, qos, callback, option);
+  name = topic_name;
 }
 
 template <class MessageT>
@@ -164,22 +163,13 @@ inline RosSubscriberNode<MessageT>::RosSubscriberNode(
   const std::string & instance_name, const Config & config, const Context & context, const rclcpp::QoS & qos)
 : BT::ConditionNode{instance_name, config}, context_{context}, logger_(context.getLogger()), qos_{qos}
 {
-  // check port remapping
-  auto portIt = config.input_ports.find("topic_name");
-  if (portIt != config.input_ports.end()) {
-    const std::string & bb_topic_name = portIt->second;
-
-    if (isBlackboardPointer(bb_topic_name)) {
-      // unknown value at construction time. postpone to tick
-      topic_name_should_be_checked_ = true;
-    } else if (!bb_topic_name.empty()) {
-      // "hard-coded" name in the bb_topic_name. Use it.
-      createSubscriber(bb_topic_name);
-    }
-  }
-  // no port value or it is empty. Use the default port value
-  if (!sub_instance_ && !context_.registration_params_.port.empty()) {
-    createSubscriber(context_.registration_params_.port);
+  if (const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this)) {
+    createSubscriber(expected_name.value());
+  } else {
+    // We assume that determining the communication port requires a blackboard pointer, which cannot be evaluated at
+    // construction time. The expression will be evaluated each time before the node is ticked the first time after
+    // successful execution.
+    dynamic_client_instance_ = true;
   }
 }
 
@@ -188,31 +178,38 @@ inline bool RosSubscriberNode<MessageT>::createSubscriber(const std::string & to
 {
   if (topic_name.empty()) {
     throw exceptions::RosNodeError(
-      context_.getFullName(this) + " - Argument topic_name is empty when trying to create a client.");
-  }
-  if (sub_instance_) {
-    throw exceptions::RosNodeError(context_.getFullName(this) + " - Cannot call createSubscriber() more than once.");
+      context_.getFullyQualifiedTreeNodeName(this) + " - Argument topic_name is empty when trying to create a client.");
   }
 
-  // find SubscriberInstance in the registry
+  // Check if the subscriber with given name is already set up
+  if (sub_instance_ && topic_name == sub_instance_->name) return true;
+
   std::unique_lock lk(registryMutex());
 
-  auto node = context_.nh_.lock();
+  rclcpp::Node::SharedPtr node = context_.nh_.lock();
   if (!node) {
     throw exceptions::RosNodeError(
-      context_.getFullName(this) +
-      " - The shared pointer to the ROS node went out of scope. The tree node doesn't "
-      "take the ownership of the node.");
+      context_.getFullyQualifiedTreeNodeName(this) +
+      " - The weak pointer to the ROS 2 node expired. The tree node doesn't "
+      "take ownership of it.");
+  }
+  rclcpp::CallbackGroup::SharedPtr group = context_.cb_group_.lock();
+  if (!group) {
+    throw exceptions::RosNodeError(
+      context_.getFullyQualifiedTreeNodeName(this) +
+      " - The weak pointer to the ROS 2 callback group expired. The tree node doesn't "
+      "take ownership of it.");
   }
   subscriber_key_ = std::string(node->get_fully_qualified_name()) + "/" + topic_name;
 
   auto & registry = getRegistry();
   auto it = registry.find(subscriber_key_);
   if (it == registry.end() || it->second.expired()) {
-    sub_instance_ = std::make_shared<SubscriberInstance>(node, topic_name, qos_);
+    sub_instance_ = std::make_shared<SubscriberInstance>(node, group, topic_name, qos_);
     registry.insert({subscriber_key_, sub_instance_});
     RCLCPP_DEBUG(
-      logger_, "%s - Created subscriber for topic '%s'.", context_.getFullName(this).c_str(), topic_name.c_str());
+      logger_, "%s - Created subscriber for topic '%s'.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+      topic_name.c_str());
   } else {
     sub_instance_ = it->second.lock();
   }
@@ -226,39 +223,51 @@ inline bool RosSubscriberNode<MessageT>::createSubscriber(const std::string & to
   signal_connection_ =
     sub_instance_->broadcaster.connect([this](const std::shared_ptr<MessageT> msg) { last_msg_ = msg; });
 
-  topic_name_ = topic_name;
   return true;
 }
 
 template <class MessageT>
 inline BT::NodeStatus RosSubscriberNode<MessageT>::tick()
 {
-  // First, check if the subscriber_ is valid and that the name of the
-  // topic_name in the port didn't change.
-  // otherwise, create a new subscriber
-  if (!sub_instance_ || (status() == BT::NodeStatus::IDLE && topic_name_should_be_checked_)) {
-    std::string topic_name;
-    getInput("topic_name", topic_name);
-    if (topic_name_ != topic_name) {
-      createSubscriber(topic_name);
+  if (!rclcpp::ok()) {
+    halt();
+    return BT::NodeStatus::FAILURE;
+  }
+
+  // If client has been set up in derived constructor, event though this constructor couldn't, we discard the intention
+  // of dynamically creating the client
+  if (dynamic_client_instance_ && sub_instance_) {
+    dynamic_client_instance_ = false;
+  }
+
+  // Try again to create the client on first tick if this was not possible during construction or if client should be
+  // created from a blackboard entry on the start of every iteration
+  if (status() == BT::NodeStatus::IDLE && dynamic_client_instance_) {
+    const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this);
+    if (expected_name) {
+      createSubscriber(expected_name.value());
+    } else {
+      throw exceptions::RosNodeError(
+        context_.getFullyQualifiedTreeNodeName(this) +
+        " - Cannot create the subscriber because the topic name couldn't be resolved using "
+        "the communication port expression specified by the node's "
+        "registration parameters (" +
+        NodeRegistrationParams::PARAM_NAME_PORT + ": " + context_.registration_params_.port +
+        "). Error message: " + expected_name.error());
     }
   }
 
   if (!sub_instance_) {
-    throw exceptions::RosNodeError(
-      context_.getFullName(this) +
-      " - You must specify a service name either by using a default value or by "
-      "passing a value to the corresponding dynamic input port.");
+    throw exceptions::RosNodeError(context_.getFullyQualifiedTreeNodeName(this) + " - sub_instance_ is nullptr.");
   }
 
   auto check_status = [this](BT::NodeStatus status) {
     if (!isStatusCompleted(status)) {
       throw exceptions::RosNodeError(
-        context_.getFullName(this) + " - The callback must return either SUCCESS or FAILURE.");
+        context_.getFullyQualifiedTreeNodeName(this) + " - The callback must return either SUCCESS or FAILURE.");
     }
     return status;
   };
-  sub_instance_->callback_group_executor.spin_some();
   auto status = check_status(onTick(last_msg_));
   last_msg_.reset();
   return status;
@@ -280,7 +289,8 @@ inline BT::NodeStatus RosSubscriberNode<MessageT>::onMessageReceived(const Messa
 template <class MessageT>
 inline std::string RosSubscriberNode<MessageT>::getTopicName() const
 {
-  return topic_name_;
+  if (sub_instance_) return sub_instance_->name;
+  return "unkown";
 }
 
 template <class MessageT>

@@ -1,21 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<root BTCPP_format="4" project_name="px4_contingency_mission">
-    <include path="bringup.xml"/>
-    <include path="contingency/contingency_hold.xml"/>
-    <include path="mission.xml"/>
-    <include path="shutdown.xml"/>
+<root BTCPP_format="4" project_name="Project">
+    <include path="builtin_nodes_test.xml"/>
+    <include path="infinite_w_bb_flags.xml"/>
     <!-- Description of Node Models (used by Groot) -->
     <TreeNodesModel>
-        <Action ID="Arm">
-            <input_port name="wait_until_ready_to_arm" default="true" type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
-            <input_port name="action_name" type="std::string">Action server name</input_port>
-        </Action>
-        <Action ID="Disarm">
-            <input_port name="action_name" type="std::string">Action server name</input_port>
-        </Action>
-        <Action ID="EnableHold">
-            <input_port name="action_name" type="std::string">Action server name</input_port>
-        </Action>
         <Action ID="Error">
             <input_port name="message" type="std::string">Error message. Creates a generic error message if empty.</input_port>
         </Action>
@@ -69,41 +57,12 @@
             <output_port name="value" type="std::vector&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt;">Output port for the parameter's value.</output_port>
             <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
         </Action>
-        <Action ID="GoTo">
-            <input_port name="lat" type="double">Target latitude</input_port>
-            <input_port name="lon" type="double">Target longitude</input_port>
-            <input_port name="alt" type="double">Target altitude in meter (AMSL)</input_port>
-            <input_port name="action_name" type="std::string">Action server name</input_port>
-        </Action>
-        <Action ID="GoToVector">
-            <input_port name="lat" type="double">Target latitude</input_port>
-            <input_port name="lon" type="double">Target longitude</input_port>
-            <input_port name="alt" type="double">Target altitude in meter (AMSL)</input_port>
-            <input_port name="action_name" type="std::string">Action server name</input_port>
-        </Action>
         <Action ID="HaltExecutor">
             <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
-        </Action>
-        <Action ID="Land">
-            <input_port name="action_name" type="std::string">Action server name</input_port>
-        </Action>
-        <Action ID="Mission">
-            <input_port name="do_restart" default="false" type="bool">Wether to restart (true) or resume (false) the mission.</input_port>
-            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="PauseExecutor">
             <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
         </Action>
-        <Action ID="RTL">
-            <input_port name="action_name" type="std::string">Action server name</input_port>
-        </Action>
-        <Condition ID="ReadGlobalPosition">
-            <output_port name="pos_vec" default="{pos_vec}" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position vector (latitude [°], longitude [°], altitude AMSL [m])</output_port>
-            <output_port name="alt" default="{alt}" type="double">Current altitude in meter (AMSL)</output_port>
-            <output_port name="lat" default="{lat}" type="double">Current latitude in degree [°]</output_port>
-            <output_port name="lon" default="{lon}" type="double">Current longitude in degree [°]</output_port>
-            <input_port name="topic_name" type="std::string">Topic name</input_port>
-        </Condition>
         <Action ID="ResumeExecutor">
             <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
         </Action>
@@ -165,10 +124,6 @@
             <input_port name="node_overrides" type="std::string">YAML/JSON formatted string encoding the registration parameters for any tree nodes supposed to be loaded/overridden before the execution starts.</input_port>
             <input_port name="clear_blackboard" default="true" type="bool">Boolean flag wether to clear the existing blackboard entries before the execution starts or not.</input_port>
             <input_port name="attach" default="true" type="bool">Boolean flag wether to attach to the execution process or start in detached mode.</input_port>
-        </Action>
-        <Action ID="Takeoff">
-            <input_port name="alt" type="double">Target takeoff altitude in meter (AMSL)</input_port>
-            <input_port name="action_name" type="std::string">Action server name</input_port>
         </Action>
         <Action ID="TerminateExecutor">
             <input_port name="executor" type="std::string">Name of the executor to command.</input_port>

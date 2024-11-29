@@ -62,17 +62,18 @@ private:
   using TerminationCallback = std::function<void(ExecutionResult, const std::string &)>;
 
 public:
-  TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr);
+  TreeExecutorBase(
+    rclcpp::Node::SharedPtr node_ptr, rclcpp::CallbackGroup::SharedPtr tree_node_callback_group_ptr = nullptr);
 
   std::shared_future<ExecutionResult> startExecution(
-    TreeConstructor make_tree, double tick_rate_sec = 0.25, int groot2_port = -1);
+    TreeConstructor make_tree, double tick_rate_sec = 0.1, int groot2_port = -1);
 
   template <typename TimeRepT = int64_t, typename TimeT = std::milli>
   std::shared_future<ExecutionResult> startExecution(
     TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, int groot2_port = -1);
 
 private:
-  void execution_routine_(TerminationCallback termination_callback);
+  void tick_callback_(TerminationCallback termination_callback);
 
   /* Virtual methods */
 
@@ -112,11 +113,17 @@ public:
   /// Get the node's base interface. Is required to be able to register derived classes as ROS2 components.
   rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface();
 
+  rclcpp::CallbackGroup::SharedPtr getTreeNodeWaitablesCallbackGroupPtr();
+
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr getTreeNodeWaitablesExecutorPtr();
+
 protected:
   rclcpp::Node::SharedPtr node_ptr_;
   const rclcpp::Logger logger_;
 
 private:
+  rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group_ptr_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor_ptr_;
   TreeBlackboardSharedPtr global_blackboard_ptr_;
   std::unique_ptr<Tree> tree_ptr_;
   std::unique_ptr<BT::Groot2Publisher> groot2_publisher_ptr_;

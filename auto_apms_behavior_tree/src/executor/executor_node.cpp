@@ -18,7 +18,7 @@
 #include <regex>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/util/bt_types.hpp"
+#include "auto_apms_behavior_tree/util/conversion.hpp"
 #include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_util/string.hpp"
 #include "rclcpp/utilities.hpp"
@@ -97,11 +97,11 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
   if (!unkown_param_names.empty()) {
     RCLCPP_WARN(
       logger_, "The following initial parameters are not supported and have been removed: [ %s ].",
-      rcpputils::join(unkown_param_names, ", ").c_str());
+      auto_apms_util::join(unkown_param_names, ", ").c_str());
   }
 
   // Create behavior tree node loader
-  node_loader_ptr_ = core::NodeRegistrationLoader::make_shared(
+  tree_node_loader_ptr_ = core::NodeRegistrationLoader::make_shared(
     std::set<std::string>(initial_params.node_exclude_packages.begin(), initial_params.node_exclude_packages.end()));
 
   // Create behavior tree build handler loader
@@ -179,7 +179,8 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
     // Log relevant arguments. First argument is executable name (argv[0]) and won't be considered.
     std::vector<std::string> relevant_args{args.begin() + 1, args.end()};
     RCLCPP_DEBUG(
-      logger_, "Additional cli arguments in rclcpp::NodeOptions: [ %s ]", rcpputils::join(relevant_args, ", ").c_str());
+      logger_, "Additional cli arguments in rclcpp::NodeOptions: [ %s ]",
+      auto_apms_util::join(relevant_args, ", ").c_str());
 
     // Start tree execution with the build handler request being the first relevant argument
     startExecution(makeTreeConstructor(relevant_args[0], ""), initial_params.tick_rate, initial_params.groot2_port);
@@ -225,18 +226,17 @@ bool TreeExecutorNode::updateScriptingEnumsWithParameterValues(
           if (!simulate) scripting_enums_[enum_key] = static_cast<int>(pval.get<bool>());
           break;
         case rclcpp::ParameterType::PARAMETER_INTEGER:
-          if (!simulate) scripting_enums_[enum_key] = pval.get<int64_t>();
+          if (!simulate) scripting_enums_[enum_key] = static_cast<int>(pval.get<int64_t>());
           break;
         default:
-          throw std::runtime_error("Parameter to scripting enum conversion is not defined.");
+          if (simulate) return false;
+          throw exceptions::ParameterConversionError("Parameter to scripting enum conversion is undefined.");
       }
       set_successfully_map[enum_key] = rclcpp::to_string(pval);
     } catch (const std::exception & e) {
-      if (!simulate) {
-        RCLCPP_ERROR(
-          logger_, "Error setting scripting enum from parameter %s=%s (Type: %s): %s", enum_key.c_str(),
-          rclcpp::to_string(pval).c_str(), rclcpp::to_string(pval.get_type()).c_str(), e.what());
-      }
+      RCLCPP_ERROR(
+        logger_, "Error setting scripting enum from parameter %s=%s (Type: %s): %s", enum_key.c_str(),
+        rclcpp::to_string(pval).c_str(), rclcpp::to_string(pval.get_type()).c_str(), e.what());
       return false;
     }
   }
@@ -254,99 +254,17 @@ bool TreeExecutorNode::updateBlackboardWithParameterValues(
   std::map<std::string, std::string> set_successfully_map;
   for (const auto & [entry_key, pval] : value_map) {
     try {
-      switch (pval.get_type()) {
-        case rclcpp::ParameterType::PARAMETER_BOOL:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<bool>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<bool>());
+      if (const BT::Expected<BT::Any> expected = createAnyFromParameterValue(pval)) {
+        BT::Any any(expected.value());
+        if (simulate) {
+          if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key)) {
+            if (entry_ptr->info.type() != any.type()) return false;
           }
-          break;
-        case rclcpp::ParameterType::PARAMETER_INTEGER:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<int64_t>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<int64_t>());
-          }
-          break;
-        case rclcpp::ParameterType::PARAMETER_DOUBLE:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<double>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<double>());
-          }
-          break;
-        case rclcpp::ParameterType::PARAMETER_STRING:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<std::string>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<std::string>());
-          }
-          break;
-        case rclcpp::ParameterType::PARAMETER_BYTE_ARRAY:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<std::vector<uint8_t>>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<std::vector<uint8_t>>());
-          }
-          break;
-        case rclcpp::ParameterType::PARAMETER_BOOL_ARRAY:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<std::vector<bool>>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<std::vector<bool>>());
-          }
-          break;
-        case rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<std::vector<int64_t>>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<std::vector<int64_t>>());
-          }
-          break;
-        case rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<std::vector<double>>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<std::vector<double>>());
-          }
-          break;
-        case rclcpp::ParameterType::PARAMETER_STRING_ARRAY:
-          if (simulate) {
-            if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key);
-                entry_ptr && !entry_ptr->value.isType<std::vector<std::string>>()) {
-              return false;
-            }
-          } else {
-            bb.set(entry_key, pval.get<std::vector<std::string>>());
-          }
-          break;
-        default:
-          throw std::runtime_error("Parameter to blackboard conversion is not defined.");
+        } else {
+          bb.set(entry_key, any);
+        }
+      } else {
+        throw exceptions::ParameterConversionError(expected.error());
       }
       set_successfully_map[entry_key] = rclcpp::to_string(pval);
     } catch (const std::exception & e) {
@@ -403,7 +321,8 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   // the tree later. Otherwise a segmentation fault might occur since memory allocated for the arguments might be
   // released at the time the method returns.
   return [this, root_tree_name, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
-    TreeBuilder builder(node_ptr_, node_loader_ptr_);
+    TreeBuilder builder(
+      node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_);
 
     // Allow executor to set up the builder independently from the build handler
     setUpBuilder(builder);
@@ -418,7 +337,7 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
     }
 
     // Allow for overriding selected node instances
-    builder.loadNodePlugins(node_overrides, true);
+    builder.makeNodesAvailable(node_overrides, true);
 
     // Finally, instantiate the tree
     return builder.instantiate(instantiate_name, bb_ptr);
@@ -786,7 +705,7 @@ bool TreeExecutorNode::onTick()
   auto running_action_history = state_observer.getRunningActionHistory();
   if (!running_action_history.empty()) {
     // If there are multiple nodes running (ParallelNode), join the IDs to a single string
-    feedback_ptr->running_action_name = rcpputils::join(running_action_history, " + ");
+    feedback_ptr->running_action_name = auto_apms_util::join(running_action_history, " + ");
     feedback_ptr->running_action_timestamp =
       std::chrono::duration<double>{std::chrono::high_resolution_clock::now().time_since_epoch()}.count();
 

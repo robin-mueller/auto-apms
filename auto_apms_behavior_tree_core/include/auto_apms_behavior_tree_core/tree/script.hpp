@@ -12,23 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include <string>
+#include <vector>
 
-#include "behaviortree_cpp/basic_types.h"
-
-/// @cond
-namespace BT
+namespace auto_apms_behavior_tree::core
 {
 
-template <>
-[[nodiscard]] std::vector<uint8_t> convertFromString<std::vector<uint8_t>>(StringView str);
+class Script
+{
+  friend class TreeDocument;
 
-template <>
-[[nodiscard]] std::vector<bool> convertFromString<std::vector<bool>>(StringView str);
+public:
+  Script() = default;
 
-template <>
-[[nodiscard]] std::vector<int64_t, std::allocator<int64_t>>
-convertFromString<std::vector<int64_t, std::allocator<int64_t>>>(StringView str);
+  Script(std::vector<std::string> expressions);
 
-}  // namespace BT
-/// @endcond
+  Script(const std::string & str);
+
+  Script(const char * str);
+
+  Script & operator+=(const Script & rhs);
+
+  friend Script operator+(Script lhs, const Script & rhs);
+
+  std::string str() const;
+
+private:
+  std::vector<std::string> expressions_;
+};
+
+}  // namespace auto_apms_behavior_tree::core

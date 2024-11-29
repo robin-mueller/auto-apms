@@ -44,11 +44,11 @@ UploadBehaviorTree:
   port: mission_manager/upload
 
 ResumeExecutor:
-  class_name: auto_apms_behavior_tree::ResumeExecutorAction
+  class_name: auto_apms_behavior_tree::ResumeExecutor
   port: mission_manager/command
 
 HaltExecutor:
-  class_name: auto_apms_behavior_tree::HaltExecutorAction
+  class_name: auto_apms_behavior_tree::HaltExecutor
   port: mission_manager/command
 
 ReadGlobalPosition:

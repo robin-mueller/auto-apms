@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4"
-      main_tree_to_execute="RootTree">
-  <BehaviorTree ID="RootTree">
+      main_tree_to_execute="ExecutorParamTest">
+  <BehaviorTree ID="ExecutorParamTest">
     <KeepRunningUntilFailure>
       <Error message="{@msg}"
              _skipIf="@throw == ENUM_THROW"/>

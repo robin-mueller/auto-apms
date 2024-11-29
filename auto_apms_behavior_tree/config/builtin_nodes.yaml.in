@@ -7,21 +7,101 @@ ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION}:
   class_name: auto_apms_behavior_tree::ThrowException
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::StartExecutorAction
-  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME}${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}
+  class_name: auto_apms_behavior_tree::StartExecutor
+  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_TERMINATE_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::TerminateExecutorAction
-  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME}${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  class_name: auto_apms_behavior_tree::TerminateExecutor
+  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HALT_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::HaltExecutorAction
-  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME}${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  class_name: auto_apms_behavior_tree::HaltExecutor
+  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_PAUSE_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::PauseExecutorAction
-  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME}${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  class_name: auto_apms_behavior_tree::PauseExecutor
+  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_RESUME_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::ResumeExecutorAction
-  port: ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME}${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  class_name: auto_apms_behavior_tree::ResumeExecutor
+  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER}:
+  class_name: auto_apms_behavior_tree::SetParameter
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL}:
+  class_name: auto_apms_behavior_tree::SetParameterBool
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT}:
+  class_name: auto_apms_behavior_tree::SetParameterInt
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE}:
+  class_name: auto_apms_behavior_tree::SetParameterDouble
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING}:
+  class_name: auto_apms_behavior_tree::SetParameterString
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BYTE_VEC}:
+  class_name: auto_apms_behavior_tree::SetParameterByteVec
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL_VEC}:
+  class_name: auto_apms_behavior_tree::SetParameterBoolVec
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT_VEC}:
+  class_name: auto_apms_behavior_tree::SetParameterIntVec
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE_VEC}:
+  class_name: auto_apms_behavior_tree::SetParameterDoubleVec
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING_VEC}:
+  class_name: auto_apms_behavior_tree::SetParameterStringVec
+  port: (input:node)/set_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER}:
+  class_name: auto_apms_behavior_tree::GetParameter
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL}:
+  class_name: auto_apms_behavior_tree::GetParameterBool
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT}:
+  class_name: auto_apms_behavior_tree::GetParameterInt
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE}:
+  class_name: auto_apms_behavior_tree::GetParameterDouble
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING}:
+  class_name: auto_apms_behavior_tree::GetParameterString
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BYTE_VEC}:
+  class_name: auto_apms_behavior_tree::GetParameterByteVec
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL_VEC}:
+  class_name: auto_apms_behavior_tree::GetParameterBoolVec
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC}:
+  class_name: auto_apms_behavior_tree::GetParameterIntVec
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC}:
+  class_name: auto_apms_behavior_tree::GetParameterDoubleVec
+  port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC}:
+  class_name: auto_apms_behavior_tree::GetParameterStringVec
+  port: (input:node)/get_parameters

@@ -37,6 +37,8 @@ enum class TextColor
   CYAN
 };
 
+using rcpputils::join;
+
 /**
  * @brief Split a string into multiple tokens using a specific delimiter string (Delimiter may consist of multiple
  * characters).

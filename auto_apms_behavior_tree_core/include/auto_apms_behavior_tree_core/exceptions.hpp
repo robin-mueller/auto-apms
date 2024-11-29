@@ -19,7 +19,7 @@
 namespace auto_apms_behavior_tree::exceptions
 {
 
-struct TreeDocumentError : public auto_apms_util::exceptions::ExceptionBase
+struct NodeManifestError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };
@@ -29,12 +29,17 @@ struct RosNodeError : public auto_apms_util::exceptions::ExceptionBase
   using ExceptionBase::ExceptionBase;
 };
 
-struct TreeBuildError : public auto_apms_util::exceptions::ExceptionBase
+struct TreeDocumentError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };
 
-struct NodeManifestError : public auto_apms_util::exceptions::ExceptionBase
+struct ScriptError : public auto_apms_util::exceptions::ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
+};
+
+struct TreeBuildError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;
 };

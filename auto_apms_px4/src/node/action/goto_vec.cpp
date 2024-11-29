@@ -38,8 +38,8 @@ public:
     if (auto any_locked = getLockedPortContent(INPUT_KEY_VEC)) {
       if (any_locked->empty()) {
         RCLCPP_ERROR(
-          context_.getLogger(), "%s - Value at blackboard entry {%s} is empty", context_.getFullName(this).c_str(),
-          INPUT_KEY_VEC);
+          context_.getLogger(), "%s - Value at blackboard entry {%s} is empty",
+          context_.getFullyQualifiedTreeNodeName(this).c_str(), INPUT_KEY_VEC);
         return false;
       } else if (Eigen::Vector3d * vec_ptr = any_locked->castPtr<Eigen::Vector3d>()) {
         goal.lat = vec_ptr->x();
@@ -49,13 +49,14 @@ public:
         return true;
       } else {
         RCLCPP_ERROR(
-          context_.getLogger(), "%s - Failed to cast pointer {%s}", context_.getFullName(this).c_str(), INPUT_KEY_VEC);
+          context_.getLogger(), "%s - Failed to cast pointer {%s}",
+          context_.getFullyQualifiedTreeNodeName(this).c_str(), INPUT_KEY_VEC);
         return false;
       }
     }
     RCLCPP_ERROR(
-      context_.getLogger(), "%s - getLockedPortContent() failed for argument %s", context_.getFullName(this).c_str(),
-      INPUT_KEY_VEC);
+      context_.getLogger(), "%s - getLockedPortContent() failed for argument %s",
+      context_.getFullyQualifiedTreeNodeName(this).c_str(), INPUT_KEY_VEC);
     return false;
   }
 };

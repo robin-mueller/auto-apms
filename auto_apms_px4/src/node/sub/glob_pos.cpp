@@ -29,6 +29,7 @@ namespace auto_apms_px4
 
 class ReadGlobalPosition : public auto_apms_behavior_tree::core::RosSubscriberNode<GlobalPositionMsg>
 {
+  bool first_message_received_ = false;
   GlobalPositionMsg last_msg_;
 
 public:
@@ -53,8 +54,11 @@ public:
   {
     // Check if a new message was received
     if (last_msg_ptr) {
+      first_message_received_ = true;
       last_msg_ = *last_msg_ptr;
     }
+
+    if (!first_message_received_) return BT::NodeStatus::FAILURE;
 
     if (auto any_locked = getLockedPortContent(OUTPUT_KEY_POS)) {
       setOutput(OUTPUT_KEY_LAT, last_msg_.lat);
@@ -65,8 +69,8 @@ public:
       return BT::NodeStatus::SUCCESS;
     }
     RCLCPP_ERROR(
-      context_.getLogger(), "%s - getLockedPortContent() failed for argument %s", context_.getFullName(this).c_str(),
-      OUTPUT_KEY_POS);
+      context_.getLogger(), "%s - getLockedPortContent() failed for argument %s",
+      context_.getFullyQualifiedTreeNodeName(this).c_str(), OUTPUT_KEY_POS);
     return BT::NodeStatus::FAILURE;
   }
 };

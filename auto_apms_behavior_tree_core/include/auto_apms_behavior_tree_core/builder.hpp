@@ -21,8 +21,7 @@
 #include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
 #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 #include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
-#include "rclcpp/macros.hpp"
-#include "rclcpp/node.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace auto_apms_behavior_tree::core
 {
@@ -44,15 +43,42 @@ class TreeBuilder
 {
   friend class TreeDocument;
 
+  inline static const std::string LOGGER_NAME = "behavior_tree_builder";
+
 public:
   using TreeElement = TreeDocument::TreeElement;
   using NodeElement = TreeDocument::NodeElement;
 
   RCLCPP_SMART_PTR_DEFINITIONS_NOT_COPYABLE(TreeBuilder)
 
+  /**
+   * @brief TreeBuilder constructor.
+   *
+   * Arguments @p ros_node_ptr, @p tree_node_waitables_callback_group and @p tree_node_waitables_executor are passed to
+   * behavior tree node plugins which utilize ROS 2 communication interfaces or waitables in general, that is, all nodes
+   * inheriting from RosPublisherNode, RosSubscriberNode, RosServiceNode or RosActionNode.
+   *
+   * @param[in] ros_node Weak pointer to the ROS 2 node instance to be associate the behavior tree node with.
+   * @param[in] tree_node_waitables_callback_group The ROS 2 callback group to be used within tree nodes when adding
+   * waitables.
+   * @param[in] tree_node_waitables_executor The ROS 2 executor instance that may be used for executing work provided by
+   * the node's waitables.
+   * @param tree_node_loader Shared pointer to the behavior tree node plugin loader instance.
+   */
   TreeBuilder(
-    rclcpp::Node::SharedPtr node_ptr,
-    NodeRegistrationLoader::SharedPtr tree_node_loader_ptr = NodeRegistrationLoader::make_shared());
+    rclcpp::Node::WeakPtr ros_node, rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group,
+    rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor,
+    NodeRegistrationLoader::SharedPtr tree_node_loader = NodeRegistrationLoader::make_shared());
+
+  /**
+   * @brief TreeBuilder constructor.
+   *
+   * Using this signature you'll only be able to load behavior tree nodes that don't require an instance of
+   * RosNodeContext during construction time.
+   *
+   * @param tree_node_loader Shared pointer to the behavior tree node plugin loader instance.
+   */
+  TreeBuilder(NodeRegistrationLoader::SharedPtr tree_node_loader = NodeRegistrationLoader::make_shared());
 
   /* TreeDocument methods */
 
@@ -88,7 +114,7 @@ public:
 
   std::string writeTreeDocumentToString() const;
 
-  /* Factory related member funtions */
+  /* Factory related member functions */
 
   TreeBuilder & setScriptingEnum(const std::string & enum_name, int val);
 
@@ -96,18 +122,20 @@ public:
   TreeBuilder & setScriptingEnumsFromType();
 
   /**
-   * @brief Load behavior tree node plugins and register with behavior tree factory.
+   * @brief Load behavior tree node plugins and register them with the internal behavior tree factory.
    *
-   * @param[in] node_manifest Parameters for locating and configuring the behavior tree node plugins.
-   * @param[in] override If @p node_manifest specifies nodes that have already been registered, unregister the
+   * This makes it possible to add any nodes specified in @p tree_node_manifest to the tree.
+   *
+   * @param[in] tree_node_manifest Parameters for locating and configuring the behavior tree node plugins.
+   * @param[in] override If @p tree_node_manifest specifies nodes that have already been registered, unregister the
    * existing plugin and use the new one instead.
    * @throw exceptions::TreeBuildError if registration fails.
    */
-  TreeBuilder & loadNodePlugins(const NodeManifest & node_manifest, bool override = false);
+  TreeBuilder & makeNodesAvailable(const NodeManifest & tree_node_manifest, bool override = false);
 
-  std::unordered_map<std::string, BT::NodeType> getRegisteredNodeTypeMap(bool include_native = false) const;
+  std::unordered_map<std::string, BT::NodeType> getAvailableNodeTypeMap(bool include_native = true) const;
 
-  std::set<std::string> getAvailableNodeNames(bool include_native = false) const;
+  std::set<std::string> getAvailableNodeNames(bool include_native = true) const;
 
   TreeBuilder & addNodeModelToDocument(bool include_native = false);
 
@@ -125,10 +153,13 @@ public:
 private:
   void getNodeModel(tinyxml2::XMLDocument & doc, bool include_native = false) const;
 
+  rclcpp::Node::WeakPtr ros_node_wptr_;
+  rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group_wptr_;
+  rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor_wptr_;
+  NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
+  rclcpp::Logger logger_;
   TreeDocument doc_;
   BT::BehaviorTreeFactory factory_;
-  rclcpp::Node::WeakPtr ros_node_wptr_;
-  NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
   const std::map<std::string, std::string> all_node_classes_package_map_;
   const std::set<std::string> native_node_names_;
   std::map<std::string, std::string> registered_node_class_names_map_;

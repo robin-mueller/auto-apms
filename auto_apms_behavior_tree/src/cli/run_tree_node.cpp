@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
   // been successfully canceled
   rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
   signal(SIGINT, [](int /*sig*/) { termination_requested = 1; });
-  auto node_ptr = std::make_shared<rclcpp::Node>("run_tree_node_cpp");
+  rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("run_tree_node_cpp");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
   core::NodeRegistrationParams registration_params;
@@ -62,11 +62,13 @@ int main(int argc, char ** argv)
     }
   }
 
-  const std::string tree_name = "RunTreeNodeCPP";
-  core::TreeBuilder builder(node_ptr);
+  TreeExecutorBase executor(node_ptr);
+  core::TreeBuilder builder(
+    node_ptr, executor.getTreeNodeWaitablesCallbackGroupPtr(), executor.getTreeNodeWaitablesExecutorPtr());
   try {
-    builder.newTree(tree_name)
-      .loadAndInsertNode(registration_params.class_name.c_str(), registration_params)
+    builder.newTree("RunTreeNodeCPP")
+      .makeRoot()
+      .loadAndInsertNode(registration_params.class_name, registration_params)
       .setPorts(port_values, true);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR inserting tree node: %s", e.what());
@@ -76,11 +78,10 @@ int main(int argc, char ** argv)
   RCLCPP_DEBUG(
     node_ptr->get_logger(), "Creating a tree with a single node:\n%s", builder.writeTreeDocumentToString().c_str());
 
-  TreeExecutorBase executor(node_ptr);
-  auto future = executor.startExecution(
-    [&builder, &tree_name](TreeBlackboardSharedPtr bb) { return builder.instantiate(tree_name, bb); });
+  std::shared_future<TreeExecutorBase::ExecutionResult> future =
+    executor.startExecution([&builder](TreeBlackboardSharedPtr bb) { return builder.instantiate(bb); });
 
-  const auto termination_timeout = std::chrono::duration<double>(1.5);
+  const std::chrono::duration<double> termination_timeout(1.5);
   rclcpp::Time termination_start;
   bool termination_started = false;
   try {

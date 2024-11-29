@@ -68,8 +68,10 @@ struct NodeRegistrationParams
    * - RosServiceNode: Name of the service
    * - RosPublisherNode: Name of the topic to publish to
    * - RosSubscriberNode: Name of the topic to subscribe to
+   *
+   * By default, we look for the communication port name using the node's input port named 'port'.
    */
-  std::string port;
+  std::string port = "(input:port)";
   /// Timeout [s] for initially discovering the associated ROS2 node.
   std::chrono::duration<double> wait_timeout = std::chrono::duration<double>(3);
   /// Timeout [s] for waiting for a response for the requested service or goal.

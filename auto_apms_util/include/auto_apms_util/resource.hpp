@@ -183,7 +183,7 @@ inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::makeUnambiguousPluginC
   for (const auto & [class_name, packages] : packages_for_class_name) {
     if (packages.size() > 1) {
       error_details.push_back(
-        "- Class '" + class_name + "' found in packages ['" + rcpputils::join(packages, "', '") + "'].");
+        "- Class '" + class_name + "' found in packages ['" + auto_apms_util::join(packages, "', '") + "'].");
     }
   }
   if (!error_details.empty()) {
@@ -191,7 +191,7 @@ inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::makeUnambiguousPluginC
       "Ambiguous class names found! PluginClassLoader (Base: '" + base_class +
       "') created with makeUnambiguousPluginClassLoader() won't register resources from packages "
       "that use already existing lookup names. Found the following duplicates:\n" +
-      rcpputils::join(error_details, "\n"));
+      auto_apms_util::join(error_details, "\n"));
   }
   return {base_package, base_class, exclude_packages};
 }

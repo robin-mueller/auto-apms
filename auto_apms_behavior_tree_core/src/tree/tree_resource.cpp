@@ -162,11 +162,12 @@ std::string TreeResource::getRootTreeName() const
   if (!identity_.tree_name.empty()) return identity_.tree_name;
 
   // If <tree_name> wasn't provided, look for root tree attribute in XML file
-  if (const TreeDocument doc(*this); doc.hasRootTreeName()) return doc.getRootTreeName();
+  TreeDocument doc;
+  if (doc.mergeResource(*this, true).hasRootTreeName()) return doc.getRootTreeName();
 
   // Root tree cannot be determined
   throw auto_apms_util::exceptions::ResourceError(
-    "Cannot get root tree name of tree resource'" + identity_.str() + "'. Since there is no XML attribute named '" +
+    "Cannot get root tree name of tree resource '" + identity_.str() + "'. Since there is no XML attribute named '" +
     TreeDocument::ROOT_TREE_ATTRIBUTE_NAME +
     "' and the resource identity doesn't specify <tree_name>, the root tree is unkown.");
 }

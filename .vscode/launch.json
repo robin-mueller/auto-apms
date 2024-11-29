@@ -2,13 +2,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch new_tree",
+            "name": "(gdb) Launch new_tree",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree/lib/auto_apms_behavior_tree/new_tree",
-            "args": ["${workspaceFolder:px4-ros2-env}/text.xml"],
+            "args": [
+                "${file} ${input:nodeManifestResourceIdentity}"
+            ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder:px4-ros2-env}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -26,12 +28,101 @@
             ]
         },
         {
-            "name": "TreeExecutor debugger",
+            "name": "(gdb) Launch run_tree",
             "type": "cppdbg",
             "request": "launch",
-            "miDebuggerServerAddress": "localhost:3000",
-            "cwd": "/",
-            "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree/lib/auto_apms_behavior_tree/tree_executor"
-        }
+            "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree/lib/auto_apms_behavior_tree/run_tree",
+            "args": [
+                "${input:treeResourceIdentity}"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch run_tree_node",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree/lib/auto_apms_behavior_tree/run_tree_node",
+            "args": [
+                "${input:registrationParams} ${input:portValues}"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Attach tree_executor",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree/lib/auto_apms_behavior_tree/tree_executor",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+    ],
+    "inputs": [
+        {
+            "type": "promptString",
+            "id": "nodeManifestResourceIdentity",
+            "description": "Node manifest resource identity",
+            "default": ""
+        },
+        {
+            "type": "promptString",
+            "id": "treeResourceIdentity",
+            "description": "Behavior tree resource identity",
+            "default": ""
+        },
+        {
+            "type": "promptString",
+            "id": "registrationParams",
+            "description": "Node registration parameters as JSON map",
+            "default": ""
+        },
+        {
+            "type": "promptString",
+            "id": "portValues",
+            "description": "Node port values as JSON map",
+            "default": ""
+        },
     ]
 }

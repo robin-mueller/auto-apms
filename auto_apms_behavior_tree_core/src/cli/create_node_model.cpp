@@ -22,7 +22,6 @@
 #include "auto_apms_util/string.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 #include "class_loader/class_loader.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 using namespace auto_apms_behavior_tree;
 
@@ -30,7 +29,7 @@ int main(int argc, char ** argv)
 {
   if (argc < 3) {
     std::cerr << "create_node_model: Missing inputs! The program requires: \n\t1.) The path to the node plugin "
-                 "manifest.\n\t2. The exhaustive list of libraries to be loaded by ClassLoader (Seperated by "
+                 "manifest.\n\t2. The exhaustive list of libraries to be loaded by ClassLoader (Separated by "
                  "';').\n\t3.) The xml file to "
                  "store the model.\n";
     std::cerr << "Usage: create_node_model <manifest_file> <library_paths> <output_file>.\n";
@@ -58,9 +57,8 @@ int main(int argc, char ** argv)
       throw std::runtime_error("Output file '" + output_file.string() + "' has wrong extension. Must be '.xml'.");
     }
 
-    rclcpp::init(argc, argv);
-    auto node_ptr = std::make_shared<rclcpp::Node>("create_node_model__" + output_file.stem().string());
-    auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
+    const rclcpp::Logger logger = rclcpp::get_logger("create_node_model__" + output_file.stem().string());
+    auto_apms_util::exposeToDebugLogging(logger);
 
     BT::BehaviorTreeFactory factory;
     const auto manifest = core::NodeManifest::fromFile(manifest_file);
@@ -70,8 +68,8 @@ int main(int argc, char ** argv)
      * customizing the internal node/library allocation map.
      */
 
-    // Instatiate loaders for all libraries in library_paths (We don't use class_loader::MultiLibraryClassLoader because
-    // we want to keep track of the libraries that the nodes come from for debugging purposes)
+    // Instantiate loaders for all libraries in library_paths (We don't use class_loader::MultiLibraryClassLoader
+    // because we want to keep track of the libraries that the nodes come from for debugging purposes)
     std::vector<std::unique_ptr<class_loader::ClassLoader>> class_loaders;
     for (const auto & path : library_paths) class_loaders.push_back(std::make_unique<class_loader::ClassLoader>(path));
 
@@ -97,16 +95,20 @@ int main(int argc, char ** argv)
       }
 
       RCLCPP_DEBUG(
-        node_ptr->get_logger(), "Loading behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
+        logger, "Loading behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
         params.class_name.c_str(), loader->getLibraryPath().c_str());
 
       try {
         const auto plugin_instance = loader->createUniqueInstance<core::NodeRegistrationInterface>(required_class_name);
-        core::RosNodeContext ros_node_context(node_ptr, params);  // Values don't matter when not instantiating it
+        rclcpp::Node::SharedPtr node = nullptr;
+        rclcpp::CallbackGroup::SharedPtr group = nullptr;
+        rclcpp::executors::SingleThreadedExecutor::SharedPtr executor = nullptr;
+        core::RosNodeContext ros_node_context(
+          node, group, executor, params);  // Values don't matter when not instantiating it
         plugin_instance->registerWithBehaviorTreeFactory(factory, node_name, &ros_node_context);
       } catch (const std::exception & e) {
         throw std::runtime_error(
-          "Failed to load and register node '" + node_name + " (Class: " + params.class_name + ")': " + e.what() + ".");
+          "Failed to load and register node '" + node_name + " (Class: " + params.class_name + ")': " + e.what());
       }
     }
 

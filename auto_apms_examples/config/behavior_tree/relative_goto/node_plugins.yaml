@@ -1,0 +1,31 @@
+# NOTE:
+# The ROS2 namespace concept (https://design.ros2.org/articles/topic_and_service_names.html)
+# applies to 'port'. That is, you can specify both relative and absolute names.
+#
+
+Error:
+  class_name: auto_apms_behavior_tree::ThrowException
+
+ReadGlobalPosition:
+  class_name: auto_apms_px4::ReadGlobalPosition
+  port: /fmu/out/vehicle_global_position
+
+Arm:
+  class_name: auto_apms_px4::ArmAction
+  port: arm_disarm
+
+Takeoff:
+  class_name: auto_apms_px4::TakeoffAction
+  port: takeoff
+
+GoTo:
+  class_name: auto_apms_px4::GoToAction
+  port: go_to
+
+Land:
+  class_name: auto_apms_px4::LandAction
+  port: land
+
+Disarm:
+  class_name: auto_apms_px4::DisarmAction
+  port: arm_disarm

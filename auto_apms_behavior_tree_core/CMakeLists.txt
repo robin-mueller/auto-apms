@@ -41,6 +41,7 @@ add_library(auto_apms_behavior_tree_core SHARED
     "src/node/node_manifest.cpp"
     "src/node/ros_node_context.cpp"
     "src/node/node_registration_loader.cpp"
+    "src/tree/script.cpp"
     "src/tree/tree_resource.cpp"
     "src/tree/tree_document.cpp"
     "src/builder.cpp"

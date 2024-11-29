@@ -131,7 +131,7 @@ private:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_ptr_;
   std::shared_ptr<rclcpp::ParameterEventHandler> parameter_event_handler_ptr_;
   rclcpp::ParameterEventCallbackHandle::SharedPtr parameter_event_callback_handle_ptr_;
-  core::NodeRegistrationLoader::SharedPtr node_loader_ptr_;
+  core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
   TreeBuildHandlerLoader::UniquePtr build_handler_loader_ptr_;
   TreeBuildHandler::UniquePtr build_handler_ptr_;
   std::string current_build_handler_name_;

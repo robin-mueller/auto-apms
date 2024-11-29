@@ -16,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "auto_apms_behavior_tree/executor/executor_base.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -66,13 +67,17 @@ int main(int argc, char ** argv)
     }
   }
 
+  // We don't use the node in any way, but we need a valid pointer to rclcpp::Node for TreeBuilder to make it possible
+  // to load ROS 2 behavior tree node plugins
   rclcpp::init(argc, argv);
   rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("_new_tree_temp_node");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
   // Prepare template document
-  core::TreeBuilder builder(node_ptr);
-  builder.loadNodePlugins(node_manifest);
+  TreeExecutorBase executor(node_ptr);  // Helper to create the necessary constructor arguments
+  core::TreeBuilder builder(
+    node_ptr, executor.getTreeNodeWaitablesCallbackGroupPtr(), executor.getTreeNodeWaitablesExecutorPtr());
+  builder.makeNodesAvailable(node_manifest);
   core::TreeBuilder::TreeElement tree = builder.newTree(NEW_TREE_NAME).makeRoot();
 
   // Insert template children

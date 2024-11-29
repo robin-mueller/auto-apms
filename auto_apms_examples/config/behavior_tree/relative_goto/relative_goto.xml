@@ -2,25 +2,27 @@
 <root BTCPP_format="4"
       main_tree_to_execute="RelativeGoTo">
   <BehaviorTree ID="RelativeGoTo">
-    <SequenceWithMemory>
-      <ReadGlobalPosition pos_vec="{pos_vec}"
-                          alt="{alt}"
-                          lat="{lat}"
-                          lon="{lon}"
-                          topic_name=""
-                          _onSuccess="new_alt := alt + 10;&#10;new_lon := lon + 0.0001"/>
-      <Arm name="ArmInstance"
-           wait_until_ready_to_arm="true"
-           action_name=""/>
-      <Takeoff alt="{new_alt}"
-               action_name=""/>
-      <GoTo lat="{lat}"
-            lon="{new_lon}"
-            alt="{new_alt}"
-            action_name=""/>
-      <Land action_name=""/>
-      <Disarm action_name=""/>
-    </SequenceWithMemory>
+    <Fallback>
+      <SequenceWithMemory>
+        <ReadGlobalPosition pos_vec="{pos_vec}"
+                            alt="{alt}"
+                            lat="{lat}"
+                            lon="{lon}"
+                            port=""
+                            _onSuccess="new_alt := alt + 10;&#10;new_lon := lon + 0.0001"/>
+        <Arm wait_until_ready_to_arm="true"
+             port=""/>
+        <Takeoff alt="{new_alt}"
+                 port=""/>
+        <GoTo lat="{lat}"
+              lon="{new_lon}"
+              alt="{new_alt}"
+              port=""/>
+        <Land port=""/>
+        <Disarm port=""/>
+      </SequenceWithMemory>
+      <Error message="relative_goto failed"/>
+    </Fallback>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
@@ -29,12 +31,16 @@
       <input_port name="wait_until_ready_to_arm"
                   default="true"
                   type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
     <Action ID="Disarm">
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
+    </Action>
+    <Action ID="Error">
+      <input_port name="message"
+                  type="std::string">Error message. Creates a generic error message if empty.</input_port>
     </Action>
     <Action ID="GoTo">
       <input_port name="lat"
@@ -43,12 +49,12 @@
                   type="double">Target longitude</input_port>
       <input_port name="alt"
                   type="double">Target altitude in meter (AMSL)</input_port>
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
     <Action ID="Land">
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
     <Condition ID="ReadGlobalPosition">
       <output_port name="pos_vec"
@@ -63,14 +69,14 @@
       <output_port name="lon"
                    default="{lon}"
                    type="double">Current longitude in degree [°]</output_port>
-      <input_port name="topic_name"
-                  type="std::string">Topic name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 topic to subscribe to.</input_port>
     </Condition>
     <Action ID="Takeoff">
       <input_port name="alt"
                   type="double">Target takeoff altitude in meter (AMSL)</input_port>
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
   </TreeNodesModel>
 

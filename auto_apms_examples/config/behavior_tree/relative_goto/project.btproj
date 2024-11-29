@@ -5,30 +5,33 @@
     <TreeNodesModel>
         <Action ID="Arm">
             <input_port name="wait_until_ready_to_arm" default="true" type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
-            <input_port name="action_name" type="std::string">Action server name</input_port>
+            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
         </Action>
         <Action ID="Disarm">
-            <input_port name="action_name" type="std::string">Action server name</input_port>
+            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
+        </Action>
+        <Action ID="Error">
+            <input_port name="message" type="std::string">Error message. Creates a generic error message if empty.</input_port>
         </Action>
         <Action ID="GoTo">
             <input_port name="lat" type="double">Target latitude</input_port>
             <input_port name="lon" type="double">Target longitude</input_port>
             <input_port name="alt" type="double">Target altitude in meter (AMSL)</input_port>
-            <input_port name="action_name" type="std::string">Action server name</input_port>
+            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
         </Action>
         <Action ID="Land">
-            <input_port name="action_name" type="std::string">Action server name</input_port>
+            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
         </Action>
         <Condition ID="ReadGlobalPosition">
             <output_port name="pos_vec" default="{pos_vec}" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position vector (latitude [°], longitude [°], altitude AMSL [m])</output_port>
             <output_port name="alt" default="{alt}" type="double">Current altitude in meter (AMSL)</output_port>
             <output_port name="lat" default="{lat}" type="double">Current latitude in degree [°]</output_port>
             <output_port name="lon" default="{lon}" type="double">Current longitude in degree [°]</output_port>
-            <input_port name="topic_name" type="std::string">Topic name</input_port>
+            <input_port name="port" type="std::string">Name of the ROS 2 topic to subscribe to.</input_port>
         </Condition>
         <Action ID="Takeoff">
             <input_port name="alt" type="double">Target takeoff altitude in meter (AMSL)</input_port>
-            <input_port name="action_name" type="std::string">Action server name</input_port>
+            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
         </Action>
     </TreeNodesModel>
 </root>

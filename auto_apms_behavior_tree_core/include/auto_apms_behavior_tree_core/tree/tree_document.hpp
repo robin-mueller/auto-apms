@@ -16,10 +16,13 @@
 
 #include <tinyxml2.h>
 
+#include <functional>
 #include <string>
 #include <vector>
 
 #include "auto_apms_behavior_tree_core/node/node_registration_params.hpp"
+#include "auto_apms_behavior_tree_core/tree/script.hpp"
+#include "behaviortree_cpp/tree_node.h"
 
 namespace auto_apms_behavior_tree::core
 {
@@ -34,6 +37,11 @@ class TreeDocument : private tinyxml2::XMLDocument
   using XMLElement = tinyxml2::XMLElement;
 
 public:
+  using NodePreCondition = BT::PreCond;
+  using NodePostCondition = BT::PostCond;
+
+  static inline const char BTCPP_FORMAT_ATTRIBUTE_NAME[] = "BTCPP_format";
+  static inline const char BTCPP_FORMAT_DEFAULT_VERSION[] = "4";
   static inline const char ROOT_ELEMENT_NAME[] = "root";
   static inline const char ROOT_TREE_ATTRIBUTE_NAME[] = "main_tree_to_execute";
   static inline const char TREE_ELEMENT_NAME[] = "BehaviorTree";
@@ -46,8 +54,12 @@ public:
 
   class NodeElement
   {
+    friend class TreeBuilder;
+
   public:
     using PortValues = std::map<std::string, std::string>;
+    using DeepApplyCallback = std::function<bool(NodeElement &)>;
+    using ConstDeepApplyCallback = std::function<bool(const NodeElement &)>;
 
   protected:
     NodeElement(TreeBuilder * builder_ptr, XMLElement * ele_ptr);
@@ -64,9 +76,9 @@ public:
     NodeElement insertTree(const TreeElement & tree, const NodeElement * before_this = nullptr);
 
     NodeElement insertTreeFromDocument(
-      TreeDocument & doc, const std::string & tree_name, const NodeElement * before_this = nullptr);
+      const TreeDocument & other, const std::string & tree_name, const NodeElement * before_this = nullptr);
 
-    NodeElement insertTreeFromDocument(TreeDocument & doc, const NodeElement * before_this = nullptr);
+    NodeElement insertTreeFromDocument(const TreeDocument & other, const NodeElement * before_this = nullptr);
 
     NodeElement insertTreeFromString(
       const std::string & tree_str, const std::string & tree_name, const NodeElement * before_this = nullptr);
@@ -82,6 +94,14 @@ public:
       const TreeResource & resource, const std::string & tree_name, const NodeElement * before_this = nullptr);
 
     NodeElement insertTreeFromResource(const TreeResource & resource, const NodeElement * before_this = nullptr);
+
+    bool hasChildren() const;
+
+    NodeElement getFirstNode(const std::string & name = "") const;
+
+    NodeElement & removeFirstChild(const std::string & name = "");
+
+    NodeElement & removeChildren();
 
     /**
      * @brief Set the node's ports.
@@ -102,13 +122,9 @@ public:
      */
     NodeElement & setPorts(const PortValues & port_values = {}, bool verify = true);
 
-    NodeElement getFirstNode(const std::string & name = "") const;
+    NodeElement & setPreCondition(NodePreCondition type, const Script & script);
 
-    NodeElement & removeFirstChild(const std::string & name = "");
-
-    NodeElement & removeChildren();
-
-    bool hasChildren() const;
+    NodeElement & setPostCondition(NodePostCondition type, const Script & script);
 
     std::string getRegistrationName() const;
 
@@ -116,35 +132,51 @@ public:
 
     std::string getFullyQualifiedName() const;
 
+    const std::vector<NodeElement> deepApply(ConstDeepApplyCallback apply_callback) const;
+
+    std::vector<NodeElement> deepApply(DeepApplyCallback apply_callback);
+
   private:
     NodeElement insertBeforeImpl(const NodeElement * before_this, XMLElement * add_this);
 
-    NodeElement insertTreeImpl(const XMLElement * tree_root, const NodeElement * before_this = nullptr);
+    static void deepApplyImpl(
+      const NodeElement & parent, ConstDeepApplyCallback apply_callback, std::vector<NodeElement> & vec);
 
-    static XMLElement * getFirstNodeImpl(XMLElement * ele, const std::string & name);
+    static void deepApplyImpl(NodeElement & parent, DeepApplyCallback apply_callback, std::vector<NodeElement> & vec);
 
   protected:
     TreeBuilder * builder_ptr_;
     tinyxml2::XMLElement * ele_ptr_;
+
+  private:
+    std::vector<std::string> port_keys_;
+    std::map<std::string, std::string> port_default_values_;
   };
 
   class TreeElement : public NodeElement
   {
     friend class TreeBuilder;
 
-    using NodeElement::NodeElement;
+  protected:
+    TreeElement(TreeBuilder * builder_ptr, XMLElement * ele_ptr);
 
   public:
-    NodeElement & setPorts() = delete;
-
     std::string getName() const override;
 
     TreeElement & makeRoot();
+
+    /* Not supported methods for a TreeElement instances */
+
+    NodeElement & setPorts() = delete;
+    NodeElement & setPreCondition() = delete;
+    NodeElement & setPostCondition() = delete;
   };
 
-  TreeDocument();
+  TreeDocument(const std::string & format_version = BTCPP_FORMAT_DEFAULT_VERSION);
 
-  explicit TreeDocument(const TreeResource & resource);
+  TreeDocument(const TreeDocument & other);
+
+  TreeDocument & operator=(const TreeDocument & other);
 
   TreeDocument & merge(const XMLDocument & other, bool adopt_root_tree = false);
 
@@ -172,8 +204,16 @@ public:
 
   TreeDocument & reset(const TreeDocument & new_doc);
 
-private:
+protected:
+  const XMLElement * getXMLElementForTreeWithName(const std::string & tree_name) const;
+
   XMLElement * getXMLElementForTreeWithName(const std::string & tree_name);
+
+private:
+  template <typename ReturnT, typename DocumentT>
+  static ReturnT getXMLElementForTreeWithNameImpl(DocumentT & doc, const std::string & tree_name);
+
+  const std::string format_version_;
 };
 
 }  // namespace auto_apms_behavior_tree::core

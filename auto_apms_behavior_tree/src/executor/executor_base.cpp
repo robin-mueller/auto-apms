@@ -16,19 +16,35 @@
 
 #include <chrono>
 
+#include "auto_apms_util/container.hpp"
 #include "auto_apms_util/logging.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-TreeExecutorBase::TreeExecutorBase(rclcpp::Node::SharedPtr node_ptr)
+TreeExecutorBase::TreeExecutorBase(
+  rclcpp::Node::SharedPtr node_ptr, rclcpp::CallbackGroup::SharedPtr tree_node_callback_group_ptr)
 : node_ptr_(node_ptr),
   logger_(node_ptr_->get_logger()),
+  tree_node_waitables_callback_group_ptr_(tree_node_callback_group_ptr),
+  tree_node_waitables_executor_ptr_(rclcpp::executors::SingleThreadedExecutor::make_shared()),
   global_blackboard_ptr_(TreeBlackboard::create()),
   control_command_(ControlCommand::RUN),
   execution_stopped_(true)
 {
   auto_apms_util::exposeToDebugLogging(logger_);
+
+  // The behavior tree node callback group is intended to be passed to all nodes and used when adding subscriptions,
+  // publishers, services, actions etc. It is associated with a standalone single threaded executor, which is spun in
+  // between ticks, to make sure that pending work is executed while the main tick routine is sleeping.
+  if (!tree_node_waitables_callback_group_ptr_) {
+    tree_node_waitables_callback_group_ptr_ =
+      node_ptr_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
+  }
+
+  // Add the behavior tree node callback group to the internal executor
+  tree_node_waitables_executor_ptr_->add_callback_group(
+    tree_node_waitables_callback_group_ptr_, get_node_base_interface());
 }
 
 std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExecution(
@@ -76,9 +92,9 @@ std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExe
     RCLCPP_INFO(
       logger_, "Terminating tree '%s' from state %s.", getTreeName().c_str(), toStr(getExecutionState()).c_str());
     if (result == ExecutionResult::ERROR) {
-      RCLCPP_ERROR(logger_, "Termination reason: %s.", msg.c_str());
+      RCLCPP_ERROR(logger_, "Termination reason: %s", msg.c_str());
     } else {
-      RCLCPP_INFO(logger_, "Termination reason: %s.", msg.c_str());
+      RCLCPP_INFO(logger_, "Termination reason: %s", msg.c_str());
     }
     onTermination(result);  // is evaluated before the timer is cancelled, which means the execution state has not
                             // changed yet during the callback and can be evaluated to inspect the terminal state.
@@ -87,13 +103,20 @@ std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExe
     tree_ptr_.reset();  // Release the memory allocated by the tree
   };
 
-  execution_timer_ptr_ = node_ptr_->create_wall_timer(
-    std::chrono::duration<double>(tick_rate_sec),
-    [this, termination_callback]() { execution_routine_(termination_callback); });
+  // NOTE: The main callback timer is using the node's default callback group
+  const std::chrono::nanoseconds period =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(tick_rate_sec));
+  execution_timer_ptr_ = node_ptr_->create_wall_timer(period, [this, period, termination_callback]() {
+    // Execute work provided by waitables introduced by the behavior tree nodes before ticking
+    this->tree_node_waitables_executor_ptr_->spin_all(period);
+
+    // Execute the callback to tick the tree, evaluate the control commands and handle the returned tree status
+    this->tick_callback_(termination_callback);
+  });
   return promise_ptr->get_future();
 }
 
-void TreeExecutorBase::execution_routine_(TerminationCallback termination_callback)
+void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
 {
   const ExecutionState this_execution_state = getExecutionState();
   if (prev_execution_state_ != this_execution_state) {
@@ -244,6 +267,16 @@ TreeStateObserver & TreeExecutorBase::getStateObserver() { return *state_observe
 rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutorBase::get_node_base_interface()
 {
   return node_ptr_->get_node_base_interface();
+}
+
+rclcpp::CallbackGroup::SharedPtr TreeExecutorBase::getTreeNodeWaitablesCallbackGroupPtr()
+{
+  return tree_node_waitables_callback_group_ptr_;
+}
+
+rclcpp::executors::SingleThreadedExecutor::SharedPtr TreeExecutorBase::getTreeNodeWaitablesExecutorPtr()
+{
+  return tree_node_waitables_executor_ptr_;
 }
 
 std::string toStr(TreeExecutorBase::ExecutionState state)

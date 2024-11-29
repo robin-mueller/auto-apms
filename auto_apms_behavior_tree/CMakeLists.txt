@@ -7,6 +7,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
@@ -48,6 +49,28 @@ set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HALT_EXECUTOR "HaltExecutor")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_PAUSE_EXECUTOR "PauseExecutor")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_RESUME_EXECUTOR "ResumeExecutor")
 
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER "SetParameter")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL "SetParameterBool")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT "SetParameterInt")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE "SetParameterDouble")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING "SetParameterString")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BYTE_VEC "SetParameterByteVec")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL_VEC "SetParameterBoolVec")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT_VEC "SetParameterIntVec")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE_VEC "SetParameterDoubleVec")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING_VEC "SetParameterStringVec")
+
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER "GetParameter")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL "GetParameterBool")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT "GetParameterInt")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE "GetParameterDouble")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING "GetParameterString")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BYTE_VEC "GetParameterByteVec")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL_VEC "GetParameterBoolVec")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC "GetParameterIntVec")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC "GetParameterDoubleVec")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC "GetParameterStringVec")
+
 #
 # ------------ Library --------------
 #
@@ -65,7 +88,7 @@ add_library(auto_apms_behavior_tree SHARED
     "src/executor/state_observer.cpp"
     "src/executor/executor_base.cpp"
     "src/executor/executor_node.cpp"
-    "src/util/bt_types.cpp"
+    "src/util/conversion.cpp"
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -74,6 +97,7 @@ target_include_directories(auto_apms_behavior_tree PUBLIC
 target_compile_definitions(auto_apms_behavior_tree PUBLIC
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}"
+    _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_BLACKBOARD="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_BLACKBOARD}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_SCRIPTING_ENUMS="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_DYNAMIC_SCRIPTING_ENUMS}"
@@ -83,7 +107,6 @@ target_compile_definitions(auto_apms_behavior_tree PUBLIC
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER}"
-    _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}"
 
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION}"
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR}"
@@ -91,6 +114,28 @@ target_compile_definitions(auto_apms_behavior_tree PUBLIC
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HALT_EXECUTOR="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HALT_EXECUTOR}"
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_PAUSE_EXECUTOR="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_PAUSE_EXECUTOR}"
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_RESUME_EXECUTOR="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_RESUME_EXECUTOR}"
+
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BYTE_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BYTE_VEC}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL_VEC}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT_VEC}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE_VEC}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING_VEC}"
+
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BYTE_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BYTE_VEC}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL_VEC}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC}"
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC}"
 )
 target_link_libraries(auto_apms_behavior_tree
     executor_params
@@ -138,22 +183,52 @@ rclcpp_components_register_nodes(executor_node_components
 add_library(builtin_nodes SHARED
     "src/node/action/throw_exception.cpp"
     "src/node/action/start_executor.cpp"
-    "src/node/action/terminate_executor.cpp"
-    "src/node/action/halt_executor.cpp"
-    "src/node/action/pause_executor.cpp"
-    "src/node/action/resume_executor.cpp"
+    "src/node/action/command_executor.cpp"
+    "src/node/service/set_parameter.cpp"
+    "src/node/service/get_parameter.cpp"
+
+    "src/util/conversion.cpp"
+)
+# Make conversion util available for builtin nodes too, but don't include anything that's not also been added to the sources
+target_include_directories(builtin_nodes PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 ament_target_dependencies(builtin_nodes
+    rclcpp
+    rcl_interfaces
     auto_apms_interfaces
     auto_apms_behavior_tree_core
 )
 auto_apms_behavior_tree_declare_nodes(builtin_nodes
     "auto_apms_behavior_tree::ThrowException"
-    "auto_apms_behavior_tree::StartExecutorAction"
-    "auto_apms_behavior_tree::TerminateExecutorAction"
-    "auto_apms_behavior_tree::HaltExecutorAction"
-    "auto_apms_behavior_tree::PauseExecutorAction"
-    "auto_apms_behavior_tree::ResumeExecutorAction"
+    "auto_apms_behavior_tree::StartExecutor"
+    "auto_apms_behavior_tree::TerminateExecutor"
+    "auto_apms_behavior_tree::HaltExecutor"
+    "auto_apms_behavior_tree::PauseExecutor"
+    "auto_apms_behavior_tree::ResumeExecutor"
+
+    "auto_apms_behavior_tree::SetParameter"
+    "auto_apms_behavior_tree::SetParameterBool"
+    "auto_apms_behavior_tree::SetParameterInt"
+    "auto_apms_behavior_tree::SetParameterDouble"
+    "auto_apms_behavior_tree::SetParameterString"
+    "auto_apms_behavior_tree::SetParameterByteVec"
+    "auto_apms_behavior_tree::SetParameterBoolVec"
+    "auto_apms_behavior_tree::SetParameterIntVec"
+    "auto_apms_behavior_tree::SetParameterDoubleVec"
+    "auto_apms_behavior_tree::SetParameterStringVec"
+
+    "auto_apms_behavior_tree::GetParameter"
+    "auto_apms_behavior_tree::GetParameterBool"
+    "auto_apms_behavior_tree::GetParameterInt"
+    "auto_apms_behavior_tree::GetParameterDouble"
+    "auto_apms_behavior_tree::GetParameterString"
+    "auto_apms_behavior_tree::GetParameterByteVec"
+    "auto_apms_behavior_tree::GetParameterBoolVec"
+    "auto_apms_behavior_tree::GetParameterIntVec"
+    "auto_apms_behavior_tree::GetParameterDoubleVec"
+    "auto_apms_behavior_tree::GetParameterStringVec"
     NODE_MANIFEST
     "config/builtin_nodes.yaml.in"
 )
@@ -197,10 +272,18 @@ target_link_libraries(new_tree auto_apms_behavior_tree)
 if(BUILD_TESTING)
     find_package(ament_cmake_gtest REQUIRED)
 
+    # To include the builtin_nodes manifest, we can pass the target name
+    # that was previously associated with the generation of the respective metadata.
     auto_apms_behavior_tree_declare_trees(
         "test/trees/infinite_w_bb_flags.xml"
         NODE_MANIFEST
-        builtin_nodes # We can pass the target name that was previously associated with the generation of node metadata for referring to the manifest files.
+        builtin_nodes
+    )
+
+    auto_apms_behavior_tree_declare_trees(
+        "test/trees/builtin_nodes_test.xml"
+        NODE_MANIFEST
+        builtin_nodes
     )
 
     # ament_add_gtest(${PROJECT_NAME}_unit_tests

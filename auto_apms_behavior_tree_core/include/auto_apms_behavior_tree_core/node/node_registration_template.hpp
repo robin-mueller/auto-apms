@@ -15,6 +15,7 @@
 #pragma once
 
 #include <boost/core/demangle.hpp>
+#include <stdexcept>
 #include <type_traits>
 
 #include "auto_apms_behavior_tree_core/node/node_registration_interface.hpp"
@@ -38,7 +39,7 @@ public:
   {
     if constexpr (requires_ros_node_params) {
       if (!params_ptr) {
-        throw std::runtime_error(
+        throw std::invalid_argument(
           boost::core::demangle(typeid(T).name()) +
           " requires a valid RosNodeContext object to be passed via argument 'params_ptr'.");
       }

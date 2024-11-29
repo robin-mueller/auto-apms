@@ -43,7 +43,7 @@ std::set<std::string> getPackagesWithResourceType(
         "Resources for type '" + resource_type +
         "' are only available in excluded but not in any other of the installed packages (Excluded packages containing "
         "resources: [ " +
-        rcpputils::join(std::vector<std::string>(common.begin(), common.end()), ", ") + " ]).");
+        auto_apms_util::join(std::vector<std::string>(common.begin(), common.end()), ", ") + " ]).");
     }
   }
   return packages;

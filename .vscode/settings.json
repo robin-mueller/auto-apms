@@ -13,9 +13,11 @@
         "BTCPP",
         "Eigen",
         "groot",
+        "gtest",
         "rclcpp",
         "rcpputils",
         "tinyxml",
+        "waitables",
         "wptr"
     ],
     "[cpp]": {
@@ -25,4 +27,8 @@
     },
     "C_Cpp.clang_format_fallbackStyle": "none",
     "C_Cpp.clang_format_style": "file:${workspaceFolder}/.clang-format",
+    "cSpell.enabled": true,
+    "cSpell.enabledFileTypes": {
+        "cpp": true
+    },
 }

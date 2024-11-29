@@ -39,7 +39,7 @@ int main(int argc, char ** argv)
   // been successfully canceled
   rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
   signal(SIGINT, [](int /*sig*/) { termination_requested = 1; });
-  auto node_ptr = std::make_shared<rclcpp::Node>("run_tree_cpp");
+  rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("run_tree_cpp");
   auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
 
   std::unique_ptr<core::TreeResource> tree_resource_ptr;
@@ -52,9 +52,11 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  core::TreeBuilder builder(node_ptr);
+  TreeExecutorBase executor(node_ptr);
+  core::TreeBuilder builder(
+    node_ptr, executor.getTreeNodeWaitablesCallbackGroupPtr(), executor.getTreeNodeWaitablesExecutorPtr());
   try {
-    builder.newTreeFromResource(*tree_resource_ptr, tree_resource_ptr->getRootTreeName()).makeRoot();
+    builder.newTreeFromResource(*tree_resource_ptr).makeRoot();
   } catch (const std::exception & e) {
     RCLCPP_ERROR(
       node_ptr->get_logger(), "ERROR loading behavior tree from resource '%s': %s", tree_identity.str().c_str(),
@@ -62,14 +64,14 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  TreeExecutorBase executor(node_ptr);
-  auto future = executor.startExecution([&builder](TreeBlackboardSharedPtr bb) { return builder.instantiate(bb); });
+  std::shared_future<TreeExecutorBase::ExecutionResult> future =
+    executor.startExecution([&builder](TreeBlackboardSharedPtr bb) { return builder.instantiate(bb); });
 
   RCLCPP_INFO(
     node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.", tree_resource_ptr->getPackageName().c_str(),
     tree_resource_ptr->getFileStem().c_str(), builder.getRootTree().getName().c_str());
 
-  const auto termination_timeout = std::chrono::duration<double>(1.5);
+  const std::chrono::duration<double> termination_timeout(1.5);
   rclcpp::Time termination_start;
   bool termination_started = false;
   try {

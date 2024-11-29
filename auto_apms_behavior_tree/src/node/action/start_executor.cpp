@@ -15,6 +15,7 @@
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 
+#define INPUT_KEY_EXECUTOR_NAME "executor"
 #define INPUT_KEY_TREE_BUILD_REQUEST "build_request"
 #define INPUT_KEY_TREE_BUILD_HANDLER "build_handler"
 #define INPUT_KEY_ROOT_TREE_NAME "root_tree"
@@ -25,34 +26,49 @@
 namespace auto_apms_behavior_tree
 {
 
-class StartExecutorAction : public core::RosActionNode<auto_apms_interfaces::action::StartTreeExecutor>
+class StartExecutor : public core::RosActionNode<auto_apms_interfaces::action::StartTreeExecutor>
 {
 public:
   using RosActionNode::RosActionNode;
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts(
-      {BT::InputPort<std::string>(
-         INPUT_KEY_TREE_BUILD_REQUEST, "String passed to the tree build handler defining which tree is to be built."),
-       BT::InputPort<std::string>(
-         INPUT_KEY_TREE_BUILD_HANDLER, "",
-         "Fully qualified class name of the build handler that is supposed to take care of the request."),
-       BT::InputPort<std::string>(INPUT_KEY_ROOT_TREE_NAME, "", "Name of the root tree."),
-       BT::InputPort<std::string>(
-         INPUT_KEY_NODE_OVERRIDES, "",
-         "YAML/JSON formatted string encoding the registration parameters for any tree nodes supposed to be "
-         "loaded/overridden before the execution starts."),
-       BT::InputPort<bool>(
-         INPUT_KEY_ATTACH, true, "Boolean flag wether to attach to the execution process or start in detached mode."),
-       BT::InputPort<bool>(
-         INPUT_KEY_CLEAR_BB, true,
-         "Boolean flag wether to clear the existing blackboard entries before the execution starts or not.")});
+    // We do not use the default port for the action name
+    return {
+      BT::InputPort<bool>(
+        INPUT_KEY_ATTACH, true, "Boolean flag wether to attach to the execution process or start in detached mode."),
+      BT::InputPort<bool>(
+        INPUT_KEY_CLEAR_BB, true,
+        "Boolean flag wether to clear the existing blackboard entries before the execution starts or not."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_NODE_OVERRIDES, "",
+        "YAML/JSON formatted string encoding the registration parameters for any tree nodes supposed to be "
+        "loaded/overridden before the execution starts."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_ROOT_TREE_NAME, "",
+        "Name of the root tree. If empty, let the build handler determine the root tree."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_TREE_BUILD_HANDLER, "",
+        "Fully qualified class name of the build handler that is supposed to take care of the request. If empty, use "
+        "the current one."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_TREE_BUILD_REQUEST, "String passed to the tree build handler defining which tree is to be built."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_EXECUTOR_NAME,
+        "Name of the executor responsible for building and running the specified behavior tree."),
+    };
   }
 
   bool setGoal(Goal & goal) override final
   {
-    goal.build_request = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST).value();
+    if (const auto val = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST); val && !val.value().empty()) {
+      goal.build_request = val.value();
+    } else {
+      RCLCPP_WARN(
+        context_.getLogger(), "%s - You must provide a non-empty build request.",
+        context_.getFullyQualifiedTreeNodeName(this).c_str());
+      return false;
+    }
     goal.build_handler = getInput<std::string>(INPUT_KEY_TREE_BUILD_HANDLER).value();
     goal.root_tree = getInput<std::string>(INPUT_KEY_ROOT_TREE_NAME).value();
     goal.node_overrides = getInput<std::string>(INPUT_KEY_NODE_OVERRIDES).value();
@@ -63,19 +79,44 @@ public:
 
   BT::NodeStatus onResultReceived(const WrappedResult & wr) override final
   {
+    // If action was aborted
+    if (wr.code == rclcpp_action::ResultCode::ABORTED) {
+      const std::string msg =
+        context_.getFullyQualifiedTreeNodeName(this) + " - Tree execution was aborted: " + wr.result->message;
+      RCLCPP_ERROR_STREAM(context_.getLogger(), msg);
+      throw exceptions::RosNodeError(msg);
+    }
+
+    // If action was canceled
+    if (wr.code == rclcpp_action::ResultCode::CANCELED) {
+      RCLCPP_DEBUG(
+        context_.getLogger(), "%s - Tree execution was canceled: %s",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), wr.result->message.c_str());
+      // Return value is ignored
+      return BT::NodeStatus::SUCCESS;
+    }
+
+    /*  If action succeeded */
+
     RCLCPP_DEBUG(
-      context_.getLogger(), "%s - Received response %i from server %s: %s", context_.getFullName(this).c_str(),
-      wr.result->tree_result, getActionName().c_str(), wr.result->message.c_str());
+      context_.getLogger(), "%s - Tree execution finished successfully with result %i: %s",
+      context_.getFullyQualifiedTreeNodeName(this).c_str(), wr.result->tree_result, wr.result->message.c_str());
+
+    // If started in attached mode
     if (getInput<bool>(INPUT_KEY_ATTACH).value()) {
       if (wr.result->tree_result == ActionType::Result::TREE_RESULT_SUCCESS) return BT::NodeStatus::SUCCESS;
       return BT::NodeStatus::FAILURE;
     }
+
+    // If started in detached mode
     if (wr.result->tree_result == ActionType::Result::TREE_RESULT_NOT_SET) return BT::NodeStatus::SUCCESS;
-    throw exceptions::RosNodeError(
-      "Expected tree_result to be TREE_RESULT_NOT_SET when requesting to start in detached mode.");
+    const std::string msg = context_.getFullyQualifiedTreeNodeName(this) +
+                            " - Expected tree_result to be TREE_RESULT_NOT_SET when started in detached mode.";
+    RCLCPP_ERROR_STREAM(context_.getLogger(), msg);
+    throw exceptions::RosNodeError(msg);
   }
 };
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::StartExecutorAction)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::StartExecutor)
