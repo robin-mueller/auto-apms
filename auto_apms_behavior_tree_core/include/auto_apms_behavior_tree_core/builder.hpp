@@ -66,8 +66,8 @@ public:
    * @param tree_node_loader Shared pointer to the behavior tree node plugin loader instance.
    */
   TreeBuilder(
-    rclcpp::Node::WeakPtr ros_node, rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group,
-    rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor,
+    rclcpp::Node::SharedPtr ros_node, rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group,
+    rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor,
     NodeRegistrationLoader::SharedPtr tree_node_loader = NodeRegistrationLoader::make_shared());
 
   /**

@@ -104,9 +104,11 @@ protected:
 private:
   /* Executor specific virtual overrides */
 
-  virtual bool onTick() override final;
+  bool onTick() override final;
 
-  virtual void onTermination(const ExecutionResult & result) override final;
+  bool afterTick() override final;
+
+  void onTermination(const ExecutionResult & result) override final;
 
   /* Internal callbacks */
 
@@ -133,9 +135,11 @@ private:
   rclcpp::ParameterEventCallbackHandle::SharedPtr parameter_event_callback_handle_ptr_;
   core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
   TreeBuildHandlerLoader::UniquePtr build_handler_loader_ptr_;
+  TreeBuilder::UniquePtr builder_ptr_;
   TreeBuildHandler::UniquePtr build_handler_ptr_;
   std::string current_build_handler_name_;
   std::map<std::string, int> scripting_enums_;
+  std::set<std::string> known_bb_keys_;
   TreeConstructor tree_constructor_;
 
   // Interface objects

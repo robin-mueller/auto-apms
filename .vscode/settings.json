@@ -16,6 +16,7 @@
         "gtest",
         "rclcpp",
         "rcpputils",
+        "RCUTILS",
         "tinyxml",
         "waitables",
         "wptr"

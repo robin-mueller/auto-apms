@@ -73,7 +73,7 @@ class RosServiceNode : public BT::ActionNodeBase
   struct ServiceClientInstance
   {
     ServiceClientInstance(
-      rclcpp::Node::SharedPtr node, rclcpp::CallbackGroup::SharedPtr group, const std::string & sercice_name);
+      rclcpp::Node::SharedPtr node, rclcpp::CallbackGroup::SharedPtr group, const std::string & service_name);
 
     ServiceClientPtr service_client;
     std::string name;
@@ -88,7 +88,7 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
-  explicit RosServiceNode(const std::string & instance_name, const Config & config, const Context & context);
+  explicit RosServiceNode(const std::string & instance_name, Config config, const Context & context);
 
   virtual ~RosServiceNode() = default;
 
@@ -175,7 +175,7 @@ inline RosServiceNode<ServiceT>::ServiceClientInstance::ServiceClientInstance(
 
 template <class ServiceT>
 inline RosServiceNode<ServiceT>::RosServiceNode(
-  const std::string & instance_name, const Config & config, const Context & context)
+  const std::string & instance_name, Config config, const Context & context)
 : BT::ActionNodeBase(instance_name, config), context_(context), logger_(context.getLogger())
 {
   if (const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this)) {

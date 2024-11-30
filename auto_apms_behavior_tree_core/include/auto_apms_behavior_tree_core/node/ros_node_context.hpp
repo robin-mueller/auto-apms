@@ -37,22 +37,26 @@ class RosNodeContext
 
 public:
   RosNodeContext(
-    rclcpp::Node::WeakPtr ros_node, rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group,
-    rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor,
+    rclcpp::Node::SharedPtr ros_node, rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group,
+    rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor,
     const NodeRegistrationParams & registration_params);
 
   std::string getROSNodeName() const;
 
-  std::string getFullyQualifiedROSNodeName() const;
+  std::string getFullyQualifiedRosNodeName() const;
 
   rclcpp::Logger getLogger() const;
 
   rclcpp::Time getCurrentTime() const;
 
-  std::string getFullyQualifiedTreeNodeName(const BT::TreeNode * node) const;
+  std::string getFullyQualifiedTreeNodeName(const BT::TreeNode * node, bool with_class_name = true) const;
 
 private:
   BT::Expected<std::string> getCommunicationPortName(const BT::TreeNode * node) const;
+
+  const std::string ros_node_name_;
+  const std::string fully_qualified_ros_node_name_;
+  const rclcpp::Logger logger_;
 
   /// Handle for the ROS2 node.
   std::weak_ptr<rclcpp::Node> nh_;

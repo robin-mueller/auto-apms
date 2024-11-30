@@ -3,6 +3,9 @@
 # applies to 'port'. That is, you can specify both relative and absolute names.
 #
 
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_LOGGER}:
+  class_name: auto_apms_behavior_tree::Logger
+
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION}:
   class_name: auto_apms_behavior_tree::ThrowException
 

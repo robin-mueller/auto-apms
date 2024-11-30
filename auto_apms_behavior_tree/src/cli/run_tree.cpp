@@ -71,7 +71,7 @@ int main(int argc, char ** argv)
     node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.", tree_resource_ptr->getPackageName().c_str(),
     tree_resource_ptr->getFileStem().c_str(), builder.getRootTree().getName().c_str());
 
-  const std::chrono::duration<double> termination_timeout(1.5);
+  const std::chrono::duration<double> termination_timeout(2);
   rclcpp::Time termination_start;
   bool termination_started = false;
   try {

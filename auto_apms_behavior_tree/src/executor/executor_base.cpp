@@ -55,8 +55,9 @@ std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExe
       "Cannot start execution with tree '" + getTreeName() + "' currently executing.");
   }
 
+  TreeBlackboardSharedPtr main_tree_bb_ptr = TreeBlackboard::create(global_blackboard_ptr_);
   try {
-    tree_ptr_.reset(new Tree(make_tree(global_blackboard_ptr_)));
+    tree_ptr_.reset(new Tree(make_tree(main_tree_bb_ptr)));
   } catch (const std::exception & e) {
     throw exceptions::TreeBuildError(
       "Cannot start execution because creating the tree failed: " + std::string(e.what()));
@@ -107,11 +108,11 @@ std::shared_future<TreeExecutorBase::ExecutionResult> TreeExecutorBase::startExe
   const std::chrono::nanoseconds period =
     std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(tick_rate_sec));
   execution_timer_ptr_ = node_ptr_->create_wall_timer(period, [this, period, termination_callback]() {
-    // Execute work provided by waitables introduced by the behavior tree nodes before ticking
-    this->tree_node_waitables_executor_ptr_->spin_all(period);
+    // Collect and process incoming messages before ticking
+    tree_node_waitables_executor_ptr_->spin_all(period);
 
-    // Execute the callback to tick the tree, evaluate the control commands and handle the returned tree status
-    this->tick_callback_(termination_callback);
+    // Tick the tree, evaluate control commands and handle the returned tree status
+    tick_callback_(termination_callback);
   });
   return promise_ptr->get_future();
 }
@@ -139,7 +140,7 @@ void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
         // Evaluate initial tick callback before ticking for the first time since the timer has been created
         if (!onInitialTick()) {
           do_on_tick = false;
-          termination_reason_ = "onInitialTick() returned false";
+          termination_reason_ = "onInitialTick() returned false.";
         }
       }
       // Evaluate tick callback everytime before actually ticking.
@@ -148,7 +149,7 @@ void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
         if (onTick()) {
           break;
         } else {
-          termination_reason_ = "onTick() returned false";
+          termination_reason_ = "onTick() returned false.";
         }
       }
 
@@ -158,7 +159,7 @@ void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
       if (this_execution_state == ExecutionState::HALTED) {
         termination_callback(
           ExecutionResult::TERMINATED_PREMATURELY,
-          termination_reason_.empty() ? "Control command was set to TERMINATE" : termination_reason_);
+          termination_reason_.empty() ? "Control command was set to TERMINATE." : termination_reason_);
         return;
       }
 
@@ -199,7 +200,10 @@ void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
     return;
   }
 
-  /* Continue execution until tree is not running anymore */
+  if (!afterTick()) {
+    termination_callback(ExecutionResult::TERMINATED_PREMATURELY, "afterTick() returned false.");
+    return;
+  }
 
   if (bt_status == BT::NodeStatus::RUNNING) return;
 
@@ -214,7 +218,7 @@ void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
     case TreeExitBehavior::TERMINATE:
       termination_callback(
         success ? ExecutionResult::TREE_SUCCEEDED : ExecutionResult::TREE_FAILED,
-        "Terminated on tree result " + BT::toStr(bt_status));
+        "Terminated on tree result " + BT::toStr(bt_status) + ".");
       return;
     case TreeExitBehavior::RESTART:
       control_command_ = ControlCommand::RUN;
@@ -227,6 +231,8 @@ void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
 bool TreeExecutorBase::onInitialTick() { return true; }
 
 bool TreeExecutorBase::onTick() { return true; }
+
+bool TreeExecutorBase::afterTick() { return true; }
 
 TreeExecutorBase::TreeExitBehavior TreeExecutorBase::onTreeExit(bool /*success*/)
 {

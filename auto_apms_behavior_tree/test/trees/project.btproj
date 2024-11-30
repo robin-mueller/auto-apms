@@ -60,6 +60,10 @@
         <Action ID="HaltExecutor">
             <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
         </Action>
+        <Action ID="Logger">
+            <input_port name="message" type="std::string">Message to be logged via rclcpp::Logger.</input_port>
+            <input_port name="level" default="INFO" type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
+        </Action>
         <Action ID="PauseExecutor">
             <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
         </Action>

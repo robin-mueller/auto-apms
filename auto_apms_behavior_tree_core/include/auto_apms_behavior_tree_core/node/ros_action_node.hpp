@@ -306,6 +306,7 @@ inline void RosActionNode<T>::halt()
   if (status() == BT::NodeStatus::RUNNING) {
     cancelGoal();
     onHalt();
+    resetStatus();
   }
 }
 
@@ -364,6 +365,11 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     on_feedback_state_change_ = BT::NodeStatus::RUNNING;
     result_ = {};
 
+    // Check if server is ready
+    if (!action_client->action_server_is_ready()) {
+      return onFailure(SERVER_UNREACHABLE);
+    }
+
     Goal goal;
     if (!setGoal(goal)) {
       return check_status(onFailure(INVALID_GOAL));
@@ -399,11 +405,6 @@ inline BT::NodeStatus RosActionNode<T>::tick()
         emitWakeUpSignal();
       }
     };
-
-    // Check if server is ready
-    if (!action_client->action_server_is_ready()) {
-      return onFailure(SERVER_UNREACHABLE);
-    }
 
     future_goal_handle_ = action_client->async_send_goal(goal, goal_options);
     time_goal_sent_ = context_.getCurrentTime();

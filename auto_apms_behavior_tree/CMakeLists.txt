@@ -42,6 +42,7 @@ set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT "groot2_port")
 set(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER "state_change_logger")
 
 # Builtin behavior tree node names
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_LOGGER "Logger")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION "Error")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR "StartExecutor")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_TERMINATE_EXECUTOR "TerminateExecutor")
@@ -108,6 +109,7 @@ target_compile_definitions(auto_apms_behavior_tree PUBLIC
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_GROOT2_PORT}"
     _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER="${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_STATE_CHANGE_LOGGER}"
 
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_LOGGER="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_LOGGER}"
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION}"
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR}"
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_TERMINATE_EXECUTOR="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_TERMINATE_EXECUTOR}"
@@ -181,6 +183,7 @@ rclcpp_components_register_nodes(executor_node_components
 #
 
 add_library(builtin_nodes SHARED
+    "src/node/action/logger.cpp"
     "src/node/action/throw_exception.cpp"
     "src/node/action/start_executor.cpp"
     "src/node/action/command_executor.cpp"
@@ -201,6 +204,7 @@ ament_target_dependencies(builtin_nodes
     auto_apms_behavior_tree_core
 )
 auto_apms_behavior_tree_declare_nodes(builtin_nodes
+    "auto_apms_behavior_tree::Logger"
     "auto_apms_behavior_tree::ThrowException"
     "auto_apms_behavior_tree::StartExecutor"
     "auto_apms_behavior_tree::TerminateExecutor"

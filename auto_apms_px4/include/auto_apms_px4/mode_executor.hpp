@@ -164,7 +164,7 @@ auto_apms_util::ActionStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
   } else {
     // Only send command if not in HOLD already
     if (!deactivation_command_sent_) {
-      if (!vehicle_command_client_.SyncActivateFlightMode(FlightMode::Hold)) {
+      if (!vehicle_command_client_.syncActivateFlightMode(FlightMode::Hold)) {
         RCLCPP_ERROR(this->node_ptr_->get_logger(), "Failed to send command to activate HOLD");
         return ActionStatus::FAILURE;
       }
@@ -178,9 +178,8 @@ auto_apms_util::ActionStatus ModeExecutor<ActionT>::asyncDeactivateFlightMode()
 }
 
 template <class ActionT>
-bool ModeExecutor<ActionT>::onGoalRequest(const std::shared_ptr<const Goal> goal_ptr)
+bool ModeExecutor<ActionT>::onGoalRequest(const std::shared_ptr<const Goal> /*goal_ptr*/)
 {
-  (void)goal_ptr;
   state_ = State::REQUEST_ACTIVATION;
   deactivation_command_sent_ = false;
   mode_completed_ = false;
@@ -189,10 +188,9 @@ bool ModeExecutor<ActionT>::onGoalRequest(const std::shared_ptr<const Goal> goal
 }
 
 template <class ActionT>
-bool ModeExecutor<ActionT>::onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
+bool ModeExecutor<ActionT>::onCancelRequest(
+  std::shared_ptr<const Goal> /*goal_ptr*/, std::shared_ptr<Result> /*result_ptr*/)
 {
-  (void)goal_ptr;
-  (void)result_ptr;
   if (deactivate_before_completion_) {
     // To deactivate current flight mode, enable HOLD mode.
     RCLCPP_DEBUG(
@@ -205,10 +203,8 @@ bool ModeExecutor<ActionT>::onCancelRequest(std::shared_ptr<const Goal> goal_ptr
 
 template <class ActionT>
 auto_apms_util::ActionStatus ModeExecutor<ActionT>::cancelGoal(
-  std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr)
+  std::shared_ptr<const Goal> /*goal_ptr*/, std::shared_ptr<Result> /*result_ptr*/)
 {
-  (void)goal_ptr;
-  (void)result_ptr;
   if (deactivate_before_completion_) {
     return asyncDeactivateFlightMode();
   }
@@ -226,11 +222,8 @@ bool ModeExecutor<ActionT>::isCurrentNavState(uint8_t nav_state)
 
 template <class ActionT>
 auto_apms_util::ActionStatus ModeExecutor<ActionT>::executeGoal(
-  std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr, std::shared_ptr<Result> result_ptr)
+  std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr, std::shared_ptr<Result> /*result_ptr*/)
 {
-  (void)goal_ptr;
-  (void)result_ptr;
-
   switch (state_) {
     case State::REQUEST_ACTIVATION:
       if (!sendActivationCommand(vehicle_command_client_, goal_ptr)) {
@@ -304,7 +297,7 @@ bool ModeExecutor<ActionT>::sendActivationCommand(
   const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr)
 {
   (void)goal_ptr;
-  return client.SyncActivateFlightMode(mode_id_);
+  return client.syncActivateFlightMode(mode_id_);
 }
 
 template <class ActionT>

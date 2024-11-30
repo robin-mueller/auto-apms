@@ -188,14 +188,14 @@ rclcpp_action::GoalResponse ActionWrapper<ActionT>::handle_goal_(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (onGoalRequest(goal_ptr)) {
-    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+  if (!onGoalRequest(goal_ptr)) {
+    RCLCPP_DEBUG(
+      node_ptr_->get_logger(), "Goal %s was REJECTED because onGoalRequest() returned false",
+      rclcpp_action::to_string(uuid).c_str());
+    return rclcpp_action::GoalResponse::REJECT;
   }
 
-  RCLCPP_DEBUG(
-    node_ptr_->get_logger(), "Goal %s was REJECTED because onGoalRequest() returned false",
-    rclcpp_action::to_string(uuid).c_str());
-  return rclcpp_action::GoalResponse::REJECT;
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
 template <class ActionT>
@@ -210,18 +210,18 @@ template <class ActionT>
 void ActionWrapper<ActionT>::handle_accepted_(std::shared_ptr<GoalHandle> goal_handle_ptr)
 {
   action_context_ptr_->setUp(goal_handle_ptr);
-  const auto goal_ptr = action_context_ptr_->getGoalHandlePtr()->get_goal();
+  std::shared_ptr<const Goal> goal_ptr = action_context_ptr_->getGoalHandlePtr()->get_goal();
   setInitialResult(goal_ptr, action_context_ptr_->getResultPtr());
   (void)goal_handle_ptr;  // action_context_ptr_ takes ownership of goal handle from now on
 
-  // Create the timer that triggers the execution routine
   const Params & params = param_listener_.get_params();
+
+  // Ensure that feedback is published already after the first cycle
+  last_feedback_ts_ = node_ptr_->now() - rclcpp::Duration::from_seconds(params.feedback_rate);
+
+  // Create the timer that triggers the execution routine
   execution_timer_ptr_ = node_ptr_->create_wall_timer(
     std::chrono::duration<double>(params.loop_rate), [this, goal_ptr]() { this->execution_timer_callback_(goal_ptr); });
-
-  // Ensure that feedback is published already at the first cycle
-  const auto feedback_rate = rclcpp::Duration::from_seconds(params.feedback_rate);
-  last_feedback_ts_ = node_ptr_->now() - feedback_rate;
 }
 
 template <class ActionT>
@@ -250,7 +250,7 @@ void ActionWrapper<ActionT>::execution_timer_callback_(std::shared_ptr<const Goa
 
     // Publish feedback
     const auto feedback_rate = rclcpp::Duration::from_seconds(param_listener_.get_params().feedback_rate);
-    if ((node_ptr_->now() - last_feedback_ts_) > feedback_rate) {
+    if (node_ptr_->now() - last_feedback_ts_ > feedback_rate) {
       action_context_ptr_->publishFeedback();
       last_feedback_ts_ = node_ptr_->now();
     }

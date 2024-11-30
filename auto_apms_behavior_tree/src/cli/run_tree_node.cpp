@@ -81,7 +81,7 @@ int main(int argc, char ** argv)
   std::shared_future<TreeExecutorBase::ExecutionResult> future =
     executor.startExecution([&builder](TreeBlackboardSharedPtr bb) { return builder.instantiate(bb); });
 
-  const std::chrono::duration<double> termination_timeout(1.5);
+  const std::chrono::duration<double> termination_timeout(2);
   rclcpp::Time termination_start;
   bool termination_started = false;
   try {

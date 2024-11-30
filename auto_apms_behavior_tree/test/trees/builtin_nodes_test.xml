@@ -1,34 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <BehaviorTree ID="BuiltinNodesTest">
-    <StartExecutor executor="tree_executor"
-                   build_request="relative_goto"
-                   build_handler=""
-                   root_tree=""
-                   node_overrides=""
-                   clear_blackboard="true"
-                   attach="true"/>
+    <Sequence>
+      <SetParameterString parameter="bb.param"
+                          value="test_string"
+                          node=""/>
+      <GetParameter parameter="bb.param"
+                    value="{val}"
+                    node=""/>
+      <Logger message="{val}"/>
+    </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Action ID="StartExecutor">
-      <input_port name="executor"
-                  type="std::string">Name of the executor responsible for building and running the specified behavior tree.</input_port>
-      <input_port name="build_request"
-                  type="std::string">String passed to the tree build handler defining which tree is to be built.</input_port>
-      <input_port name="build_handler"
-                  type="std::string">Fully qualified class name of the build handler that is supposed to take care of the request. If empty, use the current one.</input_port>
-      <input_port name="root_tree"
-                  type="std::string">Name of the root tree. If empty, let the build handler determine the root tree.</input_port>
-      <input_port name="node_overrides"
-                  type="std::string">YAML/JSON formatted string encoding the registration parameters for any tree nodes supposed to be loaded/overridden before the execution starts.</input_port>
-      <input_port name="clear_blackboard"
-                  default="true"
-                  type="bool">Boolean flag wether to clear the existing blackboard entries before the execution starts or not.</input_port>
-      <input_port name="attach"
-                  default="true"
-                  type="bool">Boolean flag wether to attach to the execution process or start in detached mode.</input_port>
+    <Action ID="GetParameter">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter to get.</input_port>
+      <output_port name="value"
+                   type="BT::Any">Output port for the parameter's value.</output_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node.</input_port>
+    </Action>
+    <Action ID="Logger">
+      <input_port name="message"
+                  type="std::string">Message to be logged via rclcpp::Logger.</input_port>
+      <input_port name="level"
+                  default="INFO"
+                  type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
+    </Action>
+    <Action ID="SetParameterString">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter to be set.</input_port>
+      <input_port name="value"
+                  type="BT::Any">Value of the parameter to be set.</input_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node.</input_port>
     </Action>
   </TreeNodesModel>
 

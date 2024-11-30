@@ -29,7 +29,7 @@ public:
     return {BT::InputPort<std::string>(INPUT_KEY_MSG, "Error message. Creates a generic error message if empty.")};
   }
 
-  BT::NodeStatus tick() final
+  BT::NodeStatus tick() override final
   {
     auto input = getInput<std::string>(INPUT_KEY_MSG);
     auto prefix = name() == registrationName() ? name() : (name() + " (" + registrationName() + ")");

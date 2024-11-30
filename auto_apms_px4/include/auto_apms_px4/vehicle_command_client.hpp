@@ -51,30 +51,30 @@ public:
     rclcpp::Node & node, const std::chrono::milliseconds & command_timeout = std::chrono::milliseconds(500));
 
   // Send a vehicle command synchronously
-  SendCommandResult SyncSendVehicleCommand(
+  SendCommandResult syncSendVehicleCommand(
     uint32_t command, float param1 = NAN, float param2 = NAN, float param3 = NAN, float param4 = NAN,
     float param5 = NAN, float param6 = NAN, float param7 = NAN) const;
 
   // Send a vehicle command synchronously
-  SendCommandResult SyncSendVehicleCommand(const VehicleCommand & cmd) const;
+  SendCommandResult syncSendVehicleCommand(const VehicleCommand & cmd) const;
 
-  bool Arm() const;
-  bool Disarm() const;
+  bool arm() const;
+  bool disarm() const;
 
   /**
    * @brief (Re)starts the uploaded mission plan.
    *
-   * If you want to resume a mission, use SyncActivateFlightMode(FlightMode::Mission) instead.
+   * If you want to resume a mission, use syncActivateFlightMode(FlightMode::Mission) instead.
    */
-  bool StartMission() const;
+  bool startMission() const;
 
-  bool Takeoff(float altitude_amsl_m, float heading_rad = NAN) const;
+  bool takeoff(float altitude_amsl_m, float heading_rad = NAN) const;
 
-  bool Land() const;
+  bool land() const;
 
-  bool SyncActivateFlightMode(uint8_t mode_id) const;
-  bool SyncActivateFlightMode(const FlightMode & mode) const;
-  bool SyncActivateFlightMode(const px4_ros2::ModeBase * const mode_ptr) const;
+  bool syncActivateFlightMode(uint8_t mode_id) const;
+  bool syncActivateFlightMode(const FlightMode & mode) const;
+  bool syncActivateFlightMode(const px4_ros2::ModeBase * const mode_ptr) const;
 
 private:
   rclcpp::Node & node_;

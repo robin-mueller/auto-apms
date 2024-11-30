@@ -36,8 +36,8 @@ std::set<std::string> getNativeNodeNames()
 }
 
 TreeBuilder::TreeBuilder(
-  rclcpp::Node::WeakPtr ros_node, rclcpp::CallbackGroup::WeakPtr tree_node_callback_group,
-  rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor,
+  rclcpp::Node::SharedPtr ros_node, rclcpp::CallbackGroup::SharedPtr tree_node_callback_group,
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor,
   NodeRegistrationLoader::SharedPtr tree_node_loader)
 : ros_node_wptr_(ros_node),
   tree_node_waitables_callback_group_wptr_(tree_node_callback_group),
@@ -49,13 +49,13 @@ TreeBuilder::TreeBuilder(
   all_node_classes_package_map_(auto_apms_behavior_tree::core::NodeRegistrationLoader().getClassPackageMap()),
   native_node_names_(getNativeNodeNames())
 {
-  if (rclcpp::Node::SharedPtr ptr = ros_node.lock()) logger_ = ptr->get_logger().get_child(LOGGER_NAME);
+  logger_ = ros_node->get_logger().get_child(LOGGER_NAME);
 }
 
 TreeBuilder::TreeBuilder(NodeRegistrationLoader::SharedPtr tree_node_loader)
 : TreeBuilder(
-    std::weak_ptr<rclcpp::Node>(), std::weak_ptr<rclcpp::CallbackGroup>(),
-    std::weak_ptr<rclcpp::executors::SingleThreadedExecutor>(), tree_node_loader)
+    std::shared_ptr<rclcpp::Node>(), std::shared_ptr<rclcpp::CallbackGroup>(),
+    std::shared_ptr<rclcpp::executors::SingleThreadedExecutor>(), tree_node_loader)
 {
 }
 
@@ -236,11 +236,18 @@ TreeBuilder & TreeBuilder::makeNodesAvailable(const NodeManifest & tree_node_man
     }
 
     try {
-      if (ros_node_wptr_.expired() || tree_node_waitables_callback_group_wptr_.expired()) {
+      if (
+        ros_node_wptr_.expired() || tree_node_waitables_callback_group_wptr_.expired() ||
+        tree_node_waitables_executor_wptr_.expired()) {
+        if (plugin_instance->requiresRosNodeContext()) {
+          throw exceptions::TreeBuildError(
+            "Constructor requires to pass an instance of RosNodeContext but the required pointers expired.");
+        }
         plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name);
       } else {
         RosNodeContext ros_node_context(
-          ros_node_wptr_, tree_node_waitables_callback_group_wptr_, tree_node_waitables_executor_wptr_, params);
+          ros_node_wptr_.lock(), tree_node_waitables_callback_group_wptr_.lock(),
+          tree_node_waitables_executor_wptr_.lock(), params);
         plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
       }
 

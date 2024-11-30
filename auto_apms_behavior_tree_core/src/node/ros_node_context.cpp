@@ -22,39 +22,24 @@
 namespace auto_apms_behavior_tree::core
 {
 RosNodeContext::RosNodeContext(
-  rclcpp::Node::WeakPtr ros_node, rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group,
-  rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor,
+  rclcpp::Node::SharedPtr ros_node, rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group,
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor,
   const NodeRegistrationParams & registration_params)
-: nh_(ros_node),
+: ros_node_name_(ros_node ? ros_node->get_name() : "empty"),
+  fully_qualified_ros_node_name_(ros_node ? ros_node->get_fully_qualified_name() : "empty"),
+  logger_(ros_node ? ros_node->get_logger() : rclcpp::get_logger("empty")),
+  nh_(ros_node),
   cb_group_(tree_node_waitables_callback_group),
   executor_(tree_node_waitables_executor),
   registration_params_(registration_params)
 {
 }
 
-std::string RosNodeContext::getROSNodeName() const
-{
-  if (const rclcpp::Node::SharedPtr node = nh_.lock()) {
-    return node->get_name();
-  }
-  return "unkown";
-}
+std::string RosNodeContext::getROSNodeName() const { return ros_node_name_; }
 
-std::string RosNodeContext::getFullyQualifiedROSNodeName() const
-{
-  if (const rclcpp::Node::SharedPtr node = nh_.lock()) {
-    return node->get_fully_qualified_name();
-  }
-  return "unkown";
-}
+std::string RosNodeContext::getFullyQualifiedRosNodeName() const { return fully_qualified_ros_node_name_; }
 
-rclcpp::Logger RosNodeContext::getLogger() const
-{
-  if (const rclcpp::Node::SharedPtr node = nh_.lock()) {
-    return node->get_logger();
-  }
-  return rclcpp::get_logger("RosTreeNode");
-}
+rclcpp::Logger RosNodeContext::getLogger() const { return logger_; }
 
 rclcpp::Time RosNodeContext::getCurrentTime() const
 {
@@ -64,15 +49,19 @@ rclcpp::Time RosNodeContext::getCurrentTime() const
   return rclcpp::Clock(RCL_ROS_TIME).now();
 }
 
-std::string RosNodeContext::getFullyQualifiedTreeNodeName(const BT::TreeNode * node) const
+std::string RosNodeContext::getFullyQualifiedTreeNodeName(const BT::TreeNode * node, bool with_class_name) const
 {
   // NOTE: registrationName() is empty during construction as this member is first set after the factory constructed the
   // object
   const std::string instance_name = node->name();
   const std::string registration_name = node->registrationName();
-  if (registration_name.empty() || instance_name == registration_name)
-    return instance_name + " (" + registration_params_.class_name + ")";
-  return instance_name + " (" + registration_name + " : " + registration_params_.class_name + ")";
+  if (!registration_name.empty() && instance_name != registration_name) {
+    if (with_class_name) {
+      return instance_name + " (" + registration_name + " : " + registration_params_.class_name + ")";
+    }
+    return instance_name + " (" + registration_name + ")";
+  }
+  return with_class_name ? (instance_name + " (" + registration_params_.class_name + ")") : instance_name;
 }
 
 BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::TreeNode * node) const
@@ -96,9 +85,9 @@ BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::Tre
 
       // Make sure its value is either a blackboard pointer or a static string (Must not be empty)
       if (input_ports.at(input_port_key).empty()) {
-        throw exceptions::RosNodeError(
+        return nonstd::make_unexpected(
           getFullyQualifiedTreeNodeName(node) +
-          " - Cannot get the name of the node's ROS 2 communication port: Node input port '" + input_port_key +
+          " - Cannot get the name of the node's ROS 2 communication port: Input port '" + input_port_key +
           "' required by substring '" + match.str() + "' must not be empty.");
       }
 
@@ -107,14 +96,14 @@ BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::Tre
       // again.
       const BT::Expected<std::string> expected = node->getInput<std::string>(input_port_key);
       if (expected) {
-        // Replace the input pattern with the value returned from getInput()
+        // Replace the respective substring with the value returned from getInput()
         res.replace(match.position(), match.length(), expected.value());
       } else {
-        // Return unexpected if input is unavailable
+        // Return unexpected if value couldn't be retrieved from input ports
         return expected;
       }
     } else {
-      throw exceptions::RosNodeError(
+      return nonstd::make_unexpected(
         getFullyQualifiedTreeNodeName(node) +
         " - Cannot get the name of the node's ROS 2 communication port: Node input port '" + input_port_key +
         "' required by substring '" + match.str() + "' doesn't exist.");

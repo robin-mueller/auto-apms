@@ -31,9 +31,9 @@ private:
   bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr) final
   {
     if (goal_ptr->do_restart) {
-      return client.StartMission();
+      return client.startMission();
     }
-    return client.SyncActivateFlightMode(FlightMode::Mission);
+    return client.syncActivateFlightMode(FlightMode::Mission);
   }
 };
 

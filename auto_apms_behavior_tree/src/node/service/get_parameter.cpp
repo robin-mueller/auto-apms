@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <type_traits>
+
 #include "auto_apms_behavior_tree/util/conversion.hpp"
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "rcl_interfaces/msg/parameter_value.hpp"
@@ -36,7 +38,7 @@ public:
       config.input_ports.find(INPUT_KEY_NODE_NAME) == config.input_ports.end() ||
       config.input_ports.at(INPUT_KEY_NODE_NAME).empty()) {
       // Refer to this ROS 2 node as the target if respective input port is empty
-      createClient(context_.getFullyQualifiedROSNodeName() + "/get_parameters");
+      createClient(context_.getFullyQualifiedRosNodeName() + "/get_parameters");
     }
   }
 
@@ -44,34 +46,42 @@ public:
   {
     // We do not use the default port for the service name
     return {
-      BT::InputPort<std::string>(INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node. Leave empty to target the executor node."),
       BT::OutputPort<T>(OUTPUT_KEY_PARAM_VALUE, "Output port for the parameter's value."),
       BT::InputPort<std::string>(INPUT_KEY_PARAM_NAME, "Name of the parameter to get.")};
   }
 
   bool setRequest(Request::SharedPtr & request) override final
   {
-    if (const BT::Expected<std::string> val = getInput<std::string>(INPUT_KEY_PARAM_NAME);
-        val && !val.value().empty()) {
-      request->names.push_back(val.value());
-      return true;
-    } else {
+    const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_PARAM_NAME);
+    if (!expected || expected.value().empty()) {
       RCLCPP_WARN(
         context_.getLogger(), "%s - Parameter name must not be empty.",
         context_.getFullyQualifiedTreeNodeName(this).c_str());
       return false;
     }
+    requested_parameter_name_ = expected.value();
+    request->names.push_back(requested_parameter_name_);
     return true;
   }
 
   BT::NodeStatus onResponseReceived(const Response::SharedPtr & response) override final
   {
     if (response->values.empty()) {
-      throw exceptions::RosNodeError(
-        context_.getFullyQualifiedTreeNodeName(this) + " - Response vector doesn't contain any values");
+      throw std::logic_error(
+        context_.getFullyQualifiedTreeNodeName(this) + " - Response vector doesn't contain any values.");
     }
     rclcpp::ParameterValue val(response->values[0]);
+    if (val.get_type() == rclcpp::PARAMETER_NOT_SET) {
+      RCLCPP_WARN(
+        context_.getLogger(), "%s - Tried to get undeclared parameter '%s'.",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), requested_parameter_name_.c_str());
+      return BT::NodeStatus::FAILURE;
+    }
     if constexpr (std::is_same_v<BT::Any, T>) {
+      // If ouput port type is BT::Any, we must try to infer the underlying type of the blackboard entry from received
+      // the parameter message
       const BT::Expected<BT::Any> expected = createAnyFromParameterValue(val);
       if (!expected) {
         RCLCPP_WARN(
@@ -93,6 +103,9 @@ public:
     }
     return BT::NodeStatus::SUCCESS;
   }
+
+private:
+  std::string requested_parameter_name_;
 };
 
 // Use BT::Any as the type of the blackboard entry set from the parameter, so type may change dynamically until the

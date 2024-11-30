@@ -31,7 +31,7 @@ public:
   NodeRegistrationTemplate() = default;
   virtual ~NodeRegistrationTemplate() = default;
 
-  bool requiresROSNodeParams() const override { return requires_ros_node_params; }
+  bool requiresRosNodeContext() const override { return requires_ros_node_params; }
 
   void registerWithBehaviorTreeFactory(
     BT::BehaviorTreeFactory & factory, const std::string & registration_name,

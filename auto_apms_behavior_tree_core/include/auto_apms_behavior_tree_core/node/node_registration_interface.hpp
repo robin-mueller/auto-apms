@@ -26,7 +26,7 @@ public:
   NodeRegistrationInterface() = default;
   virtual ~NodeRegistrationInterface() = default;
 
-  virtual bool requiresROSNodeParams() const = 0;
+  virtual bool requiresRosNodeContext() const = 0;
 
   virtual void registerWithBehaviorTreeFactory(
     BT::BehaviorTreeFactory & factory, const std::string & registration_name,

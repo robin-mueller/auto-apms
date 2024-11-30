@@ -15,7 +15,7 @@
 #pragma once
 
 #include "behaviortree_cpp/basic_types.h"
-#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 /// @cond
 namespace BT

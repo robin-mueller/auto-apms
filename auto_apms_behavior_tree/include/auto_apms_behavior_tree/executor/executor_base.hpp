@@ -81,6 +81,8 @@ private:
 
   virtual bool onTick();
 
+  virtual bool afterTick();
+
   virtual TreeExitBehavior onTreeExit(bool success);
 
   virtual void onTermination(const ExecutionResult & result);

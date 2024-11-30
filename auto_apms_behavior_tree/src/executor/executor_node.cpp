@@ -76,7 +76,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
 {
   const ExecutorParameters initial_params = executor_param_listener_.get_params();
 
-  // Remove all unkown parameters provided via parameter overrides
+  // Remove all parameters that are not supported and have been provided via parameter overrides
   rcl_interfaces::msg::ListParametersResult res = node_ptr_->list_parameters({}, 0);
   std::vector<std::string> unkown_param_names;
   for (const std::string & param_name : res.names) {
@@ -223,10 +223,12 @@ bool TreeExecutorNode::updateScriptingEnumsWithParameterValues(
     try {
       switch (pval.get_type()) {
         case rclcpp::ParameterType::PARAMETER_BOOL:
-          if (!simulate) scripting_enums_[enum_key] = static_cast<int>(pval.get<bool>());
+          if (simulate) continue;
+          scripting_enums_[enum_key] = static_cast<int>(pval.get<bool>());
           break;
         case rclcpp::ParameterType::PARAMETER_INTEGER:
-          if (!simulate) scripting_enums_[enum_key] = static_cast<int>(pval.get<int64_t>());
+          if (simulate) continue;
+          scripting_enums_[enum_key] = static_cast<int>(pval.get<int64_t>());
           break;
         default:
           if (simulate) return false;
@@ -240,7 +242,7 @@ bool TreeExecutorNode::updateScriptingEnumsWithParameterValues(
       return false;
     }
   }
-  if (!simulate) {
+  if (!set_successfully_map.empty()) {
     RCLCPP_DEBUG(
       logger_, "Updated scripting enums from parameters: { %s }",
       auto_apms_util::printMap(set_successfully_map).c_str());
@@ -257,15 +259,18 @@ bool TreeExecutorNode::updateBlackboardWithParameterValues(
       if (const BT::Expected<BT::Any> expected = createAnyFromParameterValue(pval)) {
         BT::Any any(expected.value());
         if (simulate) {
-          if (std::shared_ptr<TreeBlackboard::Entry> entry_ptr = bb.getEntry(entry_key)) {
-            if (entry_ptr->info.type() != any.type()) return false;
+          // Verify that any has the same type as the entry (if it exists)
+          if (const BT::TypeInfo * entry_info = bb.entryInfo(entry_key)) {
+            if (entry_info->isStronglyTyped() && entry_info->type() != any.type()) return false;
           }
+          continue;
         } else {
           bb.set(entry_key, any);
         }
       } else {
         throw exceptions::ParameterConversionError(expected.error());
       }
+      known_bb_keys_.insert(entry_key);
       set_successfully_map[entry_key] = rclcpp::to_string(pval);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(
@@ -274,7 +279,7 @@ bool TreeExecutorNode::updateBlackboardWithParameterValues(
       return false;
     }
   }
-  if (!simulate) {
+  if (!set_successfully_map.empty()) {
     RCLCPP_DEBUG(
       logger_, "Updated blackboard from parameters: { %s }", auto_apms_util::printMap(set_successfully_map).c_str());
   }
@@ -321,26 +326,28 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   // the tree later. Otherwise a segmentation fault might occur since memory allocated for the arguments might be
   // released at the time the method returns.
   return [this, root_tree_name, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
-    TreeBuilder builder(
-      node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_);
+    // Currently, BehaviorTree.CPP requires the memory allocated by the factory to persist even after the tree has been
+    // created, so we make the builder a unique pointer that is only reset when a new tree is to be created.
+    builder_ptr_.reset(new TreeBuilder(
+      node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_));
 
     // Allow executor to set up the builder independently from the build handler
-    setUpBuilder(builder);
+    setUpBuilder(*builder_ptr_);
 
     // Make scripting enums available to tree instance
-    for (const auto & [enum_key, val] : scripting_enums_) builder.setScriptingEnum(enum_key, val);
+    for (const auto & [enum_key, val] : scripting_enums_) builder_ptr_->setScriptingEnum(enum_key, val);
 
     // If a build handler is specified, let it configure the builder and determine which tree is to be instantiated
     std::string instantiate_name = root_tree_name;
     if (build_handler_ptr_) {
-      instantiate_name = build_handler_ptr_->buildTree(builder, *bb_ptr).getName();
+      instantiate_name = build_handler_ptr_->buildTree(*builder_ptr_, *bb_ptr).getName();
     }
 
     // Allow for overriding selected node instances
-    builder.makeNodesAvailable(node_overrides, true);
+    builder_ptr_->makeNodesAvailable(node_overrides, true);
 
     // Finally, instantiate the tree
-    return builder.instantiate(instantiate_name, bb_ptr);
+    return builder_ptr_->instantiate(instantiate_name, bb_ptr);
   };
 }
 
@@ -350,14 +357,15 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
   const ExecutorParameters params = executor_param_listener_.get_params();
 
   // Iterate through parameters and individually decide wether to reject the change
-  for (const auto & p : parameters) {
-    const std::string param_name = p.get_name();
-    auto create_rejected = [&param_name](const std::string msg) {
+  for (const rclcpp::Parameter & p : parameters) {
+    auto create_rejected = [&p](const std::string msg) {
       rcl_interfaces::msg::SetParametersResult result;
       result.successful = false;
-      result.reason = "Rejected to set parameter '" + param_name + "': " + msg + ".";
+      result.reason = "Rejected to set " + p.get_name() + " = " + p.value_to_string() + " (Type: " + p.get_type_name() +
+                      "): " + msg + ".";
       return result;
     };
+    const std::string param_name = p.get_name();
 
     // Check if parameter is a scripting enum
     if (const std::string enum_key = stripPrefixFromParameterName(SCRIPTING_ENUM_PARAM_PREFIX, param_name);
@@ -398,7 +406,12 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
       continue;
     }
 
-    // Check for other parameters which are not allowed during execution
+    // Check if parameter is known
+    if (!auto_apms_util::contains(EXPLICITLY_ALLOWED_PARAMETERS, param_name)) {
+      return create_rejected("Parameter is unkown");
+    }
+
+    // Check if the parameter is allowed to change during execution
     if (isBusy() && !auto_apms_util::contains(EXPLICITLY_ALLOWED_PARAMETERS_WHILE_BUSY, param_name)) {
       return create_rejected("Parameter is not allowed to change while tree executor is running");
     }
@@ -409,7 +422,7 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
         return create_rejected(
           "This executor operates with tree build handler '" + executor_param_listener_.get_params().build_handler +
           "' and doesn't allow other build handlers to be loaded since the 'Allow other build handlers' option is "
-          "disabled.");
+          "disabled");
       }
       const std::string class_name = p.as_string();
       if (class_name != PARAM_VALUE_NO_BUILD_HANDLER && !build_handler_loader_ptr_->isClassAvailable(class_name)) {
@@ -686,33 +699,78 @@ void TreeExecutorNode::handle_command_accept_(std::shared_ptr<CommandActionConte
 bool TreeExecutorNode::onTick()
 {
   const ExecutorParameters params = executor_param_listener_.get_params();
-  auto & state_observer = getStateObserver();
+
+  // Set state change logging flag
+  getStateObserver().setLogging(params.state_change_logger);
+  return true;
+}
+
+bool TreeExecutorNode::afterTick()
+{
+  const ExecutorParameters params = executor_param_listener_.get_params();
 
   /**
-   * Update entities using dynamic parameters
+   * Synchronize parameters with new blackboard entries if enabled
    */
-  state_observer.setLogging(params.state_change_logger);
 
-  // Don't send feedback if started in detached mode
-  if (!start_action_context_.isValid()) return true;
+  if (executor_options_.blackboard_parameters_dynamic_ && params.allow_dynamic_blackboard) {
+    TreeBlackboardSharedPtr bb_ptr = getGlobalBlackboardPtr();
+    std::vector<rclcpp::Parameter> new_parameters;
+    for (const BT::StringView & str : bb_ptr->getKeys()) {
+      const std::string key = std::string(str);
+      const BT::TypeInfo * type_info = bb_ptr->entryInfo(key);
+      const BT::Any * any = bb_ptr->getAnyLocked(key).get();
+
+      // BehaviorTree.CPP does some type validation logic for all data ports when instantiating the tree. It parses
+      // the XML file, finds the ports of all nodes and initializes blackboard entries wherever used with the
+      // corresponding type. This is done to to detect type mismatches at construction time. This means, that the
+      // blackboard will be initialized with empty instances of BT::Any by the time the tree is created. Therefore, we
+      // must additionally check whether the blackboard entry is empty or not using BT::Any::empty().
+      if (any->empty()) continue;
+
+      // If the entry has actually been filled with a non empty value during runtime, we update this node's parameters
+      if (const auto & [_, is_new] = known_bb_keys_.insert(key); is_new) {
+        const BT::Expected<rclcpp::ParameterValue> expected =
+          createParameterValueFromAny(*any, rclcpp::PARAMETER_NOT_SET);
+        if (expected) {
+          new_parameters.push_back(rclcpp::Parameter(BLACKBOARD_PARAM_PREFIX + "." + key, expected.value()));
+        } else {
+          RCLCPP_WARN(
+            logger_, "Failed to transfer new blackboard entry '%s' (Type: %s) to parameters: %s", key.c_str(),
+            type_info->typeName().c_str(), expected.error().c_str());
+        }
+      }
+    }
+    const rcl_interfaces::msg::SetParametersResult result = node_ptr_->set_parameters_atomically(new_parameters);
+    if (!result.successful) {
+      throw exceptions::TreeExecutorError(
+        "Unexpectedly failed to set parameters inferred from global blackboard. Reason: " + result.reason);
+    }
+  }
 
   /**
    * Send feedback
    */
-  auto feedback_ptr = start_action_context_.getFeedbackPtr();  // feedback from previous tick persists
-  feedback_ptr->execution_state_str = toStr(getExecutionState());
-  feedback_ptr->running_tree_identity = getTreeName();
-  auto running_action_history = state_observer.getRunningActionHistory();
-  if (!running_action_history.empty()) {
-    // If there are multiple nodes running (ParallelNode), join the IDs to a single string
-    feedback_ptr->running_action_name = auto_apms_util::join(running_action_history, " + ");
-    feedback_ptr->running_action_timestamp =
-      std::chrono::duration<double>{std::chrono::high_resolution_clock::now().time_since_epoch()}.count();
 
-    // Reset the history cache
-    state_observer.flush();
+  // Only send feedback if started in attached mode
+  if (start_action_context_.isValid()) {
+    TreeStateObserver & state_observer = getStateObserver();
+    auto feedback_ptr = start_action_context_.getFeedbackPtr();  // feedback from previous tick persists
+    feedback_ptr->execution_state_str = toStr(getExecutionState());
+    feedback_ptr->running_tree_identity = getTreeName();
+    auto running_action_history = state_observer.getRunningActionHistory();
+    if (!running_action_history.empty()) {
+      // If there are multiple nodes running (ParallelNode), join the IDs to a single string
+      feedback_ptr->running_action_name = auto_apms_util::join(running_action_history, " + ");
+      feedback_ptr->running_action_timestamp =
+        std::chrono::duration<double>{std::chrono::high_resolution_clock::now().time_since_epoch()}.count();
+
+      // Reset the history cache
+      state_observer.flush();
+    }
+    start_action_context_.publishFeedback();
   }
-  start_action_context_.publishFeedback();
+
   return true;
 }
 

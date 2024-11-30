@@ -44,7 +44,7 @@ VehicleCommandClient::VehicleCommandClient(rclcpp::Node & node, const std::chron
     [](px4_msgs::msg::VehicleCommandAck::UniquePtr msg) { (void)msg; });
 }
 
-VehicleCommandClient::SendCommandResult VehicleCommandClient::SyncSendVehicleCommand(
+VehicleCommandClient::SendCommandResult VehicleCommandClient::syncSendVehicleCommand(
   uint32_t command, float param1, float param2, float param3, float param4, float param5, float param6,
   float param7) const
 {
@@ -59,10 +59,10 @@ VehicleCommandClient::SendCommandResult VehicleCommandClient::SyncSendVehicleCom
   cmd.param7 = param7;
   cmd.timestamp = node_.get_clock()->now().nanoseconds() / 1000;
 
-  return SyncSendVehicleCommand(cmd);
+  return syncSendVehicleCommand(cmd);
 }
 
-VehicleCommandClient::SendCommandResult VehicleCommandClient::SyncSendVehicleCommand(
+VehicleCommandClient::SendCommandResult VehicleCommandClient::syncSendVehicleCommand(
   const px4_msgs::msg::VehicleCommand & cmd) const
 {
   SendCommandResult result = SendCommandResult::REJECTED;
@@ -88,14 +88,14 @@ VehicleCommandClient::SendCommandResult VehicleCommandClient::SyncSendVehicleCom
 
       if (vehicle_command_ack_sub_->take(ack, info)) {
         if (ack.command == cmd.command && ack.target_component == cmd.source_component) {
-          RCLCPP_DEBUG(logger_, "SyncSendVehicleCommand: Command %i - received ack result %i", cmd.command, ack.result);
+          RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - received ack result %i", cmd.command, ack.result);
           if (ack.result == px4_msgs::msg::VehicleCommandAck::VEHICLE_CMD_RESULT_ACCEPTED) {
             result = SendCommandResult::ACCEPTED;
           }
           got_reply = true;
         }
       } else {
-        RCLCPP_DEBUG(logger_, "SyncSendVehicleCommand: Command %i - message not valid", cmd.command);
+        RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - message not valid", cmd.command);
       }
     }
   }
@@ -104,51 +104,51 @@ VehicleCommandClient::SendCommandResult VehicleCommandClient::SyncSendVehicleCom
 
   if (!got_reply) {
     result = SendCommandResult::TIMEOUT;
-    RCLCPP_WARN(logger_, "SyncSendVehicleCommand: Command %i - timeout, no ack received", cmd.command);
+    RCLCPP_WARN(logger_, "syncSendVehicleCommand: Command %i - timeout, no ack received", cmd.command);
   }
 
-  RCLCPP_DEBUG(logger_, "SyncSendVehicleCommand: Command %i - returned %s", cmd.command, toStr(result).c_str());
+  RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - returned %s", cmd.command, toStr(result).c_str());
 
   return result;
 }
 
-bool VehicleCommandClient::Arm() const
+bool VehicleCommandClient::arm() const
 {
-  return !SyncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 1);
+  return !syncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 1);
 }
 
-bool VehicleCommandClient::Disarm() const
+bool VehicleCommandClient::disarm() const
 {
-  return !SyncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 0);
+  return !syncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 0);
 }
 
-bool VehicleCommandClient::StartMission() const
+bool VehicleCommandClient::startMission() const
 {
-  return !SyncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_MISSION_START, 0);
+  return !syncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_MISSION_START, 0);
 }
 
-bool VehicleCommandClient::Takeoff(float altitude_amsl_m, float heading_rad) const
+bool VehicleCommandClient::takeoff(float altitude_amsl_m, float heading_rad) const
 {
   RCLCPP_DEBUG(logger_, "Takeoff parameters: altitude_amsl_m=%f heading_rad=%f", altitude_amsl_m, heading_rad);
-  return !SyncSendVehicleCommand(
+  return !syncSendVehicleCommand(
     VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, NAN, NAN, NAN, heading_rad, NAN, NAN, altitude_amsl_m);
 }
 
-bool VehicleCommandClient::Land() const { return !SyncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_NAV_LAND); }
+bool VehicleCommandClient::land() const { return !syncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_NAV_LAND); }
 
-bool VehicleCommandClient::SyncActivateFlightMode(uint8_t mode_id) const
+bool VehicleCommandClient::syncActivateFlightMode(uint8_t mode_id) const
 {
-  return !SyncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_SET_NAV_STATE, mode_id);
+  return !syncSendVehicleCommand(VehicleCommand::VEHICLE_CMD_SET_NAV_STATE, mode_id);
 }
 
-bool VehicleCommandClient::SyncActivateFlightMode(const FlightMode & mode) const
+bool VehicleCommandClient::syncActivateFlightMode(const FlightMode & mode) const
 {
-  return SyncActivateFlightMode(static_cast<uint8_t>(mode));
+  return syncActivateFlightMode(static_cast<uint8_t>(mode));
 }
 
-bool VehicleCommandClient::SyncActivateFlightMode(const px4_ros2::ModeBase * const mode_ptr) const
+bool VehicleCommandClient::syncActivateFlightMode(const px4_ros2::ModeBase * const mode_ptr) const
 {
-  return SyncActivateFlightMode(mode_ptr->id());
+  return syncActivateFlightMode(mode_ptr->id());
 }
 
 }  // namespace auto_apms_px4

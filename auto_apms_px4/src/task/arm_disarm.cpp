@@ -64,12 +64,12 @@ private:
       // If goal is to arm
       state_ = ready_to_arm_ ? SEND_COMMAND : WAIT_FOR_READY_TO_ARM;
       is_arming_state_reached_check__ = [this]() { return is_armed_; };
-      send_command_callback_ = [this]() { return vehicle_command_client_.Arm(); };
+      send_command_callback_ = [this]() { return vehicle_command_client_.arm(); };
     } else {
       // If goal is to disarm
       state_ = SEND_COMMAND;
       is_arming_state_reached_check__ = [this]() { return !is_armed_; };
-      send_command_callback_ = [this]() { return vehicle_command_client_.Disarm(); };
+      send_command_callback_ = [this]() { return vehicle_command_client_.disarm(); };
     }
 
     // Succeed directly if arming state is already reached

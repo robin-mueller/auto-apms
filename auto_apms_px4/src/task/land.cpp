@@ -31,7 +31,7 @@ private:
   bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr)
   {
     (void)goal_ptr;
-    return client.Land();
+    return client.land();
   }
 };
 

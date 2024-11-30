@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <type_traits>
+
 #include "auto_apms_behavior_tree/util/conversion.hpp"
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "rcl_interfaces/msg/parameter.hpp"
@@ -26,7 +28,7 @@
 namespace auto_apms_behavior_tree
 {
 
-template <rclcpp::ParameterType param_type>
+template <typename T>
 class SetParameterTemplate : public core::RosServiceNode<rcl_interfaces::srv::SetParameters>
 {
 public:
@@ -37,7 +39,7 @@ public:
       config.input_ports.find(INPUT_KEY_NODE_NAME) == config.input_ports.end() ||
       config.input_ports.at(INPUT_KEY_NODE_NAME).empty()) {
       // Refer to this ROS 2 node as the target if respective input port is empty
-      createClient(context_.getFullyQualifiedROSNodeName() + "/set_parameters");
+      createClient(context_.getFullyQualifiedRosNodeName() + "/set_parameters");
     }
   }
 
@@ -45,8 +47,9 @@ public:
   {
     // We do not use the default port for the service name
     return {
-      BT::InputPort<std::string>(INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node."),
-      BT::InputPort<BT::Any>(INPUT_KEY_PARAM_VALUE, "Value of the parameter to be set."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node. Leave empty to target the executor node."),
+      BT::InputPort<T>(INPUT_KEY_PARAM_VALUE, "Value of the parameter to be set."),
       BT::InputPort<std::string>(INPUT_KEY_PARAM_NAME, "Name of the parameter to be set."),
     };
   }
@@ -64,83 +67,126 @@ public:
       return false;
     }
 
+    rclcpp::ParameterType inferred_param_type = rclcpp::PARAMETER_NOT_SET;
+    if constexpr (!std::is_same_v<BT::Any, T>) {
+      inferred_param_type = rclcpp::ParameterValue(T()).get_type();
+    }
+
     rcl_interfaces::msg::ParameterValue param_val;
-    if (const BT::Expected<BT::Any> any = getInput<BT::Any>(INPUT_KEY_PARAM_VALUE)) {
-      const BT::Expected<rclcpp::ParameterValue> expected = createParameterValueFromAny(any.value(), param_type);
-      if (!expected) {
+    const BT::PortsRemapping::iterator it = config().input_ports.find(INPUT_KEY_PARAM_VALUE);
+    if (it == config().input_ports.end() || it->second.empty()) {
+      if constexpr (std::is_same_v<BT::Any, T>) {
+        throw exceptions::RosNodeError(
+          context_.getFullyQualifiedTreeNodeName(this) + " - Parameter value must not be empty.");
+      } else {
+        // Use default value of rcl_interfaces::msg::Parameter if input is not specified (Don't set param_val.value)
+        param_val.type = inferred_param_type;
+      }
+    } else {
+      // If input port is a literal, the user must use one of the statically typed versions of SetParameter, since
+      // it's impossible to know what type the parameter to be set should have
+      if (!isBlackboardPointer(it->second) && std::is_same_v<BT::Any, T>) {
+        throw exceptions::RosNodeError(
+          context_.getFullyQualifiedTreeNodeName(this) +
+          " - Cannot infer type from literal string. Use one of the type specialized versions of SetParameter "
+          "instead.");
+      }
+
+      const BT::Expected<T> expected_entry = getInput<T>(INPUT_KEY_PARAM_VALUE);
+      if (!expected_entry) {
+        throw exceptions::RosNodeError(context_.getFullyQualifiedTreeNodeName(this) + " - " + expected_entry.error());
+      }
+      const BT::Expected<rclcpp::ParameterValue> expected_param_val =
+        createParameterValueFromAny(BT::Any(expected_entry.value()), inferred_param_type);
+      if (!expected_param_val) {
+        // Conversion might not be possible. In this case, warn and reject to set parameter.
         RCLCPP_WARN(
           context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
-          expected.error().c_str());
+          expected_param_val.error().c_str());
         return false;
       }
-      param_val = expected.value().to_value_msg();
-    } else {
-      // Use default value defined by rcl_interfaces::msg::Parameter if input is not specified
-      param_val.type = param_type;
+      param_val = expected_param_val.value().to_value_msg();
     }
 
     parameter.value = param_val;
+    requested_parameter_ = rclcpp::Parameter(parameter.name, parameter.value);
     request->parameters.push_back(parameter);
     return true;
   }
+
+  BT::NodeStatus onResponseReceived(const Response::SharedPtr & response) override final
+  {
+    const rcl_interfaces::msg::SetParametersResult & result = response->results[0];
+    if (!result.successful) {
+      RCLCPP_ERROR(
+        context_.getLogger(), "Failed to set parameter %s = %s (Type: %s) via service '%s': %s",
+        requested_parameter_.get_name().c_str(), requested_parameter_.value_to_string().c_str(),
+        requested_parameter_.get_type_name().c_str(), getServiceName().c_str(), result.reason.c_str());
+      return BT::NodeStatus::FAILURE;
+    }
+    return BT::NodeStatus::SUCCESS;
+  }
+
+private:
+  rclcpp::Parameter requested_parameter_;
 };
 
 // Automatically infer the parameter type from BT::Any
-class SetParameter : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_NOT_SET>
+class SetParameter : public SetParameterTemplate<BT::Any>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterBool : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_BOOL>
+class SetParameterBool : public SetParameterTemplate<bool>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterInt : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_INTEGER>
+class SetParameterInt : public SetParameterTemplate<int64_t>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterDouble : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_DOUBLE>
+class SetParameterDouble : public SetParameterTemplate<double>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterString : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_STRING>
+class SetParameterString : public SetParameterTemplate<std::string>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterByteVec : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_BYTE_ARRAY>
+class SetParameterByteVec : public SetParameterTemplate<std::vector<uint8_t>>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterBoolVec : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_BOOL_ARRAY>
+class SetParameterBoolVec : public SetParameterTemplate<std::vector<bool>>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterIntVec : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY>
+class SetParameterIntVec : public SetParameterTemplate<std::vector<int64_t>>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterDoubleVec : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY>
+class SetParameterDoubleVec : public SetParameterTemplate<std::vector<double>>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterStringVec : public SetParameterTemplate<rclcpp::ParameterType::PARAMETER_STRING_ARRAY>
+class SetParameterStringVec : public SetParameterTemplate<std::vector<std::string>>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
