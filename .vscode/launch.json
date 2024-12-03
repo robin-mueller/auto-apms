@@ -1,6 +1,32 @@
 {
     "version": "0.2.0",
     "configurations": [
+        // {
+        //     "name": "(gdb) Launch executable",
+        //     "type": "cppdbg",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree_core/lib/auto_apms_behavior_tree_core/create_node_model_header",
+        //     "args": [
+        //         "/home/robin/Desktop/px4-ros2-env/install/auto_apms_behavior_tree_core/include/auto_apms_behavior_tree_core/native_nodes.hpp"
+        //     ],
+        //     "stopAtEntry": false,
+        //     "cwd": "${workspaceFolder}",
+        //     "environment": [],
+        //     "externalConsole": false,
+        //     "MIMode": "gdb",
+        //     "setupCommands": [
+        //         {
+        //             "description": "Enable pretty-printing for gdb",
+        //             "text": "-enable-pretty-printing",
+        //             "ignoreFailures": true
+        //         },
+        //         {
+        //             "description": "Set Disassembly Flavor to Intel",
+        //             "text": "-gdb-set disassembly-flavor intel",
+        //             "ignoreFailures": true
+        //         }
+        //     ]
+        // },
         {
             "name": "(gdb) Launch new_tree",
             "type": "cppdbg",

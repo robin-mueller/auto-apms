@@ -14,20 +14,14 @@
 
 #pragma once
 
-#include "behaviortree_cpp/basic_types.h"
-#include "behaviortree_cpp/bt_factory.h"
-
-/**
- * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
- * @brief Useful tooling for Behavior Tree development.
- */
+#include "auto_apms_behavior_tree_core/convert.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
-using Tree = BT::Tree;
-using TreeBlackboard = BT::Blackboard;
-using TreeBlackboardSharedPtr = std::shared_ptr<TreeBlackboard>;
-using TreeConstructor = std::function<Tree(TreeBlackboardSharedPtr)>;
+BT::Expected<BT::Any> createAnyFromParameterValue(const rclcpp::ParameterValue & val);
+
+BT::Expected<rclcpp::ParameterValue> createParameterValueFromAny(const BT::Any & any, rclcpp::ParameterType type);
 
 }  // namespace auto_apms_behavior_tree

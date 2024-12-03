@@ -17,6 +17,7 @@
         "rclcpp",
         "rcpputils",
         "RCUTILS",
+        "STREQUAL",
         "tinyxml",
         "waitables",
         "wptr"

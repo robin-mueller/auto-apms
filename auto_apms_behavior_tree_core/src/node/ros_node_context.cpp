@@ -24,14 +24,14 @@ namespace auto_apms_behavior_tree::core
 RosNodeContext::RosNodeContext(
   rclcpp::Node::SharedPtr ros_node, rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group,
   rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor,
-  const NodeRegistrationParams & registration_params)
-: ros_node_name_(ros_node ? ros_node->get_name() : "empty"),
-  fully_qualified_ros_node_name_(ros_node ? ros_node->get_fully_qualified_name() : "empty"),
-  logger_(ros_node ? ros_node->get_logger() : rclcpp::get_logger("empty")),
+  const NodeRegistrationOptions & options)
+: ros_node_name_(ros_node ? ros_node->get_name() : ""),
+  fully_qualified_ros_node_name_(ros_node ? ros_node->get_fully_qualified_name() : ""),
+  logger_(ros_node ? ros_node->get_logger() : rclcpp::get_logger("")),
   nh_(ros_node),
   cb_group_(tree_node_waitables_callback_group),
   executor_(tree_node_waitables_executor),
-  registration_params_(registration_params)
+  registration_options_(options)
 {
 }
 
@@ -57,20 +57,20 @@ std::string RosNodeContext::getFullyQualifiedTreeNodeName(const BT::TreeNode * n
   const std::string registration_name = node->registrationName();
   if (!registration_name.empty() && instance_name != registration_name) {
     if (with_class_name) {
-      return instance_name + " (" + registration_name + " : " + registration_params_.class_name + ")";
+      return instance_name + " (" + registration_name + " : " + registration_options_.class_name + ")";
     }
     return instance_name + " (" + registration_name + ")";
   }
-  return with_class_name ? (instance_name + " (" + registration_params_.class_name + ")") : instance_name;
+  return with_class_name ? (instance_name + " (" + registration_options_.class_name + ")") : instance_name;
 }
 
 BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::TreeNode * node) const
 {
-  std::string res = registration_params_.port;
+  std::string res = registration_options_.port;
   BT::PortsRemapping input_ports = node->config().input_ports;
 
-  // Parameter registration_params_.port may contain substrings, that that are to be replaced with values retrieved from
-  // a specific node input port. Must be something like (input:my_port) where 'my_port' is the key/name of the
+  // Parameter registration_options_.port may contain substrings, that that are to be replaced with values retrieved
+  // from a specific node input port. Must be something like (input:my_port) where 'my_port' is the key/name of the
   // BT::InputPort to use. Anything before or after the expression is kept and used as a prefix respectively suffix.
   const std::regex pattern(R"(\(input:([^)\s]+)\))");
   const std::sregex_iterator replace_begin(res.begin(), res.end(), pattern);

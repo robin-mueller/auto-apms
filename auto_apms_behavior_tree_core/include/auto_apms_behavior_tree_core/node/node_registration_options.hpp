@@ -23,18 +23,18 @@
 
 namespace auto_apms_behavior_tree::core
 {
-struct NodeRegistrationParams;
+struct NodeRegistrationOptions;
 }
 
 /// @cond
 namespace YAML
 {
 template <>
-struct convert<auto_apms_behavior_tree::core::NodeRegistrationParams>
+struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
 {
-  using Params = auto_apms_behavior_tree::core::NodeRegistrationParams;
-  static Node encode(const Params & rhs);
-  static bool decode(const Node & node, Params & lhs);
+  using Options = auto_apms_behavior_tree::core::NodeRegistrationOptions;
+  static Node encode(const Options & rhs);
+  static bool decode(const Node & node, Options & lhs);
 };
 }  // namespace YAML
 /// @endcond
@@ -46,7 +46,7 @@ namespace auto_apms_behavior_tree::core
  * @brief Necessary parameters for loading and registering a behavior tree node class from a shared library using
  * e.g. NodeRegistrationLoader.
  */
-struct NodeRegistrationParams
+struct NodeRegistrationOptions
 {
   static const std::string PARAM_NAME_CLASS;
   static const std::string PARAM_NAME_PORT;
@@ -54,9 +54,9 @@ struct NodeRegistrationParams
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
   static const std::string PARAM_NAME_ALLOW_UNREACHABLE;
 
-  NodeRegistrationParams() = default;
+  NodeRegistrationOptions() = default;
 
-  AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(NodeRegistrationParams)
+  AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(NodeRegistrationOptions)
 
   /// Fully qualified name of the behavior tree node plugin class.
   std::string class_name;
@@ -90,21 +90,21 @@ struct NodeRegistrationParams
 /// @cond
 namespace YAML
 {
-inline Node convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::encode(const Params & rhs)
+inline Node convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::encode(const Options & rhs)
 {
   Node node(NodeType::Map);
-  node[Params::PARAM_NAME_CLASS] = rhs.class_name;
-  node[Params::PARAM_NAME_PORT] = rhs.port;
-  node[Params::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
-  node[Params::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
-  node[Params::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
+  node[Options::PARAM_NAME_CLASS] = rhs.class_name;
+  node[Options::PARAM_NAME_PORT] = rhs.port;
+  node[Options::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
+  node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
+  node[Options::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
   return node;
 }
-inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::decode(const Node & node, Params & rhs)
+inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::decode(const Node & node, Options & rhs)
 {
   if (!node.IsMap())
     throw auto_apms_util::exceptions::YAMLFormatError(
-      "YAML::Node for auto_apms_behavior_tree::core::NodeRegistrationParams must be map but is type " +
+      "YAML::Node for auto_apms_behavior_tree::core::NodeRegistrationOptions must be map but is type " +
       std::to_string(node.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
   for (auto it = node.begin(); it != node.end(); ++it) {
@@ -115,23 +115,23 @@ inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationParams>::deco
         "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
         " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
-    if (key == Params::PARAM_NAME_CLASS) {
+    if (key == Options::PARAM_NAME_CLASS) {
       rhs.class_name = val.as<std::string>();
       continue;
     }
-    if (key == Params::PARAM_NAME_PORT) {
+    if (key == Options::PARAM_NAME_PORT) {
       rhs.port = val.as<std::string>();
       continue;
     }
-    if (key == Params::PARAM_NAME_WAIT_TIMEOUT) {
+    if (key == Options::PARAM_NAME_WAIT_TIMEOUT) {
       rhs.wait_timeout = std::chrono::duration<double>(val.as<double>());
       continue;
     }
-    if (key == Params::PARAM_NAME_REQUEST_TIMEOUT) {
+    if (key == Options::PARAM_NAME_REQUEST_TIMEOUT) {
       rhs.request_timeout = std::chrono::duration<double>(val.as<double>());
       continue;
     }
-    if (key == Params::PARAM_NAME_ALLOW_UNREACHABLE) {
+    if (key == Options::PARAM_NAME_ALLOW_UNREACHABLE) {
       rhs.allow_unreachable = val.as<bool>();
       continue;
     }

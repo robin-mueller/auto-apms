@@ -17,7 +17,7 @@
 #include <chrono>
 #include <string>
 
-#include "auto_apms_behavior_tree_core/node/node_registration_params.hpp"
+#include "auto_apms_behavior_tree_core/node/node_registration_options.hpp"
 #include "behaviortree_cpp/tree_node.h"
 #include "rclcpp/rclcpp.hpp"
 
@@ -36,10 +36,18 @@ class RosNodeContext
   friend class RosPublisherNode;
 
 public:
+  /**
+   * @brief RosNodeContext constructor.
+   *
+   * @param[in] ros_node ROS 2 node instance used for adding waitables with.
+   * @param[in] tree_node_waitables_callback_group Callback group to be used within tree nodes when adding waitables.
+   * @param[in] tree_node_waitables_executor Executor used for executing work provided by the node's waitables.
+   * @param[in] options Configuration options for the behavior tree node.
+   */
   RosNodeContext(
     rclcpp::Node::SharedPtr ros_node, rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group,
     rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor,
-    const NodeRegistrationParams & registration_params);
+    const NodeRegistrationOptions & options);
 
   std::string getROSNodeName() const;
 
@@ -59,13 +67,13 @@ private:
   const rclcpp::Logger logger_;
 
   /// Handle for the ROS2 node.
-  std::weak_ptr<rclcpp::Node> nh_;
+  rclcpp::Node::WeakPtr nh_;
   /// Callback group to be used when adding ROS 2 waitables like subscriptions, service clients, action clients etc. do.
   rclcpp::CallbackGroup::WeakPtr cb_group_;
   /// Executor that may be used to execute work provided by the node's waitables locally.
   rclcpp::executors::SingleThreadedExecutor::WeakPtr executor_;
   /// Node specific registration parameters.
-  const NodeRegistrationParams registration_params_;
+  const NodeRegistrationOptions registration_options_;
 };
 
 }  // namespace auto_apms_behavior_tree::core

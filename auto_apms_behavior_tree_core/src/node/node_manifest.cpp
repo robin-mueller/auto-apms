@@ -23,7 +23,7 @@
 namespace auto_apms_behavior_tree::core
 {
 
-NodeManifest::NodeManifest(const ParamMap & param_map) : param_map_{param_map} {}
+NodeManifest::NodeManifest(const Map & map) : map_{map} {}
 
 NodeManifest NodeManifest::fromFiles(const std::vector<std::string> & paths)
 {
@@ -98,7 +98,7 @@ NodeManifest NodeManifest::fromResourceIdentity(const std::string & identity)
 
 void NodeManifest::toFile(const std::string & file_path) const
 {
-  std::ofstream out_stream{file_path};
+  std::ofstream out_stream(file_path);
   if (out_stream.is_open()) {
     out_stream << this->encode();
     out_stream.close();
@@ -107,31 +107,28 @@ void NodeManifest::toFile(const std::string & file_path) const
   }
 }
 
-bool NodeManifest::contains(const std::string & node_name) const
-{
-  return param_map_.find(node_name) != param_map_.end();
-}
+bool NodeManifest::contains(const std::string & node_name) const { return map_.find(node_name) != map_.end(); }
 
-NodeManifest::Params & NodeManifest::operator[](const std::string & node_name)
+NodeManifest::RegistrationOptions & NodeManifest::operator[](const std::string & node_name)
 {
-  if (contains(node_name)) return param_map_[node_name];
+  if (contains(node_name)) return map_[node_name];
   throw std::out_of_range{
-    "Node '" + node_name + "' doesn't exist in node manifest (Size: " + std::to_string(param_map_.size()) +
+    "Node '" + node_name + "' doesn't exist in node manifest (Size: " + std::to_string(map_.size()) +
     "). Use the add() method to add an entry."};
 }
 
-const NodeManifest::Params & NodeManifest::operator[](const std::string & node_name) const
+const NodeManifest::RegistrationOptions & NodeManifest::operator[](const std::string & node_name) const
 {
-  if (contains(node_name)) return param_map_.at(node_name);
+  if (contains(node_name)) return map_.at(node_name);
   throw std::out_of_range{
-    "Node '" + node_name + "' doesn't exist in node manifest (Size: " + std::to_string(param_map_.size()) + ")."};
+    "Node '" + node_name + "' doesn't exist in node manifest (Size: " + std::to_string(map_.size()) + ")."};
 }
 
-NodeManifest & NodeManifest::add(const std::string & node_name, const Params & p)
+NodeManifest & NodeManifest::add(const std::string & node_name, const RegistrationOptions & p)
 {
   if (contains(node_name)) {
     throw exceptions::NodeManifestError{
-      "Node '" + node_name + "' already exists in node manifest (Size: " + std::to_string(param_map_.size()) + ")."};
+      "Node '" + node_name + "' already exists in node manifest (Size: " + std::to_string(map_.size()) + ")."};
   }
 
   // Validate parameters
@@ -140,7 +137,7 @@ NodeManifest & NodeManifest::add(const std::string & node_name, const Params & p
       "Cannot add node '" + node_name + "' to manifest. Parameter class_name must not be empty.");
   }
 
-  param_map_[node_name] = p;
+  map_[node_name] = p;
   return *this;
 }
 
@@ -150,16 +147,16 @@ NodeManifest & NodeManifest::remove(const std::string & node_name)
     throw std::out_of_range{
       "Node '" + node_name + "' doesn't exist in node manifest, so the corresponding entry cannot be removed."};
   }
-  param_map_.erase(node_name);
+  map_.erase(node_name);
   return *this;
 }
 
 NodeManifest & NodeManifest::merge(const NodeManifest & m)
 {
-  for (const auto & [node_name, params] : m.getInternalMap()) add(node_name, params);
+  for (const auto & [node_name, params] : m.map()) add(node_name, params);
   return *this;
 }
 
-const NodeManifest::ParamMap & NodeManifest::getInternalMap() const { return param_map_; }
+const NodeManifest::Map & NodeManifest::map() const { return map_; }
 
 }  // namespace auto_apms_behavior_tree::core

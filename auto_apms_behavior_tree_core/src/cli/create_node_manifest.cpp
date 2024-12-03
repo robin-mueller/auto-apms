@@ -92,18 +92,18 @@ int main(int argc, char ** argv)
     using Loader = auto_apms_util::PluginClassLoader<core::NodeRegistrationInterface>;
 
     std::set<std::string> exclude_build_package{build_package_name};
-    std::set<std::string> other_pacakges_with_node_plugins;
+    std::set<std::string> other_packages_with_node_plugins;
     try {
       // Exclude the build package from the list of packages to be searched for resources, because resources from this
       // package are not installed yet. Instead we hold additional build information in the build_infos variable.
-      other_pacakges_with_node_plugins = auto_apms_util::getPackagesWithPluginResources(exclude_build_package);
+      other_packages_with_node_plugins = auto_apms_util::getPackagesWithPluginResources(exclude_build_package);
     } catch (const auto_apms_util::exceptions::ResourceError & e) {
       // Allow assembling library paths also if no other packages register node resources (Only using resources of the
       // build package).
-      other_pacakges_with_node_plugins = {};
+      other_packages_with_node_plugins = {};
     }
     std::unique_ptr<Loader> loader_ptr = nullptr;
-    if (!other_pacakges_with_node_plugins.empty()) {
+    if (!other_packages_with_node_plugins.empty()) {
       // When creating the node plugin loader, reserve the class names this package is building when checking for
       // ambiguous declarations. This forces us to use the auto_apms_util::PluginClassLoader constructor.
       Loader * ptr = new Loader(Loader::makeUnambiguousPluginClassLoader(
@@ -114,7 +114,7 @@ int main(int argc, char ** argv)
 
     // Determine shared libraries associated with the node classes required by the manifest files
     std::set<std::string> library_paths;
-    for (const auto & [node_name, params] : output_manifest.getInternalMap()) {
+    for (const auto & [node_name, params] : output_manifest.map()) {
       // Look for class in the build package
       if (library_paths_build_package.find(params.class_name) != library_paths_build_package.end()) {
         library_paths.insert(library_paths_build_package[params.class_name]);

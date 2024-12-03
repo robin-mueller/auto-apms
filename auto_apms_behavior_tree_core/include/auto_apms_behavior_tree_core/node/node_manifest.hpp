@@ -17,7 +17,7 @@
 #include <map>
 #include <vector>
 
-#include "auto_apms_behavior_tree_core/node/node_registration_params.hpp"
+#include "auto_apms_behavior_tree_core/node/node_registration_options.hpp"
 #include "auto_apms_util/exceptions.hpp"
 #include "auto_apms_util/yaml.hpp"
 
@@ -50,12 +50,12 @@ namespace auto_apms_behavior_tree::core
 class NodeManifest
 {
 public:
-  using Params = NodeRegistrationParams;
+  using RegistrationOptions = NodeRegistrationOptions;
 
   /// Mapping of a node's name and its registration parameters.
-  using ParamMap = std::map<std::string, NodeRegistrationParams>;
+  using Map = std::map<std::string, NodeRegistrationOptions>;
 
-  NodeManifest(const ParamMap & param_map = {});
+  NodeManifest(const Map & map = {});
 
   AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(NodeManifest)
 
@@ -71,19 +71,19 @@ public:
 
   bool contains(const std::string & node_name) const;
 
-  Params & operator[](const std::string & node_name);
-  const Params & operator[](const std::string & node_name) const;
+  RegistrationOptions & operator[](const std::string & node_name);
+  const RegistrationOptions & operator[](const std::string & node_name) const;
 
-  NodeManifest & add(const std::string & node_name, const Params & p);
+  NodeManifest & add(const std::string & node_name, const RegistrationOptions & p);
 
   NodeManifest & remove(const std::string & node_name);
 
   NodeManifest & merge(const NodeManifest & m);
 
-  const ParamMap & getInternalMap() const;
+  const Map & map() const;
 
 private:
-  ParamMap param_map_;
+  Map map_;
 };
 
 }  // namespace auto_apms_behavior_tree::core
@@ -98,7 +98,7 @@ namespace YAML
 inline Node convert<auto_apms_behavior_tree::core::NodeManifest>::encode(const Manifest & rhs)
 {
   Node node(NodeType::Map);
-  for (const auto & [name, params] : rhs.getInternalMap()) node[name] = params;
+  for (const auto & [name, params] : rhs.map()) node[name] = params;
   return node;
 }
 inline bool convert<auto_apms_behavior_tree::core::NodeManifest>::decode(const Node & node, Manifest & rhs)
@@ -111,7 +111,7 @@ inline bool convert<auto_apms_behavior_tree::core::NodeManifest>::decode(const N
   for (auto it = node.begin(); it != node.end(); ++it) {
     const auto & name = it->first.as<std::string>();
     try {
-      rhs.add(name, it->second.as<Manifest::Params>());
+      rhs.add(name, it->second.as<Manifest::RegistrationOptions>());
     } catch (const std::exception & e) {
       throw auto_apms_util::exceptions::YAMLFormatError(
         "Node registration parameters for node '" + name + "' are invalid: " + e.what());

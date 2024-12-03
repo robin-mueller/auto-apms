@@ -163,7 +163,7 @@ inline BT::NodeStatus RosPublisherNode<MessageT>::tick()
         " - Cannot create the publisher because the topic name couldn't be resolved using "
         "the communication port expression specified by the node's "
         "registration parameters (" +
-        NodeRegistrationParams::PARAM_NAME_PORT + ": " + context_.registration_params_.port +
+        NodeRegistrationOptions::PARAM_NAME_PORT + ": " + context_.registration_options_.port +
         "). Error message: " + expected_name.error());
     }
   }

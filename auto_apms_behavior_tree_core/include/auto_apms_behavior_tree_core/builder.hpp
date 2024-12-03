@@ -46,6 +46,22 @@ class TreeBuilder
   inline static const std::string LOGGER_NAME = "behavior_tree_builder";
 
 public:
+  struct NodePortInfo
+  {
+    std::string port_name;
+    std::string port_type;
+    std::string port_default;
+    std::string port_description;
+    BT::PortDirection port_direction;
+  };
+
+  struct NodeModel
+  {
+    BT::NodeType type;
+    std::vector<NodePortInfo> port_infos;
+  };
+
+  using NodeModelMap = std::map<std::string, NodeModel>;
   using TreeElement = TreeDocument::TreeElement;
   using NodeElement = TreeDocument::NodeElement;
 
@@ -54,7 +70,7 @@ public:
   /**
    * @brief TreeBuilder constructor.
    *
-   * Arguments @p ros_node_ptr, @p tree_node_waitables_callback_group and @p tree_node_waitables_executor are passed to
+   * Arguments @p ros_node, @p tree_node_waitables_callback_group and @p tree_node_waitables_executor are passed to
    * behavior tree node plugins which utilize ROS 2 communication interfaces or waitables in general, that is, all nodes
    * inheriting from RosPublisherNode, RosSubscriberNode, RosServiceNode or RosActionNode.
    *
@@ -131,13 +147,17 @@ public:
    * existing plugin and use the new one instead.
    * @throw exceptions::TreeBuildError if registration fails.
    */
-  TreeBuilder & makeNodesAvailable(const NodeManifest & tree_node_manifest, bool override = false);
+  TreeBuilder & loadNodes(const NodeManifest & tree_node_manifest, bool override = false);
 
   std::unordered_map<std::string, BT::NodeType> getAvailableNodeTypeMap(bool include_native = true) const;
 
   std::set<std::string> getAvailableNodeNames(bool include_native = true) const;
 
   TreeBuilder & addNodeModelToDocument(bool include_native = false);
+
+  static NodeModelMap getNodeModel(tinyxml2::XMLDocument & doc);
+
+  NodeModelMap getNodeModel(bool include_native = false) const;
 
   // Verify the structure of this tree document and that all nodes are registered with the factory
   bool verify() const;
@@ -151,8 +171,6 @@ public:
   Tree instantiate(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
 private:
-  void getNodeModel(tinyxml2::XMLDocument & doc, bool include_native = false) const;
-
   rclcpp::Node::WeakPtr ros_node_wptr_;
   rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group_wptr_;
   rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor_wptr_;

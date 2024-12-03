@@ -17,6 +17,7 @@
 #include <chrono>
 #include <functional>
 #include <future>
+#include <memory>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree/executor/state_observer.hpp"
@@ -27,7 +28,7 @@
 namespace auto_apms_behavior_tree
 {
 
-class TreeExecutorBase
+class TreeExecutorBase : public std::enable_shared_from_this<TreeExecutorBase>
 {
 public:
   enum class ExecutionState : uint8_t

@@ -14,7 +14,7 @@
 
 #include <type_traits>
 
-#include "auto_apms_behavior_tree/util/conversion.hpp"
+#include "auto_apms_behavior_tree/util/parameter.hpp"
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "rcl_interfaces/msg/parameter.hpp"
 #include "rcl_interfaces/msg/parameter_type.hpp"
@@ -48,7 +48,7 @@ public:
     // We do not use the default port for the service name
     return {
       BT::InputPort<std::string>(
-        INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node. Leave empty to target the executor node."),
+        INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node. Leave empty to target this executor's node."),
       BT::InputPort<T>(INPUT_KEY_PARAM_VALUE, "Value of the parameter to be set."),
       BT::InputPort<std::string>(INPUT_KEY_PARAM_NAME, "Name of the parameter to be set."),
     };
@@ -57,15 +57,17 @@ public:
   bool setRequest(Request::SharedPtr & request) override final
   {
     rcl_interfaces::msg::Parameter parameter;
-    if (const BT::Expected<std::string> val = getInput<std::string>(INPUT_KEY_PARAM_NAME);
-        val && !val.value().empty()) {
-      parameter.name = val.value();
-    } else {
-      RCLCPP_WARN(
+    const BT::Expected<std::string> expected_name = getInput<std::string>(INPUT_KEY_PARAM_NAME);
+    if (!expected_name || expected_name.value().empty()) {
+      RCLCPP_ERROR(
         context_.getLogger(), "%s - Parameter name must not be empty.",
         context_.getFullyQualifiedTreeNodeName(this).c_str());
+      RCLCPP_DEBUG_EXPRESSION(
+        context_.getLogger(), !expected_name, "%s - Error message: %s",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_name.error().c_str());
       return false;
     }
+    parameter.name = expected_name.value();
 
     rclcpp::ParameterType inferred_param_type = rclcpp::PARAMETER_NOT_SET;
     if constexpr (!std::is_same_v<BT::Any, T>) {
@@ -94,13 +96,16 @@ public:
 
       const BT::Expected<T> expected_entry = getInput<T>(INPUT_KEY_PARAM_VALUE);
       if (!expected_entry) {
-        throw exceptions::RosNodeError(context_.getFullyQualifiedTreeNodeName(this) + " - " + expected_entry.error());
+        RCLCPP_ERROR(
+          context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+          expected_entry.error().c_str());
+        return false;
       }
       const BT::Expected<rclcpp::ParameterValue> expected_param_val =
         createParameterValueFromAny(BT::Any(expected_entry.value()), inferred_param_type);
       if (!expected_param_val) {
-        // Conversion might not be possible. In this case, warn and reject to set parameter.
-        RCLCPP_WARN(
+        // Conversion might not be possible. In this case, log error message and reject to set parameter.
+        RCLCPP_ERROR(
           context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
           expected_param_val.error().c_str());
         return false;

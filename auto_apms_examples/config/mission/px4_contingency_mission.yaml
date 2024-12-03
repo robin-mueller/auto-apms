@@ -1,9 +1,11 @@
-BRINGUP: ["auto_apms_examples::bringup::PX4ContingencyMissionBringUp"]
-
-MISSION: ["auto_apms_examples::mission::PX4ContingencyMission"]
-
-CONTINGENCY:
-  auto_apms_examples::contingency_hold::ContingencyHandler:
-    ["auto_apms_examples::contingency_hold::ContingencyMonitor"]
-
-SHUTDOWN: ["auto_apms_examples::shutdown::PX4ContingencyMissionShutDown"]
+BRINGUP:
+  - auto_apms_examples::bringup::PX4ContingencyMissionBringUp
+MISSION:
+  - auto_apms_examples::mission::PX4ContingencyMission
+EVENT:
+  MONITOR:
+    - auto_apms_examples::contingency_hold::ContingencyMonitor
+  HANDLER:
+    - auto_apms_examples::contingency_hold::ContingencyHandler
+SHUTDOWN:
+  - auto_apms_examples::shutdown::PX4ContingencyMissionShutDown

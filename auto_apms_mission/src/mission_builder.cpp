@@ -16,6 +16,8 @@
 #include "auto_apms_mission/mission_builder_base.hpp"
 #include "auto_apms_util/exceptions.hpp"
 
+namespace node = auto_apms_behavior_tree::model;
+
 namespace auto_apms_mission
 {
 
@@ -105,7 +107,12 @@ void MissionBuilder::buildBringUp(NodeElement & sequence, TreeResourceVector tre
   }
 }
 
-void MissionBuilder::buildMission(NodeElement & sequence, TreeResourceVector trees) {}
+void MissionBuilder::buildMission(NodeElement & sequence, TreeResourceVector trees)
+{
+  for (const TreeResource & r : trees) {
+    sequence.insertNode<node::StartExecutor>();
+  }
+}
 
 void MissionBuilder::buildShutDown(NodeElement & sequence, TreeResourceVector trees)
 {

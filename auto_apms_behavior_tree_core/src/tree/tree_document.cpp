@@ -55,39 +55,25 @@ TreeDocument::NodeElement::NodeElement(TreeBuilder * builder_ptr, XMLElement * e
   if (!ele_ptr) {
     throw exceptions::TreeDocumentError("Cannot create an instance of NodeElement with ele_ptr=nullptr.");
   }
-  XMLDocument model_doc;
-  XMLElement * this_node_model_ele = nullptr;
 
   // We tolerate builder_ptr being nullptr here but keep in mind that the program will segfault if any methods relying
   // on the builder are called later
-  if (builder_ptr) {
-    // Extract the port names and default values from the model.
-    // Note: The basic structure of the model document has already been verified.
-    builder_ptr_->getNodeModel(model_doc, true);
-    this_node_model_ele = model_doc.RootElement()->FirstChildElement(TREE_NODE_MODEL_ELEMENT_NAME)->FirstChildElement();
-    while (this_node_model_ele && !this_node_model_ele->Attribute("ID", ele_ptr_->Name())) {
-      this_node_model_ele = this_node_model_ele->NextSiblingElement();
-    }
+  std::vector<TreeBuilder::NodePortInfo> port_infos;
+  if (builder_ptr_) {
+    const TreeBuilder::NodeModelMap model = builder_ptr_->getNodeModel(true);
+    TreeBuilder::NodeModelMap::const_iterator it = model.find(ele_ptr_->Name());
+    if (it != model.end()) port_infos = it->second.port_infos;
   }
 
   // There should always be a corresponding element in the nodes model. However, if the constructor is called e.g.
-  // before the builder loaded the respective plugin, there is not and setPorts() won't work as expected. Therefore, we
-  // must ensure that all factory methods for a NodeElement verify that the node is known to the builder before creating
-  // an instance.
-  // NOTE: We must not throw, since the constructor must also succeed for the derived TreeElement class for which we
-  // don't require an entry in the nodes model anyways.
-  if (this_node_model_ele) {
-    PortValues default_values;
-    for (const XMLElement * port_ele = this_node_model_ele->FirstChildElement(); port_ele != nullptr;
-         port_ele = port_ele->NextSiblingElement()) {
-      if (std::regex_match(port_ele->Name(), std::regex("input_port|output_port|inout_port"))) {
-        const char * port_key = port_ele->Attribute("name");
-        const char * port_default = port_ele->Attribute("default");
-        port_keys_.push_back(port_key);
-        if (port_key && port_default) {
-          port_default_values_[port_key] = port_default;
-        }
-      }
+  // before the builder loaded the respective plugin, that's not the case and setPorts() won't work as expected.
+  // Therefore, we must ensure that all factory methods for a NodeElement verify that the node is known to the builder
+  // before creating an instance. NOTE: We must not throw, since the constructor must also succeed for the derived
+  // TreeElement class for which there is no node model and setPorts() is deleted anyways.
+  if (!port_infos.empty()) {
+    for (const TreeBuilder::NodePortInfo & port_info : port_infos) {
+      port_keys_.push_back(port_info.port_name);
+      if (!port_info.port_default.empty()) port_default_values_[port_info.port_name] = port_info.port_default;
     }
   }
 }
@@ -100,21 +86,38 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
     throw exceptions::TreeDocumentError(
       "Cannot insert unkown node <" + node_name +
       ">. Before inserting a new node, the associated builder must load and register the corresponding behavior tree "
-      "node plugin.");
+      "node plugin. Consider using a signature of insertNode() that does this automatically.");
   }
   XMLElement * ele = builder_ptr_->doc_.NewElement(node_name.c_str());
-  return insertBeforeImpl(before_this, ele).setPorts();  // Additionally add default port values
+  return insertBeforeImpl(before_this, ele);
 }
 
-TreeDocument::NodeElement TreeDocument::NodeElement::loadAndInsertNode(
-  const std::string & node_name, const NodeRegistrationParams & registration_params, const NodeElement * before_this)
+TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
+  const std::string & node_name, const NodeRegistrationOptions & registration_options, const NodeElement * before_this)
 {
+  // Check if the node name is known. If the developer provided registration options for a node that has the same name
+  // as one of the native ones, we enter loadNodes() and throw these names are reserved (Therefore we set include_native
+  // to false).
   if (const std::set<std::string> names = builder_ptr_->getAvailableNodeNames(false);
       names.find(node_name) == names.end()) {
-    // Try to load the node if it isn't registered yet
-    builder_ptr_->makeNodesAvailable(NodeManifest({{node_name, registration_params}}));
+    builder_ptr_->loadNodes(NodeManifest({{node_name, registration_options}}));
   }
   return insertNode(node_name, before_this);
+}
+
+TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
+  const NodeModelType & model, const NodeElement * before_this)
+{
+  // Check if the node model is known. Since we also provide node models for the native nodes, we may include these in
+  // the list of names to search (Therefore we set include_native
+  // to true).
+  const std::string node_name = model.getRegistrationName();
+  if (const std::set<std::string> names = builder_ptr_->getAvailableNodeNames(true);
+      names.find(node_name) == names.end()) {
+    builder_ptr_->loadNodes(NodeManifest({{node_name, model.getRegistrationOptions()}}));
+  }
+  // We insert and additionally add the ports using the model's internal data.
+  return insertNode(node_name, before_this).setPorts(model.getPortValues(), true);
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertSubTreeNode(
@@ -250,7 +253,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromResource(
   // We load all associated node plugins beforehand, so that the user doesn't have to do that manually. This means, that
   // also potentially unused nodes are available and registered with the factory. This seems unnecessary, but it's very
   // convenient and the performance probably doesn't suffer too much.
-  builder_ptr_->makeNodesAvailable(resource.getNodeManifest(), false);
+  builder_ptr_->loadNodes(resource.getNodeManifest(), false);
   return insertTreeFromDocument(insert_doc, tree_name, before_this);
 }
 
@@ -319,7 +322,7 @@ TreeDocument::NodeElement & TreeDocument::NodeElement::setPorts(const PortValues
     if (!unkown_keys.empty()) {
       throw exceptions::TreeDocumentError(
         "Cannot set ports. The following port keys are not implemented by node '" + std::string(this_node_name) +
-        "': [ " + auto_apms_util::join(unkown_keys, ", ") + " ].");
+        "' according to the internal model: [ " + auto_apms_util::join(unkown_keys, ", ") + " ].");
     }
   }
 

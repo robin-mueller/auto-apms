@@ -88,7 +88,7 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
-  explicit RosServiceNode(const std::string & instance_name, Config config, const Context & context);
+  explicit RosServiceNode(const std::string & instance_name, const Config & config, const Context & context);
 
   virtual ~RosServiceNode() = default;
 
@@ -175,7 +175,7 @@ inline RosServiceNode<ServiceT>::ServiceClientInstance::ServiceClientInstance(
 
 template <class ServiceT>
 inline RosServiceNode<ServiceT>::RosServiceNode(
-  const std::string & instance_name, Config config, const Context & context)
+  const std::string & instance_name, const Config & config, const Context & context)
 : BT::ActionNodeBase(instance_name, config), context_(context), logger_(context.getLogger())
 {
   if (const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this)) {
@@ -214,7 +214,7 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
         " - Cannot create the service client because the service name couldn't be resolved using "
         "the communication port expression specified by the node's "
         "registration parameters (" +
-        NodeRegistrationParams::PARAM_NAME_PORT + ": " + context_.registration_params_.port +
+        NodeRegistrationOptions::PARAM_NAME_PORT + ": " + context_.registration_options_.port +
         "). Error message: " + expected_name.error());
     }
   }
@@ -271,7 +271,7 @@ inline BT::NodeStatus RosServiceNode<ServiceT>::tick()
     // FIRST case: check if the goal request has a timeout
     if (!response_) {
       // See if we must time out
-      if ((context_.getCurrentTime() - time_request_sent_) > context_.registration_params_.request_timeout) {
+      if ((context_.getCurrentTime() - time_request_sent_) > context_.registration_options_.request_timeout) {
         // Remove the pending request with the client if timed out
         client_instance_->service_client->remove_pending_request(request_id_);
         return check_status(onFailure(SERVICE_TIMEOUT));
@@ -365,11 +365,11 @@ inline bool RosServiceNode<ServiceT>::createClient(const std::string & service_n
     client_instance_ = it->second.lock();
   }
 
-  bool found = client_instance_->service_client->wait_for_service(context_.registration_params_.wait_timeout);
+  bool found = client_instance_->service_client->wait_for_service(context_.registration_options_.wait_timeout);
   if (!found) {
     std::string msg = context_.getFullyQualifiedTreeNodeName(this) + " - Service with name '" + client_instance_->name +
                       "' is not reachable.";
-    if (context_.registration_params_.allow_unreachable) {
+    if (context_.registration_options_.allow_unreachable) {
       RCLCPP_WARN_STREAM(logger_, msg);
     } else {
       RCLCPP_ERROR_STREAM(logger_, msg);

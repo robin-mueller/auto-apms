@@ -40,12 +40,6 @@ private:
 
   TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) override final;
 
-protected:
-  /* Helper methods */
-
-  NodeElement insertStartTreeExecutorNode(
-    NodeElement & parent, const StartTreeExecutorRequest & request, const std::string & executor_ros_node);
-
 private:
   /* Virtual methods */
 
@@ -62,7 +56,6 @@ private:
   virtual void configureOrchestratorBlackboard(TreeBlackboard & bb);
 
 private:
-  const auto_apms_behavior_tree::core::NodeManifest builtin_nodes_;
   MissionConfiguration mission_config_;
 };
 

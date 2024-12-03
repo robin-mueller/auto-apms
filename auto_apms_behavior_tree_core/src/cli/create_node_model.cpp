@@ -27,7 +27,7 @@ using namespace auto_apms_behavior_tree;
 
 int main(int argc, char ** argv)
 {
-  if (argc < 3) {
+  if (argc < 4) {
     std::cerr << "create_node_model: Missing inputs! The program requires: \n\t1.) The path to the node plugin "
                  "manifest.\n\t2. The exhaustive list of libraries to be loaded by ClassLoader (Separated by "
                  "';').\n\t3.) The xml file to "
@@ -37,7 +37,7 @@ int main(int argc, char ** argv)
   }
 
   try {
-    const std::string manifest_file = std::filesystem::absolute(argv[1]).string();
+    const std::filesystem::path manifest_file = std::filesystem::absolute(argv[1]);
     const std::vector<std::string> library_paths = auto_apms_util::splitString(argv[2], ";");
     const std::filesystem::path output_file = std::filesystem::absolute(argv[3]);
 
@@ -61,7 +61,7 @@ int main(int argc, char ** argv)
     auto_apms_util::exposeToDebugLogging(logger);
 
     BT::BehaviorTreeFactory factory;
-    const auto manifest = core::NodeManifest::fromFile(manifest_file);
+    const auto manifest = core::NodeManifest::fromFile(manifest_file.string());
 
     /**
      * NOTE: We have to use the low level class loader here because the pluginlib::ClassLoader API doesn't allow
@@ -74,7 +74,7 @@ int main(int argc, char ** argv)
     for (const auto & path : library_paths) class_loaders.push_back(std::make_unique<class_loader::ClassLoader>(path));
 
     // Walk manifest and register all plugins with BT::BehaviorTreeFactory
-    for (const auto & [node_name, params] : manifest.getInternalMap()) {
+    for (const auto & [node_name, params] : manifest.map()) {
       const std::string required_class_name =
         "auto_apms_behavior_tree::core::NodeRegistrationTemplate<" + params.class_name + ">";
 
@@ -113,7 +113,7 @@ int main(int argc, char ** argv)
     }
 
     // Generate and write node model
-    std::ofstream out_stream{output_file};
+    std::ofstream out_stream(output_file);
     if (out_stream.is_open()) {
       out_stream << BT::writeTreeNodesModelXML(factory);
       out_stream.close();

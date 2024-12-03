@@ -18,9 +18,11 @@
 
 #include <functional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
-#include "auto_apms_behavior_tree_core/node/node_registration_params.hpp"
+#include "auto_apms_behavior_tree_core/node/node_model_type.hpp"
+#include "auto_apms_behavior_tree_core/node/node_registration_options.hpp"
 #include "auto_apms_behavior_tree_core/tree/script.hpp"
 #include "behaviortree_cpp/tree_node.h"
 
@@ -57,7 +59,7 @@ public:
     friend class TreeBuilder;
 
   public:
-    using PortValues = std::map<std::string, std::string>;
+    using PortValues = NodeModelType::PortValues;
     using DeepApplyCallback = std::function<bool(NodeElement &)>;
     using ConstDeepApplyCallback = std::function<bool(const NodeElement &)>;
 
@@ -67,8 +69,14 @@ public:
   public:
     NodeElement insertNode(const std::string & name, const NodeElement * before_this = nullptr);
 
-    NodeElement loadAndInsertNode(
-      const std::string & node_name, const NodeRegistrationParams & registration_params,
+    NodeElement insertNode(
+      const std::string & node_name, const NodeRegistrationOptions & registration_params,
+      const NodeElement * before_this = nullptr);
+
+    NodeElement insertNode(const NodeModelType & model, const NodeElement * before_this = nullptr);
+
+    template <class ModelT>
+    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, NodeElement> insertNode(
       const NodeElement * before_this = nullptr);
 
     NodeElement insertSubTreeNode(const std::string & tree_name, const NodeElement * before_this = nullptr);
@@ -99,7 +107,13 @@ public:
 
     NodeElement getFirstNode(const std::string & name = "") const;
 
+    template <class ModelT>
+    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, NodeElement> getFirstNode() const;
+
     NodeElement & removeFirstChild(const std::string & name = "");
+
+    template <class ModelT>
+    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, NodeElement &> removeFirstChild();
 
     NodeElement & removeChildren();
 
@@ -215,5 +229,30 @@ private:
 
   const std::string format_version_;
 };
+
+// #####################################################################################################################
+// ################################              DEFINITIONS              ##############################################
+// #####################################################################################################################
+
+template <class ModelT>
+inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::NodeElement>
+TreeDocument::NodeElement::insertNode(const NodeElement * before_this)
+{
+  return insertNode(ModelT(), before_this);
+}
+
+template <class ModelT>
+inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::NodeElement>
+TreeDocument::NodeElement::getFirstNode() const
+{
+  return getFirstNode(ModelT().getRegistrationName());
+}
+
+template <class ModelT>
+inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::NodeElement &>
+TreeDocument::NodeElement::removeFirstChild()
+{
+  return removeFirstChild(ModelT().getRegistrationName());
+}
 
 }  // namespace auto_apms_behavior_tree::core

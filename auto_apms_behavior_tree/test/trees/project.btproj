@@ -60,8 +60,12 @@
         <Action ID="HaltExecutor">
             <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
         </Action>
+        <Action ID="HasParameter">
+            <input_port name="parameter" type="std::string">Name of the parameter.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
         <Action ID="Logger">
-            <input_port name="message" type="std::string">Message to be logged via rclcpp::Logger.</input_port>
+            <input_port name="message" type="BT::Any">Message to be logged via rclcpp::Logger.</input_port>
             <input_port name="level" default="INFO" type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
         </Action>
         <Action ID="PauseExecutor">
@@ -77,48 +81,48 @@
         </Action>
         <Action ID="SetParameterBool">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="bool">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="SetParameterBoolVec">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="std::vector&lt;bool, std::allocator&lt;bool&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="SetParameterByteVec">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="std::vector&lt;unsigned char, std::allocator&lt;unsigned char&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="SetParameterDouble">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="double">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="SetParameterDoubleVec">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="std::vector&lt;double, std::allocator&lt;double&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="SetParameterInt">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="long">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="SetParameterIntVec">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="std::vector&lt;long, std::allocator&lt;long&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="SetParameterString">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="std::string">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="SetParameterStringVec">
             <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
-            <input_port name="value" type="BT::Any">Value of the parameter to be set.</input_port>
-            <input_port name="node" type="std::string">Name of the targeted ROS 2 node.</input_port>
+            <input_port name="value" type="std::vector&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="StartExecutor">
             <input_port name="executor" type="std::string">Name of the executor responsible for building and running the specified behavior tree.</input_port>

@@ -2,6 +2,7 @@ install/
 log/
 build/
 doc/html/
+test.xml
 
 .vscode/*
 !.vscode/settings.json

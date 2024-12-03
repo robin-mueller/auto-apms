@@ -5,10 +5,15 @@
       <SetParameterString parameter="bb.param"
                           value="test_string"
                           node=""/>
+      <Logger message="{@param}"
+              level="INFO"/>
+      <HasParameter parameter="bb.param"
+                    node=""/>
       <GetParameter parameter="bb.param"
                     value="{val}"
                     node=""/>
-      <Logger message="{val}"/>
+      <Logger message="{val}"
+              level="INFO"/>
     </Sequence>
   </BehaviorTree>
 
@@ -22,9 +27,15 @@
       <input_port name="node"
                   type="std::string">Name of the targeted ROS 2 node.</input_port>
     </Action>
+    <Action ID="HasParameter">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter.</input_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+    </Action>
     <Action ID="Logger">
       <input_port name="message"
-                  type="std::string">Message to be logged via rclcpp::Logger.</input_port>
+                  type="BT::Any">Message to be logged via rclcpp::Logger.</input_port>
       <input_port name="level"
                   default="INFO"
                   type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
@@ -33,9 +44,9 @@
       <input_port name="parameter"
                   type="std::string">Name of the parameter to be set.</input_port>
       <input_port name="value"
-                  type="BT::Any">Value of the parameter to be set.</input_port>
+                  type="std::string">Value of the parameter to be set.</input_port>
       <input_port name="node"
-                  type="std::string">Name of the targeted ROS 2 node.</input_port>
+                  type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
     </Action>
   </TreeNodesModel>
 

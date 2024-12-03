@@ -14,7 +14,7 @@
 
 #include <type_traits>
 
-#include "auto_apms_behavior_tree/util/conversion.hpp"
+#include "auto_apms_behavior_tree/util/parameter.hpp"
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "rcl_interfaces/msg/parameter_value.hpp"
 #include "rcl_interfaces/srv/get_parameters.hpp"
@@ -47,21 +47,24 @@ public:
     // We do not use the default port for the service name
     return {
       BT::InputPort<std::string>(
-        INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node. Leave empty to target the executor node."),
+        INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node. Leave empty to target this executor's node."),
       BT::OutputPort<T>(OUTPUT_KEY_PARAM_VALUE, "Output port for the parameter's value."),
       BT::InputPort<std::string>(INPUT_KEY_PARAM_NAME, "Name of the parameter to get.")};
   }
 
   bool setRequest(Request::SharedPtr & request) override final
   {
-    const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_PARAM_NAME);
-    if (!expected || expected.value().empty()) {
-      RCLCPP_WARN(
+    const BT::Expected<std::string> expected_name = getInput<std::string>(INPUT_KEY_PARAM_NAME);
+    if (!expected_name || expected_name.value().empty()) {
+      RCLCPP_ERROR(
         context_.getLogger(), "%s - Parameter name must not be empty.",
         context_.getFullyQualifiedTreeNodeName(this).c_str());
+      RCLCPP_DEBUG_EXPRESSION(
+        context_.getLogger(), !expected_name, "%s - Error message: %s",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_name.error().c_str());
       return false;
     }
-    requested_parameter_name_ = expected.value();
+    requested_parameter_name_ = expected_name.value();
     request->names.push_back(requested_parameter_name_);
     return true;
   }
@@ -74,33 +77,35 @@ public:
     }
     rclcpp::ParameterValue val(response->values[0]);
     if (val.get_type() == rclcpp::PARAMETER_NOT_SET) {
-      RCLCPP_WARN(
+      RCLCPP_ERROR(
         context_.getLogger(), "%s - Tried to get undeclared parameter '%s'.",
         context_.getFullyQualifiedTreeNodeName(this).c_str(), requested_parameter_name_.c_str());
       return BT::NodeStatus::FAILURE;
     }
+
+    BT::Result set_ouput_result;
     if constexpr (std::is_same_v<BT::Any, T>) {
       // If ouput port type is BT::Any, we must try to infer the underlying type of the blackboard entry from received
       // the parameter message
       const BT::Expected<BT::Any> expected = createAnyFromParameterValue(val);
       if (!expected) {
-        RCLCPP_WARN(
+        RCLCPP_ERROR(
           context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
           expected.error().c_str());
         return BT::NodeStatus::FAILURE;
       }
-      if (const BT::Result res = setOutput(OUTPUT_KEY_PARAM_VALUE, expected.value()); !res) {
-        RCLCPP_WARN(
-          context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(), res.error().c_str());
-        return BT::NodeStatus::FAILURE;
-      }
+      set_ouput_result = setOutput(OUTPUT_KEY_PARAM_VALUE, expected.value());
     } else {
-      if (const BT::Result res = setOutput(OUTPUT_KEY_PARAM_VALUE, val.get<T>()); !res) {
-        RCLCPP_WARN(
-          context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(), res.error().c_str());
-        return BT::NodeStatus::FAILURE;
-      }
+      set_ouput_result = setOutput(OUTPUT_KEY_PARAM_VALUE, val.get<T>());
     }
+
+    if (!set_ouput_result) {
+      RCLCPP_ERROR(
+        context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        set_ouput_result.error().c_str());
+      return BT::NodeStatus::FAILURE;
+    }
+
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -108,8 +113,8 @@ private:
   std::string requested_parameter_name_;
 };
 
-// Use BT::Any as the type of the blackboard entry set from the parameter, so type may change dynamically until the
-// entry is read. Behavior trees trying to read the entry must know the current type and cast correspondingly.
+// This version allows to infer the blackboard entry type from the type of the parameter. Behavior trees trying to read
+// the entry must know the current type and cast correspondingly.
 class GetParameter : public GetParameterTemplate<BT::Any>
 {
 public:

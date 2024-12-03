@@ -14,8 +14,6 @@
 
 #include "auto_apms_behavior_tree_core/builder.hpp"
 
-#include <regex>
-
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_util/container.hpp"
 #include "auto_apms_util/resource.hpp"
@@ -115,7 +113,7 @@ TreeBuilder::TreeElement TreeBuilder::newTreeFromResource(const TreeResource & r
 {
   TreeDocument new_doc;
   new_doc.mergeFile(resource.tree_file_path_, true);
-  makeNodesAvailable(resource.getNodeManifest(), false);
+  loadNodes(resource.getNodeManifest(), false);
   return newTreeFromDocument(new_doc, tree_name);
 }
 
@@ -164,11 +162,11 @@ TreeBuilder & TreeBuilder::setScriptingEnum(const std::string & enum_name, int v
   return *this;
 }
 
-TreeBuilder & TreeBuilder::makeNodesAvailable(const NodeManifest & tree_node_manifest, bool override)
+TreeBuilder & TreeBuilder::loadNodes(const NodeManifest & tree_node_manifest, bool override)
 {
   // Make sure that there are no node names that are reserved for native nodes
   std::set<std::string> all_registration_names;
-  for (const auto & [name, _] : tree_node_manifest.getInternalMap()) all_registration_names.insert(name);
+  for (const auto & [name, _] : tree_node_manifest.map()) all_registration_names.insert(name);
   if (const std::set<std::string> common =
         auto_apms_util::getCommonElements(all_registration_names, native_node_names_);
       !common.empty()) {
@@ -178,7 +176,7 @@ TreeBuilder & TreeBuilder::makeNodesAvailable(const NodeManifest & tree_node_man
       auto_apms_util::join(std::vector<std::string>(common.begin(), common.end()), ", ") + " ].");
   }
 
-  for (const auto & [node_name, params] : tree_node_manifest.getInternalMap()) {
+  for (const auto & [node_name, params] : tree_node_manifest.map()) {
     // If the node is already registered
     if (registered_node_class_names_map_.find(node_name) != registered_node_class_names_map_.end()) {
       // Check whether the specified node class is different from the currently registered one by comparing the
@@ -285,7 +283,15 @@ std::set<std::string> TreeBuilder::getAvailableNodeNames(bool include_native) co
 TreeBuilder & TreeBuilder::addNodeModelToDocument(bool include_native)
 {
   tinyxml2::XMLDocument model_doc;
-  getNodeModel(model_doc, include_native);  // Structure is already verified
+  if (
+    model_doc.Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+    throw exceptions::TreeBuildError(
+      "Error parsing the model of the currently loaded node plugins: " + std::string(model_doc.ErrorStr()));
+  }
+
+  // Verify format of document and discard the return value (We add a model element even if empty)
+  getNodeModel(model_doc);
+
   const tinyxml2::XMLElement * model_child =
     model_doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
 
@@ -295,6 +301,86 @@ TreeBuilder & TreeBuilder::addNodeModelToDocument(bool include_native)
   // Append the copied child to the root of the builder document
   doc_.RootElement()->InsertEndChild(copied_child);
   return *this;
+}
+
+TreeBuilder::NodeModelMap TreeBuilder::getNodeModel(tinyxml2::XMLDocument & doc)
+{
+  const tinyxml2::XMLElement * root = doc.RootElement();
+  if (!root) {
+    throw exceptions::TreeBuildError("Node model document has no root element.");
+  }
+  if (const char * ver = root->Attribute(TreeDocument::BTCPP_FORMAT_ATTRIBUTE_NAME)) {
+    const std::string expected_format = TreeDocument::BTCPP_FORMAT_DEFAULT_VERSION;
+    if (std::string(ver) != expected_format) {
+      throw exceptions::TreeDocumentError(
+        "Cannot parse node model document: Format of model document (" +
+        std::string(TreeDocument::BTCPP_FORMAT_ATTRIBUTE_NAME) + ": " + ver +
+        ") doesn't comply with the expected format (" + std::string(TreeDocument::BTCPP_FORMAT_ATTRIBUTE_NAME) + ": " +
+        expected_format + ").");
+    }
+  } else {
+    throw exceptions::TreeDocumentError(
+      "Cannot parse node model document: Root element of model document doesn't have required attribute '" +
+      std::string(TreeDocument::BTCPP_FORMAT_ATTRIBUTE_NAME) + "'.");
+  }
+  tinyxml2::XMLElement * model_ele = doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
+  if (!model_ele) {
+    throw exceptions::TreeBuildError(
+      "Element <" + std::string(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME) +
+      "> doesn't exist in node model document.");
+  }
+
+  NodeModelMap model_map;
+  for (tinyxml2::XMLElement * ele = model_ele->FirstChildElement(); ele != nullptr; ele = ele->NextSiblingElement()) {
+    const char * node_name = ele->Attribute("ID");
+    if (!node_name) {
+      throw exceptions::TreeBuildError(
+        "Element '" + std::string(ele->Name()) + "' in node model document is missing the required attribute 'ID'");
+    }
+    NodeModel & model = model_map[node_name];
+    model.type = BT::convertFromString<BT::NodeType>(ele->Name());
+    for (const tinyxml2::XMLElement * port_ele = ele->FirstChildElement(); port_ele != nullptr;
+         port_ele = port_ele->NextSiblingElement()) {
+      const std::string direction = port_ele->Name();
+      NodePortInfo port_info;
+      if (direction == "input_port") {
+        port_info.port_direction = BT::PortDirection::INPUT;
+      } else if (direction == "output_port") {
+        port_info.port_direction = BT::PortDirection::OUTPUT;
+      } else if (direction == "inout_port") {
+        port_info.port_direction = BT::PortDirection::INOUT;
+      } else {
+        throw exceptions::TreeBuildError(
+          "Unkown port direction in node model for '" + std::string(node_name) + "': " + direction);
+      }
+      if (const char * c = port_ele->Attribute("name")) {
+        port_info.port_name = c;
+      }
+      if (const char * c = port_ele->Attribute("type")) {
+        port_info.port_type = c;
+      }
+      if (const char * c = port_ele->Attribute("default")) {
+        port_info.port_default = c;
+      }
+      if (const char * c = port_ele->GetText()) {
+        port_info.port_description = c;
+      }
+      model.port_infos.push_back(std::move(port_info));
+    }
+    // Port infos may be empty if there are no ports
+  }
+  return model_map;
+}
+
+TreeBuilder::NodeModelMap TreeBuilder::getNodeModel(bool include_native) const
+{
+  tinyxml2::XMLDocument model_doc;
+  if (
+    model_doc.Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+    throw exceptions::TreeBuildError(
+      "Error parsing the model of the currently loaded node plugins: " + std::string(model_doc.ErrorStr()));
+  }
+  return getNodeModel(model_doc);
 }
 
 bool TreeBuilder::verify() const
@@ -333,27 +419,6 @@ Tree TreeBuilder::instantiate(TreeBlackboardSharedPtr bb_ptr)
     std::string(TreeDocument::ROOT_TREE_ATTRIBUTE_NAME) +
     "' of the tree document's root element or call setRootTreeName() to define the root tree. Alternatively, you may "
     "call a different signature of instantiate().");
-}
-
-void TreeBuilder::getNodeModel(tinyxml2::XMLDocument & doc, bool include_native) const
-{
-  // Load tree nodes model
-  doc.Clear();
-  if (doc.Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-    throw exceptions::TreeBuildError(
-      "Error parsing the model of the currently loaded node plugins: " + std::string(doc.ErrorStr()));
-  }
-  const tinyxml2::XMLElement * root = doc.RootElement();
-  if (!root) {
-    throw exceptions::TreeBuildError("Node model document has no root element.");
-  }
-  const tinyxml2::XMLElement * model_ele =
-    doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
-  if (!model_ele) {
-    throw exceptions::TreeBuildError(
-      "Element <" + std::string(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME) +
-      "> doesn't exist in node model document.");
-  }
 }
 
 }  // namespace auto_apms_behavior_tree::core

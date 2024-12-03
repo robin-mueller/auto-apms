@@ -16,7 +16,7 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
 
     # Parse arguments
     set(options "")
-    set(oneValueArgs GENERATED_MANIFEST_FILE_NAME GENERATED_MODEL_FILE_NAME)
+    set(oneValueArgs MODEL_HEADER_TARGET GENERATED_MANIFEST_FILE_NAME GENERATED_MODEL_FILE_NAME)
     set(multiValueArgs "")
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -104,7 +104,7 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
 
             # Exhaustive list of libraries to be loaded by ClassLoader.
             # create_node_manifest previously collected all library paths that are required to successfully load the nodes specified in the manifest file.
-            # We pass this variable to the command to specifiy which libraries to load and to add target-level dependencies for those targets mentioned in any $<TARGET_FILE:tgt> generator expressions.
+            # We pass this variable to the command to specify which libraries to load and to add target-level dependencies for those targets mentioned in any $<TARGET_FILE:tgt> generator expressions.
             # Therefore, we configure the compilation so that any shared libraries created by the package invoking the macro are built before being used here.
             # If we wouldn't do this, there would be an error saying 'there is no rule to make target ...'.
             # Additionally, this variable needs to be passed to DEPENDS to create a file-level dependency to the shared library files which makes sure that the command is executed when they are recompiled.
@@ -112,10 +112,13 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
 
             "\"${_generated_node_model_abs_path__build}\"" # File to write the behavior tree node model to
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        DEPENDS ${ARGS_NODE_MANIFEST} ${_node_library_paths}
-        COMMENT "Generating behavior tree node model '${metadata_id}' with libraries [${_node_library_paths}] and manifest file ${_generated_node_manifest_abs_path__build}.")
-    add_custom_target(create_node_model__${_custom_target_suffix} ALL
-        DEPENDS "${_generated_node_model_abs_path__build}")
+        DEPENDS "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_CMD}" ${ARGS_NODE_MANIFEST} ${_node_library_paths}
+        COMMENT "Generating behavior tree node model '${metadata_id}' with libraries [${_node_library_paths}] and manifest file ${_generated_node_manifest_abs_path__build}."
+    )
+    set(_generate_node_model_target "create_node_model__${_custom_target_suffix}")
+    add_custom_target("${_generate_node_model_target}" ALL
+        DEPENDS "${_generated_node_model_abs_path__build}"
+    )
 
     # Install the generated node plugin manifest file
     install(
@@ -128,6 +131,46 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
         FILES "${_generated_node_model_abs_path__build}"
         DESTINATION "${_generated_node_model_rel_dir__install}"
     )
+
+    if(NOT "${ARGS_MODEL_HEADER_TARGET}" STREQUAL "")
+        # Generate a header that makes the node metadata available to downstream C++ source code
+        set(_generated_node_model_header_abs_path__build "${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}/${PROJECT_NAME}/${metadata_id}.hpp")
+        file(MAKE_DIRECTORY "${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}/${PROJECT_NAME}")
+        add_custom_command(OUTPUT "${_generated_node_model_header_abs_path__build}"
+            COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_HEADER_CMD}"
+                "\"${_generated_node_manifest_abs_path__build}\"" # Path to the generated node plugin manifest
+                "\"${_generated_node_model_abs_path__build}\"" # Path to the generated node model
+                "\"${_generated_node_model_header_abs_path__build}\"" # Header output file
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            DEPENDS "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_HEADER_CMD}" "${_generate_node_model_target}" "${_generated_node_manifest_abs_path__build}" "${_generated_node_model_abs_path__build}"
+            COMMENT "Generating behavior tree node model header '${metadata_id}' with manifest file ${_generated_node_manifest_abs_path__build} and model file ${_generated_node_model_abs_path__build}."
+        )
+
+        set(_generate_node_model_header_target "create_node_model_header__${_custom_target_suffix}")
+        add_custom_target("${_generate_node_model_header_target}" ALL
+            DEPENDS "${_generated_node_model_header_abs_path__build}"
+        )
+        add_dependencies("${ARGS_MODEL_HEADER_TARGET}" "${_generate_node_model_header_target}")
+
+        # Make generated header includable to this and downstream targets
+        get_target_property(_type "${ARGS_MODEL_HEADER_TARGET}" TYPE)
+        if("${_type}" STREQUAL "INTERFACE_LIBRARY")
+            set(_keyword "INTERFACE")
+        else()
+            set(_keyword "PUBLIC")
+        endif()
+        target_include_directories("${ARGS_MODEL_HEADER_TARGET}" "${_keyword}"
+            $<BUILD_INTERFACE:${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}>
+            $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+        )
+        # IMPORTANT: The target MODEL_HEADER_TARGET must link against auto_apms_behavior_tree_core!
+
+        # Install the generated node model header file
+        install(
+            FILES "${_generated_node_model_header_abs_path__build}"
+            DESTINATION "include/${PROJECT_NAME}/${PROJECT_NAME}" # Using double project name as directory avoids collisions with existing files
+        )
+    endif()
 
     # Store the metadata information for reusing it during auto_apms_behavior_tree_declare_trees()
     list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_BUILD_INFO "${metadata_id}@${_generated_node_manifest_abs_path__build}")

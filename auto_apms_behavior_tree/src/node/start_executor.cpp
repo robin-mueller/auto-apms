@@ -61,14 +61,17 @@ public:
 
   bool setGoal(Goal & goal) override final
   {
-    if (const auto val = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST); val && !val.value().empty()) {
-      goal.build_request = val.value();
-    } else {
-      RCLCPP_WARN(
+    const BT::Expected<std::string> expected_build_request = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST);
+    if (!expected_build_request || expected_build_request.value().empty()) {
+      RCLCPP_ERROR(
         context_.getLogger(), "%s - You must provide a non-empty build request.",
         context_.getFullyQualifiedTreeNodeName(this).c_str());
+      RCLCPP_DEBUG_EXPRESSION(
+        context_.getLogger(), !expected_build_request, "%s - Error message: %s",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_build_request.error().c_str());
       return false;
     }
+    goal.build_request = expected_build_request.value();
     goal.build_handler = getInput<std::string>(INPUT_KEY_TREE_BUILD_HANDLER).value();
     goal.root_tree = getInput<std::string>(INPUT_KEY_ROOT_TREE_NAME).value();
     goal.node_overrides = getInput<std::string>(INPUT_KEY_NODE_OVERRIDES).value();

@@ -108,3 +108,7 @@ ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC}:
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC}:
   class_name: auto_apms_behavior_tree::GetParameterStringVec
   port: (input:node)/get_parameters
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HAS_PARAMETER}:
+  class_name: auto_apms_behavior_tree::HasParameter
+  port: (input:node)/list_parameters

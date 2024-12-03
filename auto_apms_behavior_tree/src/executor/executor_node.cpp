@@ -18,7 +18,7 @@
 #include <regex>
 
 #include "auto_apms_behavior_tree/exceptions.hpp"
-#include "auto_apms_behavior_tree/util/conversion.hpp"
+#include "auto_apms_behavior_tree/util/parameter.hpp"
 #include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_util/string.hpp"
 #include "rclcpp/utilities.hpp"
@@ -328,8 +328,10 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   return [this, root_tree_name, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
     // Currently, BehaviorTree.CPP requires the memory allocated by the factory to persist even after the tree has been
     // created, so we make the builder a unique pointer that is only reset when a new tree is to be created.
+    // See https://github.com/BehaviorTree/BehaviorTree.CPP/issues/890
     builder_ptr_.reset(new TreeBuilder(
       node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_));
+    // builder_ptr_->loadNodes(core::NodeManifest::fromResourceIdentity("auto_apms_behavior_tree::builtin_nodes"));
 
     // Allow executor to set up the builder independently from the build handler
     setUpBuilder(*builder_ptr_);
@@ -344,7 +346,7 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
     }
 
     // Allow for overriding selected node instances
-    builder_ptr_->makeNodesAvailable(node_overrides, true);
+    builder_ptr_->loadNodes(node_overrides, true);
 
     // Finally, instantiate the tree
     return builder_ptr_->instantiate(instantiate_name, bb_ptr);

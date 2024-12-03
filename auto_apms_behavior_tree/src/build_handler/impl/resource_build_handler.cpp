@@ -64,7 +64,7 @@ public:
     resource_doc_.reset();
 
     // Load all node plugins associated with the resource
-    builder.makeNodesAvailable(resource_ptr_->getNodeManifest());
+    builder.loadNodes(resource_ptr_->getNodeManifest());
     return builder.getRootTree();
   }
 

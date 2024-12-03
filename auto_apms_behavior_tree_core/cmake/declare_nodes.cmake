@@ -17,7 +17,7 @@ macro(auto_apms_behavior_tree_declare_nodes target)
 
     # Parse arguments
     set(options "")
-    set(oneValueArgs "")
+    set(oneValueArgs MODEL_HEADER_TARGET)
     set(multiValueArgs NODE_MANIFEST)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -36,7 +36,7 @@ macro(auto_apms_behavior_tree_declare_nodes target)
 
     # Automatically create node metadata if any manifest files are provided
     if(NOT "${ARGS_NODE_MANIFEST}" STREQUAL "")
-        auto_apms_behavior_tree_generate_node_metadata("${target}" ${ARGS_NODE_MANIFEST})
+        auto_apms_behavior_tree_generate_node_metadata("${target}" ${ARGS_NODE_MANIFEST} MODEL_HEADER_TARGET "${ARGS_MODEL_HEADER_TARGET}")
     endif()
 
 endmacro()

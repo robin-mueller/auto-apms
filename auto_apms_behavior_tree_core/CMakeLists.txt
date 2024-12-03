@@ -37,7 +37,8 @@ set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE "allow_
 #
 
 add_library(auto_apms_behavior_tree_core SHARED
-    "src/node/node_registration_params.cpp"
+    "src/node/node_registration_options.cpp"
+    "src/node/node_model_type.cpp"
     "src/node/node_manifest.cpp"
     "src/node/ros_node_context.cpp"
     "src/node/node_registration_loader.cpp"
@@ -45,6 +46,7 @@ add_library(auto_apms_behavior_tree_core SHARED
     "src/tree/tree_resource.cpp"
     "src/tree/tree_document.cpp"
     "src/builder.cpp"
+    "src/convert.cpp"
 )
 target_include_directories(auto_apms_behavior_tree_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -82,9 +84,32 @@ target_link_libraries(create_node_manifest auto_apms_behavior_tree_core)
 add_executable(create_node_model "src/cli/create_node_model.cpp")
 target_link_libraries(create_node_model auto_apms_behavior_tree_core)
 
+# Generate a C++ header containing classes for all registered nodes intended to be used with the TreeBuilder API
+add_executable(create_node_model_header "src/cli/create_node_model_header.cpp")
+target_link_libraries(create_node_model_header auto_apms_behavior_tree_core)
+
 #
 # ------------ Packaging --------------
 #
+
+# Native behavior tree node model header
+set(_native_node_model_header_abs_path__build "${PROJECT_BINARY_DIR}/native_nodes.hpp")
+add_custom_command(OUTPUT "${_native_node_model_header_abs_path__build}"
+    COMMAND create_node_model_header
+        "\"${_native_node_model_header_abs_path__build}\"" # Header output file
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Generating native behavior tree node model header."
+    DEPENDS create_node_model_header
+)
+add_custom_target(generate_native_node_model_header ALL
+    DEPENDS "${_native_node_model_header_abs_path__build}"
+)
+
+# Install the native node model header file to this packages install dir
+install(
+    FILES "${_native_node_model_header_abs_path__build}"
+    DESTINATION "include/${PROJECT_NAME}"
+)
 
 ###### Export libraries ######
 install(
@@ -108,6 +133,7 @@ install(
     TARGETS
     create_node_manifest
     create_node_model
+    create_node_model_header
     DESTINATION "lib/${PROJECT_NAME}"
 )
 

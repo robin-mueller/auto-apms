@@ -72,6 +72,8 @@ set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC "GetParame
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC "GetParameterDoubleVec")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC "GetParameterStringVec")
 
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HAS_PARAMETER "HasParameter")
+
 #
 # ------------ Library --------------
 #
@@ -89,7 +91,7 @@ add_library(auto_apms_behavior_tree SHARED
     "src/executor/state_observer.cpp"
     "src/executor/executor_base.cpp"
     "src/executor/executor_node.cpp"
-    "src/util/conversion.cpp"
+    "src/util/parameter.cpp"
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -138,6 +140,8 @@ target_compile_definitions(auto_apms_behavior_tree PUBLIC
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC}"
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC}"
     _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC}"
+
+    _AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HAS_PARAMETER="${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HAS_PARAMETER}"
 )
 target_link_libraries(auto_apms_behavior_tree
     executor_params
@@ -183,16 +187,17 @@ rclcpp_components_register_nodes(executor_node_components
 #
 
 add_library(builtin_nodes SHARED
-    "src/node/action/logger.cpp"
-    "src/node/action/throw_exception.cpp"
-    "src/node/action/start_executor.cpp"
-    "src/node/action/command_executor.cpp"
-    "src/node/service/set_parameter.cpp"
-    "src/node/service/get_parameter.cpp"
+    "src/node/logger.cpp"
+    "src/node/throw_exception.cpp"
+    "src/node/start_executor.cpp"
+    "src/node/command_executor.cpp"
+    "src/node/set_parameter.cpp"
+    "src/node/get_parameter.cpp"
+    "src/node/has_parameter.cpp"
 
-    "src/util/conversion.cpp"
+    "src/util/parameter.cpp"
 )
-# Make conversion util available for builtin nodes too, but don't include anything that's not also been added to the sources
+# Make parameter util available for builtin nodes too, but don't include anything that's not also been added to the sources
 target_include_directories(builtin_nodes PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
@@ -233,8 +238,12 @@ auto_apms_behavior_tree_declare_nodes(builtin_nodes
     "auto_apms_behavior_tree::GetParameterIntVec"
     "auto_apms_behavior_tree::GetParameterDoubleVec"
     "auto_apms_behavior_tree::GetParameterStringVec"
+
+    "auto_apms_behavior_tree::HasParameter"
     NODE_MANIFEST
     "config/builtin_nodes.yaml.in"
+    MODEL_HEADER_TARGET
+    auto_apms_behavior_tree
 )
 
 #

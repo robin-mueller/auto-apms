@@ -77,14 +77,14 @@ int main(int argc, char ** argv)
   TreeExecutorBase executor(node_ptr);  // Helper to create the necessary constructor arguments
   core::TreeBuilder builder(
     node_ptr, executor.getTreeNodeWaitablesCallbackGroupPtr(), executor.getTreeNodeWaitablesExecutorPtr());
-  builder.makeNodesAvailable(node_manifest);
+  builder.loadNodes(node_manifest);
   core::TreeBuilder::TreeElement tree = builder.newTree(NEW_TREE_NAME).makeRoot();
 
   // Insert template children
   tree.insertNode("AlwaysSuccess");
 
   // Add node model
-  if (!node_manifest.getInternalMap().empty()) {
+  if (!node_manifest.map().empty()) {
     builder.addNodeModelToDocument(false);
   }
 

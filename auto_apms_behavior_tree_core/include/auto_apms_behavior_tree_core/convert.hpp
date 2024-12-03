@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "behaviortree_cpp/basic_types.h"
-#include "rclcpp/rclcpp.hpp"
 
 /// @cond
 namespace BT
@@ -47,12 +49,3 @@ template <>
 
 }  // namespace BT
 /// @endcond
-
-namespace auto_apms_behavior_tree
-{
-
-BT::Expected<BT::Any> createAnyFromParameterValue(const rclcpp::ParameterValue & val);
-
-BT::Expected<rclcpp::ParameterValue> createParameterValueFromAny(const BT::Any & any, rclcpp::ParameterType type);
-
-}  // namespace auto_apms_behavior_tree
