@@ -17,38 +17,86 @@
 #include <map>
 
 #include "auto_apms_behavior_tree_core/node/node_registration_options.hpp"
+#include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 #include "behaviortree_cpp/basic_types.h"
 
-namespace auto_apms_behavior_tree::core
+namespace auto_apms_behavior_tree
+{
+namespace core
 {
 
-class NodeModelType
+class TreeBuilder;
+
+class NodeModelType : public TreeDocument::NodeElement
 {
+protected:
+  using NodeElement::NodeElement;
+
 public:
-  using PortValues = std::map<std::string, std::string>;
+  using RegistrationOptions = NodeRegistrationOptions;
   using PortInfos = std::map<std::string, BT::PortInfo>;
 
-  NodeModelType(const std::string & type, const std::string & registration_options = "");
-
-  virtual ~NodeModelType() = default;
-
-  virtual std::string getRegistrationName() const = 0;
-
-  const BT::NodeType & getNodeType() const;
-
-  const NodeRegistrationOptions & getRegistrationOptions() const;
-
-  std::vector<std::string> getPortNames() const;
-
-  const PortValues & getPortValues() const;
-
-  const PortInfos & getPortInfos() const;
-
-protected:
-  const BT::NodeType node_type_;
-  const NodeRegistrationOptions registration_options_;
-  PortValues port_values_;
-  PortInfos port_infos_;
+  /// @copydoc TreeDocument::NodeElement::getRegistrationName()
+  virtual std::string getRegistrationName() const override = 0;
 };
 
-}  // namespace auto_apms_behavior_tree::core
+class LeafNodeModelType : public NodeModelType
+{
+protected:
+  using NodeModelType::NodeModelType;
+
+public:
+  /* Not supported methods for LeafNodeModelType instances */
+
+  LeafNodeModelType insertNode() = delete;
+  LeafNodeModelType insertSubTreeNode() = delete;
+  LeafNodeModelType insertTree() = delete;
+  LeafNodeModelType insertTreeFromDocument() = delete;
+  LeafNodeModelType insertTreeFromString() = delete;
+  LeafNodeModelType insertTreeFromFile() = delete;
+  LeafNodeModelType insertTreeFromResource() = delete;
+  LeafNodeModelType & removeFirstChild() = delete;
+  LeafNodeModelType & removeChildren() = delete;
+};
+
+}  // namespace core
+
+namespace model
+{
+
+class SubTree : public core::LeafNodeModelType
+{
+  friend class core::TreeDocument::NodeElement;
+
+private:
+  using LeafNodeModelType::LeafNodeModelType;
+
+public:
+  /// @copydoc TreeDocument::NodeElement::getRegistrationName()
+  static std::string name();
+
+  /// @brief Type of the behavior tree node.
+  static BT::NodeType type();
+
+  /// @copydoc TreeDocument::NodeElement::getRegistrationName()
+  std::string getRegistrationName() const override final;
+
+  SubTree & setPreCondition(BT::PreCond type, const core::Script & script);
+
+  SubTree & setPostCondition(BT::PostCond type, const core::Script & script);
+
+  /**
+   * @brief Set automatic blackboard remapping.
+   * @param val `true` to enable and `false` to disable.
+   */
+  SubTree & set_auto_remap(bool val = false);
+
+  /**
+   * @brief Get automatic blackboard remapping.
+   * @return Boolean flag for the currently configured option.
+   */
+  bool get_auto_remap() const;
+};
+
+}  // namespace model
+}  // namespace auto_apms_behavior_tree

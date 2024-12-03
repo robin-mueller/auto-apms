@@ -16,8 +16,6 @@
 #include "auto_apms_mission/mission_builder_base.hpp"
 #include "auto_apms_util/exceptions.hpp"
 
-namespace node = auto_apms_behavior_tree::model;
-
 namespace auto_apms_mission
 {
 
@@ -27,11 +25,11 @@ public:
   using MissionBuilderBase::MissionBuilderBase;
 
 private:
-  void buildBringUp(NodeElement & sequence, TreeResourceVector trees) override final;
+  void buildBringUp(model::SequenceWithMemory & sequence, TreeResourceVector trees) override final;
 
-  void buildMission(NodeElement & sequence, TreeResourceVector trees) override final;
+  void buildMission(model::SequenceWithMemory & sequence, TreeResourceVector trees) override final;
 
-  void buildShutDown(NodeElement & sequence, TreeResourceVector trees) override final;
+  void buildShutDown(model::SequenceWithMemory & sequence, TreeResourceVector trees) override final;
 };
 
 // #####################################################################################################################
@@ -100,21 +98,21 @@ private:
 //   }
 // }
 
-void MissionBuilder::buildBringUp(NodeElement & sequence, TreeResourceVector trees)
+void MissionBuilder::buildBringUp(model::SequenceWithMemory & sequence, TreeResourceVector trees)
 {
   for (const TreeResource & r : trees) {
     sequence.insertTreeFromResource(r);
   }
 }
 
-void MissionBuilder::buildMission(NodeElement & sequence, TreeResourceVector trees)
+void MissionBuilder::buildMission(model::SequenceWithMemory & sequence, TreeResourceVector trees)
 {
   for (const TreeResource & r : trees) {
-    sequence.insertNode<node::StartExecutor>();
+    sequence.insertNode<model::StartExecutor>();
   }
 }
 
-void MissionBuilder::buildShutDown(NodeElement & sequence, TreeResourceVector trees)
+void MissionBuilder::buildShutDown(model::SequenceWithMemory & sequence, TreeResourceVector trees)
 {
   for (const TreeResource & r : trees) {
     sequence.insertTreeFromResource(r);

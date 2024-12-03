@@ -12,6 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+function(target_links_against target library_name result_var)
+    # Get direct dependencies (LINK_LIBRARIES and INTERFACE_LINK_LIBRARIES)
+    get_target_property(direct_libraries ${target} LINK_LIBRARIES)
+    if(NOT direct_libraries)
+        set(direct_libraries "")
+    endif()
+
+    get_target_property(interface_libraries ${target} INTERFACE_LINK_LIBRARIES)
+    if(NOT interface_libraries)
+        set(interface_libraries "")
+    endif()
+
+    list(APPEND all_libraries ${direct_libraries} ${interface_libraries})
+
+    set(found FALSE)
+
+    # Check each direct dependency
+    foreach(lib ${all_libraries})
+        if(lib STREQUAL ${library_name})
+            set(found TRUE)
+            break()
+        endif()
+    endforeach()
+
+    set(${result_var} ${found} PARENT_SCOPE)
+endfunction()
+
 macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
 
     # Parse arguments
@@ -91,8 +118,11 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
     if(NOT _return_code EQUAL 0)
         message(
             FATAL_ERROR
-            "Failed to create node plugin manifest '${metadata_id}' (Return code: ${_return_code}). Manifest files: [${ARGS_UNPARSED_ARGUMENTS}]\nBuild info: [${_AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO}]\nOutput file: ${_generated_node_manifest_abs_path__build}\n${_error}"
-        )
+            "Failed to create node plugin manifest '${metadata_id}' (Return code: ${_return_code}). Manifest files: [${ARGS_UNPARSED_ARGUMENTS}]
+Build info: [${_AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO}]
+Output file: ${_generated_node_manifest_abs_path__build}
+${_error}"
+)
     endif()
     message(STATUS "Generated behavior tree node manifest ${_generated_node_manifest_abs_path__build} (Relevant libraries: [${_node_library_paths}]).")
 
@@ -140,9 +170,10 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
             COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_HEADER_CMD}"
                 "\"${_generated_node_manifest_abs_path__build}\"" # Path to the generated node plugin manifest
                 "\"${_generated_node_model_abs_path__build}\"" # Path to the generated node model
+                "\"${PROJECT_NAME}\"" # Name of the package (defining the namespace to be used)
                 "\"${_generated_node_model_header_abs_path__build}\"" # Header output file
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_HEADER_CMD}" "${_generate_node_model_target}" "${_generated_node_manifest_abs_path__build}" "${_generated_node_model_abs_path__build}"
+            DEPENDS "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_HEADER_CMD}" "${_generated_node_manifest_abs_path__build}" "${_generated_node_model_abs_path__build}"
             COMMENT "Generating behavior tree node model header '${metadata_id}' with manifest file ${_generated_node_manifest_abs_path__build} and model file ${_generated_node_model_abs_path__build}."
         )
 
@@ -150,6 +181,7 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
         add_custom_target("${_generate_node_model_header_target}" ALL
             DEPENDS "${_generated_node_model_header_abs_path__build}"
         )
+        add_dependencies("${_generate_node_model_header_target}" "${_generate_node_model_target}")
         add_dependencies("${ARGS_MODEL_HEADER_TARGET}" "${_generate_node_model_header_target}")
 
         # Make generated header includable to this and downstream targets
@@ -163,7 +195,31 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
             $<BUILD_INTERFACE:${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}>
             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
         )
-        # IMPORTANT: The target MODEL_HEADER_TARGET must link against auto_apms_behavior_tree_core!
+        # IMPORTANT: The target MODEL_HEADER_TARGET should link against auto_apms_behavior_tree_core, because otherwise
+        # if a downstream package is including the model header and doesn't link against auto_apms_behavior_tree_core,
+        # CMake will fail to compile the source code. Therefore, it is also recommended to add auto_apms_behavior_tree_core
+        # to ament_export_dependencies, since we don't want downstream packages to call find_package because of an
+        # unresolved dependency of a target from another package.
+        # We do not add ament_target_dependencies("${ARGS_MODEL_HEADER_TARGET}" auto_apms_behavior_tree_core)
+        # here, because we cannot detect which signature of target_link_libraries (plain or all-keyword)
+        # regarding the scope keywords (PRIVATE, PUBLIC or INTERFACE) has been used before.
+        # CMake only allows to use one type of signature, so it's impossible here to add a call to ament_target_dependencies since it
+        # calls target_link_libraries under the hood with the scope keywords we give it. Furthermore, we must
+        target_links_against("${ARGS_MODEL_HEADER_TARGET}" "auto_apms_behavior_tree_core::auto_apms_behavior_tree_core" is_linked)
+        if(NOT is_linked)
+            message(WARNING "auto_apms_behavior_tree_generate_node_metadata(): The target '${ARGS_MODEL_HEADER_TARGET}' provided using the optional argument MODEL_HEADER_TARGET doesn't link against package 'auto_apms_behavior_tree_core'.
+You should consider adding this dependency and export it to enable downstream packages including the behavior tree node model header generated by this macro:
+ament_target_dependencies(${ARGS_MODEL_HEADER_TARGET}
+    ... # Other packages
+    auto_apms_behavior_tree_core
+)
+ament_export_dependencies(
+    ... # Other packages
+    auto_apms_behavior_tree_core
+)
+Otherwise, downstream packages are forced to add this dependency themselves since CMake will fail to compile any source code because it cannot resolve the #include statements inside the header."
+)
+        endif()
 
         # Install the generated node model header file
         install(

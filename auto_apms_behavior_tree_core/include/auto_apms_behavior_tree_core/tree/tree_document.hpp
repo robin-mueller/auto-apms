@@ -21,16 +21,21 @@
 #include <type_traits>
 #include <vector>
 
-#include "auto_apms_behavior_tree_core/node/node_model_type.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_options.hpp"
 #include "auto_apms_behavior_tree_core/tree/script.hpp"
 #include "behaviortree_cpp/tree_node.h"
+
+namespace auto_apms_behavior_tree::model
+{
+class SubTree;
+}
 
 namespace auto_apms_behavior_tree::core
 {
 
 class TreeResource;
 class TreeBuilder;
+class NodeModelType;
 
 class TreeDocument : private tinyxml2::XMLDocument
 {
@@ -39,9 +44,6 @@ class TreeDocument : private tinyxml2::XMLDocument
   using XMLElement = tinyxml2::XMLElement;
 
 public:
-  using NodePreCondition = BT::PreCond;
-  using NodePostCondition = BT::PostCond;
-
   static inline const char BTCPP_FORMAT_ATTRIBUTE_NAME[] = "BTCPP_format";
   static inline const char BTCPP_FORMAT_DEFAULT_VERSION[] = "4";
   static inline const char ROOT_ELEMENT_NAME[] = "root";
@@ -59,7 +61,7 @@ public:
     friend class TreeBuilder;
 
   public:
-    using PortValues = NodeModelType::PortValues;
+    using PortValues = std::map<std::string, std::string>;
     using DeepApplyCallback = std::function<bool(NodeElement &)>;
     using ConstDeepApplyCallback = std::function<bool(const NodeElement &)>;
 
@@ -73,13 +75,16 @@ public:
       const std::string & node_name, const NodeRegistrationOptions & registration_params,
       const NodeElement * before_this = nullptr);
 
-    NodeElement insertNode(const NodeModelType & model, const NodeElement * before_this = nullptr);
+    template <class ModelT>
+    typename std::enable_if_t<
+      std::is_base_of_v<NodeModelType, ModelT> && !std::is_same_v<model::SubTree, ModelT>, ModelT>
+    insertNode(const NodeElement * before_this = nullptr);
 
     template <class ModelT>
-    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, NodeElement> insertNode(
-      const NodeElement * before_this = nullptr);
+    typename std::enable_if_t<std::is_same_v<model::SubTree, ModelT>, model::SubTree> insertNode(
+      const std::string & tree_name, const NodeElement * before_this = nullptr);
 
-    NodeElement insertSubTreeNode(const std::string & tree_name, const NodeElement * before_this = nullptr);
+    model::SubTree insertSubTreeNode(const std::string & tree_name, const NodeElement * before_this = nullptr);
 
     NodeElement insertTree(const TreeElement & tree, const NodeElement * before_this = nullptr);
 
@@ -108,7 +113,7 @@ public:
     NodeElement getFirstNode(const std::string & name = "") const;
 
     template <class ModelT>
-    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, NodeElement> getFirstNode() const;
+    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, ModelT> getFirstNode() const;
 
     NodeElement & removeFirstChild(const std::string & name = "");
 
@@ -116,6 +121,10 @@ public:
     typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, NodeElement &> removeFirstChild();
 
     NodeElement & removeChildren();
+
+    const std::vector<std::string> & getPortNames() const;
+
+    const PortValues & getPortValues() const;
 
     /**
      * @brief Set the node's ports.
@@ -136,11 +145,11 @@ public:
      */
     NodeElement & setPorts(const PortValues & port_values = {}, bool verify = true);
 
-    NodeElement & setPreCondition(NodePreCondition type, const Script & script);
+    NodeElement & setPreCondition(BT::PreCond type, const Script & script);
 
-    NodeElement & setPostCondition(NodePostCondition type, const Script & script);
+    NodeElement & setPostCondition(BT::PostCond type, const Script & script);
 
-    std::string getRegistrationName() const;
+    virtual std::string getRegistrationName() const;
 
     virtual std::string getName() const;
 
@@ -161,10 +170,11 @@ public:
   protected:
     TreeBuilder * builder_ptr_;
     tinyxml2::XMLElement * ele_ptr_;
+    PortValues port_values_;
 
   private:
-    std::vector<std::string> port_keys_;
-    std::map<std::string, std::string> port_default_values_;
+    std::vector<std::string> port_names_;
+    PortValues port_default_values_;
   };
 
   class TreeElement : public NodeElement
@@ -179,7 +189,7 @@ public:
 
     TreeElement & makeRoot();
 
-    /* Not supported methods for a TreeElement instances */
+    /* Not supported methods for TreeElement instances */
 
     NodeElement & setPorts() = delete;
     NodeElement & setPreCondition() = delete;
@@ -234,25 +244,53 @@ private:
 // ################################              DEFINITIONS              ##############################################
 // #####################################################################################################################
 
-template <class ModelT>
-inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::NodeElement>
-TreeDocument::NodeElement::insertNode(const NodeElement * before_this)
+template <typename T, typename = void>
+struct has_static_method_getRegistrationOptions : std::false_type
 {
-  return insertNode(ModelT(), before_this);
+};
+
+template <typename T>
+struct has_static_method_getRegistrationOptions<
+  T, typename std::enable_if_t<std::is_same_v<decltype(T::getRegistrationOptions()), NodeRegistrationOptions>>>
+: std::true_type
+{
+};
+
+template <class ModelT>
+inline
+  typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT> && !std::is_same_v<model::SubTree, ModelT>, ModelT>
+  TreeDocument::NodeElement::insertNode(const NodeElement * before_this)
+{
+  NodeElement ele(nullptr, nullptr);
+  // See if model implements getRegistrationOptions (Native node models have this function deleted)
+  if constexpr (has_static_method_getRegistrationOptions<ModelT>::value) {
+    ele = insertNode(ModelT::name(), ModelT::getRegistrationOptions(), before_this);
+  } else {
+    ele = insertNode(ModelT::name(), before_this);
+  }
+  return ModelT(ele.builder_ptr_, ele.ele_ptr_);
 }
 
 template <class ModelT>
-inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::NodeElement>
-TreeDocument::NodeElement::getFirstNode() const
+inline typename std::enable_if_t<std::is_same_v<model::SubTree, ModelT>, model::SubTree>
+TreeDocument::NodeElement::insertNode(const std::string & tree_name, const NodeElement * before_this)
 {
-  return getFirstNode(ModelT().getRegistrationName());
+  return insertSubTreeNode(tree_name, before_this);
+}
+
+template <class ModelT>
+inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, ModelT>
+core::TreeDocument::NodeElement::getFirstNode() const
+{
+  const NodeElement ele = getFirstNode(ModelT::name());
+  return ModelT(ele.builder_ptr_, ele.ele_ptr_);
 }
 
 template <class ModelT>
 inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::NodeElement &>
-TreeDocument::NodeElement::removeFirstChild()
+core::TreeDocument::NodeElement::removeFirstChild()
 {
-  return removeFirstChild(ModelT().getRegistrationName());
+  return removeFirstChild(ModelT::name());
 }
 
 }  // namespace auto_apms_behavior_tree::core

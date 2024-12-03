@@ -16,6 +16,7 @@
 
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
+#include "auto_apms_behavior_tree_core/node/node_model_type.hpp"
 #include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
 #include "auto_apms_util/container.hpp"
 #include "auto_apms_util/string.hpp"
@@ -72,9 +73,12 @@ TreeDocument::NodeElement::NodeElement(TreeBuilder * builder_ptr, XMLElement * e
   // TreeElement class for which there is no node model and setPorts() is deleted anyways.
   if (!port_infos.empty()) {
     for (const TreeBuilder::NodePortInfo & port_info : port_infos) {
-      port_keys_.push_back(port_info.port_name);
+      port_names_.push_back(port_info.port_name);
       if (!port_info.port_default.empty()) port_default_values_[port_info.port_name] = port_info.port_default;
     }
+
+    // Set the node's attributes according to the default values on construction
+    setPorts();
   }
 }
 
@@ -95,35 +99,26 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
 TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
   const std::string & node_name, const NodeRegistrationOptions & registration_options, const NodeElement * before_this)
 {
-  // Check if the node name is known. If the developer provided registration options for a node that has the same name
-  // as one of the native ones, we enter loadNodes() and throw these names are reserved (Therefore we set include_native
-  // to false).
-  if (const std::set<std::string> names = builder_ptr_->getAvailableNodeNames(false);
+  // Check if the node name is known. Since we also provide node models for the native nodes, we may include these in
+  // the list of names to search (Therefore we set include_native
+  // to true). Argument registration_options is not considered in that case.
+  if (const std::set<std::string> names = builder_ptr_->getAvailableNodeNames(true);
       names.find(node_name) == names.end()) {
     builder_ptr_->loadNodes(NodeManifest({{node_name, registration_options}}));
   }
   return insertNode(node_name, before_this);
 }
 
-TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
-  const NodeModelType & model, const NodeElement * before_this)
-{
-  // Check if the node model is known. Since we also provide node models for the native nodes, we may include these in
-  // the list of names to search (Therefore we set include_native
-  // to true).
-  const std::string node_name = model.getRegistrationName();
-  if (const std::set<std::string> names = builder_ptr_->getAvailableNodeNames(true);
-      names.find(node_name) == names.end()) {
-    builder_ptr_->loadNodes(NodeManifest({{node_name, model.getRegistrationOptions()}}));
-  }
-  // We insert and additionally add the ports using the model's internal data.
-  return insertNode(node_name, before_this).setPorts(model.getPortValues(), true);
-}
-
-TreeDocument::NodeElement TreeDocument::NodeElement::insertSubTreeNode(
+model::SubTree TreeDocument::NodeElement::insertSubTreeNode(
   const std::string & tree_name, const NodeElement * before_this)
 {
-  return insertNode(SUBTREE_ELEMENT_NAME, before_this).setPorts({{TREE_NAME_ATTRIBUTE_NAME, tree_name}}, false);
+  if (!builder_ptr_->doc_.isExistingTreeName(tree_name)) {
+    throw exceptions::TreeDocumentError(
+      "Cannot associate <" + getRegistrationName() + "> node with tree '" + tree_name + "' because it doesn't exist.");
+  }
+  NodeElement ele = insertNode(SUBTREE_ELEMENT_NAME, before_this);
+  ele.setPorts({{TREE_NAME_ATTRIBUTE_NAME, tree_name}}, false);
+  return model::SubTree(ele.builder_ptr_, ele.ele_ptr_);
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertTree(
@@ -292,32 +287,19 @@ TreeDocument::NodeElement & TreeDocument::NodeElement::removeChildren()
   return *this;
 }
 
+const std::vector<std::string> & TreeDocument::NodeElement::getPortNames() const { return port_names_; }
+
+const TreeDocument::NodeElement::PortValues & TreeDocument::NodeElement::getPortValues() const { return port_values_; }
+
 TreeDocument::NodeElement & TreeDocument::NodeElement::setPorts(const PortValues & port_values, bool verify)
 {
   const char * this_node_name = ele_ptr_->Name();
-  std::vector<std::string> implemented_ports_keys = port_keys_;
-  if (strcmp(this_node_name, SUBTREE_ELEMENT_NAME) == 0) {
-    if (port_values.find(TREE_NAME_ATTRIBUTE_NAME) == port_values.end()) {
-      throw exceptions::TreeDocumentError(
-        "Cannot set ports for <" + std::string(SUBTREE_ELEMENT_NAME) + "> node, because required key '" +
-        TREE_NAME_ATTRIBUTE_NAME + "' for identifying the associated tree is missing in port_values.");
-    }
-    if (const std::string & tree_name = port_values.at(TREE_NAME_ATTRIBUTE_NAME);
-        !builder_ptr_->doc_.isExistingTreeName(tree_name)) {
-      throw exceptions::TreeDocumentError(
-        "Cannot set ports for <" + std::string(SUBTREE_ELEMENT_NAME) + "> node, because associated tree '" + tree_name +
-        "' doesn't exist.");
-    }
-
-    // Tree name attribute is not implemented as a port, so we must add it to the vector manually.
-    implemented_ports_keys.push_back(TREE_NAME_ATTRIBUTE_NAME);
-  }
 
   // Verify port_values
   if (verify) {
     std::vector<std::string> unkown_keys;
     for (const auto & [key, _] : port_values) {
-      if (!auto_apms_util::contains(implemented_ports_keys, key)) unkown_keys.push_back(key);
+      if (!auto_apms_util::contains(port_names_, key)) unkown_keys.push_back(key);
     }
     if (!unkown_keys.empty()) {
       throw exceptions::TreeDocumentError(
@@ -334,25 +316,27 @@ TreeDocument::NodeElement & TreeDocument::NodeElement::setPorts(const PortValues
     ele_ptr_->DeleteAttribute(attr_name);
   }
 
-  // Populate the node's attributes
-  for (const auto & key : implemented_ports_keys) {
-    if (port_values.find(key) != port_values.end()) {
-      ele_ptr_->SetAttribute(key.c_str(), port_values.at(key).c_str());
-    } else if (port_default_values_.find(key) != port_default_values_.end()) {
-      ele_ptr_->SetAttribute(key.c_str(), port_default_values_.at(key).c_str());
-    }
-    // If implemented port is neither specified in port_values nor has it a default value, ignore.
+  // Preserve default value attributes
+  for (const auto & [key, val] : port_default_values_) {
+    ele_ptr_->SetAttribute(key.c_str(), val.c_str());
+    port_values_[key] = val;
+  }
+
+  // Populate additional attributes according to the content of port_values
+  for (const auto & [key, val] : port_values) {
+    ele_ptr_->SetAttribute(key.c_str(), val.c_str());
+    port_values_[key] = val;
   }
   return *this;
 }
 
-TreeDocument::NodeElement & TreeDocument::NodeElement::setPreCondition(NodePreCondition type, const Script & script)
+TreeDocument::NodeElement & TreeDocument::NodeElement::setPreCondition(BT::PreCond type, const Script & script)
 {
   ele_ptr_->SetAttribute(BT::toStr(type).c_str(), script.str().c_str());
   return *this;
 }
 
-TreeDocument::NodeElement & TreeDocument::NodeElement::setPostCondition(NodePostCondition type, const Script & script)
+TreeDocument::NodeElement & TreeDocument::NodeElement::setPostCondition(BT::PostCond type, const Script & script)
 {
   ele_ptr_->SetAttribute(BT::toStr(type).c_str(), script.str().c_str());
   return *this;

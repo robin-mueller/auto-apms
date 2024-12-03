@@ -46,7 +46,7 @@ bool MissionBuilderBase::setBuildRequest(const std::string & build_request, cons
 
 MissionBuilderBase::TreeElement MissionBuilderBase::buildTree(TreeBuilder & builder, TreeBlackboard & bb)
 {
-  namespace node = auto_apms_behavior_tree::model;
+  using namespace auto_apms_behavior_tree::model;
 
   // Load orchestrator tree
   TreeElement root_tree =
@@ -60,35 +60,36 @@ MissionBuilderBase::TreeElement MissionBuilderBase::buildTree(TreeBuilder & buil
   for (const std::string & str : mission_config_.shutdown) shutdown_trees.push_back({str});
 
   // Bring up
-  NodeElement bringup_sequence = builder.getTree("BringUp").getFirstNode<node::SequenceWithMemory>().removeChildren();
+  SequenceWithMemory bringup_sequence = builder.getTree("BringUp").getFirstNode<SequenceWithMemory>().removeChildren();
   buildBringUp(bringup_sequence, bringup_trees);
-  if (!bringup_sequence.hasChildren()) bringup_sequence.insertNode<node::AlwaysSuccess>();
+  if (!bringup_sequence.hasChildren()) bringup_sequence.insertNode<AlwaysSuccess>();
 
   // Run mission
-  NodeElement mission_sequence =
-    builder.getTree("RunMission").getFirstNode<node::SequenceWithMemory>().removeChildren();
+  SequenceWithMemory mission_sequence =
+    builder.getTree("RunMission").getFirstNode<SequenceWithMemory>().removeChildren();
   buildMission(mission_sequence, mission_trees);
-  if (!mission_sequence.hasChildren()) mission_sequence.insertNode<node::AlwaysSuccess>();
+  if (!mission_sequence.hasChildren()) mission_sequence.insertNode<AlwaysSuccess>();
 
   // buildEventMonitor(builder);
 
   // buildEventHandler(builder);
 
   // Shut down
-  NodeElement shutdown_sequence = builder.getTree("ShutDown").getFirstNode<node::SequenceWithMemory>().removeChildren();
+  SequenceWithMemory shutdown_sequence =
+    builder.getTree("ShutDown").getFirstNode<SequenceWithMemory>().removeChildren();
   buildShutDown(shutdown_sequence, shutdown_trees);
-  if (!shutdown_sequence.hasChildren()) shutdown_sequence.insertNode<node::AlwaysSuccess>();
+  if (!shutdown_sequence.hasChildren()) shutdown_sequence.insertNode<AlwaysSuccess>();
 
   return root_tree;
 }
 
-void MissionBuilderBase::buildBringUp(NodeElement & /*sequence*/, TreeResourceVector /*trees*/) {}
+void MissionBuilderBase::buildBringUp(model::SequenceWithMemory & /*sequence*/, TreeResourceVector /*trees*/) {}
 
-void MissionBuilderBase::buildEventMonitor(NodeElement & /*sequence*/, TreeResourceVector /*trees*/) {}
+void MissionBuilderBase::buildEventMonitor(model::SequenceWithMemory & /*sequence*/, TreeResourceVector /*trees*/) {}
 
-void MissionBuilderBase::buildEventHandler(NodeElement & /*sequence*/, TreeResourceVector /*trees*/) {}
+void MissionBuilderBase::buildEventHandler(model::SequenceWithMemory & /*sequence*/, TreeResourceVector /*trees*/) {}
 
-void MissionBuilderBase::buildShutDown(NodeElement & /*sequence*/, TreeResourceVector /*trees*/) {}
+void MissionBuilderBase::buildShutDown(model::SequenceWithMemory & /*sequence*/, TreeResourceVector /*trees*/) {}
 
 void MissionBuilderBase::configureOrchestratorBlackboard(TreeBlackboard & /*bb*/) {}
 

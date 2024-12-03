@@ -14,30 +14,39 @@
 
 #include "auto_apms_behavior_tree_core/node/node_model_type.hpp"
 
-namespace auto_apms_behavior_tree::core
+#include "auto_apms_behavior_tree_core/builder.hpp"
+#include "auto_apms_behavior_tree_core/exceptions.hpp"
+
+namespace auto_apms_behavior_tree
+{
+namespace model
 {
 
-NodeModelType::NodeModelType(const std::string & type, const std::string & registration_options)
-: node_type_(BT::convertFromString<BT::NodeType>(type)),
-  registration_options_(
-    registration_options.empty() ? NodeRegistrationOptions() : NodeRegistrationOptions::decode(registration_options))
+BT::NodeType SubTree::type() { return BT::NodeType::SUBTREE; }
+
+std::string SubTree::name() { return core::TreeDocument::SUBTREE_ELEMENT_NAME; }
+
+std::string SubTree::getRegistrationName() const { return name(); }
+
+SubTree & SubTree::setPreCondition(BT::PreCond type, const core::Script & script)
 {
+  LeafNodeModelType::setPreCondition(type, script);
+  return *this;
 }
 
-const BT::NodeType & NodeModelType::getNodeType() const { return node_type_; }
-
-const NodeRegistrationOptions & NodeModelType::getRegistrationOptions() const { return registration_options_; }
-
-std::vector<std::string> NodeModelType::getPortNames() const
+SubTree & SubTree::setPostCondition(BT::PostCond type, const core::Script & script)
 {
-  std::vector<std::string> vec;
-  vec.reserve(port_infos_.size());
-  for (const auto & [name, _] : port_infos_) vec.push_back(name);
-  return vec;
+  LeafNodeModelType::setPostCondition(type, script);
+  return *this;
 }
 
-const NodeModelType::PortValues & NodeModelType::getPortValues() const { return port_values_; }
+SubTree & SubTree::set_auto_remap(bool val)
+{
+  setPorts({{"_autoremap", BT::toStr(val)}});
+  return *this;
+}
 
-const NodeModelType::PortInfos & NodeModelType::getPortInfos() const { return port_infos_; }
+bool SubTree::get_auto_remap() const { return BT::convertFromString<bool>(port_values_.at("_autoremap")); }
 
-}  // namespace auto_apms_behavior_tree::core
+}  // namespace model
+}  // namespace auto_apms_behavior_tree

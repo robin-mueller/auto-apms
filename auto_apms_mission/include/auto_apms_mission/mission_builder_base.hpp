@@ -22,6 +22,8 @@
 namespace auto_apms_mission
 {
 
+namespace model = auto_apms_behavior_tree::model;
+
 class MissionBuilderBase : public auto_apms_behavior_tree::TreeBuildHandler
 {
 public:
@@ -43,15 +45,15 @@ private:
 private:
   /* Virtual methods */
 
-  virtual void buildBringUp(NodeElement & sequence, TreeResourceVector trees);
+  virtual void buildBringUp(model::SequenceWithMemory & sequence, TreeResourceVector trees);
 
-  virtual void buildMission(NodeElement & sequence, TreeResourceVector trees) = 0;
+  virtual void buildMission(model::SequenceWithMemory & sequence, TreeResourceVector trees) = 0;
 
-  virtual void buildEventMonitor(NodeElement & sequence, TreeResourceVector trees);
+  virtual void buildEventMonitor(model::SequenceWithMemory & sequence, TreeResourceVector trees);
 
-  virtual void buildEventHandler(NodeElement & sequence, TreeResourceVector trees);
+  virtual void buildEventHandler(model::SequenceWithMemory & sequence, TreeResourceVector trees);
 
-  virtual void buildShutDown(NodeElement & sequence, TreeResourceVector trees);
+  virtual void buildShutDown(model::SequenceWithMemory & sequence, TreeResourceVector trees);
 
   virtual void configureOrchestratorBlackboard(TreeBlackboard & bb);
 
