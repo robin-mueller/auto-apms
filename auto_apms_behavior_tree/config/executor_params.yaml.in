@@ -33,7 +33,7 @@ auto_apms_behavior_tree::executor_params:
 
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER}:
     type: string
-    default_value: auto_apms_behavior_tree::TreeResourceBuildHandler
+    default_value: auto_apms_behavior_tree::TreeFromResourceBuildHandler
     description: Fully qualified class name of the behavior tree build handler responsible for creating trees if not overridden by the StartTreeExecutor action goal.
 
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}:

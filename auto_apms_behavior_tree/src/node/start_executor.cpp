@@ -19,6 +19,7 @@
 #define INPUT_KEY_TREE_BUILD_REQUEST "build_request"
 #define INPUT_KEY_TREE_BUILD_HANDLER "build_handler"
 #define INPUT_KEY_ROOT_TREE_NAME "root_tree"
+#define INPUT_KEY_NODE_MANIFEST "node_manifest"
 #define INPUT_KEY_NODE_OVERRIDES "node_overrides"
 #define INPUT_KEY_ATTACH "attach"
 #define INPUT_KEY_CLEAR_BB "clear_blackboard"
@@ -42,8 +43,12 @@ public:
         "Boolean flag wether to clear the existing blackboard entries before the execution starts or not."),
       BT::InputPort<std::string>(
         INPUT_KEY_NODE_OVERRIDES, "",
-        "YAML/JSON formatted string encoding the registration parameters for any tree nodes supposed to be "
-        "loaded/overridden before the execution starts."),
+        "YAML/JSON formatted string encoding the name and the registration options for any tree nodes supposed to "
+        "override previously loaded ones."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_NODE_MANIFEST, "",
+        "YAML/JSON formatted string encoding the name and the registration options for the tree nodes supposed to be "
+        "loaded before building the tree."),
       BT::InputPort<std::string>(
         INPUT_KEY_ROOT_TREE_NAME, "",
         "Name of the root tree. If empty, let the build handler determine the root tree."),

@@ -23,6 +23,7 @@
 
 // Include all built in node models for convenience
 #include "auto_apms_behavior_tree/builtin_nodes.hpp"
+#include "auto_apms_behavior_tree/util/node.hpp"
 #include "auto_apms_behavior_tree_core/native_nodes.hpp"
 
 namespace auto_apms_behavior_tree

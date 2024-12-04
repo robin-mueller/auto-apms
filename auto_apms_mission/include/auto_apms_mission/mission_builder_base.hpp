@@ -16,7 +16,6 @@
 
 #include "auto_apms_behavior_tree/build_handler.hpp"
 #include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
-#include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_mission/mission_configuration.hpp"
 
 namespace auto_apms_mission
@@ -28,7 +27,6 @@ class MissionBuilderBase : public auto_apms_behavior_tree::TreeBuildHandler
 {
 public:
   using TreeResourceVector = const std::vector<TreeResource> &;
-  using StartTreeExecutorRequest = auto_apms_interfaces::action::StartTreeExecutor::Goal;
 
   static const std::string ORCHESTRATOR_EXECUTOR_NAME;
   static const std::string MISSION_EXECUTOR_NAME;

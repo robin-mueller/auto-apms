@@ -99,7 +99,7 @@ protected:
 
   TreeConstructor makeTreeConstructor(
     const std::string & build_handler_request, const std::string & root_tree_name,
-    const core::NodeManifest & node_overrides = {});
+    const core::NodeManifest & node_manifest = {}, const core::NodeManifest & node_overrides = {});
 
 private:
   /* Executor specific virtual overrides */

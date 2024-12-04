@@ -313,7 +313,7 @@ void TreeExecutorNode::loadBuildHandler(const std::string & name)
 
 TreeConstructor TreeExecutorNode::makeTreeConstructor(
   const std::string & build_handler_request, const std::string & root_tree_name,
-  const core::NodeManifest & node_overrides)
+  const core::NodeManifest & node_manifest, const core::NodeManifest & node_overrides)
 {
   // Request the tree identity
   if (build_handler_ptr_ && !build_handler_ptr_->setBuildRequest(build_handler_request, root_tree_name)) {
@@ -325,13 +325,15 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   // By passing the the local variables to the callback's captures by value they live on and can be used for creating
   // the tree later. Otherwise a segmentation fault might occur since memory allocated for the arguments might be
   // released at the time the method returns.
-  return [this, root_tree_name, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
+  return [this, root_tree_name, node_manifest, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
     // Currently, BehaviorTree.CPP requires the memory allocated by the factory to persist even after the tree has been
     // created, so we make the builder a unique pointer that is only reset when a new tree is to be created.
     // See https://github.com/BehaviorTree/BehaviorTree.CPP/issues/890
     builder_ptr_.reset(new TreeBuilder(
       node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_));
-    // builder_ptr_->loadNodes(core::NodeManifest::fromResourceIdentity("auto_apms_behavior_tree::builtin_nodes"));
+
+    // Load the initial node manifest prior to building the tree
+    builder_ptr_->loadNodes(node_manifest, false);
 
     // Allow executor to set up the builder independently from the build handler
     setUpBuilder(*builder_ptr_);
@@ -508,6 +510,16 @@ rclcpp_action::GoalResponse TreeExecutorNode::handle_start_goal_(
     }
   }
 
+  core::NodeManifest node_manifest;
+  try {
+    node_manifest = core::NodeManifest::decode(goal_ptr->node_manifest);
+  } catch (const std::exception & e) {
+    RCLCPP_WARN(
+      logger_, "Goal %s was REJECTED: Parsing the initial node manifest failed: %s",
+      rclcpp_action::to_string(uuid).c_str(), e.what());
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
   core::NodeManifest node_overrides;
   try {
     node_overrides = core::NodeManifest::decode(goal_ptr->node_overrides);
@@ -519,11 +531,10 @@ rclcpp_action::GoalResponse TreeExecutorNode::handle_start_goal_(
   }
 
   try {
-    tree_constructor_ = makeTreeConstructor(goal_ptr->build_request, goal_ptr->root_tree, node_overrides);
+    tree_constructor_ =
+      makeTreeConstructor(goal_ptr->build_request, goal_ptr->root_tree, node_manifest, node_overrides);
   } catch (const std::exception & e) {
-    RCLCPP_WARN(
-      logger_, "Goal %s was REJECTED: Error during makeTreeConstructor(): %s", rclcpp_action::to_string(uuid).c_str(),
-      e.what());
+    RCLCPP_WARN(logger_, "Goal %s was REJECTED: %s", rclcpp_action::to_string(uuid).c_str(), e.what());
     return rclcpp_action::GoalResponse::REJECT;
   }
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;

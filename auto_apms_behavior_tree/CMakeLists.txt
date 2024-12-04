@@ -92,6 +92,7 @@ add_library(auto_apms_behavior_tree SHARED
     "src/executor/executor_base.cpp"
     "src/executor/executor_node.cpp"
     "src/util/parameter.cpp"
+    "src/util/node.cpp"
 )
 target_include_directories(auto_apms_behavior_tree PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -251,7 +252,8 @@ auto_apms_behavior_tree_declare_nodes(builtin_nodes
 #
 
 add_library(builtin_build_handlers SHARED
-    "src/build_handler/impl/resource_build_handler.cpp"
+    "src/build_handler/impl/from_string_build_handler.cpp"
+    "src/build_handler/impl/from_resource_build_handler.cpp"
 )
 target_link_libraries(builtin_build_handlers auto_apms_behavior_tree)
 
@@ -259,7 +261,8 @@ target_link_libraries(builtin_build_handlers auto_apms_behavior_tree)
 # However, it is automatically available for all downstream packages.
 include("cmake/declare_build_handlers.cmake")
 auto_apms_behavior_tree_declare_build_handlers(builtin_build_handlers
-    "auto_apms_behavior_tree::TreeResourceBuildHandler"
+    "auto_apms_behavior_tree::TreeFromStringBuildHandler"
+    "auto_apms_behavior_tree::TreeFromResourceBuildHandler"
 )
 
 #

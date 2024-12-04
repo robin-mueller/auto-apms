@@ -39,6 +39,11 @@ struct ScriptError : public auto_apms_util::exceptions::ExceptionBase
   using ExceptionBase::ExceptionBase;
 };
 
+struct NodeRegistrationError : public auto_apms_util::exceptions::ExceptionBase
+{
+  using ExceptionBase::ExceptionBase;
+};
+
 struct TreeBuildError : public auto_apms_util::exceptions::ExceptionBase
 {
   using ExceptionBase::ExceptionBase;

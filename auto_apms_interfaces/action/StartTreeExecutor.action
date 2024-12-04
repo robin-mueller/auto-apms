@@ -1,10 +1,11 @@
 # Request
-string build_request
-string build_handler
-string root_tree
-string node_overrides
-bool attach true
-bool clear_blackboard true
+string build_request # String determining which behavior tree is to be built
+string build_handler # Fully qualified class name of the behavior tree build handler plugin
+string root_tree # Name of the behavior tree acting as an entry point for execution
+string node_manifest # Encoded node manifest specifying the behavior tree nodes to load initially
+string node_overrides # Encoded node manifest specifying the behavior tree nodes to override previously loaded ones
+bool attach true # Flag whether to start execution in attached (true) or detached (false) mode
+bool clear_blackboard true # Flag whether to clear the blackboard before executing the tree
 ---
 # Result
 uint8 TREE_RESULT_NOT_SET=0

@@ -51,7 +51,7 @@ def generate_launch_description():
                 plugin="auto_apms_mission::MissionExecutor",
                 parameters=[
                     {
-                        "build_handler": "auto_apms_behavior_tree::TreeResourceBuildHandler",
+                        "build_handler": "auto_apms_behavior_tree::TreeFromResourceBuildHandler",
                         "allow_other_build_handlers": False,
                         "groot2_port": 5666,
                     }
@@ -63,7 +63,7 @@ def generate_launch_description():
                 plugin="auto_apms_mission::EventMonitorExecutor",
                 parameters=[
                     {
-                        "build_handler": "auto_apms_behavior_tree::TreeResourceBuildHandler",
+                        "build_handler": "auto_apms_behavior_tree::TreeFromResourceBuildHandler",
                         "allow_other_build_handlers": False,
                         "groot2_port": 5777,
                     }
@@ -75,7 +75,7 @@ def generate_launch_description():
                 plugin="auto_apms_mission::EventHandlerExecutor",
                 parameters=[
                     {
-                        "build_handler": "auto_apms_behavior_tree::TreeResourceBuildHandler",
+                        "build_handler": "auto_apms_behavior_tree::TreeFromResourceBuildHandler",
                         "allow_other_build_handlers": False,
                         "groot2_port": 5888,
                     }

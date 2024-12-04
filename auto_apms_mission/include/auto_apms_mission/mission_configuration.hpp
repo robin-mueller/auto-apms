@@ -46,6 +46,7 @@ struct MissionConfiguration
   static const std::string YAML_KEY_BRINGUP;
   static const std::string YAML_KEY_MISSION;
   static const std::string YAML_KEY_CONTINGENCY;
+  static const std::string YAML_KEY_EMERGENCY;
   static const std::string YAML_KEY_SHUTDOWN;
 
   MissionConfiguration() = default;
@@ -57,6 +58,7 @@ struct MissionConfiguration
   std::vector<std::string> bringup;
   std::vector<std::string> mission;
   std::map<std::string, std::vector<std::string>> contingency;
+  std::map<std::string, std::vector<std::string>> emergency;
   std::vector<std::string> shutdown;
 };
 
@@ -118,6 +120,17 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
       }
       rhs.contingency = val.as<std::map<std::string, std::vector<std::string>>>();
+      continue;
+    }
+
+    if (key == Config::YAML_KEY_EMERGENCY) {
+      if (val.IsNull()) continue;
+      if (!val.IsMap()) {
+        throw auto_apms_util::exceptions::YAMLFormatError(
+          "Value for key '" + key + "' must be a map but is type " + std::to_string(val.Type()) +
+          " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+      }
+      rhs.emergency = val.as<std::map<std::string, std::vector<std::string>>>();
       continue;
     }
 

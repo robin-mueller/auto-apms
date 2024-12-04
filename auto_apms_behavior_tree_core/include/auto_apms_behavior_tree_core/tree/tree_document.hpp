@@ -179,6 +179,7 @@ public:
 
   class TreeElement : public NodeElement
   {
+    friend class TreeDocument;
     friend class TreeBuilder;
 
   protected:
@@ -210,7 +211,13 @@ public:
 
   TreeDocument & mergeResource(const TreeResource & resource, bool adopt_root_tree = false);
 
-  bool isExistingTreeName(const std::string & tree_name) const;
+  TreeDocument & mergeTree(const TreeElement & tree, bool make_root_tree = false);
+
+  TreeElement newTree(const std::string & tree_name);
+
+  bool hasTree(const std::string & tree_name) const;
+
+  TreeElement getTree(const std::string & tree_name);
 
   TreeDocument & setRootTreeName(const std::string & tree_name);
 

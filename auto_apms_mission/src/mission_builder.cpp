@@ -107,9 +107,7 @@ void MissionBuilder::buildBringUp(model::SequenceWithMemory & sequence, TreeReso
 
 void MissionBuilder::buildMission(model::SequenceWithMemory & sequence, TreeResourceVector trees)
 {
-  for (const TreeResource & r : trees) {
-    sequence.insertNode<model::StartExecutor>();
-  }
+  // model::StartExecutor ele = auto_apms_behavior_tree::insertStartExecutorFromString(sequence);
 }
 
 void MissionBuilder::buildShutDown(model::SequenceWithMemory & sequence, TreeResourceVector trees)

@@ -112,7 +112,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
 model::SubTree TreeDocument::NodeElement::insertSubTreeNode(
   const std::string & tree_name, const NodeElement * before_this)
 {
-  if (!builder_ptr_->doc_.isExistingTreeName(tree_name)) {
+  if (!builder_ptr_->doc_.hasTree(tree_name)) {
     throw exceptions::TreeDocumentError(
       "Cannot associate <" + getRegistrationName() + "> node with tree '" + tree_name + "' because it doesn't exist.");
   }
@@ -466,7 +466,8 @@ void setUpTreeDocument(tinyxml2::XMLDocument & doc, const std::string & format_v
   doc.InsertFirstChild(root_ele);
 }
 
-TreeDocument::TreeDocument(const std::string & format_version) : XMLDocument(), format_version_(format_version)
+TreeDocument::TreeDocument(const std::string & format_version)
+: XMLDocument(), format_version_(format_version), builder_mock_(NodeRegistrationLoader::make_shared())
 {
   setUpTreeDocument(*this, format_version_);
 }
@@ -582,12 +583,44 @@ TreeDocument & TreeDocument::mergeResource(const TreeResource & resource, bool a
   return mergeFile(resource.tree_file_path_, adopt_root_tree);
 }
 
+TreeDocument & TreeDocument::mergeTree(const TreeElement & tree, bool make_root_tree)
+{
+  XMLDocument tree_doc;
+  tree_doc.InsertEndChild(tree.ele_ptr_->DeepClone(&tree_doc));
+  merge(tree_doc, make_root_tree);
+  return *this;
+}
+
+TreeDocument::TreeElement TreeDocument::newTree(const std::string & tree_name)
+{
+  // This function is implemented to allow users access to the API for building XML
+  // documents, not instantiating trees (like TreeBuilder does). We pass a mock object of TreeBuilder as it's required
+  // for constructing TreeElement instances, however, the mock builder was initialized without valid pointers to the ROS
+  // objects, so as soon as a node plugin is instantiated, the program will fail. However, it is impossible to do so,
+  // because the user is not granted access to the builder object which implements the method for instantiating a tree.
+  if (tree_name.empty()) {
+    throw exceptions::TreeDocumentError("Cannot create a new tree with an empty name");
+  }
+  if (hasTree(tree_name)) {
+    throw exceptions::TreeDocumentError(
+      "Cannot create a new tree with name '" + tree_name + "' because it already exists.");
+  }
+  TreeDocument::XMLElement * new_ele = RootElement()->InsertNewChildElement(TreeDocument::TREE_ELEMENT_NAME);
+  new_ele->SetAttribute(TreeDocument::TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
+  return TreeElement(&builder_mock_, new_ele);
+}
+
 std::vector<std::string> TreeDocument::getAllTreeNames() const { return getAllTreeNamesImpl(*this); }
 
-bool TreeDocument::isExistingTreeName(const std::string & tree_name) const
+bool TreeDocument::hasTree(const std::string & tree_name) const
 {
   if (auto_apms_util::contains(getAllTreeNames(), tree_name)) return true;
   return false;
+}
+
+TreeDocument::TreeElement TreeDocument::getTree(const std::string & tree_name)
+{
+  return TreeElement(&builder_mock_, getXMLElementForTreeWithName(tree_name));
 }
 
 TreeDocument & TreeDocument::setRootTreeName(const std::string & tree_name)
@@ -595,7 +628,7 @@ TreeDocument & TreeDocument::setRootTreeName(const std::string & tree_name)
   if (tree_name.empty()) {
     throw exceptions::TreeDocumentError("Cannot set root tree name with empty string.");
   }
-  if (!isExistingTreeName(tree_name)) {
+  if (!hasTree(tree_name)) {
     throw exceptions::TreeDocumentError(
       "Cannot make tree with name '" + tree_name + "' the root tree because it doesn't exist.");
   }
@@ -659,7 +692,7 @@ ReturnT TreeDocument::getXMLElementForTreeWithNameImpl(DocumentT & doc, const st
   if (tree_name.empty()) {
     throw exceptions::TreeDocumentError("Cannot get tree with an empty name.");
   }
-  if (!doc.isExistingTreeName(tree_name)) {
+  if (!doc.hasTree(tree_name)) {
     throw exceptions::TreeDocumentError("Cannot get tree with name '" + tree_name + "' because it doesn't exist.");
   }
   auto child = doc.RootElement()->FirstChildElement(TreeDocument::TREE_ELEMENT_NAME);
@@ -669,7 +702,7 @@ ReturnT TreeDocument::getXMLElementForTreeWithNameImpl(DocumentT & doc, const st
   if (!child) {
     throw std::logic_error(
       "Unexpected error trying to get tree element with name '" + tree_name +
-      "'. Since isExistingTreeName() returned true, there MUST be a corresponding element.");
+      "'. Since hasTree() returned true, there MUST be a corresponding element.");
   }
   return child;
 }

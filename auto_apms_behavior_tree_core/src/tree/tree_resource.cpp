@@ -178,4 +178,6 @@ std::string TreeResource::getPackageName() const { return package_name_; }
 
 std::string TreeResource::getFileStem() const { return std::filesystem::path(tree_file_path_).stem(); }
 
+std::string TreeResource::str() const { return identity_.str(); }
+
 }  // namespace auto_apms_behavior_tree::core

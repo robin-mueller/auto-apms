@@ -65,16 +65,7 @@ TreeBuilder & TreeBuilder::mergeTreeDocument(const TreeDocument & other, bool ad
 
 TreeBuilder::TreeElement TreeBuilder::newTree(const std::string & tree_name)
 {
-  if (tree_name.empty()) {
-    throw exceptions::TreeBuildError("Cannot create a new tree with an empty name");
-  }
-  if (doc_.isExistingTreeName(tree_name)) {
-    throw exceptions::TreeBuildError(
-      "Cannot create a new tree with name '" + tree_name + "' because it already exists.");
-  }
-  TreeDocument::XMLElement * new_ele = doc_.RootElement()->InsertNewChildElement(TreeDocument::TREE_ELEMENT_NAME);
-  new_ele->SetAttribute(TreeDocument::TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
-  return TreeElement(this, new_ele);
+  return TreeElement(this, doc_.newTree(tree_name).ele_ptr_);
 }
 
 TreeBuilder::TreeElement TreeBuilder::newTreeFromDocument(const TreeDocument & other, const std::string & tree_name)
@@ -117,7 +108,7 @@ TreeBuilder::TreeElement TreeBuilder::newTreeFromResource(const TreeResource & r
   return newTreeFromDocument(new_doc, tree_name);
 }
 
-bool TreeBuilder::hasTree(const std::string & tree_name) { return doc_.isExistingTreeName(tree_name); }
+bool TreeBuilder::hasTree(const std::string & tree_name) { return doc_.hasTree(tree_name); }
 
 TreeBuilder::TreeElement TreeBuilder::getTree(const std::string & tree_name)
 {
@@ -194,10 +185,10 @@ TreeBuilder & TreeBuilder::loadNodes(const NodeManifest & tree_node_manifest, bo
       } else {
         // If it's actually a different class and override is false, we must throw.
         throw exceptions::TreeBuildError(
-          "The name '" + node_name + "' of a previously registered node (" +
+          "Tried to load node '" + node_name + "' (Class : " + params.class_name +
+          ") which is already known to the builder, but under a different class name (" +
           registered_node_class_names_map_[node_name] +
-          ")' is also discovered parsing another node manifest, but with a different class name (" + params.class_name +
-          "). You must explicitly set override=true to allow for overriding previously registered nodes.");
+          "). You must explicitly set override=true to allow for overriding previously loaded nodes.");
       }
     }
 
@@ -224,8 +215,8 @@ TreeBuilder & TreeBuilder::loadNodes(const NodeManifest & tree_node_manifest, bo
     pluginlib::UniquePtr<NodeRegistrationInterface> plugin_instance;
     try {
       plugin_instance = tree_node_loader_ptr_->createUniqueInstance(params.class_name);
-    } catch (const std::exception & e) {
-      throw exceptions::TreeBuildError(
+    } catch (const pluginlib::CreateClassException & e) {
+      throw pluginlib::CreateClassException(
         "Failed to create an instance of node '" + node_name + " (" + params.class_name +
         ")'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE "
         "macro must be called in the source file for the node class to be discoverable. "
@@ -234,42 +225,21 @@ TreeBuilder & TreeBuilder::loadNodes(const NodeManifest & tree_node_manifest, bo
     }
 
     try {
-      if (
-        ros_node_wptr_.expired() || tree_node_waitables_callback_group_wptr_.expired() ||
-        tree_node_waitables_executor_wptr_.expired()) {
-        if (plugin_instance->requiresRosNodeContext()) {
-          throw exceptions::TreeBuildError(
-            "Constructor requires to pass an instance of RosNodeContext but the required pointers expired.");
-        }
-        plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name);
-      } else {
+      if (plugin_instance->requiresRosNodeContext()) {
         RosNodeContext ros_node_context(
           ros_node_wptr_.lock(), tree_node_waitables_callback_group_wptr_.lock(),
           tree_node_waitables_executor_wptr_.lock(), params);
         plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
+      } else {
+        plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name);
       }
-
-    } catch (const std::invalid_argument & e) {
-      throw exceptions::TreeBuildError(
-        "Cannot load node '" + node_name + " (" + params.class_name +
-        ")' without a valid pointer to rclcpp::Node and rclcpp::CallbackGroup.");
     } catch (const std::exception & e) {
-      throw exceptions::TreeBuildError(
+      throw exceptions::NodeRegistrationError(
         "Cannot load node '" + node_name + " (" + params.class_name + ")': " + e.what() + ".");
     }
     registered_node_class_names_map_[node_name] = params.class_name;
   }
   return *this;
-}
-
-std::unordered_map<std::string, BT::NodeType> TreeBuilder::getAvailableNodeTypeMap(bool include_native) const
-{
-  std::unordered_map<std::string, BT::NodeType> map;
-  for (const auto & it : factory_.manifests()) {
-    if (!include_native && native_node_names_.find(it.first) != native_node_names_.end()) continue;
-    map.insert({it.first, it.second.type});
-  };
-  return map;
 }
 
 std::set<std::string> TreeBuilder::getAvailableNodeNames(bool include_native) const
@@ -385,8 +355,13 @@ TreeBuilder::NodeModelMap TreeBuilder::getNodeModel(bool include_native) const
 
 bool TreeBuilder::verify() const
 {
+  NodeModelMap model_map = getNodeModel(true);
+  std::unordered_map<std::string, BT::NodeType> registered_nodes;
+  for (const auto & [node_name, model] : model_map) {
+    registered_nodes[node_name] = model.type;
+  }
   try {
-    BT::VerifyXML(doc_.str(), getAvailableNodeTypeMap(true));
+    BT::VerifyXML(doc_.str(), registered_nodes);
   } catch (const BT::RuntimeError & e) {
     return false;
   }

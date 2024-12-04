@@ -111,6 +111,8 @@ public:
 
   std::string getFileStem() const;
 
+  std::string str() const;
+
 private:
   const TreeResourceIdentity identity_;
   std::string package_name_;

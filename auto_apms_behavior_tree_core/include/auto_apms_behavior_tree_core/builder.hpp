@@ -89,8 +89,8 @@ public:
   /**
    * @brief TreeBuilder constructor.
    *
-   * Using this signature you'll only be able to load behavior tree nodes that don't require an instance of
-   * RosNodeContext during construction time.
+   * Using this signature you'll only be able to instantiate behavior trees that contain only nodes which don't require
+   * an instance of RosNodeContext during construction time.
    *
    * @param tree_node_loader Shared pointer to the behavior tree node plugin loader instance.
    */
@@ -147,9 +147,7 @@ public:
    * existing plugin and use the new one instead.
    * @throw exceptions::TreeBuildError if registration fails.
    */
-  TreeBuilder & loadNodes(const NodeManifest & tree_node_manifest, bool override = false);
-
-  std::unordered_map<std::string, BT::NodeType> getAvailableNodeTypeMap(bool include_native = true) const;
+  virtual TreeBuilder & loadNodes(const NodeManifest & tree_node_manifest, bool override = false);
 
   std::set<std::string> getAvailableNodeNames(bool include_native = true) const;
 
@@ -170,6 +168,9 @@ public:
 
   Tree instantiate(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
+protected:
+  std::map<std::string, std::string> registered_node_class_names_map_;
+
 private:
   rclcpp::Node::WeakPtr ros_node_wptr_;
   rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group_wptr_;
@@ -180,7 +181,6 @@ private:
   BT::BehaviorTreeFactory factory_;
   const std::map<std::string, std::string> all_node_classes_package_map_;
   const std::set<std::string> native_node_names_;
-  std::map<std::string, std::string> registered_node_class_names_map_;
 };
 
 // #####################################################################################################################

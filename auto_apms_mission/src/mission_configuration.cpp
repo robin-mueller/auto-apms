@@ -26,6 +26,7 @@ namespace auto_apms_mission
 const std::string MissionConfiguration::YAML_KEY_BRINGUP = "BRINGUP";
 const std::string MissionConfiguration::YAML_KEY_MISSION = "MISSION";
 const std::string MissionConfiguration::YAML_KEY_CONTINGENCY = "CONTINGENCY";
+const std::string MissionConfiguration::YAML_KEY_EMERGENCY = "EMERGENCY";
 const std::string MissionConfiguration::YAML_KEY_SHUTDOWN = "SHUTDOWN";
 
 MissionConfiguration MissionConfiguration::fromResourceIdentity(const std::string identity)
