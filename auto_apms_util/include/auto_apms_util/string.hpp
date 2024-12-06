@@ -70,5 +70,12 @@ std::string printMap(
  */
 std::string makeColoredText(const std::string & text, TextColor color);
 
+/**
+ * @brief Trim whitespaces from both ends of a string
+ * @param str String to trim.
+ * @return Trimmed string.
+ */
+std::string trimWhitespaces(const std::string & str);
+
 /// @}
 }  // namespace auto_apms_util

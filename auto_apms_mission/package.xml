@@ -11,7 +11,6 @@
 
   <depend>rclcpp_components</depend>
   <depend>auto_apms_util</depend>
-  <depend>auto_apms_interfaces</depend>
   <depend>auto_apms_behavior_tree</depend>
 
   <export>

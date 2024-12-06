@@ -173,7 +173,7 @@ ${_error}"
                 "\"${PROJECT_NAME}\"" # Name of the package (defining the namespace to be used)
                 "\"${_generated_node_model_header_abs_path__build}\"" # Header output file
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_HEADER_CMD}" "${_generated_node_manifest_abs_path__build}" "${_generated_node_model_abs_path__build}"
+            DEPENDS "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_HEADER_CMD}" "${_generated_node_model_abs_path__build}"
             COMMENT "Generating behavior tree node model header '${metadata_id}' with manifest file ${_generated_node_manifest_abs_path__build} and model file ${_generated_node_model_abs_path__build}."
         )
 

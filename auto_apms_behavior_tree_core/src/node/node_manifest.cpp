@@ -130,13 +130,10 @@ NodeManifest & NodeManifest::add(const std::string & node_name, const Registrati
     throw exceptions::NodeManifestError{
       "Node '" + node_name + "' already exists in node manifest (Size: " + std::to_string(map_.size()) + ")."};
   }
-
-  // Validate parameters
-  if (p.class_name.empty()) {
+  if (!p.valid()) {
     throw exceptions::NodeManifestError(
       "Cannot add node '" + node_name + "' to manifest. Parameter class_name must not be empty.");
   }
-
   map_[node_name] = p;
   return *this;
 }
@@ -156,6 +153,18 @@ NodeManifest & NodeManifest::merge(const NodeManifest & m)
   for (const auto & [node_name, params] : m.map()) add(node_name, params);
   return *this;
 }
+
+std::vector<std::string> NodeManifest::getNodeNames()
+{
+  std::vector<std::string> names;
+  names.reserve(map_.size());
+  for (const auto & [name, _] : map_) names.push_back(name);
+  return names;
+}
+
+size_t NodeManifest::size() const { return map_.size(); }
+
+bool NodeManifest::empty() const { return map_.empty(); }
 
 const NodeManifest::Map & NodeManifest::map() const { return map_; }
 

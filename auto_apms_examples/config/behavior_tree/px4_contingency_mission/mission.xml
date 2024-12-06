@@ -7,12 +7,12 @@
                           alt="{alt}"
                           lat="{lat}"
                           lon="{lon}"
-                          topic_name=""
+                          port=""
                           _onSuccess="new_lon := lon + 0.0001"/>
       <GoTo lat="{lat}"
             lon="{new_lon}"
             alt="{alt}"
-            action_name=""/>
+            port=""/>
     </SequenceWithMemory>
   </BehaviorTree>
 
@@ -25,8 +25,8 @@
                   type="double">Target longitude</input_port>
       <input_port name="alt"
                   type="double">Target altitude in meter (AMSL)</input_port>
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
     <Condition ID="ReadGlobalPosition">
       <output_port name="pos_vec"
@@ -41,8 +41,8 @@
       <output_port name="lon"
                    default="{lon}"
                    type="double">Current longitude in degree [°]</output_port>
-      <input_port name="topic_name"
-                  type="std::string">Topic name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 topic to subscribe to.</input_port>
     </Condition>
   </TreeNodesModel>
 

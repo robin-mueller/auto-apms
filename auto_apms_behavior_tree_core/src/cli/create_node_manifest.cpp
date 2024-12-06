@@ -44,7 +44,7 @@ int main(int argc, char ** argv)
     }
     const std::vector<std::string> build_infos = auto_apms_util::splitString(argv[2], ";");
     const std::string build_package_name = argv[3];
-    const std::filesystem::path output_file = std::filesystem::absolute(argv[4]);
+    const std::filesystem::path output_file = std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[4]));
 
     // Ensure that arguments are not empty
     if (manifest_files.empty()) {

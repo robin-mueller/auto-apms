@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,77 +13,42 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 
-from launch_ros.actions import ComposableNodeContainer
-from launch_ros.descriptions import ComposableNode
+from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    namespace_launch_arg = DeclareLaunchArgument(
-        "namespace", description="Namespace for the task nodes", default_value=""
+    config_launch_arg = DeclareLaunchArgument(
+        "config", description="Resource identity for the mission configuration file"
     )
-    namespace = LaunchConfiguration("namespace")
+    config = LaunchConfiguration("config")
 
-    # Multithreading is required due to parallel spin_until_future_complete function calls
-    container = ComposableNodeContainer(
-        name="mission_container",
-        namespace=namespace,
-        package="rclcpp_components",
-        executable="component_container_mt",
-        composable_node_descriptions=[
-            ComposableNode(
-                namespace=namespace,
+    return LaunchDescription(
+        [
+            config_launch_arg,
+            IncludeLaunchDescription(
+                launch_description_source=PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [FindPackageShare("auto_apms_mission"), "launch", "mission_components_launch.py"]
+                    )
+                ),
+                launch_arguments={"with_orchestrator": "false"}.items(),
+            ),
+            Node(
+                executable="orchestrator",
                 package="auto_apms_mission",
-                plugin="auto_apms_mission::OrchestratorExecutor",
                 parameters=[
                     {
-                        "build_handler": "auto_apms_mission::MissionBuilder",
-                        "allow_other_build_handlers": False,
                         "groot2_port": 5555,
                     }
                 ],
+                arguments=[config],
+                output="screen",
+                emulate_tty=True,
             ),
-            ComposableNode(
-                namespace=namespace,
-                package="auto_apms_mission",
-                plugin="auto_apms_mission::MissionExecutor",
-                parameters=[
-                    {
-                        "build_handler": "auto_apms_behavior_tree::TreeFromResourceBuildHandler",
-                        "allow_other_build_handlers": False,
-                        "groot2_port": 5666,
-                    }
-                ],
-            ),
-            ComposableNode(
-                namespace=namespace,
-                package="auto_apms_mission",
-                plugin="auto_apms_mission::EventMonitorExecutor",
-                parameters=[
-                    {
-                        "build_handler": "auto_apms_behavior_tree::TreeFromResourceBuildHandler",
-                        "allow_other_build_handlers": False,
-                        "groot2_port": 5777,
-                    }
-                ],
-            ),
-            ComposableNode(
-                namespace=namespace,
-                package="auto_apms_mission",
-                plugin="auto_apms_mission::EventHandlerExecutor",
-                parameters=[
-                    {
-                        "build_handler": "auto_apms_behavior_tree::TreeFromResourceBuildHandler",
-                        "allow_other_build_handlers": False,
-                        "groot2_port": 5888,
-                    }
-                ],
-            ),
-        ],
-        output="screen",
-        emulate_tty=True,
+        ]
     )
-
-    return LaunchDescription([namespace_launch_arg, container])

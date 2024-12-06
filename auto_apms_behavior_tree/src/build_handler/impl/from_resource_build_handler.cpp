@@ -22,21 +22,32 @@ namespace auto_apms_behavior_tree
 class TreeFromResourceBuildHandler : public TreeBuildHandler
 {
 public:
-  using TreeBuildHandler::TreeBuildHandler;
-
-  bool setBuildRequest(const std::string & build_request, const std::string & root_tree_name) override final
+  TreeFromResourceBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
+  : TreeBuildHandler("tree_from_resource", ros_node_ptr, tree_node_loader_ptr),
+    resource_doc_(core::TreeDocument::BTCPP_FORMAT_DEFAULT_VERSION, tree_node_loader_ptr)
   {
-    core::TreeResourceIdentity resource_identity(build_request);
-    resource_ptr_ = std::make_unique<core::TreeResource>(resource_identity);
+  }
+
+  bool setBuildRequest(
+    const std::string & build_request, const NodeManifest & /*node_manifest*/,
+    const std::string & root_tree_name) override final
+  {
+    TreeResource::Identity resource_identity(build_request);
+    TreeResource resource(resource_identity);
 
     // We don't want to set the root tree yet
-    resource_doc_.reset().mergeResource(*resource_ptr_, false);
+    resource_doc_.reset().mergeResource(resource, false);
+
+    if (const BT::Result res = resource_doc_.verify(); !res) {
+      RCLCPP_WARN(logger_, "Tree verification failed: %s", res.error().c_str());
+      return false;
+    }
 
     // Try to determine root tree name
     std::string name = root_tree_name;
     if (root_tree_name.empty()) {
       try {
-        name = resource_ptr_->getRootTreeName();
+        name = resource.getRootTreeName();
       } catch (const auto_apms_util::exceptions::ResourceError & e) {
         RCLCPP_WARN(
           logger_,
@@ -55,20 +66,13 @@ public:
     return true;
   }
 
-  TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
+  TreeDocument::TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
   {
-    if (!resource_ptr_) {
-      throw exceptions::TreeBuildError("TreeFromResourceBuildHandler - resource_ptr_ is nullptr.");
-    }
-
     // Merge document and adopt root tree
     builder.mergeTreeDocument(resource_doc_, true);
 
     // Reset the local tree document, as the tree moved to the builder document
     resource_doc_.reset();
-
-    // Load all node plugins associated with the resource
-    builder.loadNodes(resource_ptr_->getNodeManifest());
 
     // The document MUST have a root tree. We made sure of that during setBuildRequest
     return builder.getRootTree();
@@ -76,9 +80,8 @@ public:
 
 private:
   core::TreeDocument resource_doc_;
-  std::unique_ptr<core::TreeResource> resource_ptr_;
 };
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER(auto_apms_behavior_tree::TreeFromResourceBuildHandler)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_behavior_tree::TreeFromResourceBuildHandler)

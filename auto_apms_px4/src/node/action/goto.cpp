@@ -47,4 +47,4 @@ public:
 
 }  // namespace auto_apms_px4
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_px4::GoToAction)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_px4::GoToAction)

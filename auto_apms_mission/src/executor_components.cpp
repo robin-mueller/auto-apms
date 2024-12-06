@@ -21,7 +21,9 @@ class OrchestratorExecutor : public auto_apms_behavior_tree::TreeExecutorNode
 {
 public:
   explicit OrchestratorExecutor(rclcpp::NodeOptions options)
-  : TreeExecutorNode(_AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME, options)
+  : TreeExecutorNode(
+      _AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME,
+      Options(options).setStaticBuildHandler("auto_apms_mission::MissionBuildHandler"))
   {
   }
 };

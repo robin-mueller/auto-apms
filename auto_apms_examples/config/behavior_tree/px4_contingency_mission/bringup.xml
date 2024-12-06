@@ -7,12 +7,12 @@
                           alt="{alt}"
                           lat="{lat}"
                           lon="{lon}"
-                          topic_name=""
+                          port=""
                           _onSuccess="new_alt := alt + 10"/>
       <Arm wait_until_ready_to_arm="true"
-           action_name=""/>
+           port=""/>
       <Takeoff alt="{new_alt}"
-               action_name=""/>
+               port=""/>
     </SequenceWithMemory>
   </BehaviorTree>
 
@@ -22,8 +22,8 @@
       <input_port name="wait_until_ready_to_arm"
                   default="true"
                   type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
     <Condition ID="ReadGlobalPosition">
       <output_port name="pos_vec"
@@ -38,14 +38,14 @@
       <output_port name="lon"
                    default="{lon}"
                    type="double">Current longitude in degree [°]</output_port>
-      <input_port name="topic_name"
-                  type="std::string">Topic name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 topic to subscribe to.</input_port>
     </Condition>
     <Action ID="Takeoff">
       <input_port name="alt"
                   type="double">Target takeoff altitude in meter (AMSL)</input_port>
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
   </TreeNodesModel>
 

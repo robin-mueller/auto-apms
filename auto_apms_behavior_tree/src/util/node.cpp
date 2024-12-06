@@ -30,9 +30,8 @@ model::StartExecutor insertStartExecutorFromString(
   core::TreeDocument::NodeElement & parent, const core::TreeDocument::TreeElement & tree,
   const core::TreeDocument::NodeElement * before_this)
 {
-  core::TreeDocument doc;
-  tree.mergeIntoDocument(doc);
-  return insertStartExecutorFromString(parent, doc.str(), before_this);
+  return insertStartExecutorFromString(parent, tree.writeToString(), before_this)
+    .set_node_manifest(tree.getRequiredNodeManifest().encode());
 }
 
 model::StartExecutor insertStartExecutorFromResource(

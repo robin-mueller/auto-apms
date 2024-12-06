@@ -36,7 +36,9 @@ public:
 
   TreeExecutorNodeOptions & enableBlackboardParameters(bool from_overrides, bool dynamic);
 
-  rclcpp::NodeOptions getROSNodeOptions();
+  TreeExecutorNodeOptions & setStaticBuildHandler(const std::string & name);
+
+  rclcpp::NodeOptions getROSNodeOptions() const;
 
 private:
   friend class TreeExecutorNode;
@@ -46,6 +48,7 @@ private:
   bool scripting_enum_parameters_dynamic_ = true;
   bool blackboard_parameters_from_overrides_ = true;
   bool blackboard_parameters_dynamic_ = true;
+  std::string static_build_handler_;
 };
 
 class TreeExecutorNode : public TreeExecutorBase
@@ -80,14 +83,14 @@ public:
 private:
   /* Virtual methods */
 
-  virtual void setUpBuilder(TreeBuilder & builder);
+  virtual void setUpBuilder(TreeBuilder & builder, const core::NodeManifest & node_manifest);
 
 protected:
   /* Utility methods */
 
   std::map<std::string, rclcpp::ParameterValue> getParameterValuesWithPrefix(const std::string & prefix);
 
-  std::string stripPrefixFromParameterName(const std::string & prefix, const std::string & param_name);
+  static std::string stripPrefixFromParameterName(const std::string & prefix, const std::string & param_name);
 
   bool updateScriptingEnumsWithParameterValues(
     const std::map<std::string, rclcpp::ParameterValue> & value_map, bool simulate = false);

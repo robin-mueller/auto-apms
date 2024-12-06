@@ -19,6 +19,7 @@
 #include "auto_apms_behavior_tree/executor/executor_base.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_util/logging.hpp"
+#include "auto_apms_util/string.hpp"
 #include "auto_apms_util/yaml.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -46,7 +47,7 @@ int main(int argc, char ** argv)
 
   core::NodeRegistrationOptions registration_params;
   try {
-    registration_params = core::NodeRegistrationOptions::decode(argv[1]);
+    registration_params = core::NodeRegistrationOptions::decode(auto_apms_util::trimWhitespaces(argv[1]));
   } catch (std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument registration_params: %s", e.what());
     return EXIT_FAILURE;
@@ -55,7 +56,7 @@ int main(int argc, char ** argv)
   core::TreeDocument::NodeElement::PortValues port_values;
   if (argc > 2) {
     try {
-      port_values = YAML::Load(argv[2]).as<std::map<std::string, std::string>>();
+      port_values = YAML::Load(auto_apms_util::trimWhitespaces(argv[2])).as<std::map<std::string, std::string>>();
     } catch (std::exception & e) {
       RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument port_values: %s", e.what());
       return EXIT_FAILURE;
@@ -69,14 +70,13 @@ int main(int argc, char ** argv)
     builder.newTree("RunTreeNodeCPP")
       .makeRoot()
       .insertNode(registration_params.class_name, registration_params)
-      .setPorts(port_values, true);
+      .setPorts(port_values);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR inserting tree node: %s", e.what());
     return EXIT_FAILURE;
   }
 
-  RCLCPP_DEBUG(
-    node_ptr->get_logger(), "Creating a tree with a single node:\n%s", builder.writeTreeDocumentToString().c_str());
+  RCLCPP_DEBUG(node_ptr->get_logger(), "Creating a tree with a single node:\n%s", builder.writeToString().c_str());
 
   std::shared_future<TreeExecutorBase::ExecutionResult> future =
     executor.startExecution([&builder](TreeBlackboardSharedPtr bb) { return builder.instantiate(bb); });

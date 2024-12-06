@@ -16,9 +16,12 @@
 #include <fstream>
 #include <iostream>
 
+#include "auto_apms_behavior_tree/builtin_nodes.hpp"
 #include "auto_apms_behavior_tree/executor/executor_base.hpp"
+#include "auto_apms_behavior_tree/util/node.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
-#include "auto_apms_util/logging.hpp"
+#include "auto_apms_behavior_tree_core/native_nodes.hpp"
+#include "auto_apms_util/string.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 #define NEW_TREE_NAME "NewTree"
@@ -35,10 +38,10 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  const std::filesystem::path tree_file_path = std::filesystem::absolute(argv[1]);
+  const std::filesystem::path tree_file_path = std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[1]));
   core::NodeManifest node_manifest;
   for (int i = 2; i < argc; ++i) {
-    node_manifest.merge(core::NodeManifest::fromResourceIdentity(argv[i]));
+    node_manifest.merge(core::NodeManifest::fromResourceIdentity(auto_apms_util::trimWhitespaces(argv[i])));
   }
 
   // Make sure path is not empty
@@ -67,31 +70,23 @@ int main(int argc, char ** argv)
     }
   }
 
-  // We don't use the node in any way, but we need a valid pointer to rclcpp::Node for TreeBuilder to make it possible
-  // to load ROS 2 behavior tree node plugins
-  rclcpp::init(argc, argv);
-  rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("_new_tree_temp_node");
-  auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
-
   // Prepare template document
-  TreeExecutorBase executor(node_ptr);  // Helper to create the necessary constructor arguments
-  core::TreeBuilder builder(
-    node_ptr, executor.getTreeNodeWaitablesCallbackGroupPtr(), executor.getTreeNodeWaitablesExecutorPtr());
-  builder.loadNodes(node_manifest);
-  core::TreeBuilder::TreeElement tree = builder.newTree(NEW_TREE_NAME).makeRoot();
+  core::TreeDocument doc;
+  doc.registerNodes(node_manifest);
+  core::TreeBuilder::TreeElement tree = doc.newTree(NEW_TREE_NAME).makeRoot();
 
   // Insert template children
-  tree.insertNode("AlwaysSuccess");
+  tree.insertNode<model::AlwaysSuccess>();
 
   // Add node model
-  if (!node_manifest.map().empty()) {
-    builder.addNodeModelToDocument(false);
+  if (!node_manifest.empty()) {
+    doc.addNodeModel(false);
   }
 
   // Write tree
   std::ofstream out_stream(tree_file_path);
   if (out_stream.is_open()) {
-    out_stream << builder.writeTreeDocumentToString();
+    out_stream << doc.writeToString();
     out_stream.close();
   } else {
     throw std::runtime_error("Error opening behavior tree output file '" + tree_file_path.string() + "'.");

@@ -79,6 +79,7 @@ public:
     goal.build_request = expected_build_request.value();
     goal.build_handler = getInput<std::string>(INPUT_KEY_TREE_BUILD_HANDLER).value();
     goal.root_tree = getInput<std::string>(INPUT_KEY_ROOT_TREE_NAME).value();
+    goal.node_manifest = getInput<std::string>(INPUT_KEY_NODE_MANIFEST).value();
     goal.node_overrides = getInput<std::string>(INPUT_KEY_NODE_OVERRIDES).value();
     goal.attach = getInput<bool>(INPUT_KEY_ATTACH).value();
     goal.clear_blackboard = getInput<bool>(INPUT_KEY_CLEAR_BB).value();
@@ -127,4 +128,4 @@ public:
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::StartExecutor)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_behavior_tree::StartExecutor)

@@ -111,4 +111,4 @@ private:
 
 }  // namespace auto_apms::ops_engine
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms::ops_engine::AsyncPrecondition)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms::ops_engine::AsyncPrecondition)

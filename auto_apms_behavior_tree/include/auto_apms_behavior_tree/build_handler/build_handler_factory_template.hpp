@@ -31,14 +31,16 @@ public:
   TreeBuildHandlerFactoryTemplate() = default;
   virtual ~TreeBuildHandlerFactoryTemplate() = default;
 
-  TreeBuildHandler::SharedPtr makeShared(rclcpp::Node::SharedPtr node_ptr) override final
+  TreeBuildHandler::SharedPtr makeShared(
+    rclcpp::Node::SharedPtr ros_node_ptr, core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr) override final
   {
-    return std::make_shared<T>(node_ptr);
+    return std::make_shared<T>(ros_node_ptr, tree_node_loader_ptr);
   }
 
-  TreeBuildHandler::UniquePtr makeUnique(rclcpp::Node::SharedPtr node_ptr) override final
+  TreeBuildHandler::UniquePtr makeUnique(
+    rclcpp::Node::SharedPtr ros_node_ptr, core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr) override final
   {
-    return std::make_unique<T>(node_ptr);
+    return std::make_unique<T>(ros_node_ptr, tree_node_loader_ptr);
   }
 };
 

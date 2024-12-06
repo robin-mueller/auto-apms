@@ -80,6 +80,12 @@ public:
 
   NodeManifest & merge(const NodeManifest & m);
 
+  std::vector<std::string> getNodeNames();
+
+  size_t size() const;
+
+  bool empty() const;
+
   const Map & map() const;
 
 private:

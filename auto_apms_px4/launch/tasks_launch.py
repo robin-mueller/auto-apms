@@ -13,10 +13,8 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
-from launch.substitutions import LaunchConfiguration
 
 ALL_TASK_NAMES = [
     "auto_apms_px4::ArmDisarmTask",
@@ -30,25 +28,19 @@ ALL_TASK_NAMES = [
 
 
 def generate_launch_description():
-    namespace_launch_arg = DeclareLaunchArgument(
-        "namespace", description="Namespace for the task nodes", default_value=""
+    return LaunchDescription(
+        [
+            ComposableNodeContainer(
+                name="task_container_node",
+                namespace="",
+                exec_name="task_container",
+                package="rclcpp_components",
+                executable="component_container",
+                composable_node_descriptions=[
+                    ComposableNode(package="auto_apms_px4", plugin=name) for name in ALL_TASK_NAMES
+                ],
+                output="screen",
+                emulate_tty=True,
+            )
+        ]
     )
-
-    namespace = LaunchConfiguration("namespace")
-
-    composable_nodes = [
-        ComposableNode(package="auto_apms_px4", namespace=namespace, plugin=name) for name in ALL_TASK_NAMES
-    ]
-
-    container = ComposableNodeContainer(
-        name="task_container_node",
-        exec_name="task_container",
-        namespace=namespace,
-        package="rclcpp_components",
-        executable="component_container",
-        composable_node_descriptions=composable_nodes,
-        output="screen",
-        emulate_tty=True,
-    )
-
-    return LaunchDescription([namespace_launch_arg, container])

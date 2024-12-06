@@ -19,17 +19,27 @@
 namespace auto_apms_behavior_tree
 {
 
-TreeBuildHandler::TreeBuildHandler(rclcpp::Node::SharedPtr node_ptr)
-: logger_(node_ptr->get_logger().get_child("tree_build_handler")), ros_node_wptr_(node_ptr)
+TreeBuildHandler::TreeBuildHandler(
+  const std::string & name, rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
+: logger_(ros_node_ptr->get_logger().get_child(name)),
+  ros_node_wptr_(ros_node_ptr),
+  tree_node_loader_ptr(tree_node_loader_ptr)
 {
 }
 
-rclcpp::Node::SharedPtr TreeBuildHandler::getNodePtr() const
+TreeBuildHandler::TreeBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
+: TreeBuildHandler("tree_build_handler", ros_node_ptr, tree_node_loader_ptr)
+{
+}
+
+rclcpp::Node::SharedPtr TreeBuildHandler::getRosNodePtr() const
 {
   if (ros_node_wptr_.expired()) {
     throw std::runtime_error("TreeBuildHandler: Weak pointer to rclcpp::Node expired.");
   }
   return ros_node_wptr_.lock();
 }
+
+TreeBuildHandler::NodeLoader::SharedPtr TreeBuildHandler::getNodeLoaderPtr() const { return tree_node_loader_ptr; }
 
 }  // namespace auto_apms_behavior_tree

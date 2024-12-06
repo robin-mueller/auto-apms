@@ -19,6 +19,7 @@
 #include "auto_apms_behavior_tree/executor/executor_base.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_util/logging.hpp"
+#include "auto_apms_util/string.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 sig_atomic_t volatile termination_requested = 0;
@@ -33,7 +34,7 @@ int main(int argc, char ** argv)
     std::cerr << "Usage: run_tree <tree_identity>\n";
     return EXIT_FAILURE;
   }
-  const core::TreeResourceIdentity tree_identity(argv[1]);
+  const core::TreeResourceIdentity tree_identity(auto_apms_util::trimWhitespaces(argv[1]));
 
   // Ensure that rclcpp is not shut down before the tree has been halted (on destruction) and all pending actions have
   // been successfully canceled

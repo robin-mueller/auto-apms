@@ -25,9 +25,11 @@ public:
   TreeBuildHandlerFactoryInterface() = default;
   virtual ~TreeBuildHandlerFactoryInterface() = default;
 
-  virtual TreeBuildHandler::SharedPtr makeShared(rclcpp::Node::SharedPtr node_ptr) = 0;
+  virtual TreeBuildHandler::SharedPtr makeShared(
+    rclcpp::Node::SharedPtr ros_node_ptr, core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr) = 0;
 
-  virtual TreeBuildHandler::UniquePtr makeUnique(rclcpp::Node::SharedPtr node_ptr) = 0;
+  virtual TreeBuildHandler::UniquePtr makeUnique(
+    rclcpp::Node::SharedPtr ros_node_ptr, core::NodeRegistrationLoader::SharedPtr tree_node_loader_ptr) = 0;
 };
 
 }  // namespace auto_apms_behavior_tree

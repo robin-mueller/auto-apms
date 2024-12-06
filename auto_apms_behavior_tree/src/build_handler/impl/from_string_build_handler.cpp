@@ -18,19 +18,31 @@
 namespace auto_apms_behavior_tree
 {
 
-class TreeFromResourceBuildHandler : public TreeBuildHandler
+class TreeFromStringBuildHandler : public TreeBuildHandler
 {
 public:
-  using TreeBuildHandler::TreeBuildHandler;
+  TreeFromStringBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
+  : TreeBuildHandler("tree_from_string", ros_node_ptr, tree_node_loader_ptr),
+    working_doc_(core::TreeDocument::BTCPP_FORMAT_DEFAULT_VERSION, tree_node_loader_ptr)
+  {
+  }
 
-  bool setBuildRequest(const std::string & build_request, const std::string & root_tree_name) override final
+  bool setBuildRequest(
+    const std::string & build_request, const NodeManifest & node_manifest,
+    const std::string & root_tree_name) override final
   {
     // Adopt the root tree if specified
-    resource_doc_.reset().mergeString(build_request, true);
+    working_doc_.reset().mergeString(build_request, true);
+    working_doc_.registerNodes(node_manifest, false);
+
+    if (const BT::Result res = working_doc_.verify(); !res) {
+      RCLCPP_WARN(logger_, "Tree verification failed: %s", res.error().c_str());
+      return false;
+    }
 
     // Try to determine root tree name
     if (root_tree_name.empty()) {
-      if (!resource_doc_.hasRootTreeName()) {
+      if (!working_doc_.hasRootTreeName()) {
         RCLCPP_WARN(
           logger_,
           "Cannot determine root tree: You must either encode the root tree within the tree XML or provide a non-empty "
@@ -39,7 +51,7 @@ public:
       }
     } else {
       try {
-        resource_doc_.setRootTreeName(root_tree_name);
+        working_doc_.setRootTreeName(root_tree_name);
       } catch (const exceptions::TreeDocumentError & e) {
         RCLCPP_WARN(logger_, "Cannot determine root tree: %s", e.what());
         return false;
@@ -48,22 +60,22 @@ public:
     return true;
   }
 
-  TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
+  TreeDocument::TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
   {
     // Merge document and adopt root tree
-    builder.mergeTreeDocument(resource_doc_, true);
+    builder.mergeTreeDocument(working_doc_, true);
 
     // Reset the local tree document, as the tree moved to the builder document
-    resource_doc_.reset();
+    working_doc_.reset();
 
     // The document MUST have a root tree. We made sure of that during setBuildRequest
     return builder.getRootTree();
   }
 
 private:
-  core::TreeDocument resource_doc_;
+  core::TreeDocument working_doc_;
 };
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER(auto_apms_behavior_tree::TreeFromResourceBuildHandler)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_behavior_tree::TreeFromStringBuildHandler)

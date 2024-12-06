@@ -14,10 +14,9 @@
 
 #pragma once
 
-#include <optional>
-
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/definitions.hpp"
+#include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 
@@ -25,6 +24,9 @@
 #include "auto_apms_behavior_tree/builtin_nodes.hpp"
 #include "auto_apms_behavior_tree/util/node.hpp"
 #include "auto_apms_behavior_tree_core/native_nodes.hpp"
+
+// Include exceptions if derived build handlers need to throw an TreeBuildHandlerError
+#include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -42,27 +44,35 @@ public:
 
   /* Convenience aliases for deriving classes */
 
-  using TreeBlackboard = auto_apms_behavior_tree::TreeBlackboard;
+  using NodeLoader = core::NodeRegistrationLoader;
+  using NodeManifest = core::NodeManifest;
   using TreeResource = core::TreeResource;
+  using TreeDocument = core::TreeDocument;
   using TreeBuilder = core::TreeBuilder;
-  using TreeElement = core::TreeDocument::TreeElement;
-  using NodeElement = core::TreeDocument::NodeElement;
+  using TreeBlackboard = auto_apms_behavior_tree::TreeBlackboard;
 
-  TreeBuildHandler(rclcpp::Node::SharedPtr node_ptr);
+  TreeBuildHandler(
+    const std::string & name, rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr);
+
+  TreeBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr);
 
   virtual ~TreeBuildHandler() = default;
 
-  virtual bool setBuildRequest(const std::string & build_request, const std::string & root_tree_name) = 0;
+  virtual bool setBuildRequest(
+    const std::string & build_request, const NodeManifest & node_manifest, const std::string & root_tree_name) = 0;
 
-  virtual TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) = 0;
+  virtual TreeDocument::TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) = 0;
 
-  rclcpp::Node::SharedPtr getNodePtr() const;
+  rclcpp::Node::SharedPtr getRosNodePtr() const;
+
+  NodeLoader::SharedPtr getNodeLoaderPtr() const;
 
 protected:
   const rclcpp::Logger logger_;
 
 private:
   rclcpp::Node::WeakPtr ros_node_wptr_;
+  NodeLoader::SharedPtr tree_node_loader_ptr;
 };
 
 }  // namespace auto_apms_behavior_tree

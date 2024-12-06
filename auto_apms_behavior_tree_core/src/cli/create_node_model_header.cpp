@@ -23,6 +23,7 @@
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
 #include "auto_apms_util/container.hpp"
+#include "auto_apms_util/string.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 
 using namespace auto_apms_behavior_tree;
@@ -48,9 +49,11 @@ int main(int argc, char ** argv)
   try {
     const std::filesystem::path manifest_file = only_native_nodes ? "unused" : std::filesystem::absolute(argv[1]);
     const std::filesystem::path model_file = only_native_nodes ? "unused" : std::filesystem::absolute(argv[2]);
-    const std::string build_package_name = only_native_nodes ? "auto_apms_behavior_tree" : argv[3];
-    const std::filesystem::path header_path =
-      only_native_nodes ? std::filesystem::absolute(argv[1]) : std::filesystem::absolute(argv[4]);
+    const std::string build_package_name =
+      only_native_nodes ? "auto_apms_behavior_tree" : auto_apms_util::trimWhitespaces(argv[3]);
+    const std::filesystem::path header_path = only_native_nodes
+                                                ? std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[1]))
+                                                : std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[4]));
 
     // Ensure that arguments are not empty
     if (manifest_file.empty()) {
@@ -70,14 +73,14 @@ int main(int argc, char ** argv)
 
     core::NodeManifest manifest;
     tinyxml2::XMLDocument model_doc;
-    core::TreeBuilder::NodeModelMap model_map;
+    core::TreeDocument::NodeModelMap model_map;
     if (only_native_nodes) {
       if (
         model_doc.Parse(BT::writeTreeNodesModelXML(BT::BehaviorTreeFactory(), true).c_str()) !=
         tinyxml2::XMLError::XML_SUCCESS) {
         throw std::runtime_error(model_doc.ErrorStr());
       }
-      model_map = core::TreeBuilder::getNodeModel(model_doc);
+      model_map = core::TreeDocument::getNodeModel(model_doc);
       for (const auto & [name, _] : model_map) {
         core::NodeRegistrationOptions opt;
         opt.class_name = "empty";
@@ -89,7 +92,7 @@ int main(int argc, char ** argv)
       if (model_doc.LoadFile(model_file.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
         throw std::runtime_error(model_doc.ErrorStr());
       }
-      model_map = core::TreeBuilder::getNodeModel(model_doc);
+      model_map = core::TreeDocument::getNodeModel(model_doc);
     }
 
     std::ostringstream content;
@@ -122,6 +125,7 @@ friend class auto_apms_behavior_tree::core::TreeDocument::NodeElement;
 using )" << base_class_name << "::" << base_class_name << R"(;
 
 public:
+/// @brief Information about the implemented ports.
 static PortInfos ports()
 {
 PortInfos port_infos;
@@ -141,13 +145,13 @@ static BT::NodeType type()
 return BT::convertFromString<BT::NodeType>(")" << model.type << R"(");
 }
 
-/// @copydoc auto_apms_behavior_tree::core::TreeDocument::NodeElement::getRegistrationName()
+/// @brief Name of the behavior tree node given during registration.
 static std::string name()
 {
 return ")" << node_name << R"(";
 }
 
-/// @copydoc auto_apms_behavior_tree::core::TreeDocument::NodeElement::getRegistrationName()
+/// @brief Name of the behavior tree node given during registration.
 std::string getRegistrationName() const override final
 {
 return name();
@@ -155,8 +159,9 @@ return name();
 )";
       if (!only_native_nodes) {
         content << R"(
-/// @brief Registration options specific to this node.
-static RegistrationOptions getRegistrationOptions()
+
+/// @brief Registration options for this node.
+static RegistrationOptions registrationOptions()
 {
 return RegistrationOptions::decode(R"()" << options.encode() << ")\");" << R"(
 }
@@ -164,14 +169,12 @@ return RegistrationOptions::decode(R"()" << options.encode() << ")\");" << R"(
       }
       if (!is_leaf) {
         content << R"(
-/// @copydoc auto_apms_behavior_tree::core::TreeDocument::NodeElement::removeFirstChild(const std::string &)
 )" << node_name << R"( & removeFirstChild(const std::string & name = "")
 {
 NodeModelType::removeFirstChild(name);
 return *this;
 }
 
-/// @copydoc auto_apms_behavior_tree::core::TreeDocument::NodeElement::removeFirstChild<class ModelT>()
 template <class ModelT>
 typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, )" << node_name << R"( &> removeFirstChild()
 {
@@ -179,7 +182,6 @@ NodeModelType::removeFirstChild<ModelT>();
 return *this;
 }
 
-/// @copydoc auto_apms_behavior_tree::core::TreeDocument::NodeElement::removeChildren()
 )" << node_name << R"( & removeChildren()
 {
 NodeModelType::removeChildren();
@@ -191,23 +193,26 @@ return *this;
         content << "\n" << node_name << " & setPorts() = delete;\n";
       } else {
         content << R"(
-/// @copydoc auto_apms_behavior_tree::core::TreeDocument::NodeElement::setPorts(const PortValues &, bool)
-)" << node_name << R"( & setPorts(const PortValues & port_values = {}, bool verify = true)
+)" << node_name << R"( & setPorts(const PortValues & port_values)
 {
-)" << base_class_name << R"(::setPorts(port_values, verify);
+)" << base_class_name << R"(::setPorts(port_values);
 return *this;
 }
 )";
       }
       content << R"(
-/// @copydoc auto_apms_behavior_tree::core::TreeDocument::NodeElement::setPreCondition(BT::PreCond, const Script &)
+)" << node_name << R"( & resetPorts()
+{
+)" << base_class_name << R"(::resetPorts();
+return *this;
+}
+
 )" << node_name << R"( & setPreCondition(BT::PreCond type, const auto_apms_behavior_tree::core::Script & script)
 {
 )" << base_class_name << R"(::setPreCondition(type, script);
 return *this;
 }
 
-/// @copydoc auto_apms_behavior_tree::core::TreeDocument::NodeElement::setPostCondition(BT::PostCond, const Script &)
 )" << node_name << R"( & setPostCondition(BT::PostCond type, const auto_apms_behavior_tree::core::Script & script)
 {
 )" << base_class_name << R"(::setPostCondition(type, script);
@@ -231,7 +236,7 @@ return setPorts({{")" << info.port_name << R"(", str}});
 
 const std::string & get_)" << info.port_name << R"(_str() const
 {
-return port_values_.at(")" << info.port_name << R"(");
+return getPorts().at(")" << info.port_name << R"(");
 }
 )";
         // clang-format on

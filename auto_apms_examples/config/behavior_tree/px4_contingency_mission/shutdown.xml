@@ -3,20 +3,20 @@
       main_tree_to_execute="PX4ContingencyMissionShutDown">
   <BehaviorTree ID="PX4ContingencyMissionShutDown">
     <SequenceWithMemory>
-      <Land action_name=""/>
-      <Disarm action_name=""/>
+      <Land port=""/>
+      <Disarm port=""/>
     </SequenceWithMemory>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
     <Action ID="Disarm">
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
     <Action ID="Land">
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
   </TreeNodesModel>
 

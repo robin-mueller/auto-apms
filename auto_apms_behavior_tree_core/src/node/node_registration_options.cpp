@@ -25,4 +25,8 @@ const std::string NodeRegistrationOptions::PARAM_NAME_WAIT_TIMEOUT = _AUTO_APMS_
 const std::string NodeRegistrationOptions::PARAM_NAME_ALLOW_UNREACHABLE = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE;
 // clang-format on
 
+bool NodeRegistrationOptions::valid() const { return !class_name.empty(); }
+
+NodeRegistrationOptions::operator bool() const { return valid(); }
+
 }  // namespace auto_apms_behavior_tree::core

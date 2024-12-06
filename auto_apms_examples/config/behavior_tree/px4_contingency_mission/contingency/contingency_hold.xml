@@ -2,7 +2,7 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="ContingencyHandler">
     <Sequence>
-      <EnableHold action_name=""/>
+      <EnableHold port=""/>
       <RetryUntilSuccessful num_attempts="-1">
         <ScriptCondition code="@enable_hold == false"/>
       </RetryUntilSuccessful>
@@ -16,8 +16,8 @@
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
     <Action ID="EnableHold">
-      <input_port name="action_name"
-                  type="std::string">Action server name</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
   </TreeNodesModel>
 

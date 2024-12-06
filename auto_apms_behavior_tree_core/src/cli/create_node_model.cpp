@@ -39,7 +39,7 @@ int main(int argc, char ** argv)
   try {
     const std::filesystem::path manifest_file = std::filesystem::absolute(argv[1]);
     const std::vector<std::string> library_paths = auto_apms_util::splitString(argv[2], ";");
-    const std::filesystem::path output_file = std::filesystem::absolute(argv[3]);
+    const std::filesystem::path output_file = std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[3]));
 
     // Ensure that arguments are not empty
     if (manifest_file.empty()) {
@@ -86,16 +86,15 @@ int main(int argc, char ** argv)
       if (!loader) {
         throw std::runtime_error(
           "Node '" + node_name + " (Class: " + params.class_name +
-          ")' cannot be loaded, because the required registration class '" + required_class_name +
+          ")' cannot be registered, because the required registration class '" + required_class_name +
           "' couldn't be found. Check that the class name is spelled correctly and "
-          "registered "
-          "by calling auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
+          "the node is declared by calling auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
           "corresponding package. Also make sure that you called the "
-          "AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE macro in the source file.");
+          "AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE macro in the source file.");
       }
 
       RCLCPP_DEBUG(
-        logger, "Loading behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
+        logger, "Registering behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
         params.class_name.c_str(), loader->getLibraryPath().c_str());
 
       try {
@@ -108,7 +107,7 @@ int main(int argc, char ** argv)
         plugin_instance->registerWithBehaviorTreeFactory(factory, node_name, &ros_node_context);
       } catch (const std::exception & e) {
         throw std::runtime_error(
-          "Failed to load and register node '" + node_name + " (Class: " + params.class_name + ")': " + e.what());
+          "Failed to register node '" + node_name + " (Class: " + params.class_name + ")': " + e.what());
       }
     }
 

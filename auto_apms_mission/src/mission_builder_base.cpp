@@ -19,78 +19,117 @@
 namespace auto_apms_mission
 {
 
-const std::string MissionBuilderBase::ORCHESTRATOR_EXECUTOR_NAME = _AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME;
-const std::string MissionBuilderBase::MISSION_EXECUTOR_NAME = _AUTO_APMS_MISSION__MISSION_EXECUTOR_NAME;
-const std::string MissionBuilderBase::EVENT_MONITOR_EXECUTOR_NAME = _AUTO_APMS_MISSION__EVENT_MONITOR_EXECUTOR_NAME;
-const std::string MissionBuilderBase::EVENT_HANDLER_EXECUTOR_NAME = _AUTO_APMS_MISSION__EVENT_HANDLER_EXECUTOR_NAME;
+const std::string MissionBuildHandlerBase::ORCHESTRATOR_EXECUTOR_NAME = _AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME;
+const std::string MissionBuildHandlerBase::MISSION_EXECUTOR_NAME = _AUTO_APMS_MISSION__MISSION_EXECUTOR_NAME;
+const std::string MissionBuildHandlerBase::EVENT_MONITOR_EXECUTOR_NAME =
+  _AUTO_APMS_MISSION__EVENT_MONITOR_EXECUTOR_NAME;
+const std::string MissionBuildHandlerBase::EVENT_HANDLER_EXECUTOR_NAME =
+  _AUTO_APMS_MISSION__EVENT_HANDLER_EXECUTOR_NAME;
 
-MissionBuilderBase::MissionBuilderBase(rclcpp::Node::SharedPtr node_ptr) : TreeBuildHandler(node_ptr) {}
+MissionBuildHandlerBase::MissionBuildHandlerBase(
+  rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
+: TreeBuildHandler("mission_builder", ros_node_ptr, tree_node_loader_ptr)
+{
+}
 
-bool MissionBuilderBase::setBuildRequest(const std::string & build_request, const std::string & root_tree_name)
+bool MissionBuildHandlerBase::setBuildRequest(
+  const std::string & build_request, const NodeManifest & /*node_manifest*/, const std::string & root_tree_name)
 {
   try {
     mission_config_ = MissionConfiguration::fromResourceIdentity(build_request);
   } catch (const auto_apms_util::exceptions::ResourceIdentityFormatError & e) {
-    RCLCPP_ERROR(logger_, "%s", e.what());
+    RCLCPP_WARN(logger_, "%s", e.what());
     return false;
   } catch (const auto_apms_util::exceptions::ResourceError & e) {
-    RCLCPP_ERROR(logger_, "%s", e.what());
+    RCLCPP_WARN(logger_, "%s", e.what());
     return false;
   }
   if (!root_tree_name.empty()) {
-    RCLCPP_WARN(
-      logger_, "Argument root_tree_name is not empty. MissionBuilderBase doesn't support custom root tree names.");
+    RCLCPP_WARN(logger_, "Argument root_tree_name is not empty. Custom root tree names are not allowed.");
+    return false;
   }
   return true;
 }
 
-MissionBuilderBase::TreeElement MissionBuilderBase::buildTree(TreeBuilder & builder, TreeBlackboard & bb)
+MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buildTree(
+  TreeBuilder & builder, TreeBlackboard & /*bb*/)
 {
   using namespace auto_apms_behavior_tree::model;
 
   // Load orchestrator tree
-  TreeElement root_tree =
+  TreeDocument::TreeElement root_tree =
     builder.newTreeFromResource("auto_apms_mission::orchestrator_base::MissionOrchestrator").makeRoot();
 
-  std::vector<TreeResource> bringup_trees;
-  std::vector<TreeResource> mission_trees;
-  std::vector<TreeResource> shutdown_trees;
-  for (const std::string & str : mission_config_.bringup) bringup_trees.push_back({str});
-  for (const std::string & str : mission_config_.mission) mission_trees.push_back({str});
-  for (const std::string & str : mission_config_.shutdown) shutdown_trees.push_back({str});
+  std::vector<TreeResource> bringup_trees_vec;
+  std::vector<TreeResource> mission_trees_vec;
+  std::vector<TreeResource> shutdown_trees_vec;
+  for (const std::string & str : mission_config_.bringup) bringup_trees_vec.push_back({str});
+  for (const std::string & str : mission_config_.mission) mission_trees_vec.push_back({str});
+  for (const std::string & str : mission_config_.shutdown) shutdown_trees_vec.push_back({str});
 
   // Bring up
-  SequenceWithMemory bringup_sequence = builder.getTree("BringUp").getFirstNode<SequenceWithMemory>().removeChildren();
-  buildBringUp(bringup_sequence, bringup_trees);
-  if (!bringup_sequence.hasChildren()) bringup_sequence.insertNode<AlwaysSuccess>();
+  TreeDocument::TreeElement bringup_tree = builder.getTree("BringUp");
+  SequenceWithMemory bringup_sequence = bringup_tree.getFirstNode<SequenceWithMemory>().removeChildren();
+  buildBringUp(bringup_sequence, bringup_trees_vec);
+  if (bringup_sequence.hasChildren()) {
+    if (const BT::Result res = bringup_tree.verify(); !res) {
+      throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Bringup tree is not valid: " + res.error());
+    }
+  } else {
+    bringup_sequence.insertNode<AlwaysSuccess>();
+  }
 
-  // Run mission
-  SequenceWithMemory mission_sequence =
-    builder.getTree("RunMission").getFirstNode<SequenceWithMemory>().removeChildren();
-  buildMission(mission_sequence, mission_trees);
-  if (!mission_sequence.hasChildren()) mission_sequence.insertNode<AlwaysSuccess>();
+  // Mission
+  TreeDocument::TreeElement mission_tree = builder.getTree("RunMission");
+  SequenceWithMemory mission_sequence = mission_tree.getFirstNode<SequenceWithMemory>().removeChildren();
+  buildMission(mission_sequence, mission_trees_vec);
+  if (mission_sequence.hasChildren()) {
+    if (const BT::Result res = mission_tree.verify(); !res) {
+      throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Mission tree is not valid: " + res.error());
+    }
+  } else {
+    mission_sequence.insertNode<AlwaysSuccess>();
+  }
 
   // buildEventMonitor(builder);
 
   // buildEventHandler(builder);
 
   // Shut down
-  SequenceWithMemory shutdown_sequence =
-    builder.getTree("ShutDown").getFirstNode<SequenceWithMemory>().removeChildren();
-  buildShutDown(shutdown_sequence, shutdown_trees);
-  if (!shutdown_sequence.hasChildren()) shutdown_sequence.insertNode<AlwaysSuccess>();
+  TreeDocument::TreeElement shutdown_tree = builder.getTree("ShutDown");
+  SequenceWithMemory shutdown_sequence = shutdown_tree.getFirstNode<SequenceWithMemory>().removeChildren();
+  buildShutDown(shutdown_sequence, shutdown_trees_vec);
+  if (shutdown_sequence.hasChildren()) {
+    if (const BT::Result res = shutdown_tree.verify(); !res) {
+      throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Shutdown tree is not valid: " + res.error());
+    }
+  } else {
+    shutdown_sequence.insertNode<AlwaysSuccess>();
+  }
 
   return root_tree;
 }
 
-void MissionBuilderBase::buildBringUp(model::SequenceWithMemory & /*sequence*/, TreeResourceVector /*trees*/) {}
+void MissionBuildHandlerBase::buildBringUp(
+  model::SequenceWithMemory & /*sequence*/, const std::vector<TreeResource> & /*trees*/)
+{
+}
 
-void MissionBuilderBase::buildEventMonitor(model::SequenceWithMemory & /*sequence*/, TreeResourceVector /*trees*/) {}
+void MissionBuildHandlerBase::buildEventMonitor(
+  model::SequenceWithMemory & /*sequence*/, const std::vector<TreeResource> & /*trees*/)
+{
+}
 
-void MissionBuilderBase::buildEventHandler(model::SequenceWithMemory & /*sequence*/, TreeResourceVector /*trees*/) {}
+void MissionBuildHandlerBase::buildEventHandler(
+  model::SequenceWithMemory & /*sequence*/, const std::vector<TreeResource> & /*trees*/)
+{
+}
 
-void MissionBuilderBase::buildShutDown(model::SequenceWithMemory & /*sequence*/, TreeResourceVector /*trees*/) {}
+void MissionBuildHandlerBase::buildShutDown(
+  model::SequenceWithMemory & /*sequence*/, const std::vector<TreeResource> & /*trees*/)
+{
+}
 
-void MissionBuilderBase::configureOrchestratorBlackboard(TreeBlackboard & /*bb*/) {}
+void MissionBuildHandlerBase::configureOrchestratorBlackboard(TreeBlackboard & /*bb*/) {}
 
 }  // namespace auto_apms_mission

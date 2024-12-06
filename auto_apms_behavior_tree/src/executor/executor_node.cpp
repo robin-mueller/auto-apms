@@ -14,6 +14,7 @@
 
 #include "auto_apms_behavior_tree/executor/executor_node.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <regex>
 
@@ -60,12 +61,40 @@ TreeExecutorNodeOptions & TreeExecutorNodeOptions::enableBlackboardParameters(bo
   return *this;
 }
 
-rclcpp::NodeOptions TreeExecutorNodeOptions::getROSNodeOptions()
+TreeExecutorNodeOptions & TreeExecutorNodeOptions::setStaticBuildHandler(const std::string & name)
 {
-  ros_node_options_.automatically_declare_parameters_from_overrides(
+  static_build_handler_ = name;
+  return *this;
+}
+
+rclcpp::NodeOptions TreeExecutorNodeOptions::getROSNodeOptions() const
+{
+  rclcpp::NodeOptions opt(ros_node_options_);
+  opt.automatically_declare_parameters_from_overrides(
     scripting_enum_parameters_from_overrides_ || blackboard_parameters_from_overrides_);
-  ros_node_options_.allow_undeclared_parameters(scripting_enum_parameters_dynamic_ || blackboard_parameters_dynamic_);
-  return ros_node_options_;
+  opt.allow_undeclared_parameters(scripting_enum_parameters_dynamic_ || blackboard_parameters_dynamic_);
+
+  if (!static_build_handler_.empty()) {
+    // Add static build handler to parameters. If any fields to be set have already been specified, erase them before
+    // setting to new value. Settings provided using TreeExecutorNodeOptions are always preferred.
+    std::vector<rclcpp::Parameter> vec = {
+      rclcpp::Parameter(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER, static_build_handler_),
+      rclcpp::Parameter(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS, false)};
+    std::vector<rclcpp::Parameter> & param_overrides = opt.parameter_overrides();
+    param_overrides.erase(
+      std::remove_if(
+        param_overrides.begin(), param_overrides.end(),
+        [](const rclcpp::Parameter & p) {
+          return p.get_name() == _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER ||
+                 p.get_name() == _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS;
+        }),
+      param_overrides.end());
+    for (const rclcpp::Parameter & param : vec) {
+      param_overrides.push_back(param);
+    }
+  }
+
+  return opt;
 }
 
 TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOptions executor_options)
@@ -165,7 +194,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
     [this](const rcl_interfaces::msg::ParameterEvent & event) { this->parameter_event_callback_(event); });
 
   // Make sure ROS arguments are removed. When applying composition, this is typically not the case.
-  std::vector<std::string> args_with_ros_arguments = executor_options.getROSNodeOptions().arguments();
+  std::vector<std::string> args_with_ros_arguments = node_ptr_->get_node_options().arguments();
   int argc = args_with_ros_arguments.size();
   char ** argv = new char *[argc + 1];  // +1 for the null terminator
   for (int i = 0; i < argc; ++i) {
@@ -192,7 +221,7 @@ TreeExecutorNode::TreeExecutorNode(rclcpp::NodeOptions options)
 {
 }
 
-void TreeExecutorNode::setUpBuilder(core::TreeBuilder & /*builder*/) {}
+void TreeExecutorNode::setUpBuilder(core::TreeBuilder & /*builder*/, const core::NodeManifest & /*node_manifest*/) {}
 
 std::map<std::string, rclcpp::ParameterValue> TreeExecutorNode::getParameterValuesWithPrefix(const std::string & prefix)
 {
@@ -299,11 +328,12 @@ void TreeExecutorNode::loadBuildHandler(const std::string & name)
     build_handler_ptr_.reset();
   } else {
     try {
-      build_handler_ptr_ = build_handler_loader_ptr_->createUniqueInstance(name)->makeUnique(node_ptr_);
+      build_handler_ptr_ =
+        build_handler_loader_ptr_->createUniqueInstance(name)->makeUnique(node_ptr_, tree_node_loader_ptr_);
     } catch (const std::exception & e) {
       throw exceptions::TreeBuildError(
         "An error occurred when trying to create an instance of tree build handler class '" + name +
-        "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER macro must be "
+        "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER macro must be "
         "called in the source file for the class to be discoverable. Error message: " +
         e.what());
     }
@@ -316,7 +346,8 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   const core::NodeManifest & node_manifest, const core::NodeManifest & node_overrides)
 {
   // Request the tree identity
-  if (build_handler_ptr_ && !build_handler_ptr_->setBuildRequest(build_handler_request, root_tree_name)) {
+  if (
+    build_handler_ptr_ && !build_handler_ptr_->setBuildRequest(build_handler_request, node_manifest, root_tree_name)) {
     throw exceptions::TreeBuildError(
       "Build request '" + build_handler_request + "' was denied by '" +
       executor_param_listener_.get_params().build_handler + "' (setBuildRequest() returned false).");
@@ -332,11 +363,8 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
     builder_ptr_.reset(new TreeBuilder(
       node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_));
 
-    // Load the initial node manifest prior to building the tree
-    builder_ptr_->loadNodes(node_manifest, false);
-
     // Allow executor to set up the builder independently from the build handler
-    setUpBuilder(*builder_ptr_);
+    setUpBuilder(*builder_ptr_, node_manifest);
 
     // Make scripting enums available to tree instance
     for (const auto & [enum_key, val] : scripting_enums_) builder_ptr_->setScriptingEnum(enum_key, val);
@@ -348,7 +376,7 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
     }
 
     // Allow for overriding selected node instances
-    builder_ptr_->loadNodes(node_overrides, true);
+    builder_ptr_->registerNodes(node_overrides, true);
 
     // Finally, instantiate the tree
     return builder_ptr_->instantiate(instantiate_name, bb_ptr);

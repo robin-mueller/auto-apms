@@ -37,7 +37,7 @@
  *
  * @param type Fully qualified name of the class.
  */
-#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(type)                \
+#define AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(type)                 \
   PLUGINLIB_EXPORT_CLASS(                                          \
     auto_apms_behavior_tree::core::NodeRegistrationTemplate<type>, \
     auto_apms_behavior_tree::core::NodeRegistrationInterface)

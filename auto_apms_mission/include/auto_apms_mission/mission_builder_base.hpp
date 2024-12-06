@@ -15,7 +15,6 @@
 #pragma once
 
 #include "auto_apms_behavior_tree/build_handler.hpp"
-#include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
 #include "auto_apms_mission/mission_configuration.hpp"
 
 namespace auto_apms_mission
@@ -23,39 +22,37 @@ namespace auto_apms_mission
 
 namespace model = auto_apms_behavior_tree::model;
 
-class MissionBuilderBase : public auto_apms_behavior_tree::TreeBuildHandler
+class MissionBuildHandlerBase : public auto_apms_behavior_tree::TreeBuildHandler
 {
 public:
-  using TreeResourceVector = const std::vector<TreeResource> &;
-
   static const std::string ORCHESTRATOR_EXECUTOR_NAME;
   static const std::string MISSION_EXECUTOR_NAME;
   static const std::string EVENT_MONITOR_EXECUTOR_NAME;
   static const std::string EVENT_HANDLER_EXECUTOR_NAME;
 
-  MissionBuilderBase(rclcpp::Node::SharedPtr node_ptr);
+  MissionBuildHandlerBase(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr);
 
 private:
-  bool setBuildRequest(const std::string & build_request, const std::string & root_tree_name) override final;
+  bool setBuildRequest(
+    const std::string & build_request, const NodeManifest & node_manifest,
+    const std::string & root_tree_name) override final;
 
-  TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) override final;
+  TreeDocument::TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) override final;
 
-private:
   /* Virtual methods */
 
-  virtual void buildBringUp(model::SequenceWithMemory & sequence, TreeResourceVector trees);
+  virtual void buildBringUp(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees);
 
-  virtual void buildMission(model::SequenceWithMemory & sequence, TreeResourceVector trees) = 0;
+  virtual void buildMission(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees) = 0;
 
-  virtual void buildEventMonitor(model::SequenceWithMemory & sequence, TreeResourceVector trees);
+  virtual void buildEventMonitor(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees);
 
-  virtual void buildEventHandler(model::SequenceWithMemory & sequence, TreeResourceVector trees);
+  virtual void buildEventHandler(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees);
 
-  virtual void buildShutDown(model::SequenceWithMemory & sequence, TreeResourceVector trees);
+  virtual void buildShutDown(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees);
 
   virtual void configureOrchestratorBlackboard(TreeBlackboard & bb);
 
-private:
   MissionConfiguration mission_config_;
 };
 

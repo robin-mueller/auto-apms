@@ -135,7 +135,7 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : identity_(id
 
   // Verify that the tree <tree_name> specified by the identity string is actually present
   if (!identity.tree_name.empty()) {
-    if (auto_apms_util::contains(doc.getAllTreeNames(), identity.tree_name)) {
+    if (!auto_apms_util::contains(doc.getAllTreeNames(), identity.tree_name)) {
       throw auto_apms_util::exceptions::ResourceError(
         "Cannot create TreeResource with identity '" + identity.str() + "' because '" + identity.tree_name +
         "' does not exist in tree file " + tree_file_path_ + ".");
@@ -163,7 +163,7 @@ std::string TreeResource::getRootTreeName() const
 
   // If <tree_name> wasn't provided, look for root tree attribute in XML file
   TreeDocument doc;
-  if (doc.mergeResource(*this, true).hasRootTreeName()) return doc.getRootTreeName();
+  if (doc.mergeFile(tree_file_path_, true).hasRootTreeName()) return doc.getRootTreeName();
 
   // Root tree cannot be determined
   throw auto_apms_util::exceptions::ResourceError(

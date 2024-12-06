@@ -79,6 +79,10 @@ struct NodeRegistrationOptions
   /// Flag whether to tolerate if the action/service node is unreachable when trying to create the client. If set to
   /// `true`, a warning is written to the logger. Otherwise, an exception is raised.
   bool allow_unreachable = false;
+
+  bool valid() const;
+
+  explicit operator bool() const;
 };
 
 }  // namespace auto_apms_behavior_tree::core

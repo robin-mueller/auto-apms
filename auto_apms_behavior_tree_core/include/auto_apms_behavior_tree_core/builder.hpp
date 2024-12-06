@@ -39,33 +39,12 @@ namespace auto_apms_behavior_tree::core
  *
  * @ingroup auto_apms_behavior_tree
  */
-class TreeBuilder
+class TreeBuilder : public TreeDocument
 {
-  friend class TreeDocument;
-
-  inline static const std::string LOGGER_NAME = "behavior_tree_builder";
-
 public:
-  struct NodePortInfo
-  {
-    std::string port_name;
-    std::string port_type;
-    std::string port_default;
-    std::string port_description;
-    BT::PortDirection port_direction;
-  };
+  inline static const std::string LOGGER_NAME = "tree_builder";
 
-  struct NodeModel
-  {
-    BT::NodeType type;
-    std::vector<NodePortInfo> port_infos;
-  };
-
-  using NodeModelMap = std::map<std::string, NodeModel>;
-  using TreeElement = TreeDocument::TreeElement;
-  using NodeElement = TreeDocument::NodeElement;
-
-  RCLCPP_SMART_PTR_DEFINITIONS_NOT_COPYABLE(TreeBuilder)
+  RCLCPP_SMART_PTR_DEFINITIONS(TreeBuilder)
 
   /**
    * @brief TreeBuilder constructor.
@@ -81,7 +60,7 @@ public:
    * the node's waitables.
    * @param tree_node_loader Shared pointer to the behavior tree node plugin loader instance.
    */
-  TreeBuilder(
+  explicit TreeBuilder(
     rclcpp::Node::SharedPtr ros_node, rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group,
     rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor,
     NodeRegistrationLoader::SharedPtr tree_node_loader = NodeRegistrationLoader::make_shared());
@@ -89,46 +68,14 @@ public:
   /**
    * @brief TreeBuilder constructor.
    *
-   * Using this signature you'll only be able to instantiate behavior trees that contain only nodes which don't require
-   * an instance of RosNodeContext during construction time.
+   * Using this signature you'll only be able to instantiate behavior trees tha only contain nodes which don't require
+   * an instance of RosNodeContext during construction time (non-ROS nodes).
    *
    * @param tree_node_loader Shared pointer to the behavior tree node plugin loader instance.
    */
-  TreeBuilder(NodeRegistrationLoader::SharedPtr tree_node_loader = NodeRegistrationLoader::make_shared());
+  explicit TreeBuilder(NodeRegistrationLoader::SharedPtr tree_node_loader = NodeRegistrationLoader::make_shared());
 
-  /* TreeDocument methods */
-
-  TreeBuilder & mergeTreeDocument(const TreeDocument & other, bool adopt_root_tree = false);
-
-  TreeElement newTree(const std::string & tree_name);
-
-  TreeElement newTreeFromDocument(const TreeDocument & other, const std::string & tree_name = "");
-
-  TreeElement newTreeFromString(const std::string & tree_str, const std::string & tree_name = "");
-
-  TreeElement newTreeFromFile(const std::string & path, const std::string & tree_name = "");
-
-  TreeElement newTreeFromResource(const TreeResource & resource, const std::string & tree_name = "");
-
-  bool hasTree(const std::string & tree_name);
-
-  TreeElement getTree(const std::string & tree_name);
-
-  TreeBuilder & setRootTreeName(const std::string & tree_name);
-
-  TreeBuilder & setRootTreeName(const TreeElement & tree);
-
-  bool hasRootTree();
-
-  TreeElement getRootTree();
-
-  TreeBuilder & removeTree(const std::string & tree_name);
-
-  TreeBuilder & removeTree(const TreeElement & tree);
-
-  std::vector<std::string> getAllTreeNames() const;
-
-  std::string writeTreeDocumentToString() const;
+  virtual ~TreeBuilder() = default;
 
   /* Factory related member functions */
 
@@ -137,50 +84,11 @@ public:
   template <typename EnumT>
   TreeBuilder & setScriptingEnumsFromType();
 
-  /**
-   * @brief Load behavior tree node plugins and register them with the internal behavior tree factory.
-   *
-   * This makes it possible to add any nodes specified in @p tree_node_manifest to the tree.
-   *
-   * @param[in] tree_node_manifest Parameters for locating and configuring the behavior tree node plugins.
-   * @param[in] override If @p tree_node_manifest specifies nodes that have already been registered, unregister the
-   * existing plugin and use the new one instead.
-   * @throw exceptions::TreeBuildError if registration fails.
-   */
-  virtual TreeBuilder & loadNodes(const NodeManifest & tree_node_manifest, bool override = false);
-
-  std::set<std::string> getAvailableNodeNames(bool include_native = true) const;
-
-  TreeBuilder & addNodeModelToDocument(bool include_native = false);
-
-  static NodeModelMap getNodeModel(tinyxml2::XMLDocument & doc);
-
-  NodeModelMap getNodeModel(bool include_native = false) const;
-
-  // Verify the structure of this tree document and that all nodes are registered with the factory
-  bool verify() const;
-
   /* Create a tree instance */
 
   Tree instantiate(const std::string & root_tree_name, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
 
-  Tree instantiate(const TreeElement & tree, TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
-
   Tree instantiate(TreeBlackboardSharedPtr bb_ptr = TreeBlackboard::create());
-
-protected:
-  std::map<std::string, std::string> registered_node_class_names_map_;
-
-private:
-  rclcpp::Node::WeakPtr ros_node_wptr_;
-  rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group_wptr_;
-  rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor_wptr_;
-  NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
-  rclcpp::Logger logger_;
-  TreeDocument doc_;
-  BT::BehaviorTreeFactory factory_;
-  const std::map<std::string, std::string> all_node_classes_package_map_;
-  const std::set<std::string> native_node_names_;
 };
 
 // #####################################################################################################################

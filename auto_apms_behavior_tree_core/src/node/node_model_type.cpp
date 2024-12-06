@@ -46,7 +46,7 @@ SubTree & SubTree::set_auto_remap(bool val)
   return *this;
 }
 
-bool SubTree::get_auto_remap() const { return BT::convertFromString<bool>(port_values_.at("_autoremap")); }
+bool SubTree::get_auto_remap() const { return BT::convertFromString<bool>(getPorts().at("_autoremap")); }
 
 }  // namespace model
 }  // namespace auto_apms_behavior_tree

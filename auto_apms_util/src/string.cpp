@@ -81,4 +81,17 @@ std::string makeColoredText(const std::string & text, TextColor color)
   return text;
 }
 
+std::string trimWhitespaces(const std::string & str)
+{
+  std::string::const_iterator start = str.begin();
+  while (start != str.end() && std::isspace(*start)) {
+    ++start;
+  }
+  std::string::const_iterator end = str.end();
+  do {
+    --end;
+  } while (std::distance(start, end) > 0 && std::isspace(*end));
+  return std::string(start, end + 1);
+}
+
 }  // namespace auto_apms_util

@@ -21,9 +21,13 @@
 #include <type_traits>
 #include <vector>
 
+#include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
+#include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_options.hpp"
 #include "auto_apms_behavior_tree_core/tree/script.hpp"
+#include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/tree_node.h"
+#include "rclcpp/rclcpp.hpp"
 
 namespace auto_apms_behavior_tree::model
 {
@@ -43,6 +47,8 @@ class TreeDocument : private tinyxml2::XMLDocument
 
   using XMLElement = tinyxml2::XMLElement;
 
+  inline static const std::string LOGGER_NAME = "tree_document";
+
 public:
   static inline const char BTCPP_FORMAT_ATTRIBUTE_NAME[] = "BTCPP_format";
   static inline const char BTCPP_FORMAT_DEFAULT_VERSION[] = "4";
@@ -54,11 +60,28 @@ public:
   static inline const char TREE_NODE_MODEL_ELEMENT_NAME[] = "TreeNodesModel";
   static inline const char NODE_INSTANCE_NAME_ATTRIBUTE_NAME[] = "name";
 
+  struct NodePortInfo
+  {
+    std::string port_name;
+    std::string port_type;
+    std::string port_default;
+    std::string port_description;
+    BT::PortDirection port_direction;
+  };
+
+  struct NodeModel
+  {
+    BT::NodeType type;
+    std::vector<NodePortInfo> port_infos;
+  };
+
+  using NodeModelMap = std::map<std::string, NodeModel>;
+
   class TreeElement;
 
   class NodeElement
   {
-    friend class TreeBuilder;
+    friend class TreeDocument;
 
   public:
     using PortValues = std::map<std::string, std::string>;
@@ -66,9 +89,13 @@ public:
     using ConstDeepApplyCallback = std::function<bool(const NodeElement &)>;
 
   protected:
-    NodeElement(TreeBuilder * builder_ptr, XMLElement * ele_ptr);
+    NodeElement(TreeDocument * doc_ptr, XMLElement * ele_ptr);
 
   public:
+    NodeElement(const NodeElement & ele) = default;
+
+    NodeElement & operator=(const NodeElement & other) = delete;
+
     NodeElement insertNode(const std::string & name, const NodeElement * before_this = nullptr);
 
     NodeElement insertNode(
@@ -124,33 +151,31 @@ public:
 
     const std::vector<std::string> & getPortNames() const;
 
-    const PortValues & getPortValues() const;
+    PortValues getPorts() const;
 
     /**
      * @brief Set the node's ports.
      *
-     * Will use each port's default value if one is implemented and the corresponding key doesn't exist in @p
-     * port_values. If the argument is omitted, only default values will be used.
-     *
-     * If @p verify is `true`, the method additionally verifies that @p port_values complies with the node's port model
-     * and throws an exception if there are any values for unkown port names. If set to `false`, no error is raised in
-     * such a case and values for unkown port names are silently discarded thus won't appear in the element's list of
-     * port attributes.
+     * This method also verifies that @p port_values complies with the node's port model
+     * and throws an exception if any values for unkown port names are provided.
      *
      * @param port_values Port values to be used to fill the corresponding attributes of the node element.
-     * @param verify Flag wether to verify that @p port_values complies with the node's port model.
      * @return Reference to the modified TreeBuilder object.
-     * @throws exceptions::TreeBuildError if @p verify is set to `true` and @p port_values contains keys that are not
-     * associated with the node.
+     * @throws exceptions::TreeBuildError if @p port_values contains unkown keys, that is names for ports that are not
+     * implemented.
      */
-    NodeElement & setPorts(const PortValues & port_values = {}, bool verify = true);
+    NodeElement & setPorts(const PortValues & port_values);
+
+    NodeElement & resetPorts();
 
     NodeElement & setPreCondition(BT::PreCond type, const Script & script);
 
     NodeElement & setPostCondition(BT::PostCond type, const Script & script);
 
+    /// @brief Name of the behavior tree node given during registration.
     virtual std::string getRegistrationName() const;
 
+    /// @brief Name of the behavior tree node given to this specific instance by the developer.
     virtual std::string getName() const;
 
     std::string getFullyQualifiedName() const;
@@ -168,9 +193,8 @@ public:
     static void deepApplyImpl(NodeElement & parent, DeepApplyCallback apply_callback, std::vector<NodeElement> & vec);
 
   protected:
-    TreeBuilder * builder_ptr_;
+    TreeDocument * doc_ptr_;
     tinyxml2::XMLElement * ele_ptr_;
-    PortValues port_values_;
 
   private:
     std::vector<std::string> port_names_;
@@ -180,15 +204,24 @@ public:
   class TreeElement : public NodeElement
   {
     friend class TreeDocument;
-    friend class TreeBuilder;
 
   protected:
-    TreeElement(TreeBuilder * builder_ptr, XMLElement * ele_ptr);
+    TreeElement(TreeDocument * doc_ptr, XMLElement * ele_ptr);
 
   public:
+    TreeElement(const TreeElement & ele) = default;
+
+    TreeElement & operator=(const TreeElement & other);
+
     std::string getName() const override;
 
     TreeElement & makeRoot();
+
+    NodeManifest getRequiredNodeManifest() const;
+
+    BT::Result verify() const;
+
+    std::string writeToString() const;
 
     /* Not supported methods for TreeElement instances */
 
@@ -197,13 +230,15 @@ public:
     NodeElement & setPostCondition() = delete;
   };
 
-  TreeDocument(const std::string & format_version = BTCPP_FORMAT_DEFAULT_VERSION);
+  TreeDocument(
+    const std::string & format_version = BTCPP_FORMAT_DEFAULT_VERSION,
+    NodeRegistrationLoader::SharedPtr tree_node_loader = NodeRegistrationLoader::make_shared());
 
-  TreeDocument(const TreeDocument & other);
+  virtual ~TreeDocument() = default;
 
-  TreeDocument & operator=(const TreeDocument & other);
+  TreeDocument & mergeTreeDocument(const XMLDocument & other, bool adopt_root_tree = false);
 
-  TreeDocument & merge(const XMLDocument & other, bool adopt_root_tree = false);
+  TreeDocument & mergeTreeDocument(const TreeDocument & other, bool adopt_root_tree = false);
 
   TreeDocument & mergeString(const std::string & tree_str, bool adopt_root_tree = false);
 
@@ -215,6 +250,14 @@ public:
 
   TreeElement newTree(const std::string & tree_name);
 
+  TreeElement newTreeFromDocument(const TreeDocument & other, const std::string & tree_name = "");
+
+  TreeElement newTreeFromString(const std::string & tree_str, const std::string & tree_name = "");
+
+  TreeElement newTreeFromFile(const std::string & path, const std::string & tree_name = "");
+
+  TreeElement newTreeFromResource(const TreeResource & resource, const std::string & tree_name = "");
+
   bool hasTree(const std::string & tree_name) const;
 
   TreeElement getTree(const std::string & tree_name);
@@ -225,26 +268,64 @@ public:
 
   std::string getRootTreeName() const;
 
-  TreeDocument & removeTreeWithName(const std::string & tree_name);
+  TreeElement getRootTree();
+
+  TreeDocument & removeTree(const std::string & tree_name);
+
+  TreeDocument & removeTree(const TreeElement & tree);
 
   std::vector<std::string> getAllTreeNames() const;
 
-  std::string str() const;
+  /**
+   * @brief Load behavior tree node plugins and register them with the internal behavior tree factory.
+   *
+   * This makes it possible to add any nodes specified in @p tree_node_manifest to the tree.
+   *
+   * @param[in] tree_node_manifest Parameters for locating and configuring the behavior tree node plugins.
+   * @param[in] override If @p tree_node_manifest specifies nodes that have already been registered, unregister the
+   * existing plugin and use the new one instead.
+   * @throw exceptions::NodeRegistrationError if registration fails.
+   */
+  TreeDocument & registerNodes(const NodeManifest & tree_node_manifest, bool override = false);
+
+  std::set<std::string> getAvailableNodeNames(bool include_native = true) const;
+
+  NodeManifest getRequiredNodeManifest() const;
+
+  TreeDocument & addNodeModel(bool include_native = false);
+
+  static NodeModelMap getNodeModel(tinyxml2::XMLDocument & doc);
+
+  NodeModelMap getNodeModel(bool include_native = false) const;
+
+  // Verify the structure of this tree document and that all nodes are registered with the factory
+  BT::Result verify() const;
+
+  std::string writeToString() const;
 
   TreeDocument & reset();
-
-  TreeDocument & reset(const TreeDocument & new_doc);
-
-protected:
-  const XMLElement * getXMLElementForTreeWithName(const std::string & tree_name) const;
-
-  XMLElement * getXMLElementForTreeWithName(const std::string & tree_name);
 
 private:
   template <typename ReturnT, typename DocumentT>
   static ReturnT getXMLElementForTreeWithNameImpl(DocumentT & doc, const std::string & tree_name);
 
-  const std::string format_version_;
+  const XMLElement * getXMLElementForTreeWithName(const std::string & tree_name) const;
+
+  XMLElement * getXMLElementForTreeWithName(const std::string & tree_name);
+
+  const std::map<std::string, std::string> all_node_classes_package_map_;
+  const std::set<std::string> native_node_names_;
+  std::string format_version_;
+  NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
+  NodeManifest registered_nodes_manifest_;
+
+protected:
+  BT::BehaviorTreeFactory factory_;
+  rclcpp::Logger logger_;
+  rclcpp::Node::WeakPtr ros_node_wptr_;
+  rclcpp::CallbackGroup::WeakPtr tree_node_waitables_callback_group_wptr_;
+  rclcpp::executors::SingleThreadedExecutor::WeakPtr tree_node_waitables_executor_wptr_;
+  bool only_non_ros_nodes_ = false;
 };
 
 // #####################################################################################################################
@@ -252,13 +333,13 @@ private:
 // #####################################################################################################################
 
 template <typename T, typename = void>
-struct has_static_method_getRegistrationOptions : std::false_type
+struct has_static_method_registrationOptions : std::false_type
 {
 };
 
 template <typename T>
-struct has_static_method_getRegistrationOptions<
-  T, typename std::enable_if_t<std::is_same_v<decltype(T::getRegistrationOptions()), NodeRegistrationOptions>>>
+struct has_static_method_registrationOptions<
+  T, typename std::enable_if_t<std::is_same_v<decltype(T::registrationOptions()), NodeRegistrationOptions>>>
 : std::true_type
 {
 };
@@ -268,14 +349,14 @@ inline
   typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT> && !std::is_same_v<model::SubTree, ModelT>, ModelT>
   TreeDocument::NodeElement::insertNode(const NodeElement * before_this)
 {
-  NodeElement ele(nullptr, nullptr);
-  // See if model implements getRegistrationOptions (Native node models have this function deleted)
-  if constexpr (has_static_method_getRegistrationOptions<ModelT>::value) {
-    ele = insertNode(ModelT::name(), ModelT::getRegistrationOptions(), before_this);
+  std::unique_ptr<NodeElement> temp;
+  // See if model implements static method registrationOptions() (Models for native nodes don't)
+  if constexpr (has_static_method_registrationOptions<ModelT>::value) {
+    temp = std::make_unique<NodeElement>(insertNode(ModelT::name(), ModelT::registrationOptions(), before_this));
   } else {
-    ele = insertNode(ModelT::name(), before_this);
+    temp = std::make_unique<NodeElement>(insertNode(ModelT::name(), before_this));
   }
-  return ModelT(ele.builder_ptr_, ele.ele_ptr_);
+  return ModelT(temp->doc_ptr_, temp->ele_ptr_);
 }
 
 template <class ModelT>
@@ -290,7 +371,7 @@ inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, Model
 core::TreeDocument::NodeElement::getFirstNode() const
 {
   const NodeElement ele = getFirstNode(ModelT::name());
-  return ModelT(ele.builder_ptr_, ele.ele_ptr_);
+  return ModelT(ele.doc_ptr_, ele.ele_ptr_);
 }
 
 template <class ModelT>

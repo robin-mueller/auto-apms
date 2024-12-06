@@ -26,7 +26,7 @@
  *
  * @param type Fully qualified name of the class.
  */
-#define AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER(type)        \
+#define AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(type)         \
   PLUGINLIB_EXPORT_CLASS(                                           \
     auto_apms_behavior_tree::TreeBuildHandlerFactoryTemplate<type>, \
     auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface)
