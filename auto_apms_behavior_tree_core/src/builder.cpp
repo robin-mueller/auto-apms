@@ -16,7 +16,6 @@
 
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_util/container.hpp"
-#include "auto_apms_util/resource.hpp"
 #include "auto_apms_util/string.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
 
@@ -42,6 +41,24 @@ TreeBuilder::TreeBuilder(NodeRegistrationLoader::SharedPtr tree_node_loader)
     std::shared_ptr<rclcpp::executors::SingleThreadedExecutor>(), tree_node_loader)
 {
   only_non_ros_nodes_ = true;
+}
+
+TreeBuilder & TreeBuilder::registerNodes(const NodeManifest & tree_node_manifest, bool override)
+{
+  std::vector<std::string> provided_names;
+  std::vector<std::string> already_registered_names;
+  std::vector<std::string> new_names;
+  for (const auto & [name, _] : tree_node_manifest.map()) provided_names.push_back(name);
+  for (const auto & [name, _] : factory_.builders()) already_registered_names.push_back(name);
+  already_registered_names = auto_apms_util::getCommonElements(provided_names, already_registered_names);
+  for (const std::string & name : provided_names) {
+    if (!auto_apms_util::contains(already_registered_names, name)) new_names.push_back(name);
+  }
+  RCLCPP_DEBUG(
+    logger_, "Registering nodes with TreeBuilder\n-> Already registered node names: [ %s ]\n-> New node names: [ %s ]",
+    auto_apms_util::join(already_registered_names, ", ").c_str(), auto_apms_util::join(new_names, ", ").c_str());
+  TreeDocument::registerNodes(tree_node_manifest, override);
+  return *this;
 }
 
 TreeBuilder & TreeBuilder::setScriptingEnum(const std::string & enum_name, int val)

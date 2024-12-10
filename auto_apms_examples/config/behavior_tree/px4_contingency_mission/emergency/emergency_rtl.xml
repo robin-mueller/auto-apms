@@ -1,33 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
-  <BehaviorTree ID="ContingencyHandler">
-    <Sequence>
-      <EnableHold port=""/>
-      <RetryUntilSuccessful num_attempts="-1">
-        <ScriptCondition code="@contingency_hold == false"/>
-      </RetryUntilSuccessful>
-    </Sequence>
+  <BehaviorTree ID="EmergencyHandler">
+    <RTL port=""/>
   </BehaviorTree>
 
-  <BehaviorTree ID="ContingencyMonitor">
+  <BehaviorTree ID="EmergencyMonitor">
     <Sequence>
-      <HasParameter parameter="bb.contingency_hold"
+      <HasParameter parameter="bb.emergency"
                     node=""/>
-      <ScriptCondition code="@contingency_hold == true"/>
+      <ScriptCondition code="@emergency == true"/>
     </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Action ID="EnableHold">
-      <input_port name="port"
-                  type="std::string">Name of the ROS 2 action.</input_port>
-    </Action>
     <Action ID="HasParameter">
       <input_port name="parameter"
                   type="std::string">Name of the parameter.</input_port>
       <input_port name="node"
                   type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+    </Action>
+    <Action ID="RTL">
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
     </Action>
   </TreeNodesModel>
 

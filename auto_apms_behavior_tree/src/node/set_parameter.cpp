@@ -46,10 +46,15 @@ public:
   static BT::PortsList providedPorts()
   {
     // We do not use the default port for the service name
+
+    // There is no string conversion function for variables that are type initialized using the value port if the
+    // BT::Any version is used. To prevent errors when using these variables in e.g. the scripting language we have to
+    // set the type to BT::AnyTypeAllowed to truly indicate that the type is not set by this port
+    using AnyType = typename std::conditional_t<std::is_same_v<BT::Any, T>, BT::AnyTypeAllowed, T>;
     return {
       BT::InputPort<std::string>(
         INPUT_KEY_NODE_NAME, "Name of the targeted ROS 2 node. Leave empty to target this executor's node."),
-      BT::InputPort<T>(INPUT_KEY_PARAM_VALUE, "Value of the parameter to be set."),
+      BT::InputPort<AnyType>(INPUT_KEY_PARAM_VALUE, "Value of the parameter to be set."),
       BT::InputPort<std::string>(INPUT_KEY_PARAM_NAME, "Name of the parameter to be set."),
     };
   }

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "auto_apms_behavior_tree/build_handler.hpp"
-#include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
 
 namespace auto_apms_behavior_tree
@@ -46,23 +45,18 @@ public:
     // Try to determine root tree name
     std::string name = root_tree_name;
     if (root_tree_name.empty()) {
-      try {
+      if (resource.hasRootTree()) {
         name = resource.getRootTreeName();
-      } catch (const auto_apms_util::exceptions::ResourceError & e) {
+      } else {
         RCLCPP_WARN(
           logger_,
-          "Cannot determine root tree from tree resource identity '%s': You must either specify the root_tree_name "
-          "argument with a non empty string or provide an identity that includes a tree name.",
+          "Cannot determine root tree from tree resource identity '%s': You must either provide an identity that "
+          "includes a tree name or specify the root_tree_name argument with a non empty string.",
           resource_identity.str().c_str());
         return false;
       }
     }
-    try {
-      resource_doc_.setRootTreeName(name);
-    } catch (const exceptions::TreeDocumentError & e) {
-      RCLCPP_WARN(logger_, "Cannot determine root tree: %s", e.what());
-      return false;
-    }
+    resource_doc_.setRootTreeName(name);
     return true;
   }
 

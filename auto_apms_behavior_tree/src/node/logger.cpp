@@ -35,7 +35,7 @@ public:
       BT::InputPort<std::string>(
         INPUT_KEY_LEVEL, "INFO",
         "Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive."),
-      BT::InputPort<BT::Any>(INPUT_KEY_MSG, "Message to be logged via rclcpp::Logger.")};
+      BT::InputPort<BT::AnyTypeAllowed>(INPUT_KEY_MSG, "Message to be logged via rclcpp::Logger.")};
   }
 
   BT::NodeStatus tick() override final

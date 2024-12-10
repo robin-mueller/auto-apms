@@ -16,6 +16,7 @@
 
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
+#include "behaviortree_cpp/tree_node.h"
 
 namespace auto_apms_behavior_tree
 {
@@ -28,23 +29,45 @@ std::string SubTree::name() { return core::TreeDocument::SUBTREE_ELEMENT_NAME; }
 
 std::string SubTree::getRegistrationName() const { return name(); }
 
-SubTree & SubTree::setPreCondition(BT::PreCond type, const core::Script & script)
+SubTree & SubTree::setBlackboardRemapping(const PortValues & remapping)
 {
-  LeafNodeModelType::setPreCondition(type, script);
+  for (const auto & [key, val] : remapping) {
+    if (!BT::TreeNode::isBlackboardPointer(val)) {
+      throw exceptions::TreeDocumentError(
+        "When setting the blackboard remapping for a subtree, you must refer to the parent blackboard's entry to remap "
+        "to using the {...} notation (Got: '" +
+        val + "').");
+    }
+    ele_ptr_->SetAttribute(key.c_str(), val.c_str());
+  }
   return *this;
 }
 
-SubTree & SubTree::setPostCondition(BT::PostCond type, const core::Script & script)
+SubTree & SubTree::setPorts(const PortValues & port_values)
 {
-  LeafNodeModelType::setPostCondition(type, script);
+  LeafNodeModelType::setPorts(port_values);
   return *this;
 }
 
-SubTree & SubTree::set_auto_remap(bool val)
+SubTree & SubTree::resetPorts()
 {
-  setPorts({{"_autoremap", BT::toStr(val)}});
+  LeafNodeModelType::resetPorts();
   return *this;
 }
+
+SubTree & SubTree::setConditionalScript(BT::PreCond type, const core::Script & script)
+{
+  LeafNodeModelType::setConditionalScript(type, script);
+  return *this;
+}
+
+SubTree & SubTree::setConditionalScript(BT::PostCond type, const core::Script & script)
+{
+  LeafNodeModelType::setConditionalScript(type, script);
+  return *this;
+}
+
+SubTree & SubTree::set_auto_remap(bool val) { return setPorts({{"_autoremap", BT::toStr(val)}}); }
 
 bool SubTree::get_auto_remap() const { return BT::convertFromString<bool>(getPorts().at("_autoremap")); }
 

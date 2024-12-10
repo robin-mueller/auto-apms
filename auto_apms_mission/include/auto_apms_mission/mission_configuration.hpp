@@ -14,9 +14,10 @@
 
 #pragma once
 
-#include <map>
+#include <utility>
 #include <vector>
 
+#include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
 #include "auto_apms_util/exceptions.hpp"
 #include "auto_apms_util/yaml.hpp"
 
@@ -33,7 +34,7 @@ struct convert<auto_apms_mission::MissionConfiguration>
 {
   using Config = auto_apms_mission::MissionConfiguration;
   static Node encode(const Config & rhs);
-  static bool decode(const Node & node, Config & lhs);
+  static bool decode(const Node & node, Config & rhs);
 };
 }  // namespace YAML
 /// @endcond
@@ -43,6 +44,8 @@ namespace auto_apms_mission
 
 struct MissionConfiguration
 {
+  using TreeResourceIdentity = auto_apms_behavior_tree::core::TreeResourceIdentity;
+
   static const std::string YAML_KEY_BRINGUP;
   static const std::string YAML_KEY_MISSION;
   static const std::string YAML_KEY_CONTINGENCY;
@@ -55,11 +58,11 @@ struct MissionConfiguration
 
   static MissionConfiguration fromResourceIdentity(const std::string identity);
 
-  std::vector<std::string> bringup;
-  std::vector<std::string> mission;
-  std::map<std::string, std::vector<std::string>> contingency;
-  std::map<std::string, std::vector<std::string>> emergency;
-  std::vector<std::string> shutdown;
+  std::vector<TreeResourceIdentity> bringup;
+  std::vector<TreeResourceIdentity> mission;
+  std::vector<std::pair<TreeResourceIdentity, TreeResourceIdentity>> contingency;
+  std::vector<std::pair<TreeResourceIdentity, TreeResourceIdentity>> emergency;
+  std::vector<TreeResourceIdentity> shutdown;
 };
 
 }  // namespace auto_apms_mission
@@ -98,7 +101,7 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
           "Value for key '" + key + "' must be a sequence but is type " + std::to_string(val.Type()) +
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
       }
-      rhs.bringup = val.as<std::vector<std::string>>();
+      rhs.bringup = val.as<std::vector<Config::TreeResourceIdentity>>();
       continue;
     }
 
@@ -108,7 +111,7 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
           "Value for key '" + key + "' must be a sequence but is type " + std::to_string(val.Type()) +
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
       }
-      rhs.mission = val.as<std::vector<std::string>>();
+      rhs.mission = val.as<std::vector<Config::TreeResourceIdentity>>();
       continue;
     }
 
@@ -119,7 +122,16 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
           "Value for key '" + key + "' must be a map but is type " + std::to_string(val.Type()) +
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
       }
-      rhs.contingency = val.as<std::map<std::string, std::vector<std::string>>>();
+      for (auto it2 = val.begin(); it2 != val.end(); ++it2) {
+        const std::string monitor_id = it2->first.as<std::string>();
+        if (!it2->second.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + monitor_id + "' in the CONTINGENCY group must be scalar but is type " +
+            std::to_string(val.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
+        rhs.contingency.push_back(
+          {Config::TreeResourceIdentity(monitor_id), it2->second.as<Config::TreeResourceIdentity>()});
+      }
       continue;
     }
 
@@ -130,7 +142,16 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
           "Value for key '" + key + "' must be a map but is type " + std::to_string(val.Type()) +
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
       }
-      rhs.emergency = val.as<std::map<std::string, std::vector<std::string>>>();
+      for (auto it2 = val.begin(); it2 != val.end(); ++it2) {
+        const std::string monitor_id = it2->first.as<std::string>();
+        if (!it2->second.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + monitor_id + "' in the EMERGENCY group must be scalar but is type " +
+            std::to_string(val.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
+        rhs.emergency.push_back(
+          {Config::TreeResourceIdentity(monitor_id), it2->second.as<Config::TreeResourceIdentity>()});
+      }
       continue;
     }
 
@@ -141,7 +162,7 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
           "Value for key '" + key + "' must be a sequence but is type " + std::to_string(val.Type()) +
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
       }
-      rhs.shutdown = val.as<std::vector<std::string>>();
+      rhs.shutdown = val.as<std::vector<Config::TreeResourceIdentity>>();
       continue;
     }
 

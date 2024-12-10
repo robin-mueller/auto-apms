@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="ContingencyHandler">
+    <Sequence>
+      <Sequence _while="event_id != &apos;&apos;">
+        <ReadGlobalPosition pos_vec="{pos_vec}"
+                            alt="{alt}"
+                            lat="{lat}"
+                            lon="{lon}"
+                            port=""/>
+        <Land port=""/>
+        <Disarm port=""/>
+      </Sequence>
+      <RetryUntilSuccessful num_attempts="-1">
+        <ScriptCondition code="@contingency_land == false"/>
+      </RetryUntilSuccessful>
+      <Arm wait_until_ready_to_arm="true"
+           port=""/>
+      <Takeoff alt="{alt}"
+               port=""/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="ContingencyMonitor">
+    <Sequence>
+      <HasParameter parameter="bb.contingency_land"
+                    node=""/>
+      <ScriptCondition code="@contingency_land == true"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="Arm">
+      <input_port name="wait_until_ready_to_arm"
+                  default="true"
+                  type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
+    </Action>
+    <Action ID="Disarm">
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
+    </Action>
+    <Action ID="HasParameter">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter.</input_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+    </Action>
+    <Action ID="Land">
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
+    </Action>
+    <Condition ID="ReadGlobalPosition">
+      <output_port name="pos_vec"
+                   default="{pos_vec}"
+                   type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position vector (latitude [°], longitude [°], altitude AMSL [m])</output_port>
+      <output_port name="alt"
+                   default="{alt}"
+                   type="double">Current altitude in meter (AMSL)</output_port>
+      <output_port name="lat"
+                   default="{lat}"
+                   type="double">Current latitude in degree [°]</output_port>
+      <output_port name="lon"
+                   default="{lon}"
+                   type="double">Current longitude in degree [°]</output_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 topic to subscribe to.</input_port>
+    </Condition>
+    <Action ID="Takeoff">
+      <input_port name="alt"
+                  type="double">Target takeoff altitude in meter (AMSL)</input_port>
+      <input_port name="port"
+                  type="std::string">Name of the ROS 2 action.</input_port>
+    </Action>
+  </TreeNodesModel>
+
+</root>

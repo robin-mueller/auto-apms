@@ -53,7 +53,7 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  TreeExecutorBase executor(node_ptr);
+  TreeExecutorBase executor(node_ptr, nullptr, true);
   core::TreeBuilder builder(
     node_ptr, executor.getTreeNodeWaitablesCallbackGroupPtr(), executor.getTreeNodeWaitablesExecutorPtr());
   try {
@@ -75,24 +75,19 @@ int main(int argc, char ** argv)
   const std::chrono::duration<double> termination_timeout(2);
   rclcpp::Time termination_start;
   bool termination_started = false;
-  try {
-    while (rclcpp::spin_until_future_complete(node_ptr, future, std::chrono::milliseconds(250)) !=
-           rclcpp::FutureReturnCode::SUCCESS) {
-      if (termination_started) {
-        if (node_ptr->now() - termination_start > termination_timeout) {
-          RCLCPP_WARN(node_ptr->get_logger(), "Termination took too long. Aborted.");
-          return EXIT_FAILURE;
-        }
-      } else if (termination_requested) {
-        termination_start = node_ptr->now();
-        executor.setControlCommand(TreeExecutorBase::ControlCommand::TERMINATE);
-        termination_started = true;
-        RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");
+  while (rclcpp::spin_until_future_complete(node_ptr, future, std::chrono::milliseconds(250)) !=
+         rclcpp::FutureReturnCode::SUCCESS) {
+    if (termination_started) {
+      if (node_ptr->now() - termination_start > termination_timeout) {
+        RCLCPP_WARN(node_ptr->get_logger(), "Termination took too long. Aborted.");
+        return EXIT_FAILURE;
       }
+    } else if (termination_requested) {
+      termination_start = node_ptr->now();
+      executor.setControlCommand(TreeExecutorBase::ControlCommand::TERMINATE);
+      termination_started = true;
+      RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");
     }
-  } catch (const std::exception & e) {
-    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR during behavior tree execution: %s", e.what());
-    return EXIT_FAILURE;
   }
 
   // To prevent a deadlock, throw if future isn't ready at this point. However, this shouldn't happen.

@@ -41,17 +41,27 @@ private:
 
   /* Virtual methods */
 
-  virtual void buildBringUp(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees);
+  virtual void buildBringUp(model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees);
 
-  virtual void buildMission(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees) = 0;
+  virtual void buildMission(
+    model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees) = 0;
 
-  virtual void buildEventMonitor(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees);
+  virtual void buildEventMonitor(
+    TreeDocument::TreeElement & sub_tree,
+    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies,
+    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies);
 
-  virtual void buildEventHandler(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees);
+  virtual void buildContingencyHandling(
+    TreeDocument::TreeElement & sub_tree,
+    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies);
 
-  virtual void buildShutDown(model::SequenceWithMemory & sequence, const std::vector<TreeResource> & trees);
+  virtual void buildEmergencyHandling(
+    TreeDocument::TreeElement & sub_tree,
+    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies);
 
-  virtual void configureOrchestratorBlackboard(TreeBlackboard & bb);
+  virtual void buildShutDown(model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees);
+
+  virtual void configureOrchestratorRootBlackboard(TreeBlackboard & bb);
 
   MissionConfiguration mission_config_;
 };

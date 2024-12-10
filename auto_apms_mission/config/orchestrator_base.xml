@@ -7,28 +7,105 @@
     </SequenceWithMemory>
   </BehaviorTree>
 
+  <BehaviorTree ID="HandleContingency">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="HandleEmergency">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="IsContingency">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="IsEmergency">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
   <BehaviorTree ID="MissionOrchestrator">
     <SequenceWithMemory>
-      <SubTree ID="BringUp"
-               _onSuccess="mission_exit := false"/>
+      <Fallback>
+        <SubTree ID="BringUp"/>
+        <Error name="BringUpError"
+               message="Error during mission bringup"/>
+      </Fallback>
       <Parallel failure_count="1"
-                success_count="-1">
-        <SubTree ID="RunMission"
-                 name="NominalMission"
-                 _post="mission_exit = true"/>
-        <SubTree ID="MonitorContingencies"
-                 _while="mission_exit != true"/>
+                success_count="1">
+        <KeepRunningUntilFailure>
+          <ForceSuccess>
+            <Sequence>
+              <RunOnce then_skip="true">
+                <Script code="prev_event_id := &apos;&apos;;&#10;event_id := &apos;&apos;"/>
+              </RunOnce>
+              <Script code="prev_event_id = event_id"/>
+              <Fallback>
+                <SubTree ID="MonitorEvents"
+                         event_id="{=}"
+                         _onFailure="event_id = &apos;&apos;"/>
+                <ForceFailure>
+                  <Logger message="Event was reset (event_id = &apos;&apos;)"
+                          level="DEBUG"
+                          _skipIf="prev_event_id == &apos;&apos;"/>
+                </ForceFailure>
+              </Fallback>
+              <Precondition else="FAILURE"
+                            if="prev_event_id != event_id">
+                <Sequence>
+                  <Logger message="New event detected"
+                          level="WARN"/>
+                  <Logger name="NewEventID"
+                          message="{event_id}"
+                          level="WARN"/>
+                </Sequence>
+              </Precondition>
+            </Sequence>
+          </ForceSuccess>
+        </KeepRunningUntilFailure>
+        <RetryUntilSuccessful num_attempts="-1">
+          <Fallback>
+            <Fallback _while="event_id == &apos;&apos;">
+              <SubTree ID="RunMission"/>
+              <Error name="MissionError"
+                     message="Unexpected error during mission"/>
+            </Fallback>
+            <ReactiveFallback _while="event_id != &apos;&apos;">
+              <AsyncSequence>
+                <SubTree ID="IsEmergency"
+                         event_id="{=}"/>
+                <Fallback>
+                  <SubTree ID="HandleEmergency"
+                           event_id="{=}"/>
+                  <Error name="EmergencyHandlingError"
+                         message="{event_id}"/>
+                </Fallback>
+              </AsyncSequence>
+              <ForceFailure _description="We want to restart the mission when the contingency is handled. Thus we must return FAILURE when this is done">
+                <AsyncSequence>
+                  <SubTree ID="IsContingency"
+                           event_id="{=}"/>
+                  <Fallback>
+                    <SubTree ID="HandleContingency"
+                             event_id="{=}"/>
+                    <Error name="ContingencyHandlingError"
+                           message="{event_id}"/>
+                  </Fallback>
+                </AsyncSequence>
+              </ForceFailure>
+            </ReactiveFallback>
+          </Fallback>
+        </RetryUntilSuccessful>
       </Parallel>
-      <SubTree ID="ShutDown"/>
+      <Fallback>
+        <SubTree ID="ShutDown"/>
+        <Error name="ShutDownError"
+               message="Error during mission shutdown"/>
+      </Fallback>
     </SequenceWithMemory>
   </BehaviorTree>
 
-  <BehaviorTree ID="MonitorContingencies">
-    <KeepRunningUntilFailure>
-      <SequenceWithMemory>
-        <AlwaysSuccess/>
-      </SequenceWithMemory>
-    </KeepRunningUntilFailure>
+  <BehaviorTree ID="MonitorEvents">
+    <AlwaysSuccess/>
   </BehaviorTree>
 
   <BehaviorTree ID="RunMission">
@@ -44,6 +121,18 @@
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
-  <TreeNodesModel/>
+  <TreeNodesModel>
+    <Action ID="Error">
+      <input_port name="message"
+                  type="std::string">Error message. Creates a generic error message if empty.</input_port>
+    </Action>
+    <Action ID="Logger">
+      <input_port name="message"
+                  type="BT::Any">Message to be logged via rclcpp::Logger.</input_port>
+      <input_port name="level"
+                  default="INFO"
+                  type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
+    </Action>
+  </TreeNodesModel>
 
 </root>

@@ -8,7 +8,7 @@
                           lat="{lat}"
                           lon="{lon}"
                           port=""
-                          _onSuccess="new_lon := lon + 0.0001"/>
+                          _onSuccess="new_lon := lon + 0.0006"/>
       <GoTo lat="{lat}"
             lon="{new_lon}"
             alt="{alt}"

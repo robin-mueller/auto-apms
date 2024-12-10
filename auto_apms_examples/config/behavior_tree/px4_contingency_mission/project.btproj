@@ -2,6 +2,8 @@
 <root BTCPP_format="4" project_name="px4_contingency_mission">
     <include path="bringup.xml"/>
     <include path="contingency/contingency_hold.xml"/>
+    <include path="contingency/contingency_land.xml"/>
+    <include path="emergency/emergency_rtl.xml"/>
     <include path="mission.xml"/>
     <include path="shutdown.xml"/>
     <!-- Description of Node Models (used by Groot) -->

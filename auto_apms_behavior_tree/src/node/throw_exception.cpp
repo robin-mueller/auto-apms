@@ -33,8 +33,8 @@ public:
   {
     auto input = getInput<std::string>(INPUT_KEY_MSG);
     auto prefix = name() == registrationName() ? name() : (name() + " (" + registrationName() + ")");
-    std::string msg =
-      input.has_value() ? (prefix + " - " + input.value()) : (prefix + " - Tree ran into an exception.");
+    std::string msg = input.has_value() && !input.value().empty() ? (prefix + " - " + input.value())
+                                                                  : (prefix + " - Tree ran into an exception.");
     throw exceptions::RosNodeError(msg);
   }
 };

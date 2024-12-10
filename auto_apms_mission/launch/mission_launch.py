@@ -16,6 +16,7 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
+from launch.conditions import IfCondition
 
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
@@ -37,6 +38,9 @@ def generate_launch_description():
                     )
                 ),
                 launch_arguments={"with_orchestrator": "false"}.items(),
+                condition=IfCondition(
+                    "false"
+                ),  # TODO: Implement outsourcing of event monitor and mission executor to different nodes
             ),
             Node(
                 executable="orchestrator",

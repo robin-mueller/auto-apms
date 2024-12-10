@@ -8,10 +8,7 @@
     <license>Apache License 2.0</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
-    <buildtool_depend>rosidl_default_generators</buildtool_depend>
 
-    <depend>rclcpp_components</depend>
-    <depend>px4_ros2_cpp</depend>
     <depend>auto_apms_util</depend>
     <depend>auto_apms_interfaces</depend>
     <depend>auto_apms_behavior_tree</depend>
@@ -19,10 +16,6 @@
 
     <!-- Needs to be mentioned in dependencies because BT node metadata generation relies on nodes from this package -->
     <depend>auto_apms_px4</depend>
-
-    <exec_depend>rosidl_default_runtime</exec_depend>
-
-    <member_of_group>rosidl_interface_packages</member_of_group>
 
     <export>
         <build_type>ament_cmake</build_type>

@@ -35,11 +35,11 @@ model::StartExecutor insertStartExecutorFromString(
 }
 
 model::StartExecutor insertStartExecutorFromResource(
-  core::TreeDocument::NodeElement & parent, const core::TreeResource & resource,
+  core::TreeDocument::NodeElement & parent, const core::TreeResourceIdentity & identity,
   const core::TreeDocument::NodeElement * before_this)
 {
   model::StartExecutor ele = parent.insertNode<model::StartExecutor>(before_this);
-  ele.set_build_request(resource.str());
+  ele.set_build_request(identity.str());
   ele.set_build_handler("auto_apms_behavior_tree::TreeFromResourceBuildHandler");
   return ele;
 }

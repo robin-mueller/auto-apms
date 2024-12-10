@@ -75,7 +75,10 @@ public:
    */
   explicit TreeBuilder(NodeRegistrationLoader::SharedPtr tree_node_loader = NodeRegistrationLoader::make_shared());
 
-  virtual ~TreeBuilder() = default;
+  virtual ~TreeBuilder() override = default;
+
+  /// @copydoc TreeDocument::registerNodes(const NodeManifest & tree_node_manifest, bool override)
+  TreeBuilder & registerNodes(const NodeManifest & tree_node_manifest, bool override = false) override;
 
   /* Factory related member functions */
 

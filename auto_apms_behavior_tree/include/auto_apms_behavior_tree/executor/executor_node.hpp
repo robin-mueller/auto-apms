@@ -80,6 +80,8 @@ public:
    */
   explicit TreeExecutorNode(rclcpp::NodeOptions options);
 
+  virtual ~TreeExecutorNode() override = default;
+
 private:
   /* Virtual methods */
 

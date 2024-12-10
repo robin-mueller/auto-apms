@@ -26,16 +26,6 @@
 namespace auto_apms_behavior_tree::core
 {
 
-std::set<std::string> getNativeNodeNames()
-{
-  std::set<std::string> names;
-  BT::BehaviorTreeFactory default_factory;
-  for (const auto & [name, _] : default_factory.manifests()) {
-    names.insert(name);
-  }
-  return names;
-}
-
 std::vector<std::string> getAllTreeNamesImpl(const tinyxml2::XMLDocument & doc)
 {
   std::vector<std::string> names;
@@ -204,7 +194,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
       temp_doc.removeTree(name);
     }
   }
-  doc_ptr_->mergeTreeDocument(temp_doc, false);
+  doc_ptr_->mergeTreeDocument(static_cast<const XMLDocument &>(temp_doc), false);
 
   // Clone and insert the target tree if verification of dependency tree document succeeded
   return insertBeforeImpl(
@@ -344,13 +334,13 @@ TreeDocument::NodeElement & TreeDocument::NodeElement::resetPorts()
   return *this;
 }
 
-TreeDocument::NodeElement & TreeDocument::NodeElement::setPreCondition(BT::PreCond type, const Script & script)
+TreeDocument::NodeElement & TreeDocument::NodeElement::setConditionalScript(BT::PreCond type, const Script & script)
 {
   ele_ptr_->SetAttribute(BT::toStr(type).c_str(), script.str().c_str());
   return *this;
 }
 
-TreeDocument::NodeElement & TreeDocument::NodeElement::setPostCondition(BT::PostCond type, const Script & script)
+TreeDocument::NodeElement & TreeDocument::NodeElement::setConditionalScript(BT::PostCond type, const Script & script)
 {
   ele_ptr_->SetAttribute(BT::toStr(type).c_str(), script.str().c_str());
   return *this;
@@ -514,12 +504,24 @@ std::string TreeDocument::TreeElement::writeToString() const
   return printer.CStr();
 }
 
+TreeDocument::TreeElement & TreeDocument::TreeElement::removeFirstChild(const std::string & name)
+{
+  NodeElement::removeFirstChild(name);
+  return *this;
+}
+
+TreeDocument::TreeElement & TreeDocument::TreeElement::removeChildren()
+{
+  NodeElement::removeChildren();
+  return *this;
+}
+
 TreeDocument::TreeDocument(const std::string & format_version, NodeRegistrationLoader::SharedPtr tree_node_loader)
 // It's important to initialize XMLDocument using PRESERVE_WHITESPACE, since encoded port data (like
 // NodeRegistrationOptions) may be sensitive to changes in the whitespaces (think of the YAML format)
 : XMLDocument(true, tinyxml2::PRESERVE_WHITESPACE),
   all_node_classes_package_map_(auto_apms_behavior_tree::core::NodeRegistrationLoader().getClassPackageMap()),
-  native_node_names_(getNativeNodeNames()),
+  native_node_names_(BT::BehaviorTreeFactory().builtinNodes()),
   format_version_(format_version),
   tree_node_loader_ptr_(tree_node_loader),
   registered_nodes_manifest_(),
@@ -617,8 +619,7 @@ TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool a
 TreeDocument & TreeDocument::mergeTreeDocument(const TreeDocument & other, bool adopt_root_tree)
 {
   registerNodes(other.getRequiredNodeManifest(), false);
-  const XMLDocument & base = other;  // Upcast using implicit conversion
-  return mergeTreeDocument(base, adopt_root_tree);
+  return mergeTreeDocument(static_cast<const XMLDocument &>(other), adopt_root_tree);
 }
 
 TreeDocument & TreeDocument::mergeString(const std::string & tree_str, bool adopt_root_tree)
@@ -793,8 +794,6 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
         // We assume that the manifest entry refers to the exact same node plugin, because all NodeRegistrationLoader
         // instances verify that there are no ambiguous class names during initialization. Since the node is already
         // registered, we may skip registering it as there's nothing new to do.
-        RCLCPP_DEBUG(
-          logger_, "Skipping already registered node '%s' (%s).", node_name.c_str(), params.class_name.c_str());
         continue;
       } else if (override) {
         // If it's actually a different class and override is true, register the new node plugin instead of the
@@ -825,10 +824,6 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
         ")' cannot be registered, because the corresponding resource belongs to excluded package '" +
         all_node_classes_package_map_.at(params.class_name) + "'.");
     }
-
-    RCLCPP_DEBUG(
-      logger_, "Registering behavior tree node '%s' (%s) from library %s.", node_name.c_str(),
-      params.class_name.c_str(), tree_node_loader_ptr_->getClassLibraryPath(params.class_name).c_str());
 
     pluginlib::UniquePtr<NodeRegistrationInterface> plugin_instance;
     try {

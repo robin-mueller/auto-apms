@@ -81,9 +81,15 @@ public:
   /// @copydoc TreeDocument::NodeElement::getRegistrationName()
   std::string getRegistrationName() const override final;
 
-  SubTree & setPreCondition(BT::PreCond type, const core::Script & script);
+  SubTree & setBlackboardRemapping(const PortValues & remapping);
 
-  SubTree & setPostCondition(BT::PostCond type, const core::Script & script);
+  SubTree & setPorts(const PortValues & port_values);
+
+  SubTree & resetPorts();
+
+  SubTree & setConditionalScript(BT::PreCond type, const core::Script & script);
+
+  SubTree & setConditionalScript(BT::PostCond type, const core::Script & script);
 
   /**
    * @brief Set automatic blackboard remapping.

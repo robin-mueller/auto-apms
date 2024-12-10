@@ -38,13 +38,10 @@ namespace auto_apms_behavior_tree::core
 {
 
 class TreeResource;
-class TreeBuilder;
 class NodeModelType;
 
 class TreeDocument : private tinyxml2::XMLDocument
 {
-  friend class TreeBuilder;
-
   using XMLElement = tinyxml2::XMLElement;
 
   inline static const std::string LOGGER_NAME = "tree_document";
@@ -160,7 +157,7 @@ public:
      * and throws an exception if any values for unkown port names are provided.
      *
      * @param port_values Port values to be used to fill the corresponding attributes of the node element.
-     * @return Reference to the modified TreeBuilder object.
+     * @return Reference to the modified instance.
      * @throws exceptions::TreeBuildError if @p port_values contains unkown keys, that is names for ports that are not
      * implemented.
      */
@@ -168,9 +165,9 @@ public:
 
     NodeElement & resetPorts();
 
-    NodeElement & setPreCondition(BT::PreCond type, const Script & script);
+    NodeElement & setConditionalScript(BT::PreCond type, const Script & script);
 
-    NodeElement & setPostCondition(BT::PostCond type, const Script & script);
+    NodeElement & setConditionalScript(BT::PostCond type, const Script & script);
 
     /// @brief Name of the behavior tree node given during registration.
     virtual std::string getRegistrationName() const;
@@ -223,11 +220,20 @@ public:
 
     std::string writeToString() const;
 
+    TreeElement & removeFirstChild(const std::string & name = "");
+
+    template <class ModelT>
+    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeElement &> removeFirstChild();
+
+    TreeElement & removeChildren();
+
     /* Not supported methods for TreeElement instances */
 
+    const std::vector<std::string> & getPortNames() = delete;
+    PortValues getPorts() = delete;
     NodeElement & setPorts() = delete;
-    NodeElement & setPreCondition() = delete;
-    NodeElement & setPostCondition() = delete;
+    NodeElement & resetPorts() = delete;
+    NodeElement & setConditionalScript() = delete;
   };
 
   TreeDocument(
@@ -286,7 +292,7 @@ public:
    * existing plugin and use the new one instead.
    * @throw exceptions::NodeRegistrationError if registration fails.
    */
-  TreeDocument & registerNodes(const NodeManifest & tree_node_manifest, bool override = false);
+  virtual TreeDocument & registerNodes(const NodeManifest & tree_node_manifest, bool override = false);
 
   std::set<std::string> getAvailableNodeNames(bool include_native = true) const;
 
@@ -379,6 +385,14 @@ inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeD
 core::TreeDocument::NodeElement::removeFirstChild()
 {
   return removeFirstChild(ModelT::name());
+}
+
+template <class ModelT>
+inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::TreeElement &>
+TreeDocument::TreeElement::removeFirstChild()
+{
+  NodeElement::removeFirstChild<ModelT>();
+  return *this;
 }
 
 }  // namespace auto_apms_behavior_tree::core

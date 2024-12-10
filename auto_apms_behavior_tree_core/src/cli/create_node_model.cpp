@@ -94,7 +94,7 @@ int main(int argc, char ** argv)
       }
 
       RCLCPP_DEBUG(
-        logger, "Registering behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
+        logger, "Declared behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
         params.class_name.c_str(), loader->getLibraryPath().c_str());
 
       try {

@@ -49,10 +49,22 @@ TreeResourceIdentity::TreeResourceIdentity(const std::string & identity)
   }
 }
 
+TreeResourceIdentity::TreeResourceIdentity(const char * identity) : TreeResourceIdentity(std::string(identity)) {}
+
+bool TreeResourceIdentity::operator<(const TreeResourceIdentity & other) const { return str() < other.str(); }
+
 std::string TreeResourceIdentity::str() const { return package_name + "::" + file_stem + "::" + tree_name; }
 
-TreeResource::TreeResource(const TreeResourceIdentity & identity) : identity_(identity)
+bool TreeResourceIdentity::empty() const { return package_name.empty() && file_stem.empty() && tree_name.empty(); }
+
+TreeResourceIdentity::operator bool() const { return !empty(); }
+
+TreeResource::TreeResource(const Identity & identity) : identity_(identity)
 {
+  if (identity.empty()) {
+    throw auto_apms_util::exceptions::ResourceIdentityFormatError("Cannot create TreeResource with empty identity.");
+  }
+
   std::set<std::string> search_packages;
   if (!identity.package_name.empty()) {
     search_packages.insert(identity.package_name);
@@ -63,8 +75,6 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : identity_(id
 
   size_t matching_count = 0;
   std::string matching_package_name;
-  std::string matching_tree_file_stem;
-  std::set<std::string> matching_tree_names;
   std::string matching_tree_file_path;
   std::vector<std::string> matching_node_manifest_file_paths;
   for (const auto & p : search_packages) {
@@ -98,8 +108,6 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : identity_(id
 
         matching_count++;
         matching_package_name = p;
-        matching_tree_file_stem = found_tree_file_stem;
-        matching_tree_names = {found_tree_names.begin(), found_tree_names.end()};
         matching_tree_file_path = base_path + "/" + parts[2];
         for (const std::string & path : auto_apms_util::splitString(parts[3], ";")) {
           matching_node_manifest_file_paths.push_back(
@@ -126,7 +134,7 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : identity_(id
   // Verify that the file is ok
   TreeDocument doc;
   try {
-    doc.mergeFile(tree_file_path_);
+    doc.mergeFile(tree_file_path_, true);
   } catch (const std::exception & e) {
     throw auto_apms_util::exceptions::ResourceError(
       "Failed to create TreeResource with identity '" + identity.str() + "' because tree file " + tree_file_path_ +
@@ -140,6 +148,11 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : identity_(id
         "Cannot create TreeResource with identity '" + identity.str() + "' because '" + identity.tree_name +
         "' does not exist in tree file " + tree_file_path_ + ".");
     }
+  }
+
+  // Save the root tree name if available
+  if (doc.hasRootTreeName()) {
+    doc_root_tree_name_ = doc.getRootTreeName();
   }
 }
 
@@ -157,13 +170,14 @@ TreeResource TreeResource::selectByFileName(const std::string & file_name, const
   return TreeResource(package_name + "::" + file_name + "::");
 }
 
+bool TreeResource::hasRootTree() const { return !identity_.tree_name.empty() || !doc_root_tree_name_.empty(); }
+
 std::string TreeResource::getRootTreeName() const
 {
   if (!identity_.tree_name.empty()) return identity_.tree_name;
 
   // If <tree_name> wasn't provided, look for root tree attribute in XML file
-  TreeDocument doc;
-  if (doc.mergeFile(tree_file_path_, true).hasRootTreeName()) return doc.getRootTreeName();
+  if (!doc_root_tree_name_.empty()) return doc_root_tree_name_;
 
   // Root tree cannot be determined
   throw auto_apms_util::exceptions::ResourceError(
@@ -178,6 +192,13 @@ std::string TreeResource::getPackageName() const { return package_name_; }
 
 std::string TreeResource::getFileStem() const { return std::filesystem::path(tree_file_path_).stem(); }
 
-std::string TreeResource::str() const { return identity_.str(); }
+TreeResourceIdentity TreeResource::createIdentity(const std::string & tree_name) const
+{
+  Identity i;
+  i.package_name = package_name_;
+  i.file_stem = getFileStem();
+  i.tree_name = tree_name;
+  return i;
+}
 
 }  // namespace auto_apms_behavior_tree::core

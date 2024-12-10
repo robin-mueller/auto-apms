@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
+#include "auto_apms_util/yaml.hpp"
 
 namespace auto_apms_behavior_tree::core
 {
@@ -68,7 +69,17 @@ struct TreeResourceIdentity
    */
   TreeResourceIdentity(const std::string & identity);
 
+  TreeResourceIdentity(const char * identity);
+
+  TreeResourceIdentity() = default;
+
+  bool operator<(const TreeResourceIdentity & other) const;
+
   std::string str() const;
+
+  bool empty() const;
+
+  operator bool() const;
 
   std::string package_name;
   std::string file_stem;
@@ -93,7 +104,7 @@ public:
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
    * identity.
    */
-  explicit TreeResource(const TreeResourceIdentity & identity);
+  TreeResource(const Identity & identity);
 
   TreeResource(const std::string & identity);
 
@@ -103,6 +114,8 @@ public:
 
   static TreeResource selectByFileName(const std::string & file_name, const std::string & package_name = "");
 
+  bool hasRootTree() const;
+
   std::string getRootTreeName() const;
 
   NodeManifest getNodeManifest() const;
@@ -111,13 +124,37 @@ public:
 
   std::string getFileStem() const;
 
-  std::string str() const;
+  Identity createIdentity(const std::string & tree_name = "") const;
 
 private:
   const TreeResourceIdentity identity_;
   std::string package_name_;
   std::string tree_file_path_;
   std::vector<std::string> node_manifest_file_paths_;
+  std::string doc_root_tree_name_;
 };
 
 }  // namespace auto_apms_behavior_tree::core
+
+/// @cond
+namespace YAML
+{
+template <>
+struct convert<auto_apms_behavior_tree::core::TreeResourceIdentity>
+{
+  using Identity = auto_apms_behavior_tree::core::TreeResourceIdentity;
+  static Node encode(const Identity & rhs)
+  {
+    Node node;
+    node = rhs.str();
+    return node;
+  }
+  static bool decode(const Node & node, Identity & rhs)
+  {
+    if (!node.IsScalar()) return false;
+    rhs = Identity(node.Scalar());
+    return true;
+  }
+};
+}  // namespace YAML
+/// @endcond

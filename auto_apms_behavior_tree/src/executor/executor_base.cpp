@@ -23,11 +23,13 @@ namespace auto_apms_behavior_tree
 {
 
 TreeExecutorBase::TreeExecutorBase(
-  rclcpp::Node::SharedPtr node_ptr, rclcpp::CallbackGroup::SharedPtr tree_node_callback_group_ptr)
+  rclcpp::Node::SharedPtr node_ptr, rclcpp::CallbackGroup::SharedPtr tree_node_callback_group_ptr,
+  bool throw_on_tree_error)
 : node_ptr_(node_ptr),
   logger_(node_ptr_->get_logger()),
   tree_node_waitables_callback_group_ptr_(tree_node_callback_group_ptr),
   tree_node_waitables_executor_ptr_(rclcpp::executors::SingleThreadedExecutor::make_shared()),
+  throw_on_tree_error_(throw_on_tree_error),
   global_blackboard_ptr_(TreeBlackboard::create()),
   control_command_(ControlCommand::RUN),
   execution_stopped_(true)
@@ -168,12 +170,16 @@ void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
     case ControlCommand::HALT:
       // Check if already halted
       if (this_execution_state != ExecutionState::HALTED) {
-        try {
+        if (throw_on_tree_error_) {
           tree_ptr_->haltTree();
-        } catch (const std::exception & e) {
-          termination_callback(
-            ExecutionResult::ERROR,
-            "Error during haltTree() on command " + toStr(control_command_) + ": " + std::string(e.what()));
+        } else {
+          try {
+            tree_ptr_->haltTree();
+          } catch (const std::exception & e) {
+            termination_callback(
+              ExecutionResult::ERROR,
+              "Error during haltTree() on command " + toStr(control_command_) + ": " + std::string(e.what()));
+          }
         }
       }
       return;
@@ -186,18 +192,23 @@ void TreeExecutorBase::tick_callback_(TerminationCallback termination_callback)
   /* Tick the tree instance */
 
   BT::NodeStatus bt_status = BT::NodeStatus::IDLE;
-  try {
+  if (throw_on_tree_error_) {
     // It is important to tick EXACTLY once to prevent loops induced by BT nodes from blocking
     bt_status = tree_ptr_->tickExactlyOnce();
-  } catch (const std::exception & e) {
-    std::string msg = "Ran into an exception during tick: " + std::string(e.what());
+  } else {
     try {
-      tree_ptr_->haltTree();  // Try to halt tree before aborting
+      // It is important to tick EXACTLY once to prevent loops induced by BT nodes from blocking
+      bt_status = tree_ptr_->tickExactlyOnce();
     } catch (const std::exception & e) {
-      msg += "\nDuring haltTree(), another exception occurred: " + std::string(e.what());
+      std::string msg = "Ran into an exception during tick: " + std::string(e.what());
+      try {
+        tree_ptr_->haltTree();  // Try to halt tree before aborting
+      } catch (const std::exception & e) {
+        msg += "\nDuring haltTree(), another exception occurred: " + std::string(e.what());
+      }
+      termination_callback(ExecutionResult::ERROR, msg);
+      return;
     }
-    termination_callback(ExecutionResult::ERROR, msg);
-    return;
   }
 
   if (!afterTick()) {

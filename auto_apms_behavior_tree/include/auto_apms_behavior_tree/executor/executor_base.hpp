@@ -64,7 +64,8 @@ private:
 
 public:
   TreeExecutorBase(
-    rclcpp::Node::SharedPtr node_ptr, rclcpp::CallbackGroup::SharedPtr tree_node_callback_group_ptr = nullptr);
+    rclcpp::Node::SharedPtr node_ptr, rclcpp::CallbackGroup::SharedPtr tree_node_callback_group_ptr = nullptr,
+    bool throw_on_tree_error = false);
 
   std::shared_future<ExecutionResult> startExecution(
     TreeConstructor make_tree, double tick_rate_sec = 0.1, int groot2_port = -1);
@@ -72,6 +73,8 @@ public:
   template <typename TimeRepT = int64_t, typename TimeT = std::milli>
   std::shared_future<ExecutionResult> startExecution(
     TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, int groot2_port = -1);
+
+  virtual ~TreeExecutorBase() = default;
 
 private:
   void tick_callback_(TerminationCallback termination_callback);
@@ -127,6 +130,7 @@ protected:
 private:
   rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group_ptr_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr tree_node_waitables_executor_ptr_;
+  const bool throw_on_tree_error_;
   TreeBlackboardSharedPtr global_blackboard_ptr_;
   std::unique_ptr<Tree> tree_ptr_;
   std::unique_ptr<BT::Groot2Publisher> groot2_publisher_ptr_;

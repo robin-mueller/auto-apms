@@ -28,7 +28,7 @@ model::StartExecutor insertStartExecutorFromString(
   const core::TreeDocument::NodeElement * before_this = nullptr);
 
 model::StartExecutor insertStartExecutorFromResource(
-  core::TreeDocument::NodeElement & parent, const core::TreeResource & resource,
+  core::TreeDocument::NodeElement & parent, const core::TreeResourceIdentity & identity,
   const core::TreeDocument::NodeElement * before_this = nullptr);
 
 }  // namespace auto_apms_behavior_tree

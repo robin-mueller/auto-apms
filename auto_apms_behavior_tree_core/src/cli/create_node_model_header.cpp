@@ -28,7 +28,8 @@
 
 using namespace auto_apms_behavior_tree;
 
-const std::regex no_typed_setter_getter_types("std::shared_ptr|std::unique_ptr|std::weak_ptr|BT::Any|std::string");
+const std::regex no_typed_setter_getter_types(
+  "std::shared_ptr|std::unique_ptr|std::weak_ptr|BT::Any|BT::AnyTypeAllowed|std::string");
 const std::vector<BT::NodeType> leaf_node_types{BT::NodeType::ACTION, BT::NodeType::SUBTREE};
 
 int main(int argc, char ** argv)
@@ -207,47 +208,55 @@ return *this;
 return *this;
 }
 
-)" << node_name << R"( & setPreCondition(BT::PreCond type, const auto_apms_behavior_tree::core::Script & script)
+)" << node_name << R"( & setConditionalScript(BT::PreCond type, const auto_apms_behavior_tree::core::Script & script)
 {
-)" << base_class_name << R"(::setPreCondition(type, script);
+)" << base_class_name << R"(::setConditionalScript(type, script);
 return *this;
 }
 
-)" << node_name << R"( & setPostCondition(BT::PostCond type, const auto_apms_behavior_tree::core::Script & script)
+)" << node_name << R"( & setConditionalScript(BT::PostCond type, const auto_apms_behavior_tree::core::Script & script)
 {
-)" << base_class_name << R"(::setPostCondition(type, script);
+)" << base_class_name << R"(::setConditionalScript(type, script);
 return *this;
 }
-
 )";
-      // clang-format on
       for (const core::TreeBuilder::NodePortInfo & info : model.port_infos) {
-        content << node_name << " & set_" << info.port_name << "(const std::string & str";
+        content << R"(
+/// @brief Setter for port ')" << info.port_name << "' (" << BT::toStr(info.port_direction) << R"().
+///
+/// )" << info.port_description << R"(
+)" << node_name << " & set_" << info.port_name << "(const std::string & str";
         if (info.port_default.empty()) {
           content << ")";
         } else {
           content << " = \"" << info.port_default << "\")";
         }
-        // clang-format off
         content << R"(
 {
 return setPorts({{")" << info.port_name << R"(", str}});
 }
 
+/// @brief Getter for port ')" << info.port_name << "' (" << BT::toStr(info.port_direction) << R"().
+///
+/// )" << info.port_description << R"(
 const std::string & get_)" << info.port_name << R"(_str() const
 {
 return getPorts().at(")" << info.port_name << R"(");
 }
 )";
-        // clang-format on
         if (std::regex_search(info.port_type, no_typed_setter_getter_types)) continue;
-        content << "\n" << node_name << " & set_" << info.port_name << "(const " << info.port_type << " & val)";
-        // clang-format off
         content << R"(
+/// @brief Setter for port ')" << info.port_name << "' (" << BT::toStr(info.port_direction) << R"().
+///
+/// )" << info.port_description << R"(
+)" << node_name << " & set_" << info.port_name << "(const " << info.port_type << " & val)" << R"(
 {
 return setPorts({{")" << info.port_name << R"(", BT::toStr(val)}});
 }
 
+/// @brief Getter for port ')" << info.port_name << "' (" << BT::toStr(info.port_direction) << R"().
+///
+/// )" << info.port_description << R"(
 )" << info.port_type << " get_" << info.port_name << R"(() const
 {
 return BT::convertFromString<)" << info.port_type << ">(get_" << info.port_name << R"(_str());
