@@ -69,7 +69,7 @@ public:
       return BT::NodeStatus::SUCCESS;
     }
     RCLCPP_ERROR(
-      context_.getLogger(), "%s - getLockedPortContent() failed for argument %s",
+      logger_, "%s - getLockedPortContent() failed for argument %s",
       context_.getFullyQualifiedTreeNodeName(this).c_str(), OUTPUT_KEY_POS);
     return BT::NodeStatus::FAILURE;
   }

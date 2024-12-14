@@ -34,12 +34,8 @@ const std::vector<BT::NodeType> leaf_node_types{BT::NodeType::ACTION, BT::NodeTy
 
 int main(int argc, char ** argv)
 {
-  bool only_native_nodes = false;
-  if (argc == 2) {
-    // Only one argument. Is assumed to be the header output file and we only creat node models of those implemented
-    // natively by BehaviorTree.CPP.
-    only_native_nodes = true;
-  } else if (argc < 5) {
+  bool include_native_nodes = false;
+  if (argc < 5) {
     std::cerr << "create_node_model_header: Missing inputs! The program requires: \n\t1.) The path to the node plugin "
                  "manifest YAML file.\n\t2.) The path to the nodes model XML file.\n\t3.) The name of the package "
                  "building the node model header.\n\t4.) The path of the output .hpp file.\n";
@@ -48,13 +44,11 @@ int main(int argc, char ** argv)
   }
 
   try {
-    const std::filesystem::path manifest_file = only_native_nodes ? "unused" : std::filesystem::absolute(argv[1]);
-    const std::filesystem::path model_file = only_native_nodes ? "unused" : std::filesystem::absolute(argv[2]);
-    const std::string build_package_name =
-      only_native_nodes ? "auto_apms_behavior_tree" : auto_apms_util::trimWhitespaces(argv[3]);
-    const std::filesystem::path header_path = only_native_nodes
-                                                ? std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[1]))
-                                                : std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[4]));
+    const std::filesystem::path manifest_file = std::filesystem::absolute(argv[1]);
+    const std::filesystem::path model_file = std::filesystem::absolute(argv[2]);
+    const std::string build_package_name = auto_apms_util::trimWhitespaces(argv[3]);
+    const std::filesystem::path header_path = std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[4]));
+    if (build_package_name == "auto_apms_behavior_tree") include_native_nodes = true;
 
     // Ensure that arguments are not empty
     if (manifest_file.empty()) {
@@ -75,7 +69,9 @@ int main(int argc, char ** argv)
     core::NodeManifest manifest;
     tinyxml2::XMLDocument model_doc;
     core::TreeDocument::NodeModelMap model_map;
-    if (only_native_nodes) {
+
+    const std::set<std::string> native_node_names = BT::BehaviorTreeFactory().builtinNodes();
+    if (include_native_nodes) {
       if (
         model_doc.Parse(BT::writeTreeNodesModelXML(BT::BehaviorTreeFactory(), true).c_str()) !=
         tinyxml2::XMLError::XML_SUCCESS) {
@@ -88,17 +84,17 @@ int main(int argc, char ** argv)
         manifest.add(name, opt);
       }
       manifest.remove(core::TreeDocument::SUBTREE_ELEMENT_NAME);
-    } else {
-      manifest = core::NodeManifest::fromFile(manifest_file);
-      if (model_doc.LoadFile(model_file.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-        throw std::runtime_error(model_doc.ErrorStr());
-      }
-      model_map = core::TreeDocument::getNodeModel(model_doc);
+      model_doc.Clear();
     }
 
-    std::ostringstream content;
+    manifest.merge(core::NodeManifest::fromFile(manifest_file));
+    if (model_doc.LoadFile(model_file.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+      throw std::runtime_error(model_doc.ErrorStr());
+    }
+    model_map.merge(core::TreeDocument::getNodeModel(model_doc));
 
     // clang-format off
+    std::ostringstream content;
     content << R"(// This header has been generated automatically. DO NOT CHANGE!
 
 #pragma once
@@ -115,6 +111,7 @@ namespace )" << build_package_name << R"(::model
       core::TreeBuilder::NodeModelMap::const_iterator it = model_map.find(node_name);
       if (it == model_map.end()) continue;
       const core::TreeBuilder::NodeModel & model = it->second;
+      const bool is_native_node = native_node_names.find(node_name) != native_node_names.end();
       const bool is_leaf = auto_apms_util::contains(leaf_node_types, model.type);
       const std::string base_class_name = is_leaf ? "LeafNodeModelType" : "NodeModelType";
       // clang-format off
@@ -157,69 +154,21 @@ std::string getRegistrationName() const override final
 {
 return name();
 }
-)";
-      if (!only_native_nodes) {
-        content << R"(
 
-/// @brief Registration options for this node.
+)";
+      if (!is_native_node) {
+        content << R"(/// @brief Registration options for this node.
 static RegistrationOptions registrationOptions()
 {
 return RegistrationOptions::decode(R"()" << options.encode() << ")\");" << R"(
 }
+
 )";
       }
       if (!is_leaf) {
-        content << R"(
-)" << node_name << R"( & removeFirstChild(const std::string & name = "")
-{
-NodeModelType::removeFirstChild(name);
-return *this;
-}
-
-template <class ModelT>
-typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, )" << node_name << R"( &> removeFirstChild()
-{
-NodeModelType::removeFirstChild<ModelT>();
-return *this;
-}
-
-)" << node_name << R"( & removeChildren()
-{
-NodeModelType::removeChildren();
-return *this;
-}
-)";
+        content << "AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_NON_LEAF_THISREF_METHODS(" << node_name << ")\n";
       }
-      if (model.port_infos.empty()) {
-        content << "\n" << node_name << " & setPorts() = delete;\n";
-      } else {
-        content << R"(
-)" << node_name << R"( & setPorts(const PortValues & port_values)
-{
-)" << base_class_name << R"(::setPorts(port_values);
-return *this;
-}
-)";
-      }
-      content << R"(
-)" << node_name << R"( & resetPorts()
-{
-)" << base_class_name << R"(::resetPorts();
-return *this;
-}
-
-)" << node_name << R"( & setConditionalScript(BT::PreCond type, const auto_apms_behavior_tree::core::Script & script)
-{
-)" << base_class_name << R"(::setConditionalScript(type, script);
-return *this;
-}
-
-)" << node_name << R"( & setConditionalScript(BT::PostCond type, const auto_apms_behavior_tree::core::Script & script)
-{
-)" << base_class_name << R"(::setConditionalScript(type, script);
-return *this;
-}
-)";
+      content << "AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_LEAF_THISREF_METHODS(" << node_name << ")\n";
       for (const core::TreeBuilder::NodePortInfo & info : model.port_infos) {
         content << R"(
 /// @brief Setter for port ')" << info.port_name << "' (" << BT::toStr(info.port_direction) << R"().

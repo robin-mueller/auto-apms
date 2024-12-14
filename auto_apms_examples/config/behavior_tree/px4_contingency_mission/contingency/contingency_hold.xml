@@ -4,7 +4,12 @@
     <Sequence>
       <EnableHold port=""/>
       <RetryUntilSuccessful num_attempts="-1">
-        <ScriptCondition code="@contingency_hold == false"/>
+        <Sequence>
+          <GetParameterBool parameter="bb.contingency_hold"
+                            value="{contingency_hold}"
+                            node="orchestrator"/>
+          <ScriptCondition code="contingency_hold == false"/>
+        </Sequence>
       </RetryUntilSuccessful>
     </Sequence>
   </BehaviorTree>
@@ -12,8 +17,11 @@
   <BehaviorTree ID="ContingencyMonitor">
     <Sequence>
       <HasParameter parameter="bb.contingency_hold"
-                    node=""/>
-      <ScriptCondition code="@contingency_hold == true"/>
+                    node="orchestrator"/>
+      <GetParameterBool parameter="bb.contingency_hold"
+                        value="{contingency_hold}"
+                        node="orchestrator"/>
+      <ScriptCondition code="contingency_hold == true"/>
     </Sequence>
   </BehaviorTree>
 
@@ -22,6 +30,14 @@
     <Action ID="EnableHold">
       <input_port name="port"
                   type="std::string">Name of the ROS 2 action.</input_port>
+    </Action>
+    <Action ID="GetParameterBool">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter to get.</input_port>
+      <output_port name="value"
+                   type="bool">Output port for the parameter's value.</output_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node.</input_port>
     </Action>
     <Action ID="HasParameter">
       <input_port name="parameter"

@@ -119,7 +119,7 @@ ActionWrapper<ActionT>::ActionWrapper(
   std::shared_ptr<ActionContextType> action_context_ptr)
 : node_ptr_(node_ptr), action_context_ptr_(action_context_ptr), param_listener_(node_ptr)
 {
-  exposeToDebugLogging(node_ptr_->get_logger());
+  exposeToGlobalDebugLogging(node_ptr_->get_logger());
 
   using namespace std::placeholders;
   action_server_ptr_ = rclcpp_action::create_server<ActionT>(

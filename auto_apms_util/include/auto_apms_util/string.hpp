@@ -77,5 +77,19 @@ std::string makeColoredText(const std::string & text, TextColor color);
  */
 std::string trimWhitespaces(const std::string & str);
 
+/**
+ * @brief Transform a string to camelCase.
+ * @param[in] str String to transform.
+ * @return Transformed string.
+ */
+std::string toCamelCase(const std::string & str);
+
+/**
+ * @brief Transform a string to snake_case.
+ * @param[in] str String to transform.
+ * @return Transformed string.
+ */
+std::string toSnakeCase(const std::string & str);
+
 /// @}
 }  // namespace auto_apms_util

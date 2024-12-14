@@ -69,46 +69,77 @@ public:
     const BT::Expected<std::string> expected_build_request = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST);
     if (!expected_build_request || expected_build_request.value().empty()) {
       RCLCPP_ERROR(
-        context_.getLogger(), "%s - You must provide a non-empty build request.",
+        logger_, "%s - You must provide a non-empty build request.",
         context_.getFullyQualifiedTreeNodeName(this).c_str());
       RCLCPP_DEBUG_EXPRESSION(
-        context_.getLogger(), !expected_build_request, "%s - Error message: %s",
+        logger_, !expected_build_request, "%s - Error message: %s",
         context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_build_request.error().c_str());
       return false;
     }
     goal.build_request = expected_build_request.value();
-    goal.build_handler = getInput<std::string>(INPUT_KEY_TREE_BUILD_HANDLER).value();
-    goal.root_tree = getInput<std::string>(INPUT_KEY_ROOT_TREE_NAME).value();
-    goal.node_manifest = getInput<std::string>(INPUT_KEY_NODE_MANIFEST).value();
-    goal.node_overrides = getInput<std::string>(INPUT_KEY_NODE_OVERRIDES).value();
-    goal.attach = getInput<bool>(INPUT_KEY_ATTACH).value();
-    goal.clear_blackboard = getInput<bool>(INPUT_KEY_CLEAR_BB).value();
+    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_TREE_BUILD_HANDLER)) {
+      goal.build_handler = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
+    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_ROOT_TREE_NAME)) {
+      goal.root_tree = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
+    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_NODE_MANIFEST)) {
+      goal.node_manifest = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
+    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_NODE_OVERRIDES)) {
+      goal.node_overrides = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
+    if (const BT::Expected<bool> expected = getInput<bool>(INPUT_KEY_ATTACH)) {
+      goal.attach = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
+    if (const BT::Expected<bool> expected = getInput<bool>(INPUT_KEY_CLEAR_BB)) {
+      goal.clear_blackboard = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
     return true;
   }
 
   BT::NodeStatus onResultReceived(const WrappedResult & wr) override final
   {
-    // If action was aborted
-    if (wr.code == rclcpp_action::ResultCode::ABORTED) {
-      const std::string msg =
-        context_.getFullyQualifiedTreeNodeName(this) + " - Tree execution was aborted: " + wr.result->message;
-      RCLCPP_ERROR_STREAM(context_.getLogger(), msg);
-      throw exceptions::RosNodeError(msg);
-    }
-
-    // If action was canceled
-    if (wr.code == rclcpp_action::ResultCode::CANCELED) {
-      RCLCPP_DEBUG(
-        context_.getLogger(), "%s - Tree execution was canceled: %s",
-        context_.getFullyQualifiedTreeNodeName(this).c_str(), wr.result->message.c_str());
-      // Return value is ignored
-      return BT::NodeStatus::SUCCESS;
+    switch (wr.code) {
+      case rclcpp_action::ResultCode::ABORTED: {
+        const std::string msg =
+          context_.getFullyQualifiedTreeNodeName(this) + " - Received result ABORTED: " + wr.result->message;
+        RCLCPP_ERROR_STREAM(logger_, msg);
+        throw exceptions::RosNodeError(msg);
+        break;
+      }
+      case rclcpp_action::ResultCode::CANCELED:
+        RCLCPP_DEBUG(
+          logger_, "%s - Received result CANCELED: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+          wr.result->message.c_str());
+        // Return value is arbitrary because it is ignored when canceled
+        return BT::NodeStatus::SUCCESS;
+      default:
+        break;
     }
 
     /*  If action succeeded */
 
     RCLCPP_DEBUG(
-      context_.getLogger(), "%s - Tree execution finished successfully with result %i: %s",
+      logger_, "%s - Tree execution finished successfully with result %i: %s",
       context_.getFullyQualifiedTreeNodeName(this).c_str(), wr.result->tree_result, wr.result->message.c_str());
 
     // If started in attached mode
@@ -121,7 +152,7 @@ public:
     if (wr.result->tree_result == ActionType::Result::TREE_RESULT_NOT_SET) return BT::NodeStatus::SUCCESS;
     const std::string msg = context_.getFullyQualifiedTreeNodeName(this) +
                             " - Expected tree_result to be TREE_RESULT_NOT_SET when started in detached mode.";
-    RCLCPP_ERROR_STREAM(context_.getLogger(), msg);
+    RCLCPP_ERROR_STREAM(logger_, msg);
     throw exceptions::RosNodeError(msg);
   }
 };

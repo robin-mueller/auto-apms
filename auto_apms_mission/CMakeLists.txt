@@ -78,7 +78,8 @@ target_link_libraries(mission_builder
     auto_apms_mission
 )
 auto_apms_behavior_tree_declare_build_handlers(mission_builder
-    "auto_apms_mission::MissionBuildHandler"
+    "auto_apms_mission::SingleNodeMissionBuildHandler"
+    "auto_apms_mission::MultipleNodesMissionBuildHandler"
 )
 
 auto_apms_behavior_tree_declare_trees(

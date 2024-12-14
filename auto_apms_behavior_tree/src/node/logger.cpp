@@ -14,6 +14,8 @@
 
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "rclcpp/logging.hpp"
+#include "rcutils/error_handling.h"
+#include "rcutils/logging.h"
 
 #define INPUT_KEY_MSG "message"
 #define INPUT_KEY_LEVEL "level"
@@ -45,8 +47,11 @@ public:
     if (
       rcutils_logging_severity_level_from_string(level_str.c_str(), rcutils_get_default_allocator(), &level) !=
       RCUTILS_RET_OK) {
+      const std::string error = rcutils_get_error_string().str;
+      rcutils_reset_error();
       throw exceptions::RosNodeError(
-        "Cannot convert input of port '" + std::string(INPUT_KEY_LEVEL) + "' to a valid logging severity level.");
+        "Cannot convert input of port '" + std::string(INPUT_KEY_LEVEL) +
+        "' to a valid logging severity level: " + error);
     }
     const BT::PortsRemapping::iterator it = config().input_ports.find(INPUT_KEY_MSG);
     if (it == config().input_ports.end()) return BT::NodeStatus::SUCCESS;
@@ -57,7 +62,7 @@ public:
       if (const BT::Expected<BT::Any> expected = getInput<BT::Any>(INPUT_KEY_MSG)) {
         const BT::Any & any = expected.value();
         msg = it->second + " (Cannot convert " + BT::demangle(any.type()) + " to string)";
-        if (const BT::Expected<std::string> casted = any.tryCast<std::string>(); casted && !casted.value().empty()) {
+        if (const BT::Expected<std::string> casted = any.tryCast<std::string>()) {
           msg = casted.value().c_str();
         }
       } else {
@@ -70,7 +75,8 @@ public:
 
     msg = context_.getFullyQualifiedTreeNodeName(this, false) + " - " + msg + (msg.back() == '.' ? "" : ".");
     RCUTILS_LOG_COND_NAMED(
-      level, RCUTILS_LOG_CONDITION_EMPTY, RCUTILS_LOG_CONDITION_EMPTY, context_.getLogger().get_name(), msg.c_str());
+      level, RCUTILS_LOG_CONDITION_EMPTY, RCUTILS_LOG_CONDITION_EMPTY, context_.getBaseLogger().get_name(),
+      msg.c_str());
     return BT::NodeStatus::SUCCESS;
   }
 

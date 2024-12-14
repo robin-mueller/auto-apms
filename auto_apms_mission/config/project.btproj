@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" project_name="MissionOrchestratorBase">
+    <include path="orchestrator_base.xml"/>
+    <!-- Description of Node Models (used by Groot) -->
+    <TreeNodesModel>
+        <Action ID="Error">
+            <input_port name="message" type="std::string">Error message. Creates a generic error message if empty.</input_port>
+        </Action>
+        <SubTree ID="HandleContingency" editable="true">
+            <input_port name="event_id">Most recently detected event</input_port>
+        </SubTree>
+        <SubTree ID="HandleEmergency" editable="true">
+            <input_port name="event_id">Most recently detected event</input_port>
+        </SubTree>
+        <SubTree ID="IsContingency" editable="true">
+            <input_port name="event_id">Most recently detected event</input_port>
+        </SubTree>
+        <SubTree ID="IsEmergency" editable="true">
+            <input_port name="event_id">Most recently detected event</input_port>
+        </SubTree>
+        <Action ID="Logger">
+            <input_port name="message" type="BT::Any">Message to be logged via rclcpp::Logger.</input_port>
+            <input_port name="level" default="INFO" type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
+        </Action>
+        <SubTree ID="MonitorEvents" editable="true">
+            <output_port name="event_id">Most recently detected event</output_port>
+        </SubTree>
+    </TreeNodesModel>
+</root>

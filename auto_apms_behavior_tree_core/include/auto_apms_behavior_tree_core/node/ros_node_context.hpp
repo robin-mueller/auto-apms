@@ -53,7 +53,9 @@ public:
 
   std::string getFullyQualifiedRosNodeName() const;
 
-  rclcpp::Logger getLogger() const;
+  rclcpp::Logger getBaseLogger() const;
+
+  rclcpp::Logger getChildLogger(const std::string & name);
 
   rclcpp::Time getCurrentTime() const;
 
@@ -64,7 +66,7 @@ private:
 
   const std::string ros_node_name_;
   const std::string fully_qualified_ros_node_name_;
-  const rclcpp::Logger logger_;
+  rclcpp::Logger base_logger_;
 
   /// Handle for the ROS2 node.
   rclcpp::Node::WeakPtr nh_;

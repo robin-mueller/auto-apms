@@ -18,90 +18,148 @@
 namespace auto_apms_mission
 {
 
-class MissionBuildHandler : public MissionBuildHandlerBase
+class SingleNodeMissionBuildHandler : public MissionBuildHandlerBase
 {
 public:
   using MissionBuildHandlerBase::MissionBuildHandlerBase;
 
 private:
-  void buildBringUp(model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees) override
+  void buildMission(
+    TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees) override final
   {
+    sub_tree.removeChildren();
     for (const TreeResource::Identity & r : trees) {
-      sequence.insertTreeFromResource(r);
+      sub_tree.insertTreeFromResource(r);
     }
   }
+};
 
-  void buildMission(model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees) override
+class MultipleNodesMissionBuildHandler : public MissionBuildHandlerBase
+{
+public:
+  using MissionBuildHandlerBase::MissionBuildHandlerBase;
+
+private:
+  void buildMission(
+    TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees) override final
   {
-    // TreeDocument doc;
-    // TreeDocument::TreeElement mission_tree = doc.newTree("Mission");
-    // TreeDocument::NodeElement mission_sequence = mission_tree.insertNode<model::SequenceWithMemory>();
-    // for (const TreeResource::Identity & r : trees) {
-    //   mission_sequence.insertTreeFromResource(r);
-    // }
-    // auto_apms_behavior_tree::insertStartExecutorFromString(sequence, mission_tree)
-    //   .set_attach(true)
-    //   .set_clear_blackboard(true)
-    //   .set_executor(MISSION_EXECUTOR_NAME);
-
+    TreeDocument doc;
+    TreeDocument::TreeElement mission_tree = doc.newTree("Mission");
+    TreeDocument::NodeElement mission_sequence = mission_tree.insertNode<model::SequenceWithMemory>();
     for (const TreeResource::Identity & r : trees) {
-      sequence.insertTreeFromResource(r);
+      mission_sequence.insertTreeFromResource(r);
     }
+
+    sub_tree.removeChildren();
+    auto_apms_behavior_tree::insertStartExecutorFromString(sub_tree, mission_tree)
+      .setName("Mission")
+      .set_attach(true)
+      .set_clear_blackboard(true)
+      .set_executor(MISSION_EXECUTOR_NAME);
   }
 
   void buildEventMonitor(
     TreeDocument::TreeElement & sub_tree,
     const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies,
-    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies) override
+    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies) override final
   {
-    std::vector<TreeResource::Identity> event_ids;
+    TreeDocument doc;
+    TreeDocument::TreeElement event_monitor_tree = doc.newTree(sub_tree);
+    MissionBuildHandlerBase::buildEventMonitor(event_monitor_tree, contingencies, emergencies);
+    event_monitor_tree.getFirstNode()
+      .setName(event_monitor_tree.getName())
+      .setConditionalScript(BT::PostCond::ALWAYS, "@event_id = event_id");
+    TreeDocument::TreeElement main_tree = doc.newTree("MainTree");
+    main_tree.insertNode<model::KeepRunningUntilFailure>().insertNode<model::ForceSuccess>().insertTree(
+      event_monitor_tree);
 
-    // Emergencies have higher priority than contingencies (they are inserted to the vector first)
-    for (const auto & [event_id, handler_id] : emergencies) {
-      event_ids.push_back(event_id);
-    }
-    for (const auto & [event_id, handler_id] : contingencies) {
-      if (auto_apms_util::contains(event_ids, event_id)) event_ids.push_back(event_id);
-    }
-
-    model::Fallback fallback = sub_tree.insertNode<model::Fallback>();
-    for (const TreeResource::Identity & r : event_ids) {
-      fallback.insertTreeFromResource(r).setConditionalScript(BT::PostCond::ON_SUCCESS, "event_id = '" + r.str() + "'");
-    }
+    model::Fallback fallback = sub_tree.getFirstNode<model::Fallback>("DetectEvents").removeChildren();
+    model::Sequence run_once_seq = fallback.insertNode<model::RunOnce>().insertNode<model::Sequence>();
+    run_once_seq.insertNode<model::SetParameterString>()
+      .set_node(EVENT_MONITOR_EXECUTOR_NAME)
+      .set_parameter("bb.event_id")
+      .set_value("");
+    auto_apms_behavior_tree::insertStartExecutorFromString(run_once_seq, main_tree)
+      .setName("EventMonitor")
+      .set_attach(false)
+      .set_clear_blackboard(false)
+      .set_executor(EVENT_MONITOR_EXECUTOR_NAME);
+    fallback.insertNode<model::GetParameterString>()
+      .set_node(EVENT_MONITOR_EXECUTOR_NAME)
+      .set_parameter("bb.event_id")
+      .set_value("{event_id}");
   }
 
   void buildContingencyHandling(
     TreeDocument::TreeElement & sub_tree,
-    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies) override
+    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies) override final
   {
-    model::ReactiveFallback fallback = sub_tree.insertNode<model::ReactiveFallback>();
-    for (const auto & [event_id, handler_id] : contingencies) {
-      model::AsyncSequence seq = fallback.insertNode<model::AsyncSequence>();
-      seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
-      seq.insertTreeFromResource(handler_id);
-    }
+    sub_tree.removeChildren();
+
+    TreeDocument doc;
+    TreeDocument::TreeElement new_tree = doc.newTree(sub_tree);
+    model::Sequence seq = new_tree.insertNode<model::Sequence>();
+    seq.insertNode<model::Script>().set_code("event_id := ''");  // Initial event_id value
+    model::Parallel parallel = seq.insertNode<model::Parallel>().set_success_count(1);
+
+    parallel.insertNode<model::KeepRunningUntilFailure>()
+      .insertNode<model::GetParameterString>()
+      .set_node(EVENT_MONITOR_EXECUTOR_NAME)
+      .set_parameter("bb.event_id")
+      .set_value("{event_id}");
+
+    TreeDocument::TreeElement base_tree = doc.newTree("TempTree");
+    MissionBuildHandlerBase::buildContingencyHandling(base_tree, contingencies);
+    parallel.insertTree(base_tree).setConditionalScript(BT::PreCond::SKIP_IF, "event_id == ''");
+
+    auto_apms_behavior_tree::insertStartExecutorFromString(sub_tree, new_tree)
+      .setName("ContingencyHandler")
+      .set_attach(true)
+      .set_clear_blackboard(true)
+      .set_executor(EVENT_HANDLER_EXECUTOR_NAME);
   }
 
   void buildEmergencyHandling(
     TreeDocument::TreeElement & sub_tree,
-    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies) override
+    const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies) override final
   {
-    model::ReactiveFallback fallback = sub_tree.insertNode<model::ReactiveFallback>();
-    for (const auto & [event_id, handler_id] : emergencies) {
-      model::AsyncSequence seq = fallback.insertNode<model::AsyncSequence>();
-      seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
-      seq.insertTreeFromResource(handler_id);
-    }
+    sub_tree.removeChildren();
+
+    TreeDocument doc;
+    TreeDocument::TreeElement new_tree = doc.newTree(sub_tree);
+    model::Sequence seq = new_tree.insertNode<model::Sequence>();
+    seq.insertNode<model::Script>().set_code("event_id := ''");  // Initial event_id value
+    model::Parallel parallel = seq.insertNode<model::Parallel>().set_success_count(1);
+
+    parallel.insertNode<model::KeepRunningUntilFailure>()
+      .insertNode<model::GetParameterString>()
+      .set_node(EVENT_MONITOR_EXECUTOR_NAME)
+      .set_parameter("bb.event_id")
+      .set_value("{event_id}");
+
+    TreeDocument::TreeElement base_tree = doc.newTree("TempTree");
+    MissionBuildHandlerBase::buildEmergencyHandling(base_tree, emergencies);
+    parallel.insertTree(base_tree).setConditionalScript(BT::PreCond::SKIP_IF, "event_id == ''");
+
+    auto_apms_behavior_tree::insertStartExecutorFromString(sub_tree, new_tree)
+      .setName("EmergencyHandler")
+      .set_attach(true)
+      .set_clear_blackboard(true)
+      .set_executor(EVENT_HANDLER_EXECUTOR_NAME);
   }
 
-  void buildShutDown(model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees) override
+  void buildShutDown(TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees)
   {
-    for (const TreeResource::Identity & r : trees) {
-      sequence.insertTreeFromResource(r);
-    }
+    TreeDocument doc;
+    TreeDocument::TreeElement temp = doc.newTree("TempTree");
+    MissionBuildHandlerBase::buildShutDown(temp, trees);
+    model::SequenceWithMemory seq = sub_tree.removeChildren().insertNode<model::SequenceWithMemory>();
+    seq.insertNode<model::TerminateExecutor>().set_executor(EVENT_MONITOR_EXECUTOR_NAME);
+    seq.insertTree(temp);
   }
 };
 
 }  // namespace auto_apms_mission
 
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::MissionBuildHandler)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::SingleNodeMissionBuildHandler)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::MultipleNodesMissionBuildHandler)

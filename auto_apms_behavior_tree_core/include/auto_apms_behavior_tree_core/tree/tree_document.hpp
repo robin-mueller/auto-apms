@@ -134,15 +134,17 @@ public:
 
     bool hasChildren() const;
 
-    NodeElement getFirstNode(const std::string & name = "") const;
+    NodeElement getFirstNode(const std::string & registration_name = "", const std::string & instance_name = "") const;
 
     template <class ModelT>
-    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, ModelT> getFirstNode() const;
+    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, ModelT> getFirstNode(
+      const std::string & instance_name = "") const;
 
-    NodeElement & removeFirstChild(const std::string & name = "");
+    NodeElement & removeFirstChild(const std::string & registration_name = "", const std::string & instance_name = "");
 
     template <class ModelT>
-    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, NodeElement &> removeFirstChild();
+    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, NodeElement &> removeFirstChild(
+      const std::string & instance_name = "");
 
     NodeElement & removeChildren();
 
@@ -168,6 +170,8 @@ public:
     NodeElement & setConditionalScript(BT::PreCond type, const Script & script);
 
     NodeElement & setConditionalScript(BT::PostCond type, const Script & script);
+
+    NodeElement & setName(const std::string & instance_name);
 
     /// @brief Name of the behavior tree node given during registration.
     virtual std::string getRegistrationName() const;
@@ -220,10 +224,11 @@ public:
 
     std::string writeToString() const;
 
-    TreeElement & removeFirstChild(const std::string & name = "");
+    TreeElement & removeFirstChild(const std::string & registration_name = "", const std::string & instance_name = "");
 
     template <class ModelT>
-    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeElement &> removeFirstChild();
+    typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeElement &> removeFirstChild(
+      const std::string & instance_name = "");
 
     TreeElement & removeChildren();
 
@@ -234,6 +239,7 @@ public:
     NodeElement & setPorts() = delete;
     NodeElement & resetPorts() = delete;
     NodeElement & setConditionalScript() = delete;
+    NodeElement & setName() = delete;
   };
 
   TreeDocument(
@@ -255,6 +261,8 @@ public:
   TreeDocument & mergeTree(const TreeElement & tree, bool make_root_tree = false);
 
   TreeElement newTree(const std::string & tree_name);
+
+  TreeElement newTree(const TreeElement & other_tree);
 
   TreeElement newTreeFromDocument(const TreeDocument & other, const std::string & tree_name = "");
 
@@ -308,6 +316,8 @@ public:
   BT::Result verify() const;
 
   std::string writeToString() const;
+
+  void writeToFile(const std::string & path) const;
 
   TreeDocument & reset();
 
@@ -374,24 +384,24 @@ TreeDocument::NodeElement::insertNode(const std::string & tree_name, const NodeE
 
 template <class ModelT>
 inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, ModelT>
-core::TreeDocument::NodeElement::getFirstNode() const
+core::TreeDocument::NodeElement::getFirstNode(const std::string & instance_name) const
 {
-  const NodeElement ele = getFirstNode(ModelT::name());
+  const NodeElement ele = getFirstNode(ModelT::name(), instance_name);
   return ModelT(ele.doc_ptr_, ele.ele_ptr_);
 }
 
 template <class ModelT>
 inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::NodeElement &>
-core::TreeDocument::NodeElement::removeFirstChild()
+core::TreeDocument::NodeElement::removeFirstChild(const std::string & instance_name)
 {
-  return removeFirstChild(ModelT::name());
+  return removeFirstChild(ModelT::name(), instance_name);
 }
 
 template <class ModelT>
 inline typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, TreeDocument::TreeElement &>
-TreeDocument::TreeElement::removeFirstChild()
+TreeDocument::TreeElement::removeFirstChild(const std::string & instance_name)
 {
-  NodeElement::removeFirstChild<ModelT>();
+  NodeElement::removeFirstChild<ModelT>(instance_name);
   return *this;
 }
 

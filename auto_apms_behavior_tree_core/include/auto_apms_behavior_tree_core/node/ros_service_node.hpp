@@ -20,6 +20,7 @@
 
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/ros_node_context.hpp"
+#include "auto_apms_util/string.hpp"
 #include "behaviortree_cpp/action_node.h"
 #include "rclcpp/executors.hpp"
 
@@ -88,7 +89,7 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
-  explicit RosServiceNode(const std::string & instance_name, const Config & config, const Context & context);
+  explicit RosServiceNode(const std::string & instance_name, const Config & config, Context context);
 
   virtual ~RosServiceNode() = default;
 
@@ -143,6 +144,7 @@ public:
 
 protected:
   const Context context_;
+  const rclcpp::Logger logger_;
 
 private:
   static std::mutex & getMutex();
@@ -151,7 +153,6 @@ private:
   static ClientsRegistry & getRegistry();
 
 private:
-  const rclcpp::Logger logger_;
   bool dynamic_client_instance_ = false;
   std::shared_ptr<ServiceClientInstance> client_instance_;
   typename ServiceClient::SharedFuture future_;
@@ -175,8 +176,10 @@ inline RosServiceNode<ServiceT>::ServiceClientInstance::ServiceClientInstance(
 
 template <class ServiceT>
 inline RosServiceNode<ServiceT>::RosServiceNode(
-  const std::string & instance_name, const Config & config, const Context & context)
-: BT::ActionNodeBase(instance_name, config), context_(context), logger_(context.getLogger())
+  const std::string & instance_name, const Config & config, Context context)
+: BT::ActionNodeBase(instance_name, config),
+  context_(context),
+  logger_(context.getChildLogger(auto_apms_util::toSnakeCase(instance_name)))
 {
   if (const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this)) {
     createClient(expected_name.value());

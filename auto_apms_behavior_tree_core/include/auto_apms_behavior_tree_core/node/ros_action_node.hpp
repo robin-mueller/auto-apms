@@ -20,6 +20,7 @@
 
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/ros_node_context.hpp"
+#include "auto_apms_util/string.hpp"
 #include "behaviortree_cpp/action_node.h"
 #include "rclcpp/executors.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -94,7 +95,7 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
-  explicit RosActionNode(const std::string & instance_name, const Config & config, const Context & context);
+  explicit RosActionNode(const std::string & instance_name, const Config & config, Context context);
 
   virtual ~RosActionNode() = default;
 
@@ -162,6 +163,7 @@ public:
 
 protected:
   const Context context_;
+  const rclcpp::Logger logger_;
 
 private:
   static std::mutex & getMutex();
@@ -169,7 +171,6 @@ private:
   // contains the fully-qualified name of the node and the name of the client
   static ClientsRegistry & getRegistry();
 
-  const rclcpp::Logger logger_;
   bool dynamic_client_instance_ = false;
   std::shared_ptr<ActionClientInstance> client_instance_;
   std::string action_client_key_;
@@ -194,9 +195,10 @@ RosActionNode<ActionT>::ActionClientInstance::ActionClientInstance(
 }
 
 template <class ActionT>
-inline RosActionNode<ActionT>::RosActionNode(
-  const std::string & instance_name, const Config & config, const Context & context)
-: BT::ActionNodeBase(instance_name, config), context_(context), logger_(context.getLogger())
+inline RosActionNode<ActionT>::RosActionNode(const std::string & instance_name, const Config & config, Context context)
+: BT::ActionNodeBase(instance_name, config),
+  context_(context),
+  logger_(context.getChildLogger(auto_apms_util::toSnakeCase(instance_name)))
 {
   if (const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this)) {
     createClient(expected_name.value());
@@ -270,11 +272,14 @@ inline void RosActionNode<T>::cancelGoal()
   }
 
   if (future_goal_handle_.valid()) {
+    RCLCPP_DEBUG(
+      logger_, "%s - Awaiting goal response before trying to cancel goal...",
+      context_.getFullyQualifiedTreeNodeName(this).c_str());
     // Here the discussion is if we should block or put a timer for the waiting
     const rclcpp::FutureReturnCode ret =
       executor_ptr->spin_until_future_complete(future_goal_handle_, context_.registration_options_.request_timeout);
     if (ret != rclcpp::FutureReturnCode::SUCCESS) {
-      // Do nothing in case of INTERRUPT or TIMEOUT since we must return rather quickly
+      // Do nothing in case of INTERRUPT or TIMEOUT
       return;
     }
     goal_handle_ = future_goal_handle_.get();
@@ -282,22 +287,51 @@ inline void RosActionNode<T>::cancelGoal()
   }
 
   // If goal was rejected or handle has been invalidated, we do not need to cancel
-  if (!goal_handle_) return;
+  if (!goal_handle_) {
+    RCLCPP_DEBUG(
+      logger_, "%s - Goal was rejected. Nothing to cancel.", context_.getFullyQualifiedTreeNodeName(this).c_str());
+    return;
+  };
+
+  const std::string uuid_str = rclcpp_action::to_string(goal_handle_->get_goal_id());
+  RCLCPP_DEBUG(
+    logger_, "%s - Canceling goal %s for action '%s'.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+    uuid_str.c_str(), client_instance_->name.c_str());
 
   /**
    * Wait for the cancellation to be complete
    */
 
-  std::shared_future<std::shared_ptr<typename ActionClient::CancelResponse>> future_cancel =
+  std::shared_future<std::shared_ptr<typename ActionClient::CancelResponse>> future_cancel_response =
     client_instance_->action_client->async_cancel_goal(goal_handle_);
-  if (const auto code =
-        executor_ptr->spin_until_future_complete(future_cancel, context_.registration_options_.request_timeout);
+  if (const auto code = executor_ptr->spin_until_future_complete(
+        future_cancel_response, context_.registration_options_.request_timeout);
       code != rclcpp::FutureReturnCode::SUCCESS) {
     RCLCPP_WARN(
-      logger_, "%s - Failed to wait until goal for action '%s' was cancelled successfully (Received: %s).",
-      context_.getFullyQualifiedTreeNodeName(this).c_str(), client_instance_->name.c_str(),
-      rclcpp::to_string(code).c_str());
+      logger_, "%s - Failed to wait for response for cancellation request (Code: %s).",
+      context_.getFullyQualifiedTreeNodeName(this).c_str(), rclcpp::to_string(code).c_str());
+    return;
   }
+
+  RCLCPP_DEBUG(
+    logger_, "%s - Cancellation request of goal %s for action '%s' was accepted. Awaiting completion...",
+    context_.getFullyQualifiedTreeNodeName(this).c_str(), rclcpp_action::to_string(goal_handle_->get_goal_id()).c_str(),
+    client_instance_->name.c_str());
+
+  std::shared_future<WrappedResult> future_goal_result =
+    client_instance_->action_client->async_get_result(goal_handle_);
+  if (const auto code =
+        executor_ptr->spin_until_future_complete(future_goal_result, context_.registration_options_.request_timeout);
+      code != rclcpp::FutureReturnCode::SUCCESS) {
+    RCLCPP_WARN(
+      logger_, "%s - Failed to wait until cancellation completed (Code: %s).",
+      context_.getFullyQualifiedTreeNodeName(this).c_str(), rclcpp::to_string(code).c_str());
+    return;
+  }
+
+  RCLCPP_DEBUG(
+    logger_, "%s - Goal %s for action '%s' was cancelled successfully.",
+    context_.getFullyQualifiedTreeNodeName(this).c_str(), uuid_str.c_str(), client_instance_->name.c_str());
 }
 
 template <class T>
@@ -381,29 +415,26 @@ inline BT::NodeStatus RosActionNode<T>::tick()
       this->goal_response_received_ = true;
       this->goal_handle_ = goal_handle;
     };
-    goal_options.feedback_callback = [this](
-                                       typename GoalHandle::SharedPtr /*goal_handle*/,
-                                       const std::shared_ptr<const Feedback> feedback) {
-      on_feedback_state_change_ = onFeedback(feedback);
-      if (on_feedback_state_change_ == BT::NodeStatus::IDLE) {
-        throw std::logic_error(context_.getFullyQualifiedTreeNodeName(this) + " - onFeedback() must not return IDLE.");
-      }
-      emitWakeUpSignal();
-    };
-    goal_options.result_callback = [this](const WrappedResult & result) {
-      if (!goal_handle_)
-        throw std::logic_error(
-          context_.getFullyQualifiedTreeNodeName(this) + " - goal_handle_ is nullptr in result callback.");
-      if (goal_handle_->get_goal_id() == result.goal_id) {
-        if (result.code == rclcpp_action::ResultCode::CANCELED) {
-          // The goal can only be canceled if the tree was halted. In this case, the tick callback won't be able to call
-          // onResultReceived, so we must do this here. The returned status has no effect in this case.
-          onResultReceived(result);
+    goal_options.feedback_callback =
+      [this](typename GoalHandle::SharedPtr /*goal_handle*/, const std::shared_ptr<const Feedback> feedback) {
+        this->on_feedback_state_change_ = onFeedback(feedback);
+        if (this->on_feedback_state_change_ == BT::NodeStatus::IDLE) {
+          throw std::logic_error(
+            this->context_.getFullyQualifiedTreeNodeName(this) + " - onFeedback() must not return IDLE.");
         }
-        result_ = result;
-        goal_handle_ = nullptr;  // Reset internal goal handle after result
-        emitWakeUpSignal();
+        this->emitWakeUpSignal();
+      };
+    goal_options.result_callback = [this](const WrappedResult & result) {
+      // The result callback is also invoked when goal is rejected (code: CANCELED). So we must additionally check
+      // goal_handle_ before invoking onResultReceived, which should only be called if the goal was accepted
+      if (this->goal_handle_ && result.code == rclcpp_action::ResultCode::CANCELED) {
+        // Once accepted, the goal can only be canceled if the tree was halted. In this case, the tick callback won't be
+        // able to call onResultReceived, so we must do this here. The returned status has no effect in this case.
+        this->onResultReceived(result);
       }
+      this->result_ = result;
+      this->goal_handle_ = nullptr;  // Reset internal goal handle after result
+      this->emitWakeUpSignal();
     };
 
     future_goal_handle_ = action_client->async_send_goal(goal, goal_options);

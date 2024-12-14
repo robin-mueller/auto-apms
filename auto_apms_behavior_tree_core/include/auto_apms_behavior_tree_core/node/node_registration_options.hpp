@@ -53,6 +53,7 @@ struct NodeRegistrationOptions
   static const std::string PARAM_NAME_WAIT_TIMEOUT;
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
   static const std::string PARAM_NAME_ALLOW_UNREACHABLE;
+  static const std::string PARAM_NAME_LOGGER_LEVEL;
 
   NodeRegistrationOptions() = default;
 
@@ -79,6 +80,8 @@ struct NodeRegistrationOptions
   /// Flag whether to tolerate if the action/service node is unreachable when trying to create the client. If set to
   /// `true`, a warning is written to the logger. Otherwise, an exception is raised.
   bool allow_unreachable = false;
+  /// Minimum severity level allowed for logging using the ROS 2 logging API.
+  std::string logger_level = "INFO";
 
   bool valid() const;
 
@@ -102,6 +105,7 @@ inline Node convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::enc
   node[Options::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
   node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
   node[Options::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
+  node[Options::PARAM_NAME_LOGGER_LEVEL] = rhs.logger_level;
   return node;
 }
 inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::decode(const Node & node, Options & rhs)
@@ -137,6 +141,10 @@ inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::dec
     }
     if (key == Options::PARAM_NAME_ALLOW_UNREACHABLE) {
       rhs.allow_unreachable = val.as<bool>();
+      continue;
+    }
+    if (key == Options::PARAM_NAME_LOGGER_LEVEL) {
+      rhs.logger_level = val.as<std::string>();
       continue;
     }
     // Unkown parameter

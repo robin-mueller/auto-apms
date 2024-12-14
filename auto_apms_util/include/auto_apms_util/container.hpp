@@ -24,7 +24,9 @@ namespace auto_apms_util
 template <typename ValueT, typename AllocatorT, template <typename T, class A> class ContainerT>
 bool contains(const ContainerT<ValueT, AllocatorT> & c, const ValueT & val)
 {
-  return std::find(c.begin(), c.end(), val) != c.end();
+  for (const ValueT & v : c)
+    if (v == val) return true;
+  return false;
 }
 
 template <typename KeyT, typename CompareT, typename AllocatorT>

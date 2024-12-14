@@ -13,24 +13,54 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch.conditions import IfCondition
+from launch.launch_context import LaunchContext
 
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
+
+
+def create_orchestrator_node(context: LaunchContext):
+    return [
+        Node(
+            executable="orchestrator",
+            package="auto_apms_mission",
+            parameters=[
+                {
+                    "build_handler": (
+                        "auto_apms_mission::SingleNodeMissionBuildHandler"
+                        if context.launch_configurations["use_multiple_nodes"] == "false"
+                        else "auto_apms_mission::MultipleNodesMissionBuildHandler"
+                    ),
+                    "allow_other_build_handlers": False,
+                    "groot2_port": 5555,
+                    # "state_change_logger": True
+                }
+            ],
+            arguments=[context.launch_configurations["config"]],
+            output="screen",
+            emulate_tty=True,
+        )
+    ]
 
 
 def generate_launch_description():
     config_launch_arg = DeclareLaunchArgument(
         "config", description="Resource identity for the mission configuration file"
     )
-    config = LaunchConfiguration("config")
+    use_multiple_nodes_arg = DeclareLaunchArgument(
+        "use_multiple_nodes",
+        default_value="false",
+        description="Delegate mission execution as well as event monitoring and handling to individual nodes",
+    )
 
     return LaunchDescription(
         [
             config_launch_arg,
+            use_multiple_nodes_arg,
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
@@ -38,21 +68,8 @@ def generate_launch_description():
                     )
                 ),
                 launch_arguments={"with_orchestrator": "false"}.items(),
-                condition=IfCondition(
-                    "false"
-                ),  # TODO: Implement outsourcing of event monitor and mission executor to different nodes
+                condition=IfCondition(LaunchConfiguration("use_multiple_nodes")),
             ),
-            Node(
-                executable="orchestrator",
-                package="auto_apms_mission",
-                parameters=[
-                    {
-                        "groot2_port": 5555,
-                    }
-                ],
-                arguments=[config],
-                output="screen",
-                emulate_tty=True,
-            ),
+            OpaqueFunction(function=create_orchestrator_node),
         ]
     )

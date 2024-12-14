@@ -34,7 +34,7 @@ TreeExecutorBase::TreeExecutorBase(
   control_command_(ControlCommand::RUN),
   execution_stopped_(true)
 {
-  auto_apms_util::exposeToDebugLogging(logger_);
+  auto_apms_util::exposeToGlobalDebugLogging(logger_);
 
   // The behavior tree node callback group is intended to be passed to all nodes and used when adding subscriptions,
   // publishers, services, actions etc. It is associated with a standalone single threaded executor, which is spun in

@@ -20,10 +20,9 @@
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 
-// Include all built in node models for convenience
+// Include all built in node models and helpers for convenience
 #include "auto_apms_behavior_tree/builtin_nodes.hpp"
 #include "auto_apms_behavior_tree/util/node.hpp"
-#include "auto_apms_behavior_tree_core/native_nodes.hpp"
 
 // Include exceptions if derived build handlers need to throw an TreeBuildHandlerError
 #include "auto_apms_behavior_tree/exceptions.hpp"

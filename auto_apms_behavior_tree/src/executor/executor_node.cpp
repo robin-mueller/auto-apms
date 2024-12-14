@@ -21,6 +21,7 @@
 #include "auto_apms_behavior_tree/exceptions.hpp"
 #include "auto_apms_behavior_tree/util/parameter.hpp"
 #include "auto_apms_behavior_tree_core/definitions.hpp"
+#include "auto_apms_util/container.hpp"
 #include "auto_apms_util/string.hpp"
 #include "rclcpp/utilities.hpp"
 
@@ -61,9 +62,9 @@ TreeExecutorNodeOptions & TreeExecutorNodeOptions::enableBlackboardParameters(bo
   return *this;
 }
 
-TreeExecutorNodeOptions & TreeExecutorNodeOptions::setStaticBuildHandler(const std::string & name)
+TreeExecutorNodeOptions & TreeExecutorNodeOptions::setDefaultBuildHandler(const std::string & name)
 {
-  static_build_handler_ = name;
+  custom_default_parameters_[_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER] = rclcpp::ParameterValue(name);
   return *this;
 }
 
@@ -73,27 +74,6 @@ rclcpp::NodeOptions TreeExecutorNodeOptions::getROSNodeOptions() const
   opt.automatically_declare_parameters_from_overrides(
     scripting_enum_parameters_from_overrides_ || blackboard_parameters_from_overrides_);
   opt.allow_undeclared_parameters(scripting_enum_parameters_dynamic_ || blackboard_parameters_dynamic_);
-
-  if (!static_build_handler_.empty()) {
-    // Add static build handler to parameters. If any fields to be set have already been specified, erase them before
-    // setting to new value. Settings provided using TreeExecutorNodeOptions are always preferred.
-    std::vector<rclcpp::Parameter> vec = {
-      rclcpp::Parameter(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER, static_build_handler_),
-      rclcpp::Parameter(_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS, false)};
-    std::vector<rclcpp::Parameter> & param_overrides = opt.parameter_overrides();
-    param_overrides.erase(
-      std::remove_if(
-        param_overrides.begin(), param_overrides.end(),
-        [](const rclcpp::Parameter & p) {
-          return p.get_name() == _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_BUILD_HANDLER ||
-                 p.get_name() == _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_ALLOW_OTHER_BUILD_HANDLERS;
-        }),
-      param_overrides.end());
-    for (const rclcpp::Parameter & param : vec) {
-      param_overrides.push_back(param);
-    }
-  }
-
   return opt;
 }
 
@@ -103,6 +83,21 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
   executor_param_listener_(node_ptr_),
   start_action_context_(logger_)
 {
+  // Set custom parameter default values.
+  // NOTE: We cannot do this before the node is created, because we need all parameter overrides here, not just
+  // rclcpp::NodeOptions::parameter_overrides (This only contains parameter overrides explicitly provided to the options
+  // object. Generally speaking, this variable doesn't represent all parameter overrides).
+  std::vector<rclcpp::Parameter> new_default_parameters;
+  std::map<std::string, rclcpp::ParameterValue> effective_param_overrides =
+    node_ptr_->get_node_parameters_interface()->get_parameter_overrides();
+  for (const auto & [name, value] : executor_options_.custom_default_parameters_) {
+    // Only set custom default parameters if not present in overrides
+    if (effective_param_overrides.find(name) == effective_param_overrides.end()) {
+      new_default_parameters.push_back(rclcpp::Parameter(name, value));
+    }
+  }
+  if (!new_default_parameters.empty()) node_ptr_->set_parameters_atomically(new_default_parameters);
+
   const ExecutorParameters initial_params = executor_param_listener_.get_params();
 
   // Remove all parameters that are not supported and have been provided via parameter overrides
@@ -299,7 +294,7 @@ bool TreeExecutorNode::updateBlackboardWithParameterValues(
       } else {
         throw exceptions::ParameterConversionError(expected.error());
       }
-      known_bb_keys_.insert(entry_key);
+      translated_blackboard_entries_[entry_key] = pval;
       set_successfully_map[entry_key] = rclcpp::to_string(pval);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(
@@ -769,15 +764,31 @@ bool TreeExecutorNode::afterTick()
       // must additionally check whether the blackboard entry is empty or not using BT::Any::empty().
       if (any->empty()) continue;
 
-      // If the entry has actually been filled with a non empty value during runtime, we update this node's parameters
-      if (const auto & [_, is_new] = known_bb_keys_.insert(key); is_new) {
+      // If the entry has actually been set with any value during runtime, we update this node's parameters
+
+      if (translated_blackboard_entries_.find(key) == translated_blackboard_entries_.end()) {
+        // The key is new, so we must try to infer the parameter's type from BT::Any
         const BT::Expected<rclcpp::ParameterValue> expected =
           createParameterValueFromAny(*any, rclcpp::PARAMETER_NOT_SET);
         if (expected) {
           new_parameters.push_back(rclcpp::Parameter(BLACKBOARD_PARAM_PREFIX + "." + key, expected.value()));
+          translated_blackboard_entries_[key] = expected.value();
         } else {
           RCLCPP_WARN(
-            logger_, "Failed to transfer new blackboard entry '%s' (Type: %s) to parameters: %s", key.c_str(),
+            logger_, "Failed to translate new blackboard entry '%s' (Type: %s) to parameters: %s", key.c_str(),
+            type_info->typeName().c_str(), expected.error().c_str());
+        }
+      } else {
+        // The key is not new, so we can look up the parameter's type and update its value (if it changed)
+        const BT::Expected<rclcpp::ParameterValue> expected =
+          createParameterValueFromAny(*any, translated_blackboard_entries_[key].get_type());
+        if (expected) {
+          if (expected.value() != translated_blackboard_entries_[key]) {
+            new_parameters.push_back(rclcpp::Parameter(BLACKBOARD_PARAM_PREFIX + "." + key, expected.value()));
+          }
+        } else {
+          RCLCPP_WARN(
+            logger_, "Failed to translate blackboard entry '%s' (Type: %s) to parameters: %s", key.c_str(),
             type_info->typeName().c_str(), expected.error().c_str());
         }
       }

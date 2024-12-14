@@ -65,11 +65,10 @@ public:
     const BT::Expected<std::string> expected_name = getInput<std::string>(INPUT_KEY_PARAM_NAME);
     if (!expected_name || expected_name.value().empty()) {
       RCLCPP_ERROR(
-        context_.getLogger(), "%s - Parameter name must not be empty.",
-        context_.getFullyQualifiedTreeNodeName(this).c_str());
+        logger_, "%s - Parameter name must not be empty.", context_.getFullyQualifiedTreeNodeName(this).c_str());
       RCLCPP_DEBUG_EXPRESSION(
-        context_.getLogger(), !expected_name, "%s - Error message: %s",
-        context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_name.error().c_str());
+        logger_, !expected_name, "%s - Error message: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        expected_name.error().c_str());
       return false;
     }
     parameter.name = expected_name.value();
@@ -102,8 +101,7 @@ public:
       const BT::Expected<T> expected_entry = getInput<T>(INPUT_KEY_PARAM_VALUE);
       if (!expected_entry) {
         RCLCPP_ERROR(
-          context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
-          expected_entry.error().c_str());
+          logger_, "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_entry.error().c_str());
         return false;
       }
       const BT::Expected<rclcpp::ParameterValue> expected_param_val =
@@ -111,8 +109,7 @@ public:
       if (!expected_param_val) {
         // Conversion might not be possible. In this case, log error message and reject to set parameter.
         RCLCPP_ERROR(
-          context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
-          expected_param_val.error().c_str());
+          logger_, "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_param_val.error().c_str());
         return false;
       }
       param_val = expected_param_val.value().to_value_msg();
@@ -129,7 +126,7 @@ public:
     const rcl_interfaces::msg::SetParametersResult & result = response->results[0];
     if (!result.successful) {
       RCLCPP_ERROR(
-        context_.getLogger(), "Failed to set parameter %s = %s (Type: %s) via service '%s': %s",
+        logger_, "Failed to set parameter %s = %s (Type: %s) via service '%s': %s",
         requested_parameter_.get_name().c_str(), requested_parameter_.value_to_string().c_str(),
         requested_parameter_.get_type_name().c_str(), getServiceName().c_str(), result.reason.c_str());
       return BT::NodeStatus::FAILURE;

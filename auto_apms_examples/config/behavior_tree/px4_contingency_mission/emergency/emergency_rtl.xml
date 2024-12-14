@@ -7,13 +7,24 @@
   <BehaviorTree ID="EmergencyMonitor">
     <Sequence>
       <HasParameter parameter="bb.emergency"
-                    node=""/>
-      <ScriptCondition code="@emergency == true"/>
+                    node="orchestrator"/>
+      <GetParameterBool parameter="bb.emergency"
+                        value="{emergency}"
+                        node="orchestrator"/>
+      <ScriptCondition code="emergency == true"/>
     </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
+    <Action ID="GetParameterBool">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter to get.</input_port>
+      <output_port name="value"
+                   type="bool">Output port for the parameter's value.</output_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node.</input_port>
+    </Action>
     <Action ID="HasParameter">
       <input_port name="parameter"
                   type="std::string">Name of the parameter.</input_port>

@@ -12,6 +12,7 @@ ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION}:
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR}:
   class_name: auto_apms_behavior_tree::StartExecutor
   port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}
+  logger_level: DEBUG
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_TERMINATE_EXECUTOR}:
   class_name: auto_apms_behavior_tree::TerminateExecutor

@@ -137,7 +137,8 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTree(
     throw exceptions::TreeDocumentError(
       "Cannot insert tree element '" + tree.getFullyQualifiedName() + "' because it has more than one child node.");
   }
-  return insertBeforeImpl(before_this, root_child->DeepClone(doc_ptr_)->ToElement());
+  doc_ptr_->registerNodes(tree.getRequiredNodeManifest());
+  return insertTreeFromDocument(*tree.doc_ptr_, tree.getName(), before_this);
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
@@ -261,24 +262,29 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromResource(
 
 bool TreeDocument::NodeElement::hasChildren() const { return ele_ptr_->FirstChild() == nullptr ? false : true; }
 
-TreeDocument::NodeElement TreeDocument::NodeElement::getFirstNode(const std::string & name) const
+TreeDocument::NodeElement TreeDocument::NodeElement::getFirstNode(
+  const std::string & registration_name, const std::string & instance_name) const
 {
-  if (name.empty()) return NodeElement(doc_ptr_, ele_ptr_->FirstChildElement());
+  if (registration_name.empty() && instance_name.empty()) return NodeElement(doc_ptr_, ele_ptr_->FirstChildElement());
 
   // If name is given, recursively search for the first node with this name
-  ConstDeepApplyCallback apply = [name](const NodeElement & ele) {
-    return ele.getRegistrationName() == name || ele.getName() == name;
+  ConstDeepApplyCallback apply = [&registration_name, &instance_name](const NodeElement & ele) {
+    if (registration_name.empty()) return ele.getName() == instance_name;
+    if (instance_name.empty()) return ele.getRegistrationName() == registration_name;
+    return ele.getRegistrationName() == registration_name && ele.getName() == instance_name;
   };
   if (const std::vector<NodeElement> found = deepApply(apply); !found.empty()) return found[0];
 
   // Cannot find node in children of this
   throw exceptions::TreeDocumentError(
-    "Cannot find node '" + name + "' in parent element '" + getRegistrationName() + "'.");
+    "Cannot find a child node that matches the search arguments (registration_name: '" + registration_name +
+    "' - instance_name: '" + instance_name + "') in parent element '" + getFullyQualifiedName() + "'.");
 }
 
-TreeDocument::NodeElement & TreeDocument::NodeElement::removeFirstChild(const std::string & name)
+TreeDocument::NodeElement & TreeDocument::NodeElement::removeFirstChild(
+  const std::string & registration_name, const std::string & instance_name)
 {
-  ele_ptr_->DeleteChild(getFirstNode(name).ele_ptr_);
+  ele_ptr_->DeleteChild(getFirstNode(registration_name, instance_name).ele_ptr_);
   return *this;
 }
 
@@ -343,6 +349,12 @@ TreeDocument::NodeElement & TreeDocument::NodeElement::setConditionalScript(BT::
 TreeDocument::NodeElement & TreeDocument::NodeElement::setConditionalScript(BT::PostCond type, const Script & script)
 {
   ele_ptr_->SetAttribute(BT::toStr(type).c_str(), script.str().c_str());
+  return *this;
+}
+
+TreeDocument::NodeElement & TreeDocument::NodeElement::setName(const std::string & instance_name)
+{
+  ele_ptr_->SetAttribute(NODE_INSTANCE_NAME_ATTRIBUTE_NAME, instance_name.c_str());
   return *this;
 }
 
@@ -458,7 +470,7 @@ TreeDocument::TreeElement & TreeDocument::TreeElement::operator=(const TreeEleme
       "Cannot copy tree '" + other_name + "' because a tree with this name already exists.");
   }
   removeChildren();
-  if (other.hasChildren()) insertTree(other);  // We also allow other not having children
+  if (other.hasChildren()) insertTree(other);  // Insert children of other if existing, otherwise only copy the name
   ele_ptr_->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, other.getName().c_str());
   return *this;
 }
@@ -504,9 +516,10 @@ std::string TreeDocument::TreeElement::writeToString() const
   return printer.CStr();
 }
 
-TreeDocument::TreeElement & TreeDocument::TreeElement::removeFirstChild(const std::string & name)
+TreeDocument::TreeElement & TreeDocument::TreeElement::removeFirstChild(
+  const std::string & registration_name, const std::string & instance_name)
 {
-  NodeElement::removeFirstChild(name);
+  NodeElement::removeFirstChild(registration_name, instance_name);
   return *this;
 }
 
@@ -528,7 +541,7 @@ TreeDocument::TreeDocument(const std::string & format_version, NodeRegistrationL
   factory_(),
   logger_(rclcpp::get_logger(LOGGER_NAME))
 {
-  auto_apms_util::exposeToDebugLogging(logger_);
+  auto_apms_util::exposeToGlobalDebugLogging(logger_);
   reset();
 }
 
@@ -672,6 +685,11 @@ TreeDocument::TreeElement TreeDocument::newTree(const std::string & tree_name)
   TreeDocument::XMLElement * new_ele = RootElement()->InsertNewChildElement(TreeDocument::TREE_ELEMENT_NAME);
   new_ele->SetAttribute(TreeDocument::TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
   return TreeElement(this, new_ele);
+}
+
+TreeDocument::TreeElement TreeDocument::newTree(const TreeElement & other_tree)
+{
+  return mergeTree(other_tree).getTree(other_tree.getName());
 }
 
 TreeDocument::TreeElement TreeDocument::newTreeFromDocument(const TreeDocument & other, const std::string & tree_name)
@@ -1003,6 +1021,17 @@ std::string TreeDocument::writeToString() const
   tinyxml2::XMLPrinter printer;
   Print(&printer);
   return printer.CStr();
+}
+
+void TreeDocument::writeToFile(const std::string & path) const
+{
+  XMLDocument doc;
+  DeepCopy(&doc);
+  tinyxml2::XMLError result = doc.SaveFile(path.c_str());
+  if (result != tinyxml2::XML_SUCCESS) {
+    throw exceptions::TreeDocumentError(
+      "Failed to write tree document to file. Error ID: " + std::string(doc.ErrorIDToName(result)));
+  }
 }
 
 TreeDocument & TreeDocument::reset()

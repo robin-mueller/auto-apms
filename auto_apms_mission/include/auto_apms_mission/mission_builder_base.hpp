@@ -39,12 +39,13 @@ private:
 
   TreeDocument::TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) override final;
 
+protected:
   /* Virtual methods */
 
-  virtual void buildBringUp(model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees);
+  virtual void buildBringUp(TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees);
 
   virtual void buildMission(
-    model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees) = 0;
+    TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees) = 0;
 
   virtual void buildEventMonitor(
     TreeDocument::TreeElement & sub_tree,
@@ -59,10 +60,11 @@ private:
     TreeDocument::TreeElement & sub_tree,
     const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies);
 
-  virtual void buildShutDown(model::SequenceWithMemory & sequence, const std::vector<TreeResource::Identity> & trees);
+  virtual void buildShutDown(TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees);
 
   virtual void configureOrchestratorRootBlackboard(TreeBlackboard & bb);
 
+private:
   MissionConfiguration mission_config_;
 };
 

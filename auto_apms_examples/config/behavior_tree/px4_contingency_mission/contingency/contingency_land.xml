@@ -2,17 +2,20 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="ContingencyHandler">
     <Sequence>
-      <Sequence _while="event_id != &apos;&apos;">
-        <ReadGlobalPosition pos_vec="{pos_vec}"
-                            alt="{alt}"
-                            lat="{lat}"
-                            lon="{lon}"
-                            port=""/>
-        <Land port=""/>
-        <Disarm port=""/>
-      </Sequence>
+      <ReadGlobalPosition pos_vec="{pos_vec}"
+                          alt="{alt}"
+                          lat="{lat}"
+                          lon="{lon}"
+                          port=""/>
+      <Land port=""/>
+      <Disarm port=""/>
       <RetryUntilSuccessful num_attempts="-1">
-        <ScriptCondition code="@contingency_land == false"/>
+        <Sequence>
+          <GetParameterBool parameter="bb.contingency_land"
+                            value="{contingency_land}"
+                            node="orchestrator"/>
+          <ScriptCondition code="contingency_land == false"/>
+        </Sequence>
       </RetryUntilSuccessful>
       <Arm wait_until_ready_to_arm="true"
            port=""/>
@@ -24,8 +27,11 @@
   <BehaviorTree ID="ContingencyMonitor">
     <Sequence>
       <HasParameter parameter="bb.contingency_land"
-                    node=""/>
-      <ScriptCondition code="@contingency_land == true"/>
+                    node="orchestrator"/>
+      <GetParameterBool parameter="bb.contingency_land"
+                        value="{contingency_land}"
+                        node="orchestrator"/>
+      <ScriptCondition code="contingency_land == true"/>
     </Sequence>
   </BehaviorTree>
 
@@ -41,6 +47,14 @@
     <Action ID="Disarm">
       <input_port name="port"
                   type="std::string">Name of the ROS 2 action.</input_port>
+    </Action>
+    <Action ID="GetParameterBool">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter to get.</input_port>
+      <output_port name="value"
+                   type="bool">Output port for the parameter's value.</output_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node.</input_port>
     </Action>
     <Action ID="HasParameter">
       <input_port name="parameter"

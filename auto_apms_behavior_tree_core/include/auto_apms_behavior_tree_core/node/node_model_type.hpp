@@ -20,6 +20,52 @@
 #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 #include "behaviortree_cpp/basic_types.h"
 
+#define AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_NON_LEAF_THISREF_METHODS(ClassType)                                    \
+  ClassType & removeFirstChild(const std::string & registration_name = "", const std::string & instance_name = "") \
+  {                                                                                                                \
+    NodeElement::removeFirstChild(registration_name, instance_name);                                               \
+    return *this;                                                                                                  \
+  }                                                                                                                \
+  template <class ModelT>                                                                                          \
+  typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, ClassType &> removeFirstChild(               \
+    const std::string & instance_name = "")                                                                        \
+  {                                                                                                                \
+    NodeElement::removeFirstChild<ModelT>(instance_name);                                                          \
+    return *this;                                                                                                  \
+  }                                                                                                                \
+  ClassType & removeChildren()                                                                                     \
+  {                                                                                                                \
+    NodeElement::removeChildren();                                                                                 \
+    return *this;                                                                                                  \
+  }
+
+#define AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_LEAF_THISREF_METHODS(ClassType)                                      \
+  ClassType & setPorts(const auto_apms_behavior_tree::core::TreeDocument::NodeElement::PortValues & port_values) \
+  {                                                                                                              \
+    NodeElement::setPorts(port_values);                                                                          \
+    return *this;                                                                                                \
+  }                                                                                                              \
+  ClassType & resetPorts()                                                                                       \
+  {                                                                                                              \
+    NodeElement::resetPorts();                                                                                   \
+    return *this;                                                                                                \
+  }                                                                                                              \
+  ClassType & setConditionalScript(BT::PreCond type, const auto_apms_behavior_tree::core::Script & script)       \
+  {                                                                                                              \
+    NodeElement::setConditionalScript(type, script);                                                             \
+    return *this;                                                                                                \
+  }                                                                                                              \
+  ClassType & setConditionalScript(BT::PostCond type, const auto_apms_behavior_tree::core::Script & script)      \
+  {                                                                                                              \
+    NodeElement::setConditionalScript(type, script);                                                             \
+    return *this;                                                                                                \
+  }                                                                                                              \
+  ClassType & setName(const std::string & instance_name)                                                         \
+  {                                                                                                              \
+    NodeElement::setName(instance_name);                                                                         \
+    return *this;                                                                                                \
+  }
+
 namespace auto_apms_behavior_tree
 {
 namespace core
@@ -81,15 +127,9 @@ public:
   /// @copydoc TreeDocument::NodeElement::getRegistrationName()
   std::string getRegistrationName() const override final;
 
+  AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_LEAF_THISREF_METHODS(SubTree)
+
   SubTree & setBlackboardRemapping(const PortValues & remapping);
-
-  SubTree & setPorts(const PortValues & port_values);
-
-  SubTree & resetPorts();
-
-  SubTree & setConditionalScript(BT::PreCond type, const core::Script & script);
-
-  SubTree & setConditionalScript(BT::PostCond type, const core::Script & script);
 
   /**
    * @brief Set automatic blackboard remapping.

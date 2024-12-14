@@ -37,9 +37,24 @@ public:
 
   bool setGoal(Goal & goal)
   {
-    goal.lat = getInput<double>(INPUT_KEY_LATITUDE).value();
-    goal.lon = getInput<double>(INPUT_KEY_LONGITUDE).value();
-    goal.alt = getInput<double>(INPUT_KEY_ALTITUDE).value();
+    if (const BT::Expected<double> expected = getInput<double>(INPUT_KEY_LATITUDE)) {
+      goal.lat = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
+    if (const BT::Expected<double> expected = getInput<double>(INPUT_KEY_LONGITUDE)) {
+      goal.lon = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
+    if (const BT::Expected<double> expected = getInput<double>(INPUT_KEY_ALTITUDE)) {
+      goal.alt = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
     goal.head_towards_destination = true;
     return true;
   }

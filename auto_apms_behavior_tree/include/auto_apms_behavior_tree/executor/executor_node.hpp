@@ -36,7 +36,7 @@ public:
 
   TreeExecutorNodeOptions & enableBlackboardParameters(bool from_overrides, bool dynamic);
 
-  TreeExecutorNodeOptions & setStaticBuildHandler(const std::string & name);
+  TreeExecutorNodeOptions & setDefaultBuildHandler(const std::string & name);
 
   rclcpp::NodeOptions getROSNodeOptions() const;
 
@@ -48,7 +48,7 @@ private:
   bool scripting_enum_parameters_dynamic_ = true;
   bool blackboard_parameters_from_overrides_ = true;
   bool blackboard_parameters_dynamic_ = true;
-  std::string static_build_handler_;
+  std::map<std::string, rclcpp::ParameterValue> custom_default_parameters_;
 };
 
 class TreeExecutorNode : public TreeExecutorBase
@@ -144,7 +144,7 @@ private:
   TreeBuildHandler::UniquePtr build_handler_ptr_;
   std::string current_build_handler_name_;
   std::map<std::string, int> scripting_enums_;
-  std::set<std::string> known_bb_keys_;
+  std::map<std::string, rclcpp::ParameterValue> translated_blackboard_entries_;
   TreeConstructor tree_constructor_;
 
   // Interface objects

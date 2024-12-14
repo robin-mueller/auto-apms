@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
   signal(SIGINT, [](int /*sig*/) { termination_requested = 1; });
   rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("run_tree_node_cpp");
-  auto_apms_util::exposeToDebugLogging(node_ptr->get_logger());
+  auto_apms_util::exposeToGlobalDebugLogging(node_ptr->get_logger());
 
   core::NodeRegistrationOptions registration_params;
   try {

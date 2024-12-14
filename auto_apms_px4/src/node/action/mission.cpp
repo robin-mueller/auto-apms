@@ -34,7 +34,12 @@ public:
 
   bool setGoal(Goal & goal)
   {
-    goal.do_restart = getInput<bool>(INPUT_KEY_DO_RESTART).value();
+    if (const BT::Expected<bool> expected = getInput<bool>(INPUT_KEY_DO_RESTART)) {
+      goal.do_restart = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
     return true;
   }
 };

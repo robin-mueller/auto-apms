@@ -94,4 +94,50 @@ std::string trimWhitespaces(const std::string & str)
   return std::string(start, end + 1);
 }
 
+std::string toCamelCase(const std::string & str)
+{
+  std::string new_str;
+  bool capitalizeNext = true;
+  for (char ch : str) {
+    if (ch == '_') {
+      capitalizeNext = true;  // Flag to capitalize the next character
+    } else {
+      if (capitalizeNext) {
+        new_str += std::toupper(ch);  // Capitalize the character
+        capitalizeNext = false;       // Reset the flag
+      } else {
+        new_str += std::tolower(ch);  // Add lowercase character
+      }
+    }
+  }
+  return new_str;
+}
+
+std::string toSnakeCase(const std::string & str)
+{
+  std::string new_str;
+  for (size_t i = 0; i < str.size(); ++i) {
+    char ch = str[i];
+    if (std::isupper(ch)) {
+      // If it's an uppercase letter, check if it's part of an acronym
+      if (i > 0 && std::islower(str[i - 1])) {
+        // If the previous character is lowercase, insert an underscore
+        new_str += '_';
+      }
+
+      // Append the lowercase version of the current character
+      new_str += std::tolower(ch);
+
+      // Check if we are inside an acronym (two or more consecutive uppercase letters)
+      if (i + 1 < str.size() && std::isupper(str[i + 1])) {
+        // Continue appending subsequent uppercase letters as lowercase without underscores
+        continue;
+      }
+    } else {
+      new_str += ch;  // Append non-uppercase characters directly
+    }
+  }
+  return new_str;
+}
+
 }  // namespace auto_apms_util

@@ -79,7 +79,14 @@ inline Node convert<auto_apms_mission::MissionConfiguration>::encode(const Confi
   Node node(NodeType::Map);
   node[Config::YAML_KEY_BRINGUP] = rhs.bringup;
   node[Config::YAML_KEY_MISSION] = rhs.mission;
-  node[Config::YAML_KEY_CONTINGENCY] = rhs.contingency;
+  Node contingency_node = node[Config::YAML_KEY_CONTINGENCY];
+  for (const auto & [key, val] : rhs.contingency) {
+    contingency_node[key.str()] = val;
+  }
+  Node emergency_node = node[Config::YAML_KEY_EMERGENCY];
+  for (const auto & [key, val] : rhs.emergency) {
+    emergency_node[key.str()] = val;
+  }
   node[Config::YAML_KEY_SHUTDOWN] = rhs.shutdown;
   return node;
 }

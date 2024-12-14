@@ -43,30 +43,6 @@ SubTree & SubTree::setBlackboardRemapping(const PortValues & remapping)
   return *this;
 }
 
-SubTree & SubTree::setPorts(const PortValues & port_values)
-{
-  LeafNodeModelType::setPorts(port_values);
-  return *this;
-}
-
-SubTree & SubTree::resetPorts()
-{
-  LeafNodeModelType::resetPorts();
-  return *this;
-}
-
-SubTree & SubTree::setConditionalScript(BT::PreCond type, const core::Script & script)
-{
-  LeafNodeModelType::setConditionalScript(type, script);
-  return *this;
-}
-
-SubTree & SubTree::setConditionalScript(BT::PostCond type, const core::Script & script)
-{
-  LeafNodeModelType::setConditionalScript(type, script);
-  return *this;
-}
-
 SubTree & SubTree::set_auto_remap(bool val) { return setPorts({{"_autoremap", BT::toStr(val)}}); }
 
 bool SubTree::get_auto_remap() const { return BT::convertFromString<bool>(getPorts().at("_autoremap")); }

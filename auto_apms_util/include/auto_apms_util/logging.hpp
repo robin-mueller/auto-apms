@@ -19,6 +19,10 @@
 namespace auto_apms_util
 {
 
-void exposeToDebugLogging(const rclcpp::Logger & logger);
+void exposeToGlobalDebugLogging(const rclcpp::Logger & logger);
+
+void setLoggingSeverity(const rclcpp::Logger & logger, rclcpp::Logger::Level severity_level);
+
+void setLoggingSeverity(const rclcpp::Logger & logger, const std::string & severity_string);
 
 }  // namespace auto_apms_util

@@ -3,12 +3,22 @@
       main_tree_to_execute="PX4ContingencyMission">
   <BehaviorTree ID="PX4ContingencyMission">
     <SequenceWithMemory>
-      <ReadGlobalPosition pos_vec="{pos_vec}"
-                          alt="{alt}"
-                          lat="{lat}"
-                          lon="{lon}"
-                          port=""
-                          _onSuccess="new_lon := lon + 0.0006"/>
+      <RetryUntilSuccessful num_attempts="-1">
+        <Fallback>
+          <ReadGlobalPosition pos_vec="{pos_vec}"
+                              alt="{alt}"
+                              lat="{lat}"
+                              lon="{lon}"
+                              port=""
+                              _onSuccess="new_lon := lon + 0.0006"/>
+          <RunOnce then_skip="true">
+            <ForceFailure>
+              <Logger message="Global position not received yet. Waiting..."
+                      level="WARN"/>
+            </ForceFailure>
+          </RunOnce>
+        </Fallback>
+      </RetryUntilSuccessful>
       <GoTo lat="{lat}"
             lon="{new_lon}"
             alt="{alt}"
@@ -27,6 +37,13 @@
                   type="double">Target altitude in meter (AMSL)</input_port>
       <input_port name="port"
                   type="std::string">Name of the ROS 2 action.</input_port>
+    </Action>
+    <Action ID="Logger">
+      <input_port name="message"
+                  type="BT::Any">Message to be logged via rclcpp::Logger.</input_port>
+      <input_port name="level"
+                  default="INFO"
+                  type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
     </Action>
     <Condition ID="ReadGlobalPosition">
       <output_port name="pos_vec"

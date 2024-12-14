@@ -20,6 +20,7 @@
 
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/ros_node_context.hpp"
+#include "auto_apms_util/string.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/qos.hpp"
@@ -66,7 +67,7 @@ public:
   using Context = RosNodeContext;
 
   explicit RosSubscriberNode(
-    const std::string & instance_name, const Config & config, const Context & context, const rclcpp::QoS & qos = {10});
+    const std::string & instance_name, const Config & config, Context context, const rclcpp::QoS & qos = {10});
 
   virtual ~RosSubscriberNode() { signal_connection_.disconnect(); }
 
@@ -120,6 +121,7 @@ public:
 
 protected:
   const Context context_;
+  const rclcpp::Logger logger_;
 
 private:
   static std::mutex & registryMutex();
@@ -127,7 +129,6 @@ private:
   // contains the fully-qualified name of the node and the name of the topic
   static SubscribersRegistry & getRegistry();
 
-  const rclcpp::Logger logger_;
   const rclcpp::QoS qos_;
   std::string topic_name_;
   bool dynamic_client_instance_ = false;
@@ -160,8 +161,11 @@ inline RosSubscriberNode<MessageT>::SubscriberInstance::SubscriberInstance(
 
 template <class MessageT>
 inline RosSubscriberNode<MessageT>::RosSubscriberNode(
-  const std::string & instance_name, const Config & config, const Context & context, const rclcpp::QoS & qos)
-: BT::ConditionNode{instance_name, config}, context_{context}, logger_(context.getLogger()), qos_{qos}
+  const std::string & instance_name, const Config & config, Context context, const rclcpp::QoS & qos)
+: BT::ConditionNode{instance_name, config},
+  context_{context},
+  logger_(context.getChildLogger(auto_apms_util::toSnakeCase(instance_name))),
+  qos_{qos}
 {
   if (const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this)) {
     createSubscriber(expected_name.value());

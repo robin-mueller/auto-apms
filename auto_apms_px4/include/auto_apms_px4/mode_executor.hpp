@@ -294,27 +294,22 @@ auto_apms_util::ActionStatus ModeExecutor<ActionT>::executeGoal(
 
 template <class ActionT>
 bool ModeExecutor<ActionT>::sendActivationCommand(
-  const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr)
+  const VehicleCommandClient & client, std::shared_ptr<const Goal> /*goal_ptr*/)
 {
-  (void)goal_ptr;
   return client.syncActivateFlightMode(mode_id_);
 }
 
 template <class ActionT>
 bool ModeExecutor<ActionT>::isCompleted(
-  std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus & vehicle_status)
+  std::shared_ptr<const Goal> /*goal_ptr*/, const px4_msgs::msg::VehicleStatus & /*vehicle_status*/)
 {
-  (void)goal_ptr;
-  (void)vehicle_status;
   return mode_completed_;
 }
 
 template <class ActionT>
 void ModeExecutor<ActionT>::setFeedback(
-  std::shared_ptr<Feedback> feedback_ptr, const px4_msgs::msg::VehicleStatus & vehicle_status)
+  std::shared_ptr<Feedback> /*feedback_ptr*/, const px4_msgs::msg::VehicleStatus & /*vehicle_status*/)
 {
-  (void)feedback_ptr;
-  (void)vehicle_status;
   return;
 }
 

@@ -31,6 +31,7 @@ set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT "port")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT "wait_timeout")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT "request_timeout")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE "allow_unreachable")
+set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_LOGGER_LEVEL "logger_level")
 
 #
 # ------------ Library --------------
@@ -60,6 +61,7 @@ target_compile_definitions(auto_apms_behavior_tree_core PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT}"
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT}"
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE}"
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_LOGGER_LEVEL="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_LOGGER_LEVEL}"
 )
 ament_target_dependencies(auto_apms_behavior_tree_core
     rclcpp
@@ -91,25 +93,6 @@ target_link_libraries(create_node_model_header auto_apms_behavior_tree_core)
 #
 # ------------ Packaging --------------
 #
-
-# Native behavior tree node model header
-set(_native_node_model_header_abs_path__build "${PROJECT_BINARY_DIR}/native_nodes.hpp")
-add_custom_command(OUTPUT "${_native_node_model_header_abs_path__build}"
-    COMMAND create_node_model_header
-        "\"${_native_node_model_header_abs_path__build}\"" # Header output file
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    COMMENT "Generating native behavior tree node model header."
-    DEPENDS create_node_model_header
-)
-add_custom_target(generate_native_node_model_header ALL
-    DEPENDS "${_native_node_model_header_abs_path__build}"
-)
-
-# Install the native node model header file to this packages install dir
-install(
-    FILES "${_native_node_model_header_abs_path__build}"
-    DESTINATION "include/${PROJECT_NAME}"
-)
 
 ###### Export libraries ######
 install(

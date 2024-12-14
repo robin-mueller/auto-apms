@@ -49,6 +49,9 @@ public:
     // There is no string conversion function for variables that are type initialized using the value port if the
     // BT::Any version is used. To prevent errors when using these variables in e.g. the scripting language we have to
     // set the type to BT::AnyTypeAllowed to truly indicate that the type is not set by this port
+    // NOTE: Currently setOutput<BT::Any> is not allowed when port was declared with some other type (See
+    // https://github.com/BehaviorTree/BehaviorTree.CPP/issues/893). Therefore, GetParameter doesn't work currently...
+    // use one of the statically typed versions instead
     using AnyType = typename std::conditional_t<std::is_same_v<BT::Any, T>, BT::AnyTypeAllowed, T>;
     return {
       BT::InputPort<std::string>(
@@ -62,11 +65,10 @@ public:
     const BT::Expected<std::string> expected_name = getInput<std::string>(INPUT_KEY_PARAM_NAME);
     if (!expected_name || expected_name.value().empty()) {
       RCLCPP_ERROR(
-        context_.getLogger(), "%s - Parameter name must not be empty.",
-        context_.getFullyQualifiedTreeNodeName(this).c_str());
+        logger_, "%s - Parameter name must not be empty.", context_.getFullyQualifiedTreeNodeName(this).c_str());
       RCLCPP_DEBUG_EXPRESSION(
-        context_.getLogger(), !expected_name, "%s - Error message: %s",
-        context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_name.error().c_str());
+        logger_, !expected_name, "%s - Error message: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        expected_name.error().c_str());
       return false;
     }
     requested_parameter_name_ = expected_name.value();
@@ -82,9 +84,9 @@ public:
     }
     rclcpp::ParameterValue val(response->values[0]);
     if (val.get_type() == rclcpp::PARAMETER_NOT_SET) {
-      RCLCPP_ERROR(
-        context_.getLogger(), "%s - Tried to get undeclared parameter '%s'.",
-        context_.getFullyQualifiedTreeNodeName(this).c_str(), requested_parameter_name_.c_str());
+      RCLCPP_WARN(
+        logger_, "%s - Tried to get undeclared parameter '%s'.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        requested_parameter_name_.c_str());
       return BT::NodeStatus::FAILURE;
     }
 
@@ -95,8 +97,7 @@ public:
       const BT::Expected<BT::Any> expected = createAnyFromParameterValue(val);
       if (!expected) {
         RCLCPP_ERROR(
-          context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
-          expected.error().c_str());
+          logger_, "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(), expected.error().c_str());
         return BT::NodeStatus::FAILURE;
       }
       set_ouput_result = setOutput(OUTPUT_KEY_PARAM_VALUE, expected.value());
@@ -106,8 +107,7 @@ public:
 
     if (!set_ouput_result) {
       RCLCPP_ERROR(
-        context_.getLogger(), "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
-        set_ouput_result.error().c_str());
+        logger_, "%s - %s", context_.getFullyQualifiedTreeNodeName(this).c_str(), set_ouput_result.error().c_str());
       return BT::NodeStatus::FAILURE;
     }
 

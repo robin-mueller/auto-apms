@@ -73,13 +73,13 @@ struct TreeResourceIdentity
 
   TreeResourceIdentity() = default;
 
+  bool operator==(const TreeResourceIdentity & other) const;
+
   bool operator<(const TreeResourceIdentity & other) const;
 
   std::string str() const;
 
   bool empty() const;
-
-  operator bool() const;
 
   std::string package_name;
   std::string file_stem;

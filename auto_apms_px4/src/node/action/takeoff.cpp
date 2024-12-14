@@ -33,7 +33,12 @@ public:
 
   bool setGoal(Goal & goal)
   {
-    goal.altitude_amsl_m = getInput<double>(INPUT_KEY_ALTITUDE).value();
+    if (const BT::Expected<double> expected = getInput<double>(INPUT_KEY_ALTITUDE)) {
+      goal.altitude_amsl_m = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
     return true;
   }
 };

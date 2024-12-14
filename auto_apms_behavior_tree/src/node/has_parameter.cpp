@@ -54,11 +54,10 @@ public:
     const BT::Expected<std::string> expected_name = getInput<std::string>(INPUT_KEY_PARAM_NAME);
     if (!expected_name || expected_name.value().empty()) {
       RCLCPP_ERROR(
-        context_.getLogger(), "%s - Parameter name must not be empty.",
-        context_.getFullyQualifiedTreeNodeName(this).c_str());
+        logger_, "%s - Parameter name must not be empty.", context_.getFullyQualifiedTreeNodeName(this).c_str());
       RCLCPP_DEBUG_EXPRESSION(
-        context_.getLogger(), !expected_name, "%s - Error message: %s",
-        context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_name.error().c_str());
+        logger_, !expected_name, "%s - Error message: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        expected_name.error().c_str());
       return false;
     }
     has_parameter_name_ = expected_name.value();

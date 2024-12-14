@@ -37,7 +37,12 @@ public:
   bool setGoal(Goal & goal)
   {
     goal.arming_state = Goal::ARMING_STATE_ARM;
-    goal.wait_until_ready_to_arm = getInput<bool>(INPUT_KEY_WAIT).value();
+    if (const BT::Expected<bool> expected = getInput<bool>(INPUT_KEY_WAIT)) {
+      goal.wait_until_ready_to_arm = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
+      return false;
+    }
     return true;
   }
 };

@@ -18,6 +18,7 @@
 #include <regex>
 
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
+#include "auto_apms_util/logging.hpp"
 
 namespace auto_apms_behavior_tree::core
 {
@@ -27,7 +28,7 @@ RosNodeContext::RosNodeContext(
   const NodeRegistrationOptions & options)
 : ros_node_name_(ros_node ? ros_node->get_name() : ""),
   fully_qualified_ros_node_name_(ros_node ? ros_node->get_fully_qualified_name() : ""),
-  logger_(ros_node ? ros_node->get_logger() : rclcpp::get_logger("")),
+  base_logger_(ros_node ? ros_node->get_logger() : rclcpp::get_logger("")),
   nh_(ros_node),
   cb_group_(tree_node_waitables_callback_group),
   executor_(tree_node_waitables_executor),
@@ -39,7 +40,20 @@ std::string RosNodeContext::getROSNodeName() const { return ros_node_name_; }
 
 std::string RosNodeContext::getFullyQualifiedRosNodeName() const { return fully_qualified_ros_node_name_; }
 
-rclcpp::Logger RosNodeContext::getLogger() const { return logger_; }
+rclcpp::Logger RosNodeContext::getBaseLogger() const { return base_logger_; }
+
+rclcpp::Logger RosNodeContext::getChildLogger(const std::string & name)
+{
+  const rclcpp::Logger child_logger = base_logger_.get_child(name);
+  try {
+    auto_apms_util::setLoggingSeverity(child_logger, registration_options_.logger_level);
+  } catch (const auto_apms_util::exceptions::SetLoggingSeverityError & e) {
+    RCLCPP_ERROR(
+      base_logger_, "Failed to set the logging severity for the child logger using the node's registration options: %s",
+      e.what());
+  }
+  return child_logger;
+}
 
 rclcpp::Time RosNodeContext::getCurrentTime() const
 {

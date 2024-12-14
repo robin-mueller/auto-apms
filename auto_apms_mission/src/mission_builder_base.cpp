@@ -78,8 +78,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   if (!mission_config_.bringup.empty()) {
     RCLCPP_DEBUG(logger_, "Creating bringup subtree.");
     TreeDocument::TreeElement bringup_tree = builder.getTree("BringUp");
-    SequenceWithMemory bringup_sequence = bringup_tree.getFirstNode<SequenceWithMemory>().removeChildren();
-    buildBringUp(bringup_sequence, mission_config_.bringup);
+    buildBringUp(bringup_tree, mission_config_.bringup);
     if (const BT::Result res = bringup_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Bringup tree is not valid: " + res.error());
     }
@@ -88,8 +87,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Mission
   RCLCPP_DEBUG(logger_, "Creating mission subtree.");
   TreeDocument::TreeElement mission_tree = builder.getTree("RunMission");
-  SequenceWithMemory mission_sequence = mission_tree.getFirstNode<SequenceWithMemory>().removeChildren();
-  buildMission(mission_sequence, mission_config_.mission);
+  buildMission(mission_tree, mission_config_.mission);
   if (const BT::Result res = mission_tree.verify(); !res) {
     throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Mission tree is not valid: " + res.error());
   }
@@ -97,7 +95,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Event monitor
   if (!mission_config_.contingency.empty() || !mission_config_.emergency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating event monitor subtree.");
-    TreeDocument::TreeElement event_monitor_tree = builder.getTree("MonitorEvents").removeChildren();
+    TreeDocument::TreeElement event_monitor_tree = builder.getTree("MonitorEvents");
     buildEventMonitor(event_monitor_tree, mission_config_.contingency, mission_config_.emergency);
     if (const BT::Result res = event_monitor_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -108,7 +106,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Contingency Handling
   if (!mission_config_.contingency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating contingency handler subtree.");
-    TreeDocument::TreeElement contingency_tree = builder.getTree("HandleContingency").removeChildren();
+    TreeDocument::TreeElement contingency_tree = builder.getTree("HandleContingency");
     buildContingencyHandling(contingency_tree, mission_config_.contingency);
     if (const BT::Result res = contingency_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -119,7 +117,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Emergency Handling
   if (!mission_config_.emergency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating emergency handler subtree.");
-    TreeDocument::TreeElement emergency_tree = builder.getTree("HandleEmergency").removeChildren();
+    TreeDocument::TreeElement emergency_tree = builder.getTree("HandleEmergency");
     buildEmergencyHandling(emergency_tree, mission_config_.emergency);
     if (const BT::Result res = emergency_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -131,43 +129,84 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   if (!mission_config_.shutdown.empty()) {
     RCLCPP_DEBUG(logger_, "Creating shutdown subtree.");
     TreeDocument::TreeElement shutdown_tree = builder.getTree("ShutDown");
-    SequenceWithMemory shutdown_sequence = shutdown_tree.getFirstNode<SequenceWithMemory>().removeChildren();
-    buildShutDown(shutdown_sequence, mission_config_.shutdown);
+    buildShutDown(shutdown_tree, mission_config_.shutdown);
     if (const BT::Result res = shutdown_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Shutdown tree is not valid: " + res.error());
     }
   }
 
+  // Write tree for debugging purposes
+  builder.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
+
   return root_tree;
 }
 
 void MissionBuildHandlerBase::buildBringUp(
-  model::SequenceWithMemory & /*sequence*/, const std::vector<TreeResource::Identity> & /*trees*/)
+  TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees)
 {
+  sub_tree.removeChildren();
+  for (const TreeResource::Identity & r : trees) {
+    sub_tree.insertTreeFromResource(r);
+  }
 }
 
 void MissionBuildHandlerBase::buildEventMonitor(
-  TreeDocument::TreeElement & /*sub_tree*/,
-  const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & /*contingencies*/,
-  const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & /*emergencies*/)
+  TreeDocument::TreeElement & sub_tree,
+  const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies,
+  const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies)
 {
+  std::vector<TreeResource::Identity> event_ids;
+
+  // Emergencies have higher priority than contingencies (they are inserted to the vector first)
+  for (const auto & [event_id, _] : emergencies) {
+    event_ids.push_back(event_id);
+  }
+  for (const auto & [event_id, _] : contingencies) {
+    if (!auto_apms_util::contains(event_ids, event_id)) event_ids.push_back(event_id);
+  }
+
+  model::Fallback fallback = sub_tree.getFirstNode<model::Fallback>("DetectEvents").removeChildren();
+  for (const TreeResource::Identity & r : event_ids) {
+    fallback.insertTreeFromResource(r).setConditionalScript(BT::PostCond::ON_SUCCESS, "event_id = '" + r.str() + "'");
+  }
 }
 
 void MissionBuildHandlerBase::buildContingencyHandling(
-  TreeDocument::TreeElement & /*sub_tree*/,
-  const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & /*contingencies*/)
+  TreeDocument::TreeElement & sub_tree,
+  const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies)
 {
+  model::ReactiveFallback fallback = sub_tree.removeChildren().insertNode<model::ReactiveFallback>();
+
+  // At the highest priority (first child) we acknowledge when the event is reset (e.g. we abort the current action and
+  // resume)
+  fallback.insertNode<model::AlwaysFailure>().setConditionalScript(BT::PreCond::SUCCESS_IF, "event_id == ''");
+
+  for (const auto & [event_id, handler_id] : contingencies) {
+    model::AsyncSequence seq = fallback.insertNode<model::AsyncSequence>();
+    seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
+    seq.insertTreeFromResource(handler_id);
+  }
 }
 
 void MissionBuildHandlerBase::buildEmergencyHandling(
-  TreeDocument::TreeElement & /*sub_tree*/,
-  const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & /*emergencies*/)
+  TreeDocument::TreeElement & sub_tree,
+  const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies)
 {
+  model::ReactiveFallback fallback = sub_tree.removeChildren().insertNode<model::ReactiveFallback>();
+  for (const auto & [event_id, handler_id] : emergencies) {
+    model::AsyncSequence seq = fallback.insertNode<model::AsyncSequence>();
+    seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
+    seq.insertTreeFromResource(handler_id);
+  }
 }
 
 void MissionBuildHandlerBase::buildShutDown(
-  model::SequenceWithMemory & /*sequence*/, const std::vector<TreeResource::Identity> & /*trees*/)
+  TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees)
 {
+  sub_tree.removeChildren();
+  for (const TreeResource::Identity & r : trees) {
+    sub_tree.insertTreeFromResource(r);
+  }
 }
 
 void MissionBuildHandlerBase::configureOrchestratorRootBlackboard(TreeBlackboard & /*bb*/) {}

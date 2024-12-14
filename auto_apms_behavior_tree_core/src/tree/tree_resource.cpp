@@ -51,13 +51,13 @@ TreeResourceIdentity::TreeResourceIdentity(const std::string & identity)
 
 TreeResourceIdentity::TreeResourceIdentity(const char * identity) : TreeResourceIdentity(std::string(identity)) {}
 
+bool TreeResourceIdentity::operator==(const TreeResourceIdentity & other) const { return str() == other.str(); }
+
 bool TreeResourceIdentity::operator<(const TreeResourceIdentity & other) const { return str() < other.str(); }
 
 std::string TreeResourceIdentity::str() const { return package_name + "::" + file_stem + "::" + tree_name; }
 
 bool TreeResourceIdentity::empty() const { return package_name.empty() && file_stem.empty() && tree_name.empty(); }
-
-TreeResourceIdentity::operator bool() const { return !empty(); }
 
 TreeResource::TreeResource(const Identity & identity) : identity_(identity)
 {
