@@ -84,8 +84,6 @@ struct NodeRegistrationOptions
   std::string logger_level = "INFO";
 
   bool valid() const;
-
-  explicit operator bool() const;
 };
 
 }  // namespace auto_apms_behavior_tree::core

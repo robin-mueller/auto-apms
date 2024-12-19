@@ -26,7 +26,7 @@
   <BehaviorTree ID="MissionOrchestrator">
     <SequenceWithMemory>
       <Script name="InitVars"
-              code="event_id := &apos;&apos;;&#10;is_emergency := false;&#10;contingency_done := true"/>
+              code="prev_event_id := &apos;&apos;;&#10;event_id := &apos;&apos;;&#10;is_emergency := false;&#10;contingency_done := true"/>
       <Fallback>
         <SubTree ID="BringUp"/>
         <Error name="BringUpError"
@@ -36,11 +36,20 @@
                 success_count="1">
         <KeepRunningUntilFailure>
           <ForceSuccess>
-            <Sequence _while="is_emergency == false">
-              <SubTree ID="MonitorEvents"
-                       event_id="{=}"
-                       _description="This subtree sets event_id to a non-empty string if an event is detected or to the empty string if this is not the case. It returns SUCCESS when the event changed compared to the previous one and FAILURE otherwise."/>
+            <Sequence>
               <Sequence>
+                <Script name="SetPreviousEvent"
+                        code="prev_event_id = event_id"/>
+                <ForceSuccess>
+                  <SubTree ID="MonitorEvents"
+                           event_id="{=}"
+                           _description="This subtree sets event_id to a non-empty string if an event is detected (SUCCESS) or to the empty string if this is not the case (FAILURE)."
+                           _onFailure="event_id = &apos;&apos;"/>
+                </ForceSuccess>
+                <ScriptCondition name="DidEventChange"
+                                 code="prev_event_id != event_id"/>
+              </Sequence>
+              <Sequence _skipIf="is_emergency == true">
                 <Fallback>
                   <Sequence>
                     <ScriptCondition code="event_id == &apos;&apos;"/>
@@ -125,19 +134,7 @@
   </BehaviorTree>
 
   <BehaviorTree ID="MonitorEvents">
-    <Sequence>
-      <RunOnce then_skip="true">
-        <Script code="prev_event_id := &apos;&apos;;&#10;event_id := &apos;&apos;"/>
-      </RunOnce>
-      <Script code="prev_event_id = event_id"/>
-      <ForceSuccess>
-        <Fallback name="DetectEvents"
-                  _onFailure="event_id = &apos;&apos;">
-          <AlwaysFailure/>
-        </Fallback>
-      </ForceSuccess>
-      <ScriptCondition code="prev_event_id != event_id"/>
-    </Sequence>
+    <AlwaysFailure/>
   </BehaviorTree>
 
   <BehaviorTree ID="RunMission">

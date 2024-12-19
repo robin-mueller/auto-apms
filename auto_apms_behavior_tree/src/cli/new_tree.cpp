@@ -20,6 +20,7 @@
 #include "auto_apms_behavior_tree/executor/executor_base.hpp"
 #include "auto_apms_behavior_tree/util/node.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
+#include "auto_apms_util/filesystem.hpp"
 #include "auto_apms_util/string.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -55,17 +56,8 @@ int main(int argc, char ** argv)
 
   // Make sure that there is no content inside the file
   if (std::filesystem::exists(tree_file_path)) {
-    std::ifstream file(tree_file_path);
-    if (!file.is_open()) {
-      throw std::runtime_error("Couldn't open output file'" + tree_file_path.string() + "' to check if it is empty.");
-    }
-    // Read the file character by character
-    char ch;
-    while (file.get(ch)) {
-      if (!std::isspace(static_cast<unsigned char>(ch))) {
-        // Found a non-whitespace character
-        throw std::runtime_error("Output file '" + tree_file_path.string() + "' is not empty.");
-      }
+    if (!auto_apms_util::isFileEmpty(tree_file_path.string())) {
+      throw std::runtime_error("Output file '" + tree_file_path.string() + "' is not empty.");
     }
   }
 

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" project_name="Project">
+    <include path="navigate_to_location.xml"/>
+    <!-- Description of Node Models (used by Groot) -->
+    <TreeNodesModel>
+        <Action ID="NavigateToLocation">
+            <input_port name="target" type="std::string">Name of the target location.</input_port>
+            <input_port name="room" type="std::string">Name of the target room.</input_port>
+            <input_port name="source" type="std::string">Name of the source location.</input_port>
+            <input_port name="robot" type="std::string">Name of the robot.</input_port>
+        </Action>
+        <Action ID="SetLocationState">
+            <input_port name="open" default="false" type="bool">Open/Close the location.</input_port>
+            <input_port name="location" type="std::string">Name of the location.</input_port>
+            <input_port name="lock" default="false" type="bool">Lock/Unlock the location.</input_port>
+        </Action>
+    </TreeNodesModel>
+</root>

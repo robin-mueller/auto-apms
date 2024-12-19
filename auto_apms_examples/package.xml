@@ -14,8 +14,9 @@
     <depend>auto_apms_behavior_tree</depend>
     <depend>auto_apms_mission</depend>
 
-    <!-- Needs to be mentioned in dependencies because BT node metadata generation relies on nodes from this package -->
+    <!-- Needs to be mentioned in dependencies because tree metadata generation relies on nodes from these packages -->
     <depend>auto_apms_px4</depend>
+    <depend>auto_apms_simulation</depend>
 
     <export>
         <build_type>ament_cmake</build_type>

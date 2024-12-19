@@ -94,7 +94,7 @@ rclcpp_components_register_nodes(px4_tasks
 )
 
 #
-# ------------ Behavior Tree Nodes --------------
+# ------------ Behavior tree nodes --------------
 #
 
 add_library(px4_behavior_tree_nodes SHARED

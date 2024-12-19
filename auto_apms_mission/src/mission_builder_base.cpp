@@ -165,9 +165,9 @@ void MissionBuildHandlerBase::buildEventMonitor(
     if (!auto_apms_util::contains(event_ids, event_id)) event_ids.push_back(event_id);
   }
 
-  model::Fallback fallback = sub_tree.getFirstNode<model::Fallback>("DetectEvents").removeChildren();
+  model::Fallback fallback = sub_tree.removeChildren().insertNode<model::Fallback>();
   for (const TreeResource::Identity & r : event_ids) {
-    fallback.insertTreeFromResource(r).setConditionalScript(BT::PostCond::ON_SUCCESS, "event_id = '" + r.str() + "'");
+    fallback.insertTreeFromResource(r).setConditionalScript(BT::PostCond::ON_SUCCESS, "event_id := '" + r.str() + "'");
   }
 }
 
@@ -179,10 +179,13 @@ void MissionBuildHandlerBase::buildContingencyHandling(
 
   // At the highest priority (first child) we acknowledge when the event is reset (e.g. we abort the current action and
   // resume)
-  fallback.insertNode<model::AlwaysFailure>().setConditionalScript(BT::PreCond::SUCCESS_IF, "event_id == ''");
+  fallback.insertNode<model::AlwaysFailure>()
+    .setName("ResetEventHandler")
+    .setConditionalScript(BT::PreCond::SUCCESS_IF, "event_id == ''");
 
   for (const auto & [event_id, handler_id] : contingencies) {
-    model::AsyncSequence seq = fallback.insertNode<model::AsyncSequence>();
+    model::AsyncSequence seq =
+      fallback.insertNode<model::AsyncSequence>().setName("EventHandler (" + handler_id.str() + ")");
     seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
     seq.insertTreeFromResource(handler_id);
   }
@@ -194,7 +197,8 @@ void MissionBuildHandlerBase::buildEmergencyHandling(
 {
   model::ReactiveFallback fallback = sub_tree.removeChildren().insertNode<model::ReactiveFallback>();
   for (const auto & [event_id, handler_id] : emergencies) {
-    model::AsyncSequence seq = fallback.insertNode<model::AsyncSequence>();
+    model::AsyncSequence seq =
+      fallback.insertNode<model::AsyncSequence>().setName("EventHandler (" + handler_id.str() + ")");
     seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
     seq.insertTreeFromResource(handler_id);
   }

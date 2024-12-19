@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 
+#include "action_msgs/srv/cancel_goal.hpp"
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/ros_node_context.hpp"
 #include "auto_apms_util/string.hpp"
@@ -179,6 +180,7 @@ private:
   rclcpp::Time time_goal_sent_;
   BT::NodeStatus on_feedback_state_change_;
   bool goal_response_received_;  // We must use this additional flag because goal_handle_ may be nullptr if rejected
+  bool halt_requested_;
   WrappedResult result_;
 };
 
@@ -243,6 +245,7 @@ inline BT::NodeStatus RosActionNode<ActionT>::onResultReceived(const WrappedResu
     logger_, "%s - Goal completed. Received result %s.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
     result_str.c_str());
   if (result.code == rclcpp_action::ResultCode::SUCCEEDED) return BT::NodeStatus::SUCCESS;
+  if (halt_requested_ && result.code == rclcpp_action::ResultCode::CANCELED) return BT::NodeStatus::SUCCESS;
   return BT::NodeStatus::FAILURE;
 }
 
@@ -298,10 +301,7 @@ inline void RosActionNode<T>::cancelGoal()
     logger_, "%s - Canceling goal %s for action '%s'.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
     uuid_str.c_str(), client_instance_->name.c_str());
 
-  /**
-   * Wait for the cancellation to be complete
-   */
-
+  // Send the cancellation request
   std::shared_future<std::shared_ptr<typename ActionClient::CancelResponse>> future_cancel_response =
     client_instance_->action_client->async_cancel_goal(goal_handle_);
   if (const auto code = executor_ptr->spin_until_future_complete(
@@ -310,36 +310,80 @@ inline void RosActionNode<T>::cancelGoal()
     RCLCPP_WARN(
       logger_, "%s - Failed to wait for response for cancellation request (Code: %s).",
       context_.getFullyQualifiedTreeNodeName(this).c_str(), rclcpp::to_string(code).c_str());
+
+    // Make sure goal handle is invalidated
+    goal_handle_ = nullptr;
     return;
   }
 
-  RCLCPP_DEBUG(
-    logger_, "%s - Cancellation request of goal %s for action '%s' was accepted. Awaiting completion...",
-    context_.getFullyQualifiedTreeNodeName(this).c_str(), rclcpp_action::to_string(goal_handle_->get_goal_id()).c_str(),
-    client_instance_->name.c_str());
+  // Check the response for the cancellation request
+  if (!future_cancel_response.get()) {
+    throw std::logic_error("Shared pointer to cancel response is nullptr.");
+  }
+  typename ActionClient::CancelResponse cancel_response = *future_cancel_response.get();
+  std::string cancel_response_str;
+  switch (cancel_response.return_code) {
+    case action_msgs::srv::CancelGoal::Response::ERROR_REJECTED:
+      cancel_response_str = "ERROR_REJECTED";
+      break;
+    case action_msgs::srv::CancelGoal::Response::ERROR_UNKNOWN_GOAL_ID:
+      cancel_response_str = "ERROR_UNKNOWN_GOAL_ID";
+      break;
+    case action_msgs::srv::CancelGoal::Response::ERROR_GOAL_TERMINATED:
+      cancel_response_str = "ERROR_GOAL_TERMINATED";
+      break;
+    default:
+      cancel_response_str = "ERROR_NONE";
+      break;
+  }
+  if (cancel_response.return_code == action_msgs::srv::CancelGoal::Response::ERROR_NONE) {
+    RCLCPP_DEBUG(
+      logger_,
+      "%s - Cancellation request of goal %s for action '%s' was accepted (Response: %s). Awaiting completion...",
+      context_.getFullyQualifiedTreeNodeName(this).c_str(),
+      rclcpp_action::to_string(goal_handle_->get_goal_id()).c_str(), client_instance_->name.c_str(),
+      cancel_response_str.c_str());
 
-  std::shared_future<WrappedResult> future_goal_result =
-    client_instance_->action_client->async_get_result(goal_handle_);
-  if (const auto code =
-        executor_ptr->spin_until_future_complete(future_goal_result, context_.registration_options_.request_timeout);
-      code != rclcpp::FutureReturnCode::SUCCESS) {
-    RCLCPP_WARN(
-      logger_, "%s - Failed to wait until cancellation completed (Code: %s).",
-      context_.getFullyQualifiedTreeNodeName(this).c_str(), rclcpp::to_string(code).c_str());
-    return;
+    // Wait for the cancellation to be complete (goal result received)
+    std::shared_future<WrappedResult> future_goal_result =
+      client_instance_->action_client->async_get_result(goal_handle_);
+    if (const auto code =
+          executor_ptr->spin_until_future_complete(future_goal_result, context_.registration_options_.request_timeout);
+        code == rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_DEBUG(
+        logger_, "%s - Goal %s for action '%s' was cancelled successfully.",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), uuid_str.c_str(), client_instance_->name.c_str());
+    } else {
+      RCLCPP_WARN(
+        logger_, "%s - Failed to wait until cancellation completed (Code: %s).",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), rclcpp::to_string(code).c_str());
+    }
+  } else {
+    // The cancellation request was rejected. If this was due to the goal having terminated normally before the request
+    // was processed by the server, we consider the cancellation as a success. Otherwise we warn.
+    if (cancel_response.return_code == action_msgs::srv::CancelGoal::Response::ERROR_GOAL_TERMINATED) {
+      RCLCPP_DEBUG(
+        logger_, "%s - Goal %s for action '%s' has already terminated (Response: %s). Nothing to cancel.",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), uuid_str.c_str(), client_instance_->name.c_str(),
+        cancel_response_str.c_str());
+    } else {
+      RCLCPP_WARN(
+        logger_, "%s - Cancellation request was rejected (Response: %s).",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), cancel_response_str.c_str());
+    }
   }
 
-  RCLCPP_DEBUG(
-    logger_, "%s - Goal %s for action '%s' was cancelled successfully.",
-    context_.getFullyQualifiedTreeNodeName(this).c_str(), uuid_str.c_str(), client_instance_->name.c_str());
+  // Make sure goal handle is invalidated
+  goal_handle_ = nullptr;
 }
 
 template <class T>
 inline void RosActionNode<T>::halt()
 {
   if (status() == BT::NodeStatus::RUNNING) {
-    cancelGoal();
+    halt_requested_ = true;
     onHalt();
+    cancelGoal();
     resetStatus();
   }
 }
@@ -396,6 +440,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     setStatus(BT::NodeStatus::RUNNING);
 
     goal_response_received_ = false;
+    halt_requested_ = false;
     on_feedback_state_change_ = BT::NodeStatus::RUNNING;
     result_ = {};
 
@@ -425,15 +470,15 @@ inline BT::NodeStatus RosActionNode<T>::tick()
         this->emitWakeUpSignal();
       };
     goal_options.result_callback = [this](const WrappedResult & result) {
-      // The result callback is also invoked when goal is rejected (code: CANCELED). So we must additionally check
-      // goal_handle_ before invoking onResultReceived, which should only be called if the goal was accepted
-      if (this->goal_handle_ && result.code == rclcpp_action::ResultCode::CANCELED) {
+      // The result callback is also invoked when goal is rejected (code: CANCELED), but we only want to call
+      // onResultReceived if the goal was accepted and the tree has been halted. Therefore, we use the
+      // halt_requested_ flag.
+      if (this->halt_requested_) {
         // Once accepted, the goal can only be canceled if the tree was halted. In this case, the tick callback won't be
         // able to call onResultReceived, so we must do this here. The returned status has no effect in this case.
         this->onResultReceived(result);
       }
       this->result_ = result;
-      this->goal_handle_ = nullptr;  // Reset internal goal handle after result
       this->emitWakeUpSignal();
     };
 
@@ -459,8 +504,9 @@ inline BT::NodeStatus RosActionNode<T>::tick()
 
       if (!goal_handle_) return check_status(onFailure(GOAL_REJECTED_BY_SERVER));
       RCLCPP_DEBUG(
-        logger_, "%s - Goal accepted by server, waiting for result.",
-        context_.getFullyQualifiedTreeNodeName(this).c_str());
+        logger_, "%s - Goal %s accepted by server, waiting for result.",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        rclcpp_action::to_string(goal_handle_->get_goal_id()).c_str());
     }
 
     // SECOND case: onFeedback requested a stop
@@ -470,7 +516,10 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     }
 
     // THIRD case: result received
-    if (result_.code != rclcpp_action::ResultCode::UNKNOWN) return check_status(onResultReceived(result_));
+    if (result_.code != rclcpp_action::ResultCode::UNKNOWN) {
+      this->goal_handle_ = nullptr;  // Reset internal goal handle after result
+      return check_status(onResultReceived(result_));
+    }
   }
   return BT::NodeStatus::RUNNING;
 }

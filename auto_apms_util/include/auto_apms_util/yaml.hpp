@@ -20,20 +20,18 @@
 #include <string>
 
 #include "auto_apms_util/exceptions.hpp"
+#include "auto_apms_util/filesystem.hpp"
 #include "yaml-cpp/yaml.h"
 
 #define AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(ClassType)                                                  \
   static ClassType fromFile(const std::string & path)                                                             \
   {                                                                                                               \
+    if (auto_apms_util::isFileEmpty(path)) return ClassType();                                                    \
     try {                                                                                                         \
       return YAML::LoadFile(path).as<ClassType>();                                                                \
     } catch (const YAML::ParserException & e) {                                                                   \
       throw auto_apms_util::exceptions::YAMLFormatError(                                                          \
         "Format error when creating " + boost::core::demangle(typeid(ClassType).name()) +                         \
-        " from file: " + std::string(e.what()));                                                                  \
-    } catch (const YAML::BadFile & e) {                                                                           \
-      throw YAML::BadFile(                                                                                        \
-        "Bad file error when creating " + boost::core::demangle(typeid(ClassType).name()) +                       \
         " from file: " + std::string(e.what()));                                                                  \
     }                                                                                                             \
   }                                                                                                               \

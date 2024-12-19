@@ -28,6 +28,4 @@ const std::string NodeRegistrationOptions::PARAM_NAME_LOGGER_LEVEL = _AUTO_APMS_
 
 bool NodeRegistrationOptions::valid() const { return !class_name.empty(); }
 
-NodeRegistrationOptions::operator bool() const { return valid(); }
-
 }  // namespace auto_apms_behavior_tree::core

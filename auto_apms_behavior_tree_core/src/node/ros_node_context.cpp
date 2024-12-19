@@ -89,6 +89,9 @@ BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::Tre
   const std::regex pattern(R"(\(input:([^)\s]+)\))");
   const std::sregex_iterator replace_begin(res.begin(), res.end(), pattern);
   const std::sregex_iterator replace_end = std::sregex_iterator();
+
+  // We iterate over each substitution expression. If there are none, this for loop has no effect, and we simply return
+  // the parameters value.
   for (std::sregex_iterator it = replace_begin; it != replace_end; ++it) {
     const std::smatch match = *it;
     const std::string input_port_key = match[1].str();
@@ -113,7 +116,7 @@ BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::Tre
         // Replace the respective substring with the value returned from getInput()
         res.replace(match.position(), match.length(), expected.value());
       } else {
-        // Return unexpected if value couldn't be retrieved from input ports
+        // Return expected (contains error) if value couldn't be retrieved from input ports
         return expected;
       }
     } else {

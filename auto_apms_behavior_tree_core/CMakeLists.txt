@@ -8,6 +8,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(action_msgs REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(auto_apms_util REQUIRED)
@@ -66,6 +67,7 @@ target_compile_definitions(auto_apms_behavior_tree_core PRIVATE
 ament_target_dependencies(auto_apms_behavior_tree_core
     rclcpp
     rclcpp_action
+    action_msgs
     TinyXML2
     behaviortree_cpp
     auto_apms_util
@@ -107,7 +109,8 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
     rclcpp
     rclcpp_action
-    TinyXML2
+    action_msgs
+    tinyxml2_vendor # Must be exported instead of TinyXML2 target
     behaviortree_cpp
     auto_apms_util
 )

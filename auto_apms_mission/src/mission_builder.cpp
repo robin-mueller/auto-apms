@@ -68,23 +68,25 @@ private:
     MissionBuildHandlerBase::buildEventMonitor(event_monitor_tree, contingencies, emergencies);
     event_monitor_tree.getFirstNode()
       .setName(event_monitor_tree.getName())
-      .setConditionalScript(BT::PostCond::ALWAYS, "@event_id = event_id");
-    TreeDocument::TreeElement main_tree = doc.newTree("MainTree");
+      .setConditionalScript(BT::PostCond::ON_SUCCESS, "@event_id = event_id")
+      .setConditionalScript(BT::PostCond::ON_FAILURE, "@event_id = ''");
+    TreeDocument::TreeElement main_tree = doc.newTree("InfiniteLoopEventMonitor");
     main_tree.insertNode<model::KeepRunningUntilFailure>().insertNode<model::ForceSuccess>().insertTree(
       event_monitor_tree);
 
-    model::Fallback fallback = sub_tree.getFirstNode<model::Fallback>("DetectEvents").removeChildren();
-    model::Sequence run_once_seq = fallback.insertNode<model::RunOnce>().insertNode<model::Sequence>();
+    // Retrieve the event ID from the event monitor executor
+    model::Sequence seq = sub_tree.removeChildren().insertNode<model::Sequence>();
+    model::Sequence run_once_seq = seq.insertNode<model::RunOnce>().insertNode<model::Sequence>();
     run_once_seq.insertNode<model::SetParameterString>()
       .set_node(EVENT_MONITOR_EXECUTOR_NAME)
       .set_parameter("bb.event_id")
       .set_value("");
     auto_apms_behavior_tree::insertStartExecutorFromString(run_once_seq, main_tree)
-      .setName("EventMonitor")
+      .setName("StartDetachedEventMonitor")
       .set_attach(false)
       .set_clear_blackboard(false)
       .set_executor(EVENT_MONITOR_EXECUTOR_NAME);
-    fallback.insertNode<model::GetParameterString>()
+    seq.insertNode<model::GetParameterString>()
       .set_node(EVENT_MONITOR_EXECUTOR_NAME)
       .set_parameter("bb.event_id")
       .set_value("{event_id}");
@@ -94,26 +96,20 @@ private:
     TreeDocument::TreeElement & sub_tree,
     const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies) override final
   {
-    sub_tree.removeChildren();
-
     TreeDocument doc;
-    TreeDocument::TreeElement new_tree = doc.newTree(sub_tree);
-    model::Sequence seq = new_tree.insertNode<model::Sequence>();
-    seq.insertNode<model::Script>().set_code("event_id := ''");  // Initial event_id value
-    model::Parallel parallel = seq.insertNode<model::Parallel>().set_success_count(1);
-
+    TreeDocument::TreeElement handler_tree = doc.newTree(sub_tree.getName());
+    model::Parallel parallel = handler_tree.insertNode<model::Parallel>().set_success_count(1).set_failure_count(1);
     parallel.insertNode<model::KeepRunningUntilFailure>()
       .insertNode<model::GetParameterString>()
       .set_node(EVENT_MONITOR_EXECUTOR_NAME)
       .set_parameter("bb.event_id")
       .set_value("{event_id}");
-
-    TreeDocument::TreeElement base_tree = doc.newTree("TempTree");
+    TreeDocument::TreeElement base_tree = doc.newTree("HandlerBaseTree");
     MissionBuildHandlerBase::buildContingencyHandling(base_tree, contingencies);
-    parallel.insertTree(base_tree).setConditionalScript(BT::PreCond::SKIP_IF, "event_id == ''");
+    parallel.insertNode<model::WaitValueUpdate>().set_entry("{event_id}").insertTree(base_tree);
 
-    auto_apms_behavior_tree::insertStartExecutorFromString(sub_tree, new_tree)
-      .setName("ContingencyHandler")
+    auto_apms_behavior_tree::insertStartExecutorFromString(sub_tree.removeChildren(), handler_tree)
+      .setName(handler_tree.getName())
       .set_attach(true)
       .set_clear_blackboard(true)
       .set_executor(EVENT_HANDLER_EXECUTOR_NAME);
@@ -123,26 +119,20 @@ private:
     TreeDocument::TreeElement & sub_tree,
     const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies) override final
   {
-    sub_tree.removeChildren();
-
     TreeDocument doc;
-    TreeDocument::TreeElement new_tree = doc.newTree(sub_tree);
-    model::Sequence seq = new_tree.insertNode<model::Sequence>();
-    seq.insertNode<model::Script>().set_code("event_id := ''");  // Initial event_id value
-    model::Parallel parallel = seq.insertNode<model::Parallel>().set_success_count(1);
-
+    TreeDocument::TreeElement handler_tree = doc.newTree(sub_tree.getName());
+    model::Parallel parallel = handler_tree.insertNode<model::Parallel>().set_success_count(1).set_failure_count(1);
     parallel.insertNode<model::KeepRunningUntilFailure>()
       .insertNode<model::GetParameterString>()
       .set_node(EVENT_MONITOR_EXECUTOR_NAME)
       .set_parameter("bb.event_id")
       .set_value("{event_id}");
-
-    TreeDocument::TreeElement base_tree = doc.newTree("TempTree");
+    TreeDocument::TreeElement base_tree = doc.newTree("HandlerBaseTree");
     MissionBuildHandlerBase::buildEmergencyHandling(base_tree, emergencies);
-    parallel.insertTree(base_tree).setConditionalScript(BT::PreCond::SKIP_IF, "event_id == ''");
+    parallel.insertNode<model::WaitValueUpdate>().set_entry("{event_id}").insertTree(base_tree);
 
-    auto_apms_behavior_tree::insertStartExecutorFromString(sub_tree, new_tree)
-      .setName("EmergencyHandler")
+    auto_apms_behavior_tree::insertStartExecutorFromString(sub_tree.removeChildren(), handler_tree)
+      .setName(handler_tree.getName())
       .set_attach(true)
       .set_clear_blackboard(true)
       .set_executor(EVENT_HANDLER_EXECUTOR_NAME);
@@ -150,11 +140,14 @@ private:
 
   void buildShutDown(TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees)
   {
+    // First thing: Terminate detached event monitor executor
+    model::SequenceWithMemory seq = sub_tree.removeChildren().insertNode<model::SequenceWithMemory>();
+    seq.insertNode<model::TerminateExecutor>().set_executor(EVENT_MONITOR_EXECUTOR_NAME);
+
+    // Afterwards, execute everything else
     TreeDocument doc;
     TreeDocument::TreeElement temp = doc.newTree("TempTree");
     MissionBuildHandlerBase::buildShutDown(temp, trees);
-    model::SequenceWithMemory seq = sub_tree.removeChildren().insertNode<model::SequenceWithMemory>();
-    seq.insertNode<model::TerminateExecutor>().set_executor(EVENT_MONITOR_EXECUTOR_NAME);
     seq.insertTree(temp);
   }
 };

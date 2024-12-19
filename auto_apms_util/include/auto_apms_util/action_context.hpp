@@ -29,7 +29,7 @@ public:
   using Result = typename ActionT::Result;
   using GoalHandle = rclcpp_action::ServerGoalHandle<ActionT>;
 
-  ActionContext(const rclcpp::Logger & logger);
+  ActionContext(rclcpp::Logger logger);
 
   void setUp(std::shared_ptr<GoalHandle> goal_handle_ptr);
 
@@ -63,7 +63,7 @@ private:
  */
 
 template <class ActionT>
-ActionContext<ActionT>::ActionContext(const rclcpp::Logger & logger) : logger_{logger}
+ActionContext<ActionT>::ActionContext(rclcpp::Logger logger) : logger_{logger.get_child("action_context")}
 {
 }
 
