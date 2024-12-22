@@ -148,9 +148,20 @@ NodeManifest & NodeManifest::remove(const std::string & node_name)
   return *this;
 }
 
-NodeManifest & NodeManifest::merge(const NodeManifest & m)
+NodeManifest & NodeManifest::merge(const NodeManifest & other, bool replace)
 {
-  for (const auto & [node_name, params] : m.map()) add(node_name, params);
+  for (const auto & [node_name, params] : other.map()) {
+    if (contains(node_name)) {
+      if (replace) {
+        map_.erase(node_name);
+      } else {
+        throw exceptions::NodeManifestError(
+          "Cannot merge node manifests, because node '" + node_name +
+          "' already exists in other and argument replace is false (Won't replace existing entries).");
+      }
+    }
+    add(node_name, params);
+  }
   return *this;
 }
 

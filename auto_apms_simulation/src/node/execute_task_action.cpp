@@ -14,31 +14,57 @@
 
 #include "pyrobosim_msgs/action/execute_task_action.hpp"
 
+#include <map>
+
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "auto_apms_simulation/util.hpp"
 
 #define INPUT_KEY_ROBOT_NAME "robot"
 #define INPUT_KEY_TARGET_LOCATION "target"
-#define INPUT_KEY_ROOM "room"
-#define INPUT_KEY_SOURCE_LOCATION "source"
+#define INPUT_KEY_OBJECT "object"
 
 namespace auto_apms_simulation
 {
 
-class NavigateToLocation
-: public auto_apms_behavior_tree::core::RosActionNode<pyrobosim_msgs::action::ExecuteTaskAction>
+class ExecuteTaskAction : public auto_apms_behavior_tree::core::RosActionNode<pyrobosim_msgs::action::ExecuteTaskAction>
 {
   int32_t success_result_ = ExecutionResultMsg::SUCCESS;
 
 public:
   using RosActionNode::RosActionNode;
 
+  virtual bool setGoal(Goal & goal) = 0;
+
+  void onHalt() override final { success_result_ = ExecutionResultMsg::CANCELED; }
+
+  BT::NodeStatus onResultReceived(const WrappedResult & result) override final
+  {
+    const BT::NodeStatus base_status = RosActionNode::onResultReceived(result);
+    if (base_status != BT::NodeStatus::SUCCESS) return base_status;
+    if (result.result->execution_result.status != success_result_) {
+      RCLCPP_ERROR(
+        logger_, "%s - FAILURE: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        toStr(result.result->execution_result).c_str());
+      return BT::NodeStatus::FAILURE;
+    }
+    RCLCPP_DEBUG(
+      logger_, "%s - SUCCESS: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+      toStr(result.result->execution_result).c_str());
+    return BT::NodeStatus::SUCCESS;
+  }
+};
+
+class NavigateToLocation : public ExecuteTaskAction
+{
+public:
+  using ExecuteTaskAction::ExecuteTaskAction;
+
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<std::string>(INPUT_KEY_SOURCE_LOCATION, "", "Name of the source location."),
-      BT::InputPort<std::string>(INPUT_KEY_ROOM, "", "Name of the target room."),
-      BT::InputPort<std::string>(INPUT_KEY_TARGET_LOCATION, "Name of the target location."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_TARGET_LOCATION,
+        "Name of the target to navigate to (Terms for the knowledge query are separated by whitespace)."),
       BT::InputPort<std::string>(INPUT_KEY_ROBOT_NAME, "Name of the robot.")};
   }
 
@@ -66,30 +92,70 @@ public:
     goal.action.type = "navigate";
     goal.action.robot = expected_robot.value();
     goal.action.target_location = expected_location.value();
-    goal.action.room = getInput<std::string>(INPUT_KEY_ROOM).value();
-    goal.action.source_location = getInput<std::string>(INPUT_KEY_SOURCE_LOCATION).value();
     return true;
   }
+};
 
-  void onHalt() override final { success_result_ = ExecutionResultMsg::CANCELED; }
+class PickObject : public ExecuteTaskAction
+{
+public:
+  using ExecuteTaskAction::ExecuteTaskAction;
 
-  BT::NodeStatus onResultReceived(const WrappedResult & result)
+  static BT::PortsList providedPorts()
   {
-    const BT::NodeStatus base_status = RosActionNode::onResultReceived(result);
-    if (base_status != BT::NodeStatus::SUCCESS) return base_status;
-    if (result.result->execution_result.status != success_result_) {
+    return {
+      BT::InputPort<std::string>(INPUT_KEY_OBJECT, " ", "Name of the object to pick. Empty for the nearest object."),
+      BT::InputPort<std::string>(INPUT_KEY_ROBOT_NAME, "Name of the robot.")};
+  }
+
+  bool setGoal(Goal & goal)
+  {
+    const BT::Expected<std::string> expected_robot = getInput<std::string>(INPUT_KEY_ROBOT_NAME);
+    if (!expected_robot || expected_robot.value().empty()) {
       RCLCPP_ERROR(
-        logger_, "%s - FAILURE: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
-        toStr(result.result->execution_result).c_str());
-      return BT::NodeStatus::FAILURE;
+        logger_, "%s - You must provide a non-empty robot name.", context_.getFullyQualifiedTreeNodeName(this).c_str());
+      RCLCPP_DEBUG_EXPRESSION(
+        logger_, !expected_robot, "%s - Error message: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        expected_robot.error().c_str());
+      return false;
     }
-    RCLCPP_DEBUG(
-      logger_, "%s - SUCCESS: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
-      toStr(result.result->execution_result).c_str());
-    return BT::NodeStatus::SUCCESS;
+    goal.action.type = "pick";
+    goal.action.robot = expected_robot.value();
+    goal.action.object = getInput<std::string>(INPUT_KEY_OBJECT).value();
+    if (goal.action.object.empty()) goal.action.object = " ";  // Include a whitespace to indicate 'any object'
+    return true;
+  }
+};
+
+class PlaceObject : public ExecuteTaskAction
+{
+public:
+  using ExecuteTaskAction::ExecuteTaskAction;
+
+  static BT::PortsList providedPorts()
+  {
+    return {BT::InputPort<std::string>(INPUT_KEY_ROBOT_NAME, "Name of the robot.")};
+  }
+
+  bool setGoal(Goal & goal)
+  {
+    const BT::Expected<std::string> expected_robot = getInput<std::string>(INPUT_KEY_ROBOT_NAME);
+    if (!expected_robot || expected_robot.value().empty()) {
+      RCLCPP_ERROR(
+        logger_, "%s - You must provide a non-empty robot name.", context_.getFullyQualifiedTreeNodeName(this).c_str());
+      RCLCPP_DEBUG_EXPRESSION(
+        logger_, !expected_robot, "%s - Error message: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+        expected_robot.error().c_str());
+      return false;
+    }
+    goal.action.type = "place";
+    goal.action.robot = expected_robot.value();
+    return true;
   }
 };
 
 }  // namespace auto_apms_simulation
 
 AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_simulation::NavigateToLocation)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_simulation::PickObject)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_simulation::PlaceObject)

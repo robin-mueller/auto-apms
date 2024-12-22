@@ -28,7 +28,6 @@ For more information, please visit the [official documentation](https://robin-mu
 
 ## TODO
 
-- Implement examples using [PyRoboSim](https://github.com/sea-bass/pyrobosim)
 - Create comprehensive documentation of member functions and intended use cases
 - Implement more detailed examples
 - Implement unit tests

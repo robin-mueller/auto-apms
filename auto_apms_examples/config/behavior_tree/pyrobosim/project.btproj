@@ -1,18 +1,163 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<root BTCPP_format="4" project_name="Project">
-    <include path="navigate_to_location.xml"/>
+<root BTCPP_format="4" project_name="HogwartsSimulation">
+    <include path="hogwarts.xml"/>
     <!-- Description of Node Models (used by Groot) -->
     <TreeNodesModel>
+        <Action ID="Error">
+            <input_port name="message" type="std::string">Error message. Creates a generic error message if empty.</input_port>
+        </Action>
+        <Action ID="GetParameter">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="BT::AnyTypeAllowed">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterBool">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="bool">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterBoolVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;bool, std::allocator&lt;bool&gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterByteVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;unsigned char, std::allocator&lt;unsigned char&gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterDouble">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="double">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterDoubleVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;double, std::allocator&lt;double&gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterInt">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="long">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterIntVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;long, std::allocator&lt;long&gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterString">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::string">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterStringVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <SubTree ID="GetStudentName" editable="true">
+            <output_port name="student" default="{=}">Hogwarts student name to execute the tree.</output_port>
+            <input_port name="default">Default student name used if no parameter is found.</input_port>
+        </SubTree>
+        <Action ID="HaltExecutor">
+            <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
+        </Action>
+        <Action ID="HasParameter">
+            <input_port name="parameter" type="std::string">Name of the parameter.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="IsLocationOccupied">
+            <input_port name="location" type="std::string">Name of the location.</input_port>
+        </Action>
+        <Action ID="Logger">
+            <input_port name="message" type="BT::AnyTypeAllowed">Message to be logged via rclcpp::Logger.</input_port>
+            <input_port name="level" default="INFO" type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
+        </Action>
         <Action ID="NavigateToLocation">
-            <input_port name="target" type="std::string">Name of the target location.</input_port>
-            <input_port name="room" type="std::string">Name of the target room.</input_port>
-            <input_port name="source" type="std::string">Name of the source location.</input_port>
+            <input_port name="robot" type="std::string">Name of the robot.</input_port>
+            <input_port name="target" type="std::string">Name of the target to navigate to (Terms for the knowledge query are separated by whitespace).</input_port>
+        </Action>
+        <Action ID="PauseExecutor">
+            <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
+        </Action>
+        <Action ID="PickObject">
+            <input_port name="robot" type="std::string">Name of the robot.</input_port>
+            <input_port name="object" default=" " type="std::string">Name of the object to pick. Empty for the nearest object.</input_port>
+        </Action>
+        <Action ID="PlaceObject">
             <input_port name="robot" type="std::string">Name of the robot.</input_port>
         </Action>
+        <Action ID="ResumeExecutor">
+            <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
+        </Action>
         <Action ID="SetLocationState">
-            <input_port name="open" default="false" type="bool">Open/Close the location.</input_port>
+            <input_port name="open" default="true" type="bool">Open/Close the location.</input_port>
             <input_port name="location" type="std::string">Name of the location.</input_port>
             <input_port name="lock" default="false" type="bool">Lock/Unlock the location.</input_port>
+        </Action>
+        <Action ID="SetParameter">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="BT::AnyTypeAllowed">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterBool">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="bool">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterBoolVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;bool, std::allocator&lt;bool&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterByteVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;unsigned char, std::allocator&lt;unsigned char&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterDouble">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="double">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterDoubleVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;double, std::allocator&lt;double&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterInt">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="long">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterIntVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;long, std::allocator&lt;long&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterString">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::string">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterStringVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="StartExecutor">
+            <input_port name="executor" type="std::string">Name of the executor responsible for building and running the specified behavior tree.</input_port>
+            <input_port name="build_request" type="std::string">String passed to the tree build handler defining which tree is to be built.</input_port>
+            <input_port name="build_handler" type="std::string">Fully qualified class name of the build handler that is supposed to take care of the request. If empty, use the current one.</input_port>
+            <input_port name="root_tree" type="std::string">Name of the root tree. If empty, let the build handler determine the root tree.</input_port>
+            <input_port name="node_manifest" type="std::string">YAML/JSON formatted string encoding the name and the registration options for the tree nodes supposed to be loaded before building the tree.</input_port>
+            <input_port name="node_overrides" type="std::string">YAML/JSON formatted string encoding the name and the registration options for any tree nodes supposed to override previously loaded ones.</input_port>
+            <input_port name="clear_blackboard" default="true" type="bool">Boolean flag wether to clear the existing blackboard entries before the execution starts or not.</input_port>
+            <input_port name="attach" default="true" type="bool">Boolean flag wether to attach to the execution process or start in detached mode.</input_port>
+        </Action>
+        <Action ID="TerminateExecutor">
+            <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
         </Action>
     </TreeNodesModel>
 </root>

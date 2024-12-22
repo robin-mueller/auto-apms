@@ -78,7 +78,14 @@ public:
 
   NodeManifest & remove(const std::string & node_name);
 
-  NodeManifest & merge(const NodeManifest & m);
+  /**
+   * @brief Merges another NodeManifest with this one.
+   * @param other Other node manifest.
+   * @param replace `true` for automatically replacing entries with the same key. Throws an error if `false`
+   * and `other` contains any keys that also exist in this manifest.
+   * @return Modified manifest instance.
+   */
+  NodeManifest & merge(const NodeManifest & other, bool replace = false);
 
   std::vector<std::string> getNodeNames();
 

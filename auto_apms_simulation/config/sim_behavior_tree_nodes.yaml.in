@@ -2,7 +2,18 @@ SetLocationState:
   class_name: auto_apms_simulation::SetLocationState
   port: ${_AUTO_APMS_SIMULATION__SERVICE_NAME__SET_LOCATION_STATE}
 
+IsLocationOccupied:
+  class_name: auto_apms_simulation::IsLocationOccupied
+  port: ${_AUTO_APMS_SIMULATION__SERVICE_NAME__REQUEST_WORLD_STATE}
+
 NavigateToLocation:
   class_name: auto_apms_simulation::NavigateToLocation
   port: ${_AUTO_APMS_SIMULATION__ACTION_NAME__EXECUTE_TASK_ACTION}
-  logger_level: DEBUG
+
+PickObject:
+  class_name: auto_apms_simulation::PickObject
+  port: ${_AUTO_APMS_SIMULATION__ACTION_NAME__EXECUTE_TASK_ACTION}
+
+PlaceObject:
+  class_name: auto_apms_simulation::PlaceObject
+  port: ${_AUTO_APMS_SIMULATION__ACTION_NAME__EXECUTE_TASK_ACTION}

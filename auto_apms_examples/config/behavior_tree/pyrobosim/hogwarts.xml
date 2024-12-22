@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="GryffindorTree">
+  <BehaviorTree ID="GetStudentName">
+    <Fallback>
+      <Sequence>
+        <HasParameter parameter="bb.student"
+                      node=""/>
+        <GetParameterString parameter="bb.student"
+                            value="{student}"
+                            node=""/>
+      </Sequence>
+      <Script code="student := default"/>
+    </Fallback>
+  </BehaviorTree>
+
+  <BehaviorTree ID="GryffindorTree">
+    <Sequence>
+      <SubTree ID="GetStudentName"
+               student="{student}"
+               default="potter"/>
+      <KeepRunningUntilFailure>
+        <SequenceWithMemory>
+          <NavigateToLocation robot="{student}"
+                              target="voldemort"/>
+          <PickObject robot="{student}"/>
+          <NavigateToLocation robot="{student}"
+                              target="dumbledore"/>
+          <PlaceObject robot="{student}"/>
+        </SequenceWithMemory>
+      </KeepRunningUntilFailure>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="SlytherinTree">
+    <Sequence>
+      <SubTree ID="GetStudentName"
+               student="{student}"
+               default="malfoy"/>
+      <KeepRunningUntilFailure>
+        <SequenceWithMemory>
+          <NavigateToLocation robot="{student}"
+                              target="dumbledore"/>
+          <PickObject robot="{student}"
+                      object=" "/>
+          <NavigateToLocation robot="{student}"
+                              target="voldemort"/>
+          <PlaceObject robot="{student}"/>
+        </SequenceWithMemory>
+      </KeepRunningUntilFailure>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="GetParameterString">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter to get.</input_port>
+      <output_port name="value"
+                   type="std::string">Output port for the parameter's value.</output_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+    </Action>
+    <SubTree ID="GetStudentName"
+             editable="true">
+      <output_port name="student"
+                   default="{=}">Hogwarts student name to execute the tree.</output_port>
+      <input_port name="default">Default student name used if no parameter is found.</input_port>
+    </SubTree>
+    <Action ID="HasParameter">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter.</input_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+    </Action>
+    <Action ID="NavigateToLocation">
+      <input_port name="robot"
+                  type="std::string">Name of the robot.</input_port>
+      <input_port name="target"
+                  type="std::string">Name of the target to navigate to (Terms for the knowledge query are separated by whitespace).</input_port>
+    </Action>
+    <Action ID="PickObject">
+      <input_port name="robot"
+                  type="std::string">Name of the robot.</input_port>
+      <input_port name="object"
+                  default=" "
+                  type="std::string">Name of the object to pick. Empty for the nearest object.</input_port>
+    </Action>
+    <Action ID="PlaceObject">
+      <input_port name="robot"
+                  type="std::string">Name of the robot.</input_port>
+    </Action>
+  </TreeNodesModel>
+
+</root>
