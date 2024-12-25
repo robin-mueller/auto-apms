@@ -84,9 +84,9 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
   start_action_context_(logger_)
 {
   // Set custom parameter default values.
-  // NOTE: We cannot do this before the node is created, because we need all parameter overrides here, not just
-  // rclcpp::NodeOptions::parameter_overrides (This only contains parameter overrides explicitly provided to the options
-  // object. Generally speaking, this variable doesn't represent all parameter overrides).
+  // NOTE: We cannot do this before the node is created, because we also need the global parameter overrides here, not
+  // just rclcpp::NodeOptions::parameter_overrides (This only contains parameter overrides explicitly provided to the
+  // options object. Generally speaking, this variable doesn't represent all parameter overrides).
   std::vector<rclcpp::Parameter> new_default_parameters;
   std::map<std::string, rclcpp::ParameterValue> effective_param_overrides =
     node_ptr_->get_node_parameters_interface()->get_parameter_overrides();
@@ -100,7 +100,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
 
   const ExecutorParameters initial_params = executor_param_listener_.get_params();
 
-  // Remove all parameters that are not supported and have been provided via parameter overrides
+  // Remove all parameters from overrides that are not supported
   rcl_interfaces::msg::ListParametersResult res = node_ptr_->list_parameters({}, 0);
   std::vector<std::string> unkown_param_names;
   for (const std::string & param_name : res.names) {
@@ -188,7 +188,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
   parameter_event_callback_handle_ptr_ = parameter_event_handler_ptr_->add_parameter_event_callback(
     [this](const rcl_interfaces::msg::ParameterEvent & event) { this->parameter_event_callback_(event); });
 
-  // Make sure ROS arguments are removed. When applying composition, this is typically not the case.
+  // Make sure ROS arguments are removed. When using rclcpp_components, this is typically not the case.
   std::vector<std::string> args_with_ros_arguments = node_ptr_->get_node_options().arguments();
   int argc = args_with_ros_arguments.size();
   char ** argv = new char *[argc + 1];  // +1 for the null terminator
@@ -217,6 +217,13 @@ TreeExecutorNode::TreeExecutorNode(rclcpp::NodeOptions options)
 }
 
 void TreeExecutorNode::setUpBuilder(core::TreeBuilder & /*builder*/, const core::NodeManifest & /*node_manifest*/) {}
+
+std::shared_future<TreeExecutorNode::ExecutionResult> TreeExecutorNode::startExecution(
+  const std::string & tree_build_request)
+{
+  const ExecutorParameters params = executor_param_listener_.get_params();
+  return startExecution(makeTreeConstructor(tree_build_request, ""), params.tick_rate, params.groot2_port);
+}
 
 std::map<std::string, rclcpp::ParameterValue> TreeExecutorNode::getParameterValuesWithPrefix(const std::string & prefix)
 {

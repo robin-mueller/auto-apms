@@ -23,11 +23,12 @@ from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
 
-def create_orchestrator_node(context: LaunchContext):
+def spawn_orchestrator_node(context: LaunchContext):
     return [
         Node(
-            executable="orchestrator",
-            package="auto_apms_mission",
+            package="auto_apms_behavior_tree",
+            executable="run_tree",
+            name="orchestrator",
             parameters=[
                 {
                     "build_handler": (
@@ -70,6 +71,6 @@ def generate_launch_description():
                 launch_arguments={"with_orchestrator": "false"}.items(),
                 condition=IfCondition(LaunchConfiguration("use_multiple_nodes")),
             ),
-            OpaqueFunction(function=create_orchestrator_node),
+            OpaqueFunction(function=spawn_orchestrator_node),
         ]
     )

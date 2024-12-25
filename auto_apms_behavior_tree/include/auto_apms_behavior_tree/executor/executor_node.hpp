@@ -66,7 +66,7 @@ public:
   inline static const std::string BLACKBOARD_PARAM_PREFIX = "bb";
 
   /**
-   * @brief Constructor for TreeExecutorNode allowing to specify a default node name and executor options.
+   * @brief Constructor allowing to specify a default node name and executor options.
    * @param[in] name Name of the rclcpp::Node instance.
    * @param[in] executor_options Executor specific options. Simply pass a rclcpp::NodeOptions instance to use the
    * default options.
@@ -81,6 +81,10 @@ public:
   explicit TreeExecutorNode(rclcpp::NodeOptions options);
 
   virtual ~TreeExecutorNode() override = default;
+
+  using TreeExecutorBase::startExecution;
+
+  std::shared_future<ExecutionResult> startExecution(const std::string & tree_build_request);
 
 private:
   /* Virtual methods */

@@ -34,5 +34,6 @@
     "cSpell.enabled": true,
     "cSpell.enabledFileTypes": {
         "cpp": true
-    }
+    },
+    "python.analysis.autoImportCompletions": true
 }

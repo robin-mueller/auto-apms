@@ -67,14 +67,14 @@ public:
     rclcpp::Node::SharedPtr node_ptr, rclcpp::CallbackGroup::SharedPtr tree_node_callback_group_ptr = nullptr,
     bool throw_on_tree_error = false);
 
+  virtual ~TreeExecutorBase() = default;
+
   std::shared_future<ExecutionResult> startExecution(
     TreeConstructor make_tree, double tick_rate_sec = 0.1, int groot2_port = -1);
 
   template <typename TimeRepT = int64_t, typename TimeT = std::milli>
   std::shared_future<ExecutionResult> startExecution(
     TreeConstructor make_tree, const std::chrono::duration<TimeRepT, TimeT> & tick_rate, int groot2_port = -1);
-
-  virtual ~TreeExecutorBase() = default;
 
 private:
   void tick_callback_(TerminationCallback termination_callback);
@@ -115,6 +115,8 @@ public:
   void clearGlobalBlackboard();
 
   TreeStateObserver & getStateObserver();
+
+  rclcpp::Node::SharedPtr getNodePtr();
 
   /// Get the node's base interface. Is required to be able to register derived classes as ROS2 components.
   rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface();

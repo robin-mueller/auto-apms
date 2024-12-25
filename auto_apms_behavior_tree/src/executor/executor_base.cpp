@@ -281,6 +281,8 @@ void TreeExecutorBase::clearGlobalBlackboard() { global_blackboard_ptr_ = TreeBl
 
 TreeStateObserver & TreeExecutorBase::getStateObserver() { return *state_observer_ptr_; }
 
+rclcpp::Node::SharedPtr TreeExecutorBase::getNodePtr() { return node_ptr_; }
+
 rclcpp::node_interfaces::NodeBaseInterface::SharedPtr TreeExecutorBase::get_node_base_interface()
 {
   return node_ptr_->get_node_base_interface();

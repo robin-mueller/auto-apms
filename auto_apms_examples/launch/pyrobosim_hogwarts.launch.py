@@ -18,9 +18,16 @@ import json
 import numpy as np
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
-
-# from launch.substitutions import LaunchConfiguration
+from launch.actions import (
+    DeclareLaunchArgument,
+    OpaqueFunction,
+    RegisterEventHandler,
+    GroupAction,
+    UnregisterEventHandler,
+)
+from launch.event_handlers import OnProcessIO
+from launch.conditions import IfCondition
+from launch.substitutions import PythonExpression
 from launch.launch_context import LaunchContext
 from launch_ros.actions import Node
 
@@ -28,7 +35,7 @@ GRYFFINDOR_NAMES = ["potter", "granger", "weasley"]
 SLYTHERIN_NAMES = ["malfoy", "crabbe", "goyle"]
 
 
-def create_nodes(context: LaunchContext):
+def spawn_nodes(context: LaunchContext):
     max_student_num = len(GRYFFINDOR_NAMES) + len(SLYTHERIN_NAMES)
     student_num = int(context.launch_configurations["student_num"])
     if student_num > max_student_num:
@@ -44,45 +51,60 @@ def create_nodes(context: LaunchContext):
 
     gryffindor_names = np.random.choice(GRYFFINDOR_NAMES, gryffindor_num, replace=False).tolist()
     slytherin_names = np.random.choice(SLYTHERIN_NAMES, slytherin_num, replace=False).tolist()
-    return (
-        [
-            Node(
-                package="auto_apms_simulation",
-                executable="world.py",
-                arguments=[
-                    "hogwarts",
-                    json.dumps(
-                        {
-                            "size": 4.0,
-                            "hallway_num": int(context.launch_configurations["hallway_num"]),
-                            "gryffindor_names": gryffindor_names,
-                            "slytherin_names": slytherin_names,
-                        }
-                    ),
-                ],
-            ),
-        ]
-        + [
-            Node(
-                package="auto_apms_behavior_tree",
-                executable="tree_executor",
-                name=student,
-                arguments=["auto_apms_examples::hogwarts::GryffindorTree"],
-                parameters=[{"bb.student": student}],
-            )
-            for student in gryffindor_names
-        ]
-        + [
-            Node(
-                package="auto_apms_behavior_tree",
-                executable="tree_executor",
-                name=student,
-                arguments=["auto_apms_examples::hogwarts::SlytherinTree"],
-                parameters=[{"bb.student": student}],
-            )
-            for student in slytherin_names
-        ]
+
+    encoded_kwargs = json.dumps(
+        {
+            "size": 4.0,
+            "hallway_num": int(context.launch_configurations["hallway_num"]),
+            "gryffindor_names": gryffindor_names,
+            "slytherin_names": slytherin_names,
+        }
     )
+    world_node = Node(
+        package="auto_apms_simulation",
+        executable="world.py",
+        arguments=["hogwarts", encoded_kwargs],
+        output="screen",
+        emulate_tty=True,
+    )
+
+    start_tree_nodes_event_handler = OnProcessIO(
+        target_action=world_node,
+        on_stdout=lambda event: GroupAction(
+            [
+                Node(
+                    package="auto_apms_behavior_tree",
+                    executable="run_tree",
+                    name=student,
+                    arguments=["auto_apms_examples::hogwarts::GryffindorTree"],
+                    parameters=[{"bb.student": student}],
+                    output="screen",
+                    emulate_tty=True,
+                )
+                for student in gryffindor_names
+            ]
+            + [
+                Node(
+                    package="auto_apms_behavior_tree",
+                    executable="run_tree",
+                    name=student,
+                    arguments=["auto_apms_examples::hogwarts::SlytherinTree"],
+                    parameters=[{"bb.student": student}],
+                    output="screen",
+                    emulate_tty=True,
+                )
+                for student in slytherin_names
+            ]
+            + [UnregisterEventHandler(start_tree_nodes_event_handler)],
+            condition=IfCondition(PythonExpression([f"'{event.text.decode().strip()}' == 'WORLD_READY'"])),
+        ),
+    )
+
+    return [
+        world_node,
+        RegisterEventHandler(start_tree_nodes_event_handler),
+        # start_tree_nodes_event_handler,
+    ]
 
 
 def generate_launch_description():
@@ -96,6 +118,6 @@ def generate_launch_description():
         [
             hallway_num_arg,
             student_num_arg,
-            OpaqueFunction(function=create_nodes),
+            OpaqueFunction(function=spawn_nodes),
         ]
     )

@@ -16,8 +16,7 @@
 
 #include <chrono>
 
-#include "auto_apms_behavior_tree/executor/executor_base.hpp"
-#include "auto_apms_behavior_tree_core/builder.hpp"
+#include "auto_apms_behavior_tree/executor/executor_node.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "auto_apms_util/string.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -29,64 +28,43 @@ using namespace auto_apms_behavior_tree;
 int main(int argc, char ** argv)
 {
   if (argc < 2) {
-    std::cerr
-      << "run_tree: Missing inputs! The program requires: \n\t1.) The identity string of an installed tree resource.\n";
-    std::cerr << "Usage: run_tree <tree_identity>\n";
+    std::cerr << "run_tree: Missing inputs! The program requires: \n\t1.) Single string specifying the behavior tree "
+                 "build request to be passed to the tree executor's build handler.\n";
+    std::cerr << "Usage: run_tree <build_request>\n";
     return EXIT_FAILURE;
   }
-  const core::TreeResourceIdentity tree_identity(auto_apms_util::trimWhitespaces(argv[1]));
+  const std::string build_request(auto_apms_util::trimWhitespaces(argv[1]));
 
   // Ensure that rclcpp is not shut down before the tree has been halted (on destruction) and all pending actions have
   // been successfully canceled
   rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
   signal(SIGINT, [](int /*sig*/) { termination_requested = 1; });
-  rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("run_tree_cpp");
-  auto_apms_util::exposeToGlobalDebugLogging(node_ptr->get_logger());
 
-  std::unique_ptr<core::TreeResource> tree_resource_ptr;
-  try {
-    tree_resource_ptr = std::make_unique<core::TreeResource>(tree_identity);
-  } catch (const std::exception & e) {
-    RCLCPP_ERROR(
-      node_ptr->get_logger(), "ERROR searching for behavior tree resource '%s': %s", tree_identity.str().c_str(),
-      e.what());
-    return EXIT_FAILURE;
-  }
+  // Create executor node
+  rclcpp::NodeOptions opt;
+  TreeExecutorNode executor("run_tree_cpp", opt);
+  const rclcpp::Logger logger = executor.getNodePtr()->get_logger();
 
-  TreeExecutorBase executor(node_ptr, nullptr, true);
-  core::TreeBuilder builder(
-    node_ptr, executor.getTreeNodeWaitablesCallbackGroupPtr(), executor.getTreeNodeWaitablesExecutorPtr());
-  try {
-    builder.newTreeFromResource(*tree_resource_ptr).makeRoot();
-  } catch (const std::exception & e) {
-    RCLCPP_ERROR(
-      node_ptr->get_logger(), "ERROR loading behavior tree from resource '%s': %s", tree_identity.str().c_str(),
-      e.what());
-    return EXIT_FAILURE;
-  }
-
-  std::shared_future<TreeExecutorBase::ExecutionResult> future =
-    executor.startExecution([&builder](TreeBlackboardSharedPtr bb) { return builder.instantiate(bb); });
-
-  RCLCPP_INFO(
-    node_ptr->get_logger(), "Executing tree with identity '%s::%s::%s'.", tree_resource_ptr->getPackageName().c_str(),
-    tree_resource_ptr->getFileStem().c_str(), builder.getRootTree().getName().c_str());
+  // Start tree execution
+  std::shared_future<TreeExecutorBase::ExecutionResult> future = executor.startExecution(build_request);
+  RCLCPP_INFO(logger, "Executing tree '%s'.", executor.getTreeName().c_str());
 
   const std::chrono::duration<double> termination_timeout(3);
   rclcpp::Time termination_start;
   bool termination_started = false;
-  while (rclcpp::spin_until_future_complete(node_ptr, future, std::chrono::milliseconds(250)) !=
-         rclcpp::FutureReturnCode::SUCCESS) {
+  while (
+    rclcpp::spin_until_future_complete(executor.get_node_base_interface(), future, std::chrono::milliseconds(250)) !=
+    rclcpp::FutureReturnCode::SUCCESS) {
     if (termination_started) {
-      if (node_ptr->now() - termination_start > termination_timeout) {
-        RCLCPP_WARN(node_ptr->get_logger(), "Termination took too long. Aborted.");
+      if (executor.getNodePtr()->now() - termination_start > termination_timeout) {
+        RCLCPP_WARN(logger, "Termination took too long. Aborted.");
         return EXIT_FAILURE;
       }
     } else if (termination_requested) {
-      termination_start = node_ptr->now();
+      termination_start = executor.getNodePtr()->now();
       executor.setControlCommand(TreeExecutorBase::ControlCommand::TERMINATE);
       termination_started = true;
-      RCLCPP_INFO(node_ptr->get_logger(), "Terminating tree execution...");
+      RCLCPP_INFO(logger, "Terminating tree execution...");
     }
   }
 
@@ -95,7 +73,7 @@ int main(int argc, char ** argv)
     throw std::logic_error("Future object is not ready.");
   }
 
-  RCLCPP_INFO(node_ptr->get_logger(), "Finished with status %s.", toStr(future.get()).c_str());
+  RCLCPP_INFO(logger, "Finished with status %s.", toStr(future.get()).c_str());
   rclcpp::shutdown();
 
   return EXIT_SUCCESS;
