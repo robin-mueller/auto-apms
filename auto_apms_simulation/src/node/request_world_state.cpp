@@ -14,40 +14,48 @@
 
 #include "pyrobosim_msgs/srv/request_world_state.hpp"
 
+#include <regex>
+
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "auto_apms_simulation/util.hpp"
 #include "pyrobosim_msgs/msg/robot_state.hpp"
 
-#define INPUT_KEY_LOCATION_NAME "location"
+#define INPUT_KEY_TARGET_LOCATION "target_loc"
+#define INPUT_KEY_FILTER_LOCATION "filter_loc"
+#define INPUT_KEY_FILTER_ROBOT "filter_robot"
 
 namespace auto_apms_simulation
 {
 
 class IsLocationOccupied : public auto_apms_behavior_tree::core::RosServiceNode<pyrobosim_msgs::srv::RequestWorldState>
 {
-  std::string requested_location_;
+  std::string target_location_;
 
 public:
   using RosServiceNode::RosServiceNode;
 
   static BT::PortsList providedPorts()
   {
-    return {BT::InputPort<std::string>(INPUT_KEY_LOCATION_NAME, "Name of the location.")};
+    return {
+      BT::InputPort<std::string>(INPUT_KEY_FILTER_ROBOT, ".*", "Regex filter for robots to consider."),
+      BT::InputPort<std::string>(
+        INPUT_KEY_FILTER_LOCATION, ".*", "Regex filter for locations to match the target location."),
+      BT::InputPort<std::string>(INPUT_KEY_TARGET_LOCATION, "Name of the location to test for occupancy.")};
   }
 
   bool setRequest(Request::SharedPtr & request)
   {
-    const BT::Expected<std::string> expected_location = getInput<std::string>(INPUT_KEY_LOCATION_NAME);
+    const BT::Expected<std::string> expected_location = getInput<std::string>(INPUT_KEY_TARGET_LOCATION);
     if (!expected_location || expected_location.value().empty()) {
       RCLCPP_ERROR(
-        logger_, "%s - You must provide a non-empty location name.",
+        logger_, "%s - You must provide a non-empty target location name.",
         context_.getFullyQualifiedTreeNodeName(this).c_str());
       RCLCPP_DEBUG_EXPRESSION(
         logger_, !expected_location, "%s - Error message: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
         expected_location.error().c_str());
       return false;
     }
-    requested_location_ = expected_location.value();
+    target_location_ = expected_location.value();
     request->robot = "";  // Request state for all robots
     return true;
   }
@@ -55,7 +63,12 @@ public:
   BT::NodeStatus onResponseReceived(const Response::SharedPtr & response) override final
   {
     for (const pyrobosim_msgs::msg::RobotState & robot_state : response->state.robots) {
-      if (robot_state.last_visited_location == requested_location_) return BT::NodeStatus::SUCCESS;
+      std::regex loc_regex(getInput<std::string>(INPUT_KEY_FILTER_LOCATION).value());
+      std::regex robot_regex(getInput<std::string>(INPUT_KEY_FILTER_ROBOT).value());
+      if (
+        std::regex_match(robot_state.last_visited_location, loc_regex) &&
+        std::regex_match(robot_state.name, robot_regex) && robot_state.last_visited_location == target_location_)
+        return BT::NodeStatus::SUCCESS;
     }
     return BT::NodeStatus::FAILURE;
   }

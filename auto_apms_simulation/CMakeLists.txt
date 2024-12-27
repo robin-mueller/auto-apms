@@ -13,6 +13,7 @@ find_package(auto_apms_behavior_tree_core REQUIRED)
 
 set(_AUTO_APMS_SIMULATION__NODE_NAME "pyrobosim")
 set(_AUTO_APMS_SIMULATION__SERVICE_NAME__SET_LOCATION_STATE "set_location_state")
+set(_AUTO_APMS_SIMULATION__TOPIC_NAME__ROBOT_STATE "robot_state")
 set(_AUTO_APMS_SIMULATION__SERVICE_NAME__REQUEST_WORLD_STATE "request_world_state")
 set(_AUTO_APMS_SIMULATION__ACTION_NAME__EXECUTE_TASK_ACTION "execute_action")
 
@@ -74,6 +75,7 @@ target_link_libraries(auto_apms_simulation
 add_library(sim_behavior_tree_nodes SHARED
     "src/node/set_location_state.cpp"
     "src/node/request_world_state.cpp"
+    "src/node/get_robot_state.cpp"
     "src/node/execute_task_action.cpp"
 )
 target_link_libraries(sim_behavior_tree_nodes
@@ -86,6 +88,7 @@ ament_target_dependencies(sim_behavior_tree_nodes
 auto_apms_behavior_tree_declare_nodes(sim_behavior_tree_nodes
     "auto_apms_simulation::SetLocationState"
     "auto_apms_simulation::IsLocationOccupied"
+    "auto_apms_simulation::GetRobotState"
     "auto_apms_simulation::NavigateToLocation"
     "auto_apms_simulation::PickObject"
     "auto_apms_simulation::PlaceObject"

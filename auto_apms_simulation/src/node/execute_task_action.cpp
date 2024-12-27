@@ -28,29 +28,27 @@ namespace auto_apms_simulation
 
 class ExecuteTaskAction : public auto_apms_behavior_tree::core::RosActionNode<pyrobosim_msgs::action::ExecuteTaskAction>
 {
-  int32_t success_result_ = ExecutionResultMsg::SUCCESS;
-
 public:
   using RosActionNode::RosActionNode;
 
   virtual bool setGoal(Goal & goal) = 0;
 
-  void onHalt() override final { success_result_ = ExecutionResultMsg::CANCELED; }
-
   BT::NodeStatus onResultReceived(const WrappedResult & result) override final
   {
     const BT::NodeStatus base_status = RosActionNode::onResultReceived(result);
     if (base_status != BT::NodeStatus::SUCCESS) return base_status;
-    if (result.result->execution_result.status != success_result_) {
-      RCLCPP_ERROR(
-        logger_, "%s - FAILURE: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+    if (
+      result.result->execution_result.status == ExecutionResultMsg::SUCCESS ||
+      result.result->execution_result.status == ExecutionResultMsg::CANCELED) {
+      RCLCPP_DEBUG(
+        logger_, "%s - SUCCESS: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
         toStr(result.result->execution_result).c_str());
-      return BT::NodeStatus::FAILURE;
+      return BT::NodeStatus::SUCCESS;
     }
-    RCLCPP_DEBUG(
-      logger_, "%s - SUCCESS: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+    RCLCPP_ERROR(
+      logger_, "%s - FAILURE: %s", context_.getFullyQualifiedTreeNodeName(this).c_str(),
       toStr(result.result->execution_result).c_str());
-    return BT::NodeStatus::SUCCESS;
+    return BT::NodeStatus::FAILURE;
   }
 };
 

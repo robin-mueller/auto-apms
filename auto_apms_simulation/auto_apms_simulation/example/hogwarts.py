@@ -40,7 +40,7 @@ class HogwartsWorld(World):
         Location.set_metadata(None)
         Location.metadata.data = {
             "boss": {
-                "footprint": {"type": "box", "dims": [boss_size, boss_size], "height": 0},
+                "footprint": {"type": "box", "dims": [boss_size, boss_size], "height": 0.0},
                 "nav_poses": [
                     {"position": {"x": 0.0, "y": boss_size}, "rotation_eul": {"yaw": -np.pi / 2}},  # Above
                     {"position": {"x": 0.0, "y": -boss_size}, "rotation_eul": {"yaw": np.pi / 2}},  # Below
@@ -51,7 +51,7 @@ class HogwartsWorld(World):
 
         Object.set_metadata(None)
         Object.metadata.data = {
-            "magical_item": {"footprint": {"type": "circle", "radius": boss_size / 10}, "height": 0},
+            "magical_item": {"footprint": {"type": "circle", "radius": boss_size / 10.0}, "height": 0.0},
         }
 
         center_y: float = 0.0
@@ -62,14 +62,14 @@ class HogwartsWorld(World):
             "gryffindor",
             create_square_from_center(*center0, size),
             color="#ae0001",
-            nav_poses=[Pose(*center0, z=0, yaw=0.0)],
+            nav_poses=[Pose(*center0, z=0.0, yaw=0.0)],
             wall_width=wall_width,
         )
         slytherin = Room(
             "slytherin",
             create_square_from_center(*center1, size),
             color="#2a623d",
-            nav_poses=[Pose(*center1, z=0, yaw=np.pi)],
+            nav_poses=[Pose(*center1, z=0.0, yaw=np.pi)],
             wall_width=wall_width,
         )
         self.add_room(room=gryffindor)
@@ -99,14 +99,14 @@ class HogwartsWorld(World):
             "dumbledore",
             parent=gryffindor,
             category="boss",
-            pose=Pose(center0[0] - size / 2 + boss_size, center0[1], 0),
+            pose=Pose(center0[0] - size / 2 + boss_size, center0[1], 0.0),
             color=gryffindor.viz_color,
         )
         voldemort = Location(
             "voldemort",
             parent=slytherin,
             category="boss",
-            pose=Pose(center1[0] + size / 2 - boss_size, center1[1], 0),
+            pose=Pose(center1[0] + size / 2 - boss_size, center1[1], 0.0),
             color=slytherin.viz_color,
         )
         self.add_location(location=dumbledore)

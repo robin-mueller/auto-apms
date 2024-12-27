@@ -2,6 +2,10 @@ SetLocationState:
   class_name: auto_apms_simulation::SetLocationState
   port: ${_AUTO_APMS_SIMULATION__SERVICE_NAME__SET_LOCATION_STATE}
 
+GetRobotState:
+  class_name: auto_apms_simulation::GetRobotState
+  port: (input:robot)/${_AUTO_APMS_SIMULATION__TOPIC_NAME__ROBOT_STATE}
+
 IsLocationOccupied:
   class_name: auto_apms_simulation::IsLocationOccupied
   port: ${_AUTO_APMS_SIMULATION__SERVICE_NAME__REQUEST_WORLD_STATE}

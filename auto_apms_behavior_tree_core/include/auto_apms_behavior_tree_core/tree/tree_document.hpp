@@ -181,7 +181,7 @@ public:
 
     std::string getFullyQualifiedName() const;
 
-    const std::vector<NodeElement> deepApply(ConstDeepApplyCallback apply_callback) const;
+    const std::vector<NodeElement> deepApplyConst(ConstDeepApplyCallback apply_callback) const;
 
     std::vector<NodeElement> deepApply(DeepApplyCallback apply_callback);
 

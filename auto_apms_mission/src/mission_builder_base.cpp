@@ -64,14 +64,25 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   RCLCPP_DEBUG(logger_, "Configuring orchestrator root blackboard.");
   configureOrchestratorRootBlackboard(bb);
 
-  model::Fallback is_contingency_fallback =
-    builder.getTree("IsContingency").removeChildren().insertNode<model::Fallback>();
-  for (const auto & [event_id, _] : mission_config_.contingency) {
-    is_contingency_fallback.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
+  TreeDocument::TreeElement is_contingency_tree = builder.getTree("IsContingency").removeChildren();
+  TreeDocument::TreeElement is_emergency_tree = builder.getTree("IsEmergency").removeChildren();
+
+  if (mission_config_.contingency.empty()) {
+    is_contingency_tree.insertNode<model::AlwaysFailure>();
+  } else {
+    model::Fallback fallback = is_contingency_tree.insertNode<model::Fallback>();
+    for (const auto & [event_id, _] : mission_config_.contingency) {
+      fallback.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
+    }
   }
-  model::Fallback is_emergency_fallback = builder.getTree("IsEmergency").removeChildren().insertNode<model::Fallback>();
-  for (const auto & [event_id, _] : mission_config_.emergency) {
-    is_emergency_fallback.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
+
+  if (mission_config_.emergency.empty()) {
+    is_emergency_tree.insertNode<model::AlwaysFailure>();
+  } else {
+    model::Fallback fallback = is_emergency_tree.insertNode<model::Fallback>();
+    for (const auto & [event_id, _] : mission_config_.emergency) {
+      fallback.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
+    }
   }
 
   // Bring up
@@ -136,7 +147,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   }
 
   // Write tree for debugging purposes
-  builder.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
+  // builder.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
 
   return root_tree;
 }

@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.conditions import IfCondition
 from launch.launch_context import LaunchContext
 
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.actions import Node
+from launch_ros.actions import Node, ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
 
 
 def spawn_orchestrator_node(context: LaunchContext):
@@ -28,47 +30,96 @@ def spawn_orchestrator_node(context: LaunchContext):
         Node(
             package="auto_apms_behavior_tree",
             executable="run_tree",
-            name="orchestrator",
+            name=context.launch_configurations["orchestrator_name"],
             parameters=[
                 {
-                    "build_handler": (
-                        "auto_apms_mission::SingleNodeMissionBuildHandler"
-                        if context.launch_configurations["use_multiple_nodes"] == "false"
-                        else "auto_apms_mission::MultipleNodesMissionBuildHandler"
+                    "build_handler": PythonExpression(
+                        [
+                            "'auto_apms_mission::SingleNodeMissionBuildHandler' if bool('",
+                            context.launch_configurations["use_multiple_nodes"],
+                            "') else 'auto_apms_mission::MultipleNodesMissionBuildHandler'",
+                        ]
                     ),
                     "allow_other_build_handlers": False,
                     "groot2_port": 5555,
-                    # "state_change_logger": True
-                }
+                },
+                json.loads(context.launch_configurations["orchestrator_params"]),
             ],
-            arguments=[context.launch_configurations["config"]],
+            arguments=[LaunchConfiguration("config")],
             output="screen",
             emulate_tty=True,
-        )
+        ),
     ]
 
 
 def generate_launch_description():
     config_launch_arg = DeclareLaunchArgument(
-        "config", description="Resource identity for the mission configuration file"
+        "config", description="Resource identity for the mission configuration file."
+    )
+    orchestrator_name_arg = DeclareLaunchArgument(
+        "orchestrator_name",
+        default_value="orchestrator",
+        description="Name of the mission orchestrator node.",
+    )
+    orchestrator_params_arg = DeclareLaunchArgument(
+        "orchestrator_params",
+        default_value="{}",
+        description="JSON encoded dictionary that is used as parameter overrides for the orchestrator node.",
     )
     use_multiple_nodes_arg = DeclareLaunchArgument(
         "use_multiple_nodes",
         default_value="false",
-        description="Delegate mission execution as well as event monitoring and handling to individual nodes",
+        description="Delegate mission execution as well as event monitoring and handling to individual nodes.",
     )
 
     return LaunchDescription(
         [
             config_launch_arg,
+            orchestrator_name_arg,
+            orchestrator_params_arg,
             use_multiple_nodes_arg,
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    PathJoinSubstitution(
-                        [FindPackageShare("auto_apms_mission"), "launch", "mission_components_launch.py"]
-                    )
-                ),
-                launch_arguments={"with_orchestrator": "false"}.items(),
+            ComposableNodeContainer(
+                name="mission_container",
+                namespace="",
+                package="rclcpp_components",
+                executable="component_container",
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package="auto_apms_mission",
+                        plugin="auto_apms_mission::MissionExecutor",
+                        parameters=[
+                            {
+                                "build_handler": "auto_apms_behavior_tree::TreeFromStringBuildHandler",
+                                "allow_other_build_handlers": False,
+                                "groot2_port": 5666,
+                            }
+                        ],
+                    ),
+                    ComposableNode(
+                        package="auto_apms_mission",
+                        plugin="auto_apms_mission::EventMonitorExecutor",
+                        parameters=[
+                            {
+                                "build_handler": "auto_apms_behavior_tree::TreeFromStringBuildHandler",
+                                "allow_other_build_handlers": False,
+                                "groot2_port": 5777,
+                            }
+                        ],
+                    ),
+                    ComposableNode(
+                        package="auto_apms_mission",
+                        plugin="auto_apms_mission::EventHandlerExecutor",
+                        parameters=[
+                            {
+                                "build_handler": "auto_apms_behavior_tree::TreeFromStringBuildHandler",
+                                "allow_other_build_handlers": False,
+                                "groot2_port": 5888,
+                            }
+                        ],
+                    ),
+                ],
+                output="screen",
+                emulate_tty=True,
                 condition=IfCondition(LaunchConfiguration("use_multiple_nodes")),
             ),
             OpaqueFunction(function=spawn_orchestrator_node),

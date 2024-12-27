@@ -31,6 +31,7 @@ add_and_install_example_executable("src/task_ex1.cpp" auto_apms_util auto_apms_i
 
 auto_apms_behavior_tree_declare_trees(
     "config/behavior_tree/pyrobosim/hogwarts.xml"
+    "config/behavior_tree/pyrobosim/hogwarts_contingency.xml"
     NODE_MANIFEST
     "auto_apms_behavior_tree::builtin_nodes"
     "auto_apms_simulation::sim_behavior_tree_nodes"
@@ -59,6 +60,7 @@ auto_apms_behavior_tree_declare_trees(
 #
 
 auto_apms_mission_register_missions(
+    "config/mission/pyrobosim_hogwarts_mission.yaml"
     "config/mission/px4_contingency_mission.yaml"
 )
 

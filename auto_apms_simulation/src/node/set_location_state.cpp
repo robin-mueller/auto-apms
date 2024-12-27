@@ -17,7 +17,7 @@
 #include "auto_apms_behavior_tree_core/node.hpp"
 #include "auto_apms_simulation/util.hpp"
 
-#define INPUT_KEY_LOCATION_NAME "location"
+#define INPUT_KEY_LOCATION "location"
 #define INPUT_KEY_OPEN "open"
 #define INPUT_KEY_LOCK "lock"
 
@@ -34,12 +34,12 @@ public:
     return {
       BT::InputPort<bool>(INPUT_KEY_LOCK, false, "Lock/Unlock the location."),
       BT::InputPort<bool>(INPUT_KEY_OPEN, true, "Open/Close the location."),
-      BT::InputPort<std::string>(INPUT_KEY_LOCATION_NAME, "Name of the location.")};
+      BT::InputPort<std::string>(INPUT_KEY_LOCATION, "Name of the location.")};
   }
 
   bool setRequest(Request::SharedPtr & request) override final
   {
-    const BT::Expected<std::string> expected_location = getInput<std::string>(INPUT_KEY_LOCATION_NAME);
+    const BT::Expected<std::string> expected_location = getInput<std::string>(INPUT_KEY_LOCATION);
     if (!expected_location || expected_location.value().empty()) {
       RCLCPP_ERROR(
         logger_, "%s - You must provide a non-empty location name.",

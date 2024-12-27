@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4" project_name="HogwartsSimulation">
     <include path="hogwarts.xml"/>
+    <include path="hogwarts_contingency.xml"/>
     <!-- Description of Node Models (used by Groot) -->
     <TreeNodesModel>
         <Action ID="Error">
@@ -56,6 +57,11 @@
             <output_port name="value" type="std::vector&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt;">Output port for the parameter's value.</output_port>
             <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
+        <Condition ID="GetRobotState">
+            <input_port name="robot" type="std::string">Name of the robot.</input_port>
+            <output_port name="location" default="{=}" type="std::string">Current location name.</output_port>
+            <output_port name="battery" default="{=}" type="double">Current battery state [%].</output_port>
+        </Condition>
         <SubTree ID="GetStudentName" editable="true">
             <output_port name="student" default="{=}">Hogwarts student name to execute the tree.</output_port>
             <input_port name="default">Default student name used if no parameter is found.</input_port>
@@ -68,7 +74,9 @@
             <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
         </Action>
         <Action ID="IsLocationOccupied">
-            <input_port name="location" type="std::string">Name of the location.</input_port>
+            <input_port name="target_loc" type="std::string">Name of the location to test for occupancy.</input_port>
+            <input_port name="filter_loc" default=".*" type="std::string">Regex filter for locations to match the target location.</input_port>
+            <input_port name="filter_robot" default=".*" type="std::string">Regex filter for robots to consider.</input_port>
         </Action>
         <Action ID="Logger">
             <input_port name="message" type="BT::AnyTypeAllowed">Message to be logged via rclcpp::Logger.</input_port>

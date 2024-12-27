@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4"
-      main_tree_to_execute="GryffindorTree">
+      main_tree_to_execute="EntryPoint">
+  <BehaviorTree ID="EntryPoint">
+    <SequenceWithMemory>
+      <Fallback>
+        <HasParameter parameter="bb.house"
+                      node=""/>
+        <Error message="Parameter &apos;house&apos; is not set"/>
+      </Fallback>
+      <SequenceWithMemory>
+        <GetParameterString parameter="bb.house"
+                            value="{house}"
+                            node=""/>
+        <SubTree ID="GryffindorTree"
+                 _skipIf="house != &apos;gryffindor&apos;"/>
+        <SubTree ID="SlytherinTree"
+                 _skipIf="house != &apos;slytherin&apos;"/>
+      </SequenceWithMemory>
+    </SequenceWithMemory>
+  </BehaviorTree>
+
   <BehaviorTree ID="GetStudentName">
     <Fallback>
       <Sequence>
@@ -23,7 +42,8 @@
         <SequenceWithMemory>
           <NavigateToLocation robot="{student}"
                               target="voldemort"/>
-          <PickObject robot="{student}"/>
+          <PickObject robot="{student}"
+                      object=" "/>
           <NavigateToLocation robot="{student}"
                               target="dumbledore"/>
           <PlaceObject robot="{student}"/>
@@ -53,6 +73,10 @@
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
+    <Action ID="Error">
+      <input_port name="message"
+                  type="std::string">Error message. Creates a generic error message if empty.</input_port>
+    </Action>
     <Action ID="GetParameterString">
       <input_port name="parameter"
                   type="std::string">Name of the parameter to get.</input_port>

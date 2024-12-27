@@ -154,22 +154,32 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
       "Cannot insert tree '" + tree_name + "' because other document doesn't specify a tree with that name.");
   }
 
-  // List including the target tree name and the names of its dependencies (Trees required by SubTree node)
+  // List including the target tree name and the names of its dependencies (Trees required by SubTree nodes)
   std::set<std::string> required_tree_names = {tree_name};
 
   // Find all subtree nodes and push back the associated tree to required_tree_names.
-  // NOTE: All tree elements within a TreeDocument instance always have exactly one child, so we must only search the
-  // children of the tree element's first child.
+  // NOTE: All tree elements within a TreeDocument instance always have exactly one child, so we don't have to verify
+  // that here again
   TreeDocument temp_doc(doc_ptr_->format_version_, doc_ptr_->tree_node_loader_ptr_);  // Temporary working document
   other.DeepCopy(&temp_doc);
-  const NodeElement temp(&temp_doc, temp_doc.getXMLElementForTreeWithName(tree_name)->FirstChildElement());
-  temp.deepApply(ConstDeepApplyCallback([&required_tree_names](const NodeElement & ele) {
+  const TreeElement other_tree(&temp_doc, temp_doc.getXMLElementForTreeWithName(tree_name));
+  ConstDeepApplyCallback collect_dependency_tree_names;
+  collect_dependency_tree_names = [&required_tree_names, &collect_dependency_tree_names](const NodeElement & ele) {
     if (ele.getRegistrationName() == SUBTREE_ELEMENT_NAME) {
-      if (const char * name = ele.ele_ptr_->Attribute(TREE_NAME_ATTRIBUTE_NAME)) required_tree_names.insert(name);
+      if (const char * name = ele.ele_ptr_->Attribute(TREE_NAME_ATTRIBUTE_NAME)) {
+        // Add the tree name to the list
+        required_tree_names.insert(name);
+
+        // Search for more tree dependencies under the tree pointed by this subtree node
+        ele.doc_ptr_->getTree(name).deepApplyConst(collect_dependency_tree_names);
+      } else {
+        throw exceptions::TreeDocumentError("Subtree element has no name attribute.");
+      };
     }
     // The return value doesn't matter here
     return false;
-  }));
+  };
+  other_tree.deepApplyConst(collect_dependency_tree_names);
 
   // Verify that all child nodes of the trees listed in required_tree_names are known to the builder
   ConstDeepApplyCallback apply = [available_names = doc_ptr_->getAvailableNodeNames(true)](const NodeElement & ele) {
@@ -177,7 +187,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
   };
   for (const std::string & name : required_tree_names) {
     const NodeElement ele(&temp_doc, temp_doc.getXMLElementForTreeWithName(name)->FirstChildElement());
-    if (const std::vector<NodeElement> found = ele.deepApply(apply); !found.empty()) {
+    if (const std::vector<NodeElement> found = ele.deepApplyConst(apply); !found.empty()) {
       std::vector<std::string> names;
       for (const NodeElement & ele : found) names.push_back(ele.getFullyQualifiedName());
       throw exceptions::TreeDocumentError(
@@ -197,7 +207,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
   }
   doc_ptr_->mergeTreeDocument(static_cast<const XMLDocument &>(temp_doc), false);
 
-  // Clone and insert the target tree if verification of dependency tree document succeeded
+  // Clone and insert the target tree
   return insertBeforeImpl(
     before_this, other.getXMLElementForTreeWithName(tree_name)->FirstChildElement()->DeepClone(doc_ptr_)->ToElement());
 }
@@ -273,7 +283,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::getFirstNode(
     if (instance_name.empty()) return ele.getRegistrationName() == registration_name;
     return ele.getRegistrationName() == registration_name && ele.getName() == instance_name;
   };
-  if (const std::vector<NodeElement> found = deepApply(apply); !found.empty()) return found[0];
+  if (const std::vector<NodeElement> found = deepApplyConst(apply); !found.empty()) return found[0];
 
   // Cannot find node in children of this
   throw exceptions::TreeDocumentError(
@@ -374,7 +384,7 @@ std::string TreeDocument::NodeElement::getFullyQualifiedName() const
   return instance_name + " (" + registration_name + ")";
 }
 
-const std::vector<TreeDocument::NodeElement> TreeDocument::NodeElement::deepApply(
+const std::vector<TreeDocument::NodeElement> TreeDocument::NodeElement::deepApplyConst(
   ConstDeepApplyCallback apply_callback) const
 {
   std::vector<NodeElement> found;
@@ -490,7 +500,7 @@ TreeDocument::TreeElement & TreeDocument::TreeElement::makeRoot()
 NodeManifest TreeDocument::TreeElement::getRequiredNodeManifest() const
 {
   NodeManifest m;
-  deepApply([this, &m](const NodeElement & node) {
+  deepApplyConst([this, &m](const NodeElement & node) {
     const std::string name = node.getRegistrationName();
     const bool is_native_node = doc_ptr_->native_node_names_.find(name) != doc_ptr_->native_node_names_.end();
     if (!is_native_node && !m.contains(name)) {

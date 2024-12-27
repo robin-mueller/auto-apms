@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="IsHallwayOccupied">
+    <Sequence>
+      <RunOnce then_skip="true">
+        <Script code="filter_robot := &apos;^(?!.*&apos; + @student + &apos;).*$&apos;"/>
+      </RunOnce>
+      <GetRobotState robot="{@student}"
+                     location="{location}"
+                     battery="{=}"/>
+      <IsLocationOccupied target_loc="{location}"
+                          filter_loc="^hallway.*"
+                          filter_robot="{filter_robot}"
+                          _failureIf="location == &apos;&apos;"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="Retreat">
+    <NavigateToLocation robot="{@student}"
+                        target="{@house}"/>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Condition ID="GetRobotState">
+      <input_port name="robot"
+                  type="std::string">Name of the robot.</input_port>
+      <output_port name="location"
+                   default="{=}"
+                   type="std::string">Current location name.</output_port>
+      <output_port name="battery"
+                   default="{=}"
+                   type="double">Current battery state [%].</output_port>
+    </Condition>
+    <Action ID="IsLocationOccupied">
+      <input_port name="target_loc"
+                  type="std::string">Name of the location to test for occupancy.</input_port>
+      <input_port name="filter_loc"
+                  default=".*"
+                  type="std::string">Regex filter for locations to match the target location.</input_port>
+      <input_port name="filter_robot"
+                  default=".*"
+                  type="std::string">Regex filter for robots to consider.</input_port>
+    </Action>
+    <Action ID="NavigateToLocation">
+      <input_port name="robot"
+                  type="std::string">Name of the robot.</input_port>
+      <input_port name="target"
+                  type="std::string">Name of the target to navigate to (Terms for the knowledge query are separated by whitespace).</input_port>
+    </Action>
+  </TreeNodesModel>
+
+</root>
