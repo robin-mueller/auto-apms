@@ -20,7 +20,6 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.conditions import IfCondition
 from launch.launch_context import LaunchContext
 
-from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node, ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
