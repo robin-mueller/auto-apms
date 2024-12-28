@@ -12,7 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Macro that registers behavior tree node registration plugins from a specific target
+#
+# Add plugins that register behavior tree nodes at runtime to the
+# package's resources.
+#
+# This macro must be called to make behavior tree node plugins available
+# at runtime and configure their registration with the behavior tree
+# factory. Optionally, a corresponding node model header is generated.
+# This header facilitates integrating the specified nodes when building
+# behavior trees using the TreeDocument API.
+#
+# :param target: Shared library target implementing the behavior tree
+#   nodes declared under ARGN.
+# :type target: string
+# :param ARGN: The unique names of node classes being declared with this
+#   macro call and exported by the shared library target.
+# :type ARGN: list of strings
+# :param NODE_MANIFEST: Path or identifier of the node manifest YAML file.
+# :type NODE_MANIFEST: string
+# :param MODEL_HEADER_TARGET: If specified, generate a C++ header that
+#   defines model classes for all behavior tree nodes given in ARGN and
+#   add it to the includes of this shared library target.
+# :type MODEL_HEADER_TARGET: string
+#
+# @public
+#
 macro(auto_apms_behavior_tree_declare_nodes target)
 
     # Parse arguments

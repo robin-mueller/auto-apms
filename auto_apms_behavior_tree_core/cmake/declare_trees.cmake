@@ -12,6 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#
+# Declare behavior trees to the package's resources.
+#
+# This macro makes behavior trees available to the ROS 2 workspace by
+# exposing the corresponding XML and node manifest files as ament_index
+# resources.
+#
+# :param ARGN: Behavior tree XML files to be added to this package's resources.
+# :type ARGN: list of files
+# :param NODE_MANIFEST: Path or identifier of the node manifest YAML file.
+#   If specified, behavior tree nodes associated with this manifest are
+#   loaded automatically and available for every tree under ARGN.
+# :type NODE_MANIFEST: string
+#
+# @public
+#
 macro(auto_apms_behavior_tree_declare_trees)
 
     # Parse arguments

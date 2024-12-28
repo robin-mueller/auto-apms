@@ -37,7 +37,7 @@ from launch.substitutions import (
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.launch_context import LaunchContext
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 GRYFFINDOR_NAMES = ["potter", "granger", "weasley"]

@@ -12,7 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Macro that registers behavior tree build handler plugins from a specific target
+#
+# Add behavior tree build handler plugins to the package's resources.
+#
+# This macro must be called to make behavior tree build handlers available
+# at runtime. They may be loaded using TreeBuildHandlerLoader (a subclass of
+# pluginlib::ClassLoader).
+#
+# :param target: Shared library target implementing the behavior tree
+#   build handlers declared under ARGN.
+# :type target: string
+# :param ARGN: The unique names of build handler classes being declared with this
+#   macro call and exported by the shared library target.
+# :type ARGN: list of strings
+#
+# @public
+#
 macro(auto_apms_behavior_tree_declare_build_handlers target)
     auto_apms_util_register_plugins(
         ${target}
