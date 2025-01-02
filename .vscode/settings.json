@@ -35,5 +35,6 @@
     "cSpell.enabledFileTypes": {
         "cpp": true
     },
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "C_Cpp.doxygen.generatedStyle": "/**"
 }

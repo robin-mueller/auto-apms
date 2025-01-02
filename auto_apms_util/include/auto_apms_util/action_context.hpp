@@ -19,6 +19,11 @@
 namespace auto_apms_util
 {
 
+/**
+ * @ingroup auto_apms_util
+ * @brief Helper class that stores contextual information related to a ROS 2 action.
+ * @tparam ActionT Type of the ROS 2 action interface.
+ */
 template <typename ActionT>
 class ActionContext
 {
@@ -29,26 +34,76 @@ public:
   using Result = typename ActionT::Result;
   using GoalHandle = rclcpp_action::ServerGoalHandle<ActionT>;
 
+  /**
+   * @brief Constructor.
+   * @param logger Logger instance of the action's parent node.
+   */
   ActionContext(rclcpp::Logger logger);
 
+  /**
+   * @brief Initialize the action context using the current goal handle.
+   * @param goal_handle_ptr Action goal handle pointer.
+   */
   void setUp(std::shared_ptr<GoalHandle> goal_handle_ptr);
 
+  /**
+   * @brief Publish the feedback written to the internal buffer.
+   *
+   * You may access the internal buffer using getFeedbackPtr().
+   */
   void publishFeedback();
 
+  /**
+   * @brief Terminate the current goal and mark it as succeeded.
+   *
+   * The goal will be terminated using the internal actio result buffer, which you may access using getResultPtr().
+   */
   void succeed();
 
+  /**
+   * @brief Terminate the current goal and mark it as canceled.
+   *
+   * The goal will be terminated using the internal actio result buffer, which you may access using getResultPtr().
+   */
   void cancel();
 
+  /**
+   * @brief Terminate the current goal and mark it as aborted.
+   *
+   * The goal will be terminated using the internal actio result buffer, which you may access using getResultPtr().
+   */
   void abort();
 
+  /**
+   * @brief Invalidate the goal handle managed by this ActionContext instance.
+   *
+   * You must initialize the context using a new goal handle before you may call one of publishFeedback(), succeed(),
+   * cancel() or abort() again.
+   */
   void invalidate();
 
+  /**
+   * @brief Check if this ActionContext is valid (e.g. is managing a valid action goal handle).
+   * @return `true` if the context is ok, `false` otherwise.
+   */
   bool isValid();
 
+  /**
+   * @brief Get the goal handle managed by this ActionContext instance.
+   * @return Current action goal handle.
+   */
   std::shared_ptr<GoalHandle> getGoalHandlePtr();
 
+  /**
+   * @brief Access the internal action feedback buffer.
+   * @return Shared pointer of the feedback data structure.
+   */
   std::shared_ptr<Feedback> getFeedbackPtr();
 
+  /**
+   * @brief Access the internal action result buffer.
+   * @return Shared pointer of the result data structure.
+   */
   std::shared_ptr<Result> getResultPtr();
 
 private:

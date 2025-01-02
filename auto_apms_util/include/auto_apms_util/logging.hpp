@@ -19,10 +19,29 @@
 namespace auto_apms_util
 {
 
+/// @ingroup auto_apms_util
+/// @{
+
+/**
+ * @brief Enable ROS 2 debug logging, if the C preprocessor flag _AUTO_APMS_DEBUG_LOGGING is set.
+ * @param logger Logger instance.
+ */
 void exposeToGlobalDebugLogging(const rclcpp::Logger & logger);
 
-void setLoggingSeverity(const rclcpp::Logger & logger, rclcpp::Logger::Level severity_level);
+/**
+ * @brief Set the logging severity of a ROS 2 logger.
+ * @param logger Logger instance.
+ * @param severity Desired severity level encoded as a string. Must be one of DEBUG, INFO, WARN, ERROR, FATAL or UNSET.
+ */
+void setLoggingSeverity(const rclcpp::Logger & logger, const std::string & severity);
 
-void setLoggingSeverity(const rclcpp::Logger & logger, const std::string & severity_string);
+/**
+ * @brief Set the logging severity of a ROS 2 logger.
+ * @param logger Logger instance.
+ * @param severity Desired severity level.
+ */
+void setLoggingSeverity(const rclcpp::Logger & logger, rclcpp::Logger::Level severity);
+
+/// @}
 
 }  // namespace auto_apms_util

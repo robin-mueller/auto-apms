@@ -78,7 +78,6 @@ std::string getPluginXMLPath(const std::string & package);
  * This function requires packages to install plugins.xml manifest files and register them as an `ament_index` resource
  * using the CMake macro auto_apms_util_register_plugins().
  *
- * @param resource_type Name of the `ament_index` resource type associated with the plugins.xml file paths to collect.
  * @param exclude_packages Packages to exclude when searching for plugins.xml file paths.
  * @return Absolute paths to the `pluginlib`-style plugin manifest xml files.
  * @throws auto_apms_util::exceptions::ResourceError if failed to find a plugin manifest file.
@@ -101,7 +100,7 @@ public:
    * @brief Standard PluginClassLoader constructor.
    *
    * Alternatively, if you want to verify that only unique class names are loaded, have a look at
-   * auto_apms_util::makeUnambiguousPluginClassLoader.
+   * PluginClassLoader::makeUnambiguousPluginClassLoader.
    *
    * @param base_package Name of the package containing the @p base_class. Will throw an error if it is not
    * installed.

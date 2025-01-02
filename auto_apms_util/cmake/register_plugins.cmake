@@ -12,9 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Macro that registers pluginlib plugins from a specific target.
-# If FACTORY_TEMPLATE_CLASS is specified, the plugin class must be designed to be created using a factory template helper class,
-# since the plugin's type will be registered as FactoryTemplateHelper<MyClass>.
+#
+# Register plugins for CMake according to the pluginlib style
+# (See also http://wiki.ros.org/pluginlib).
+#
+# This macro populates a variable holding the content of the
+# plugin XML manifest file which is added to the package's
+# ament_index resources by register_plugins_hook.cmake
+# invoked by each ament_package call, once auto_apms_util is discovered
+# using find_package.
+# See also PluginClassLoader for more information on how to load
+# plugins registered using this macro.
+#
+# :param target: Shared library target implementing the plugins
+#   specified under ARGN.
+# :type target: string
+# :param base_class: Fully qualified name of the plugin base class.
+# :type base_class: string
+# :param ARGN: The unique names of plugin classes being declared with this
+#   macro call and exported by the shared library target.
+# :type ARGN: list of strings
+# :param FACTORY_TEMPLATE_CLASS: If specified, the plugin classes are configured
+#  to be loadable using a factory template class. That is, the plugin's type is
+#  set to FactoryTemplateClass<MyClass>, so there must be a class called
+#  FactoryTemplateClass that takes the plugin class type as a template argument.
+# :type FACTORY_TEMPLATE_CLASS: string
+#
+# @public
+#
 macro(auto_apms_util_register_plugins target base_class)
 
     if(NOT TARGET ${target})

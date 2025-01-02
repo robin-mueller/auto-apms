@@ -34,6 +34,28 @@ void exposeToGlobalDebugLogging(const rclcpp::Logger & logger)
 #endif
 }
 
+void setLoggingSeverity(const rclcpp::Logger & logger, const std::string & severity_string)
+{
+  int severity;
+  rcutils_ret_t ret =
+    rcutils_logging_severity_level_from_string(severity_string.c_str(), rcl_get_default_allocator(), &severity);
+  if (RCUTILS_RET_LOGGING_SEVERITY_STRING_INVALID == ret) {
+    throw exceptions::SetLoggingSeverityError("Unknown severity string '" + severity_string + "'");
+  }
+  if (ret != RCUTILS_RET_OK) {
+    const std::string msg = rcutils_get_error_string().str;
+    rcutils_reset_error();
+    throw exceptions::SetLoggingSeverityError(msg);
+  }
+
+  ret = rcutils_logging_set_logger_level(logger.get_name(), severity);
+  if (ret != RCUTILS_RET_OK) {
+    const std::string msg = rcutils_get_error_string().str;
+    rcutils_reset_error();
+    throw exceptions::SetLoggingSeverityError(msg);
+  }
+}
+
 void setLoggingSeverity(const rclcpp::Logger & logger, rclcpp::Logger::Level severity_level)
 {
   switch (severity_level) {
@@ -55,28 +77,6 @@ void setLoggingSeverity(const rclcpp::Logger & logger, rclcpp::Logger::Level sev
     case rclcpp::Logger::Level::Unset:
       setLoggingSeverity(logger, "UNSET");
       break;
-  }
-}
-
-void setLoggingSeverity(const rclcpp::Logger & logger, const std::string & severity_string)
-{
-  int severity;
-  rcutils_ret_t ret =
-    rcutils_logging_severity_level_from_string(severity_string.c_str(), rcl_get_default_allocator(), &severity);
-  if (RCUTILS_RET_LOGGING_SEVERITY_STRING_INVALID == ret) {
-    throw exceptions::SetLoggingSeverityError("Unknown severity string '" + severity_string + "'");
-  }
-  if (ret != RCUTILS_RET_OK) {
-    const std::string msg = rcutils_get_error_string().str;
-    rcutils_reset_error();
-    throw exceptions::SetLoggingSeverityError(msg);
-  }
-
-  ret = rcutils_logging_set_logger_level(logger.get_name(), severity);
-  if (ret != RCUTILS_RET_OK) {
-    const std::string msg = rcutils_get_error_string().str;
-    rcutils_reset_error();
-    throw exceptions::SetLoggingSeverityError(msg);
   }
 }
 

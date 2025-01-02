@@ -23,6 +23,13 @@
 #include "auto_apms_util/filesystem.hpp"
 #include "yaml-cpp/yaml.h"
 
+/// @ingroup auto_apms_util
+/// @{
+
+/**
+ * @brief Macro for defining YAML encode/decode methods for a class.
+ * @param ClassType Fully qualified name of the class.
+ */
 #define AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(ClassType)                                                  \
   static ClassType fromFile(const std::string & path)                                                             \
   {                                                                                                               \
@@ -52,3 +59,5 @@
     }                                                                                                             \
     return out.c_str();                                                                                           \
   }
+
+/// @}

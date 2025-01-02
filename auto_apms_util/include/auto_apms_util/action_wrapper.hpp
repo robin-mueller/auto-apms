@@ -26,7 +26,7 @@ namespace auto_apms_util
 {
 
 /**
- * @defgroup auto_apms_util AutoAPMS - Utilities
+ * @defgroup auto_apms_util AutoAPMS - Common utilities
  * @brief Fundamental helper classes and utility functions.
  */
 
@@ -45,7 +45,7 @@ extern const std::string ACTION_WRAPPER_PARAM_NAME_LOOP_RATE;
 extern const std::string ACTION_WRAPPER_PARAM_NAME_FEEDBACK_RATE;
 
 /**
- * @brief Generic base class for robot actions.
+ * @brief Generic base class for implementing robot skills or actions.
  *
  * A auto_apms_util::ActionWrapper is a wrapper for a rclcpp_action::Server providing convenient extension points.
  *
@@ -64,12 +64,28 @@ public:
   using Result = typename ActionContextType::Result;
   using GoalHandle = typename ActionContextType::GoalHandle;
 
+  /**
+   * @brief Constructor.
+   * @param action_name Name of the action.
+   * @param node_ptr ROS 2 node pointer.
+   * @param action_context_ptr Pointer to a shared instance of the associated action context.
+   */
   explicit ActionWrapper(
     const std::string & action_name, rclcpp::Node::SharedPtr node_ptr,
     std::shared_ptr<ActionContextType> action_context_ptr);
 
+  /**
+   * @brief Constructor.
+   * @param action_name Name of the action.
+   * @param node_ptr ROS 2 node pointer.
+   */
   explicit ActionWrapper(const std::string & action_name, rclcpp::Node::SharedPtr node_ptr);
 
+  /**
+   * @brief Constructor.
+   * @param action_name Name of the action.
+   * @param options ROS 2 node options used for initialization.
+   */
   explicit ActionWrapper(const std::string & action_name, const rclcpp::NodeOptions & options);
 
 private:
@@ -77,14 +93,43 @@ private:
    *  Implementation specific callbacks
    */
 
+  /**
+   * @brief Callback for handling an incoming action goal request.
+   * @param goal_ptr Goal request.
+   * @return `true` for accepting the request and `false` for rejecting it.
+   */
   virtual bool onGoalRequest(std::shared_ptr<const Goal> goal_ptr);
 
+  /**
+   * @brief Configure the initial action result that is set once a goal is accepted.
+   * @param goal_ptr Accepted action goal.
+   * @param result_ptr Shared action result to be modified.
+   */
   virtual void setInitialResult(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
 
+  /**
+   * @brief Callback for handling an incoming cancel request.
+   * @param goal_ptr Original goal of the action to be canceled.
+   * @param result_ptr Shared action result to be modified.
+   * @return `true` for accepting the request and `false` for rejecting it.
+   */
   virtual bool onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
 
+  /**
+   * @brief Callback that executes work when the goal is cancelling.
+   * @param goal_ptr Original goal of the action that is being canceled.
+   * @param result_ptr Shared action result to be modified.
+   * @return Status of the cancellation routine.
+   */
   virtual Status cancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
 
+  /**
+   * @brief Callback that executes work when the goal is executing.
+   * @param goal_ptr Original goal of the action that is being executed.
+   * @param feedback_ptr Shared action feedback that is published according to the configured feedback rate.
+   * @param result_ptr Shared action result to be modified.
+   * @return Status of the execution routine.
+   */
   virtual Status executeGoal(
     std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
     std::shared_ptr<Result> result_ptr) = 0;

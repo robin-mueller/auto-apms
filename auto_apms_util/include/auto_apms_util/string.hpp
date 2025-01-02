@@ -54,6 +54,13 @@ using rcpputils::join;
  */
 std::vector<std::string> splitString(const std::string & str, const std::string & delimiter, bool remove_empty = true);
 
+/**
+ * @brief Converts a map to a string representation that is suited for printing to console.
+ * @param map Map to be converted to string.
+ * @param key_val_sep Separator for the key-value pairs.
+ * @param entry_sep Separator for the map's entries.
+ * @return String that encodes @p map.
+ */
 std::string printMap(
   const std::map<std::string, std::string> & map, const std::string & key_val_sep = "=",
   const std::string & entry_sep = ", ");
@@ -92,4 +99,5 @@ std::string toCamelCase(const std::string & str);
 std::string toSnakeCase(const std::string & str);
 
 /// @}
+
 }  // namespace auto_apms_util
