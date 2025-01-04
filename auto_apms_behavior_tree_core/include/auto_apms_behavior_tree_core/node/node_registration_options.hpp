@@ -76,13 +76,17 @@ struct NodeRegistrationOptions
   /// Timeout [s] for initially discovering the associated ROS2 node.
   std::chrono::duration<double> wait_timeout = std::chrono::duration<double>(3);
   /// Timeout [s] for waiting for a response for the requested service or goal.
-  std::chrono::duration<double> request_timeout = std::chrono::duration<double>(1.5);
+  std::chrono::duration<double> request_timeout = std::chrono::duration<double>(2);
   /// Flag whether to tolerate if the action/service node is unreachable when trying to create the client. If set to
   /// `true`, a warning is written to the logger. Otherwise, an exception is raised.
   bool allow_unreachable = false;
   /// Minimum severity level allowed for logging using the ROS 2 logging API.
   std::string logger_level = "INFO";
 
+  /**
+   * @brief Verify that the options are valid (e.g. all required values are set).
+   * @return `true` if valid, `false` otherwise.
+   */
   bool valid() const;
 };
 

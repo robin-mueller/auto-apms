@@ -17,11 +17,6 @@ find_package(auto_apms_util REQUIRED)
 # ------------ Configuration --------------
 #
 
-option(AUTO_APMS_BEHAVIOR_TREE_CORE_DEBUG_LOGGING "Enable debug logging severity" ON)
-if(AUTO_APMS_BEHAVIOR_TREE_CORE_DEBUG_LOGGING)
-    add_compile_definitions(_AUTO_APMS_DEBUG_LOGGING)
-endif()
-
 # Core resources
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST "auto_apms_behavior_tree_core__node_manifest")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE "auto_apms_behavior_tree_core__tree")

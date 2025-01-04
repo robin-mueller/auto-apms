@@ -16,11 +16,6 @@ find_package(auto_apms_util REQUIRED)
 find_package(auto_apms_behavior_tree_core REQUIRED)
 find_package(auto_apms_interfaces REQUIRED)
 
-option(AUTO_APMS_PX4_DEBUG_LOGGING "Enable debug logging severity" ON)
-if(AUTO_APMS_PX4_DEBUG_LOGGING)
-    add_compile_definitions(_AUTO_APMS_DEBUG_LOGGING)
-endif()
-
 set(_AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME "arm_disarm")
 set(_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME "enable_hold")
 set(_AUTO_APMS_PX4__GOTO_ACTION_NAME "go_to")

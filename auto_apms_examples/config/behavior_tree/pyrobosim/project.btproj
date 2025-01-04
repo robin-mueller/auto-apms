@@ -99,6 +99,11 @@
         <Action ID="ResumeExecutor">
             <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
         </Action>
+        <Action ID="RobotSharesCurrentLocation">
+            <input_port name="robot" type="std::string">Target robot in question to be the first at the given location.</input_port>
+            <input_port name="filter_loc" default=".*" type="std::string">Regex filter for locations to consider.</input_port>
+            <output_port name="current_loc" default="{=}" type="std::string">Current location name.</output_port>
+        </Action>
         <Action ID="SetLocationState">
             <input_port name="open" default="true" type="bool">Open/Close the location.</input_port>
             <input_port name="location" type="std::string">Name of the location.</input_port>

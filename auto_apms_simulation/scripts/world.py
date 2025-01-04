@@ -19,9 +19,9 @@ import time
 import rclpy
 import sys
 import signal
+import threading
 
 from rclpy.executors import MultiThreadedExecutor
-from threading import Thread
 from argparse import ArgumentParser
 from pyrobosim.core import World
 from pyrobosim.gui import PyRoboSimGUI
@@ -37,7 +37,7 @@ def main():
     parser.add_argument(
         "options",
         nargs="?",
-        help="Options to pass to the world during initialization (Use json format).",
+        help="Options dictionary to pass to the world during initialization (Use json format).",
         default="{}",
     )
 
@@ -46,21 +46,28 @@ def main():
     world: World = create_world_from_name(args.name, **json.loads(args.options))
 
     # Initialize the node
-    rclpy.init(args=unknown_args, signal_handler_options=rclpy.SignalHandlerOptions.SIGTERM)
-    node = WorldROSWrapper(world, state_pub_rate=0.1, dynamics_rate=0.01)
-    executor = MultiThreadedExecutor()
-    executor.add_node(node)
+    rclpy.init(args=unknown_args)
+    node = WorldROSWrapper(
+        world,
+        state_pub_rate=0.25,
+        dynamics_rate=0.1,
+        dynamics_latch_time=0.5,
+        dynamics_ramp_down_time=0.5,
+        dynamics_enable_collisions=False,
+    )
+    node.start(wait_for_gui=False, auto_spin=False)
 
     def spin():
-        while not node.world.has_gui:
+        while not world.has_gui:
             node.get_logger().info("Waiting for GUI...")
             time.sleep(1.0)
-        node.start(wait_for_gui=False, auto_spin=False)
         print("WORLD_READY", flush=True)  # Allow other processes to react when world node is ready
+        executor = MultiThreadedExecutor()
+        executor.add_node(node)
         executor.spin()
 
     # Spin the node in a separate thread
-    node_thread = Thread(target=spin, name=node.get_name())
+    node_thread = threading.Thread(target=spin, name=node.get_name(), daemon=True)
     node_thread.start()
 
     # Start GUI in main thread
@@ -79,7 +86,9 @@ def main():
 
     # Shut down the node and exit the program
     node.get_logger().info("World node shutdown.")
-    node.shutdown()
+    node.destroy_node()
+    if rclpy.ok():
+        rclpy.shutdown()
     node_thread.join()
     sys.exit(code)
 

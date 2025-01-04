@@ -40,7 +40,7 @@ def spawn_orchestrator_node(context: LaunchContext):
                         ]
                     ),
                     "allow_other_build_handlers": False,
-                    "groot2_port": 5555,
+                    "groot2_port": -1,
                 },
                 json.loads(context.launch_configurations["orchestrator_params"]),
             ],

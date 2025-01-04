@@ -180,7 +180,9 @@ private:
   rclcpp::Time time_goal_sent_;
   BT::NodeStatus on_feedback_state_change_;
   bool goal_response_received_;  // We must use this additional flag because goal_handle_ may be nullptr if rejected
-  bool halt_requested_;
+  bool goal_rejected_;
+  bool result_received_;
+  bool cancel_requested_;
   WrappedResult result_;
 };
 
@@ -245,7 +247,7 @@ inline BT::NodeStatus RosActionNode<ActionT>::onResultReceived(const WrappedResu
     logger_, "%s - Goal completed. Received result %s.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
     result_str.c_str());
   if (result.code == rclcpp_action::ResultCode::SUCCEEDED) return BT::NodeStatus::SUCCESS;
-  if (halt_requested_ && result.code == rclcpp_action::ResultCode::CANCELED) return BT::NodeStatus::SUCCESS;
+  if (cancel_requested_ && result.code == rclcpp_action::ResultCode::CANCELED) return BT::NodeStatus::SUCCESS;
   return BT::NodeStatus::FAILURE;
 }
 
@@ -287,12 +289,22 @@ inline void RosActionNode<T>::cancelGoal()
     }
     goal_handle_ = future_goal_handle_.get();
     future_goal_handle_ = {};
+    goal_rejected_ = goal_handle_ == nullptr;
   }
 
   // If goal was rejected or handle has been invalidated, we do not need to cancel
-  if (!goal_handle_) {
+  if (goal_rejected_) {
     RCLCPP_DEBUG(
       logger_, "%s - Goal was rejected. Nothing to cancel.", context_.getFullyQualifiedTreeNodeName(this).c_str());
+    return;
+  };
+
+  // If goal was accepted, but goal handle is nullptr, result callback was already called which means that the goal has
+  // already reached a terminal state
+  if (!goal_handle_) {
+    RCLCPP_DEBUG(
+      logger_, "%s - Goal has already reached a terminal state. Nothing to cancel.",
+      context_.getFullyQualifiedTreeNodeName(this).c_str());
     return;
   };
 
@@ -381,7 +393,7 @@ template <class T>
 inline void RosActionNode<T>::halt()
 {
   if (status() == BT::NodeStatus::RUNNING) {
-    halt_requested_ = true;
+    cancel_requested_ = true;
     onHalt();
     cancelGoal();
     resetStatus();
@@ -440,7 +452,9 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     setStatus(BT::NodeStatus::RUNNING);
 
     goal_response_received_ = false;
-    halt_requested_ = false;
+    goal_rejected_ = false;
+    result_received_ = false;
+    cancel_requested_ = false;
     on_feedback_state_change_ = BT::NodeStatus::RUNNING;
     result_ = {};
 
@@ -458,6 +472,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     goal_options.goal_response_callback = [this](typename GoalHandle::SharedPtr goal_handle) {
       // Indicate that a goal response has been received and let tick() do the rest
       this->goal_response_received_ = true;
+      this->goal_rejected_ = goal_handle == nullptr;
       this->goal_handle_ = goal_handle;
     };
     goal_options.feedback_callback =
@@ -471,13 +486,15 @@ inline BT::NodeStatus RosActionNode<T>::tick()
       };
     goal_options.result_callback = [this](const WrappedResult & result) {
       // The result callback is also invoked when goal is rejected (code: CANCELED), but we only want to call
-      // onResultReceived if the goal was accepted and the tree has been halted. Therefore, we use the
-      // halt_requested_ flag.
-      if (this->halt_requested_) {
-        // Once accepted, the goal can only be canceled if the tree was halted. In this case, the tick callback won't be
-        // able to call onResultReceived, so we must do this here. The returned status has no effect in this case.
+      // onResultReceived if the goal was accepted and we want to return prematurely. Therefore, we use the
+      // cancel_requested_ flag.
+      if (this->cancel_requested_) {
+        // If the node is to return prematurely, we must invoke onResultReceived here. The returned status has no effect
+        // in this case.
         this->onResultReceived(result);
       }
+      this->result_received_ = true;
+      this->goal_handle_ = nullptr;  // Reset internal goal handle when result was received
       this->result_ = result;
       this->emitWakeUpSignal();
     };
@@ -502,7 +519,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
       // We noticed, that a goal response has just been received and have to prepare the next steps now
       future_goal_handle_ = {};  // Invalidate future since it's obsolete now and it indicates that we've done this step
 
-      if (!goal_handle_) return check_status(onFailure(GOAL_REJECTED_BY_SERVER));
+      if (goal_rejected_) return check_status(onFailure(GOAL_REJECTED_BY_SERVER));
       RCLCPP_DEBUG(
         logger_, "%s - Goal %s accepted by server, waiting for result.",
         context_.getFullyQualifiedTreeNodeName(this).c_str(),
@@ -511,13 +528,13 @@ inline BT::NodeStatus RosActionNode<T>::tick()
 
     // SECOND case: onFeedback requested a stop
     if (on_feedback_state_change_ != BT::NodeStatus::RUNNING) {
+      cancel_requested_ = true;
       cancelGoal();
       return on_feedback_state_change_;
     }
 
     // THIRD case: result received
-    if (result_.code != rclcpp_action::ResultCode::UNKNOWN) {
-      this->goal_handle_ = nullptr;  // Reset internal goal handle after result
+    if (result_received_) {
       return check_status(onResultReceived(result_));
     }
   }

@@ -23,7 +23,7 @@ namespace auto_apms_util
 /// @{
 
 /**
- * @brief Enable ROS 2 debug logging, if the C preprocessor flag _AUTO_APMS_DEBUG_LOGGING is set.
+ * @brief Enable ROS 2 debug logging, if the C preprocessor flag `_AUTO_APMS_DEBUG_LOGGING` is set.
  * @param logger Logger instance.
  */
 void exposeToGlobalDebugLogging(const rclcpp::Logger & logger);

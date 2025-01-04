@@ -43,6 +43,8 @@ from launch_ros.substitutions import FindPackageShare
 GRYFFINDOR_NAMES = ["potter", "granger", "weasley"]
 SLYTHERIN_NAMES = ["malfoy", "crabbe", "goyle"]
 
+TICK_RATE_SEC = 0.1
+
 
 def spawn_nodes(context: LaunchContext):
     max_student_num = len(GRYFFINDOR_NAMES) + len(SLYTHERIN_NAMES)
@@ -75,6 +77,8 @@ def spawn_nodes(context: LaunchContext):
     world_node = Node(
         package="auto_apms_simulation",
         executable="world.py",
+        name="hogwarts_world_node",
+        ros_arguments=["--log-level", "hogwarts_world_node:=WARN"],
         arguments=["hogwarts", encoded_world_kwargs],
         output="screen",
         emulate_tty=True,
@@ -96,7 +100,7 @@ def spawn_nodes(context: LaunchContext):
                                 else "auto_apms_examples::hogwarts::SlytherinTree"
                             )
                         ],
-                        parameters=[{"bb.student": student}],
+                        parameters=[{"tick_rate": TICK_RATE_SEC, "bb.student": student}],
                         output="screen",
                         emulate_tty=True,
                     )
@@ -119,7 +123,7 @@ def spawn_nodes(context: LaunchContext):
                             "config": "auto_apms_examples::pyrobosim_hogwarts_mission",
                             "orchestrator_name": student,
                             "orchestrator_params": json.dumps(
-                                {"groot2_port": -1, "bb.student": student, "bb.house": house}
+                                {"tick_rate": TICK_RATE_SEC, "bb.student": student, "bb.house": house}
                             ),
                             "use_multiple_nodes": "false",
                         }.items(),
@@ -148,7 +152,7 @@ def spawn_nodes(context: LaunchContext):
 
 def generate_launch_description():
     hallway_num_arg = DeclareLaunchArgument(
-        "hallway_num", description="Number of magical hallways in Hogwarts.", default_value="4"
+        "hallway_num", description="Number of magical hallways in Hogwarts.", default_value="3"
     )
     student_num_arg = DeclareLaunchArgument(
         "student_num", description="Number of wizardry students in Hogwarts.", default_value="2"

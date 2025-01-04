@@ -88,6 +88,7 @@ ament_target_dependencies(sim_behavior_tree_nodes
 auto_apms_behavior_tree_declare_nodes(sim_behavior_tree_nodes
     "auto_apms_simulation::SetLocationState"
     "auto_apms_simulation::IsLocationOccupied"
+    "auto_apms_simulation::RobotSharesCurrentLocation"
     "auto_apms_simulation::GetRobotState"
     "auto_apms_simulation::NavigateToLocation"
     "auto_apms_simulation::PickObject"

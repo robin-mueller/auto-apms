@@ -199,6 +199,12 @@ void MissionBuildHandlerBase::buildContingencyHandling(
       fallback.insertNode<model::AsyncSequence>().setName("EventHandler (" + handler_id.str() + ")");
     seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
     seq.insertTreeFromResource(handler_id);
+
+    // Once the contingency handler subtree is done, the tree idles as long as the respective event_id is still set
+    seq.insertNode<model::KeepRunningUntilFailure>()
+      .insertNode<model::ScriptCondition>()
+      .setName("IsEventStillActive")
+      .set_code("event_id == '" + event_id.str() + "'");
   }
 }
 

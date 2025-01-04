@@ -37,6 +37,9 @@ class HogwartsWorld(World):
         student_radius = hallway_width / 2.5
         boss_size = student_radius * 2.0
 
+        # We set the location and object metadata programmatically, since this is more convenient.
+        # However, resetting the world using the GUI doesn't work properly with this approach.
+
         Location.set_metadata(None)
         Location.metadata.data = {
             "boss": {
@@ -51,7 +54,7 @@ class HogwartsWorld(World):
 
         Object.set_metadata(None)
         Object.metadata.data = {
-            "magical_item": {"footprint": {"type": "circle", "radius": boss_size / 10.0}, "height": 0.0},
+            "magical_item": {"footprint": {"type": "circle", "radius": boss_size / 12.0}, "height": 0.0},
         }
 
         center_y: float = 0.0
@@ -144,14 +147,16 @@ class HogwartsWorld(World):
                         path_planner=RRTPlanner(
                             world=self,
                             bidirectional=True,
-                            rrt_connect=False,
+                            rrt_connect=True,
                             rrt_star=True,
                             collision_check_step_dist=size / 12,
                             max_connection_dist=size / 6,
-                            rewire_radius=1,
+                            max_nodes_sampled=500,
+                            max_time=1,
+                            rewire_radius=size / 6,
                             compress_path=True,
                         ),
-                        path_executor=ConstantVelocityExecutor(validation_step_dist=size / 12),
+                        path_executor=ConstantVelocityExecutor(dt=0.05, validation_step_dist=size / 12),
                         color=room.viz_color,
                     ),
                     loc=room,

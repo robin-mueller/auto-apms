@@ -3,35 +3,38 @@
   <BehaviorTree ID="IsHallwayOccupied">
     <Sequence>
       <RunOnce then_skip="true">
-        <Script code="filter_robot := &apos;^(?!.*&apos; + @student + &apos;).*$&apos;"/>
+        <Script code="is_hallway_shared := false;&#10;location := &apos;&apos;;&#10;prev_location := &apos;&apos;;&#10;new_location := false;&#10;@location_before_this := &apos;&apos;;&#10;shared_hallway_name := &apos;&apos;"/>
       </RunOnce>
-      <GetRobotState robot="{@student}"
-                     location="{location}"
-                     battery="{=}"/>
-      <IsLocationOccupied target_loc="{location}"
+      <Sequence name="IsHallwaySharedOnEntry"
+                _successIf="shared_hallway_name != &apos;&apos;"
+                _onSuccess="shared_hallway_name = location">
+        <Script code="prev_location = location"/>
+        <ForceSuccess>
+          <RobotSharesCurrentLocation robot="{@student}"
+                                      filter_loc="^hallway.*"
+                                      current_loc="{location}"
+                                      _onSuccess="is_hallway_shared = true"
+                                      _onFailure="is_hallway_shared = false"
+                                      _post="new_location = prev_location != location"/>
+        </ForceSuccess>
+        <Script code="@location_before_this = prev_location"
+                _skipIf="new_location == false || prev_location == &apos;&apos; || (prev_location == &apos;gryffindor&apos; || prev_location == &apos;slytherin&apos;) == false"/>
+        <ScriptCondition code="new_location &amp;&amp; is_hallway_shared"/>
+      </Sequence>
+      <IsLocationOccupied target_loc="{shared_hallway_name}"
                           filter_loc="^hallway.*"
-                          filter_robot="{filter_robot}"
-                          _failureIf="location == &apos;&apos;"/>
+                          filter_robot=".*"
+                          _onFailure="shared_hallway_name = &apos;&apos;"/>
     </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="Retreat">
     <NavigateToLocation robot="{@student}"
-                        target="{@house}"/>
+                        target="{@location_before_this}"/>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Condition ID="GetRobotState">
-      <input_port name="robot"
-                  type="std::string">Name of the robot.</input_port>
-      <output_port name="location"
-                   default="{=}"
-                   type="std::string">Current location name.</output_port>
-      <output_port name="battery"
-                   default="{=}"
-                   type="double">Current battery state [%].</output_port>
-    </Condition>
     <Action ID="IsLocationOccupied">
       <input_port name="target_loc"
                   type="std::string">Name of the location to test for occupancy.</input_port>
@@ -47,6 +50,16 @@
                   type="std::string">Name of the robot.</input_port>
       <input_port name="target"
                   type="std::string">Name of the target to navigate to (Terms for the knowledge query are separated by whitespace).</input_port>
+    </Action>
+    <Action ID="RobotSharesCurrentLocation">
+      <input_port name="robot"
+                  type="std::string">Target robot in question to be the first at the given location.</input_port>
+      <input_port name="filter_loc"
+                  default=".*"
+                  type="std::string">Regex filter for locations to consider.</input_port>
+      <output_port name="current_loc"
+                   default="{=}"
+                   type="std::string">Current location name.</output_port>
     </Action>
   </TreeNodesModel>
 

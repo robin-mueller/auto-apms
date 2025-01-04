@@ -24,6 +24,7 @@ namespace auto_apms_util
 
 void exposeToGlobalDebugLogging(const rclcpp::Logger & logger)
 {
+  (void)logger;
 #ifdef _AUTO_APMS_DEBUG_LOGGING
   auto ret = rcutils_logging_set_logger_level(logger.get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
   if (ret != RCUTILS_RET_OK) {

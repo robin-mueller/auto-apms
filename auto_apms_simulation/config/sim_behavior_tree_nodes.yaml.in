@@ -10,6 +10,10 @@ IsLocationOccupied:
   class_name: auto_apms_simulation::IsLocationOccupied
   port: ${_AUTO_APMS_SIMULATION__SERVICE_NAME__REQUEST_WORLD_STATE}
 
+RobotSharesCurrentLocation:
+  class_name: auto_apms_simulation::RobotSharesCurrentLocation
+  port: ${_AUTO_APMS_SIMULATION__SERVICE_NAME__REQUEST_WORLD_STATE}
+
 NavigateToLocation:
   class_name: auto_apms_simulation::NavigateToLocation
   port: ${_AUTO_APMS_SIMULATION__ACTION_NAME__EXECUTE_TASK_ACTION}

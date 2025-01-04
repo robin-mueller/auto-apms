@@ -20,11 +20,6 @@ find_package(auto_apms_behavior_tree_core REQUIRED)
 # ------------ Configuration --------------
 #
 
-option(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING "Enable debug logging severity" ON)
-if(AUTO_APMS_BEHAVIOR_TREE_DEBUG_LOGGING)
-    add_compile_definitions(_AUTO_APMS_DEBUG_LOGGING)
-endif()
-
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILD_DIR_ABSOLUTE "${_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_ABSOLUTE}")
 
 # Behavior tree executor defaults

@@ -28,7 +28,10 @@ class GetRobotState : public auto_apms_behavior_tree::core::RosSubscriberNode<py
   MessageType last_msg_;
 
 public:
-  using RosSubscriberNode::RosSubscriberNode;
+  GetRobotState(const std::string & instance_name, const Config & config, Context context)
+  : RosSubscriberNode(instance_name, config, context, rclcpp::SensorDataQoS())
+  {
+  }
 
   static BT::PortsList providedPorts()
   {

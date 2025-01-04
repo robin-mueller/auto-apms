@@ -14,7 +14,7 @@ find_package(generate_parameter_library REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 
-option(AUTO_APMS_UTIL_DEBUG_LOGGING "Enable debug logging severity" ON)
+option(AUTO_APMS_UTIL_DEBUG_LOGGING "Enable debug logging severity" OFF)
 if(AUTO_APMS_UTIL_DEBUG_LOGGING)
     add_compile_definitions(_AUTO_APMS_DEBUG_LOGGING)
 endif()
