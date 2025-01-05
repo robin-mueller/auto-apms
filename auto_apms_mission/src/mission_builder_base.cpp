@@ -48,6 +48,31 @@ bool MissionBuildHandlerBase::setBuildRequest(
     RCLCPP_WARN(logger_, "Argument root_tree_name is not empty. Custom root tree names are not allowed.");
     return false;
   }
+
+  // Parse all tree resource identities and replace all empty tree names with the corresponding root tree name
+  auto add_tree_name_to_identity = [this](TreeResource::Identity & identity) {
+    if (identity.tree_name.empty()) {
+      TreeResource r(identity);
+      identity.tree_name = r.getRootTreeName();
+    }
+  };
+  try {
+    for (TreeResource::Identity & identity : mission_config_.bringup) add_tree_name_to_identity(identity);
+    for (TreeResource::Identity & identity : mission_config_.mission) add_tree_name_to_identity(identity);
+    for (auto & [monitor_id, handler_id] : mission_config_.contingency) {
+      add_tree_name_to_identity(monitor_id);
+      add_tree_name_to_identity(handler_id);
+    }
+    for (auto & [monitor_id, handler_id] : mission_config_.emergency) {
+      add_tree_name_to_identity(monitor_id);
+      add_tree_name_to_identity(handler_id);
+    }
+    for (TreeResource::Identity & identity : mission_config_.shutdown) add_tree_name_to_identity(identity);
+  } catch (const auto_apms_util::exceptions::ResourceError & e) {
+    RCLCPP_WARN(logger_, "%s", e.what());
+    return false;
+  }
+
   return true;
 }
 
@@ -64,15 +89,15 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   RCLCPP_DEBUG(logger_, "Configuring orchestrator root blackboard.");
   configureOrchestratorRootBlackboard(bb);
 
-  TreeDocument::TreeElement is_contingency_tree = builder.getTree("IsContingency").removeChildren();
-  TreeDocument::TreeElement is_emergency_tree = builder.getTree("IsEmergency").removeChildren();
+  TreeDocument::TreeElement is_contingency_tree = builder.getTree("__IsContingency__").removeChildren();
+  TreeDocument::TreeElement is_emergency_tree = builder.getTree("__IsEmergency__").removeChildren();
 
   if (mission_config_.contingency.empty()) {
     is_contingency_tree.insertNode<model::AlwaysFailure>();
   } else {
     model::Fallback fallback = is_contingency_tree.insertNode<model::Fallback>();
-    for (const auto & [event_id, _] : mission_config_.contingency) {
-      fallback.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
+    for (const auto & [monitor_id, _] : mission_config_.contingency) {
+      fallback.insertNode<model::ScriptCondition>().set_code("event_id == '" + monitor_id.str() + "'");
     }
   }
 
@@ -80,15 +105,15 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
     is_emergency_tree.insertNode<model::AlwaysFailure>();
   } else {
     model::Fallback fallback = is_emergency_tree.insertNode<model::Fallback>();
-    for (const auto & [event_id, _] : mission_config_.emergency) {
-      fallback.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
+    for (const auto & [monitor_id, _] : mission_config_.emergency) {
+      fallback.insertNode<model::ScriptCondition>().set_code("event_id == '" + monitor_id.str() + "'");
     }
   }
 
   // Bring up
   if (!mission_config_.bringup.empty()) {
     RCLCPP_DEBUG(logger_, "Creating bringup subtree.");
-    TreeDocument::TreeElement bringup_tree = builder.getTree("BringUp");
+    TreeDocument::TreeElement bringup_tree = builder.getTree("__BringUp__");
     buildBringUp(bringup_tree, mission_config_.bringup);
     if (const BT::Result res = bringup_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Bringup tree is not valid: " + res.error());
@@ -97,7 +122,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
 
   // Mission
   RCLCPP_DEBUG(logger_, "Creating mission subtree.");
-  TreeDocument::TreeElement mission_tree = builder.getTree("RunMission");
+  TreeDocument::TreeElement mission_tree = builder.getTree("__RunMission__");
   buildMission(mission_tree, mission_config_.mission);
   if (const BT::Result res = mission_tree.verify(); !res) {
     throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Mission tree is not valid: " + res.error());
@@ -106,7 +131,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Event monitor
   if (!mission_config_.contingency.empty() || !mission_config_.emergency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating event monitor subtree.");
-    TreeDocument::TreeElement event_monitor_tree = builder.getTree("MonitorEvents");
+    TreeDocument::TreeElement event_monitor_tree = builder.getTree("__MonitorEvents__");
     buildEventMonitor(event_monitor_tree, mission_config_.contingency, mission_config_.emergency);
     if (const BT::Result res = event_monitor_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -117,7 +142,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Contingency Handling
   if (!mission_config_.contingency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating contingency handler subtree.");
-    TreeDocument::TreeElement contingency_tree = builder.getTree("HandleContingency");
+    TreeDocument::TreeElement contingency_tree = builder.getTree("__HandleContingency__");
     buildContingencyHandling(contingency_tree, mission_config_.contingency);
     if (const BT::Result res = contingency_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -128,7 +153,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Emergency Handling
   if (!mission_config_.emergency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating emergency handler subtree.");
-    TreeDocument::TreeElement emergency_tree = builder.getTree("HandleEmergency");
+    TreeDocument::TreeElement emergency_tree = builder.getTree("__HandleEmergency__");
     buildEmergencyHandling(emergency_tree, mission_config_.emergency);
     if (const BT::Result res = emergency_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -139,7 +164,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Shut down
   if (!mission_config_.shutdown.empty()) {
     RCLCPP_DEBUG(logger_, "Creating shutdown subtree.");
-    TreeDocument::TreeElement shutdown_tree = builder.getTree("ShutDown");
+    TreeDocument::TreeElement shutdown_tree = builder.getTree("__ShutDown__");
     buildShutDown(shutdown_tree, mission_config_.shutdown);
     if (const BT::Result res = shutdown_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Shutdown tree is not valid: " + res.error());
@@ -147,7 +172,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   }
 
   // Write tree for debugging purposes
-  // builder.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
+  builder.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
 
   return root_tree;
 }
@@ -166,19 +191,32 @@ void MissionBuildHandlerBase::buildEventMonitor(
   const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies,
   const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies)
 {
-  std::vector<TreeResource::Identity> event_ids;
+  std::vector<TreeResource::Identity> sorted_monitor_ids;
 
   // Emergencies have higher priority than contingencies (they are inserted to the vector first)
-  for (const auto & [event_id, _] : emergencies) {
-    event_ids.push_back(event_id);
+  for (const auto & [monitor_id, _] : emergencies) {
+    sorted_monitor_ids.push_back(monitor_id);
   }
-  for (const auto & [event_id, _] : contingencies) {
-    if (!auto_apms_util::contains(event_ids, event_id)) event_ids.push_back(event_id);
+  for (const auto & [monitor_id, _] : contingencies) {
+    if (!auto_apms_util::contains(sorted_monitor_ids, monitor_id)) sorted_monitor_ids.push_back(monitor_id);
+  }
+
+  // Assemble an extra document that holds all monitor subtrees
+  TreeDocument monitor_doc;
+  for (const TreeResource::Identity & monitor_id : sorted_monitor_ids) {
+    if (!monitor_doc.hasTreeName(monitor_id.str())) {
+      monitor_doc.newTreeFromResource(monitor_id).setName(monitor_id.str());
+    }
   }
 
   model::Fallback fallback = sub_tree.removeChildren().insertNode<model::Fallback>();
-  for (const TreeResource::Identity & r : event_ids) {
-    fallback.insertTreeFromResource(r).setConditionalScript(BT::PostCond::ON_SUCCESS, "event_id := '" + r.str() + "'");
+  for (const TreeResource::Identity & monitor_id : sorted_monitor_ids) {
+    // We want the monitor to have its own blackboard, so we create a subtree node
+    const std::string monitor_tree_name = monitor_id.str();
+    model::SubTree subtree_node = fallback.getParentDocument().hasTreeName(monitor_tree_name) -
+                                    ? fallback.insertNode<model::SubTree>(monitor_tree_name)
+                                    : fallback.insertNode<model::SubTree>(monitor_doc.getTree(monitor_tree_name));
+    subtree_node.setConditionalScript(BT::PostCond::ON_SUCCESS, "event_id := '" + monitor_tree_name + "'");
   }
 }
 
@@ -186,25 +224,41 @@ void MissionBuildHandlerBase::buildContingencyHandling(
   TreeDocument::TreeElement & sub_tree,
   const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & contingencies)
 {
+  // Assemble an extra document that holds all handler subtrees
+  TreeDocument handler_doc;
+  for (const auto & [_, handler_id] : contingencies) {
+    if (!handler_doc.hasTreeName(handler_id.str())) {
+      handler_doc.newTreeFromResource(handler_id).setName(handler_id.str());
+    }
+  }
+
   model::ReactiveFallback fallback = sub_tree.removeChildren().insertNode<model::ReactiveFallback>();
 
-  // At the highest priority (first child) we acknowledge when the event is reset (e.g. we abort the current action and
-  // resume)
+  // With the highest priority (first child) we acknowledge when the event is reset (e.g. we abort the current action
+  // and resume)
   fallback.insertNode<model::AlwaysFailure>()
     .setName("ResetEventHandler")
     .setConditionalScript(BT::PreCond::SUCCESS_IF, "event_id == ''");
 
-  for (const auto & [event_id, handler_id] : contingencies) {
+  for (const auto & [monitor_id, handler_id] : contingencies) {
     model::AsyncSequence seq =
       fallback.insertNode<model::AsyncSequence>().setName("EventHandler (" + handler_id.str() + ")");
-    seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
-    seq.insertTreeFromResource(handler_id);
+    seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + monitor_id.str() + "'");
 
-    // Once the contingency handler subtree is done, the tree idles as long as the respective event_id is still set
+    // We want the handler to have its own blackboard, so we create a subtree node
+    const std::string handler_tree_name = handler_id.str();
+    if (seq.getParentDocument().hasTreeName(handler_tree_name)) {
+      seq.insertNode<model::SubTree>(handler_tree_name);
+    } else {
+      // Automatically add the handler tree if it doesn't exist yet
+      seq.insertNode<model::SubTree>(handler_doc.getTree(handler_tree_name));
+    }
+
+    // Once the contingency handler subtree is done, the tree idles as long as the respective event is still active
     seq.insertNode<model::KeepRunningUntilFailure>()
       .insertNode<model::ScriptCondition>()
       .setName("IsEventStillActive")
-      .set_code("event_id == '" + event_id.str() + "'");
+      .set_code("event_id == '" + monitor_id.str() + "'");
   }
 }
 
@@ -212,12 +266,28 @@ void MissionBuildHandlerBase::buildEmergencyHandling(
   TreeDocument::TreeElement & sub_tree,
   const std::vector<std::pair<TreeResource::Identity, TreeResource::Identity>> & emergencies)
 {
+  // Assemble an extra document that holds all handler subtrees
+  TreeDocument handler_doc;
+  for (const auto & [_, handler_id] : emergencies) {
+    if (!handler_doc.hasTreeName(handler_id.str())) {
+      handler_doc.newTreeFromResource(handler_id).setName(handler_id.str());
+    }
+  }
+
   model::ReactiveFallback fallback = sub_tree.removeChildren().insertNode<model::ReactiveFallback>();
-  for (const auto & [event_id, handler_id] : emergencies) {
+  for (const auto & [monitor_id, handler_id] : emergencies) {
     model::AsyncSequence seq =
       fallback.insertNode<model::AsyncSequence>().setName("EventHandler (" + handler_id.str() + ")");
-    seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + event_id.str() + "'");
-    seq.insertTreeFromResource(handler_id);
+    seq.insertNode<model::ScriptCondition>().set_code("event_id == '" + monitor_id.str() + "'");
+
+    // We want the handler to have its own blackboard, so we create a subtree node
+    const std::string handler_tree_name = handler_id.str();
+    if (seq.getParentDocument().hasTreeName(handler_tree_name)) {
+      seq.insertNode<model::SubTree>(handler_tree_name);
+    } else {
+      // Automatically add the handler tree if it doesn't exist yet
+      seq.insertNode<model::SubTree>(handler_doc.getTree(handler_tree_name));
+    }
   }
 }
 

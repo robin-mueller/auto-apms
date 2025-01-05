@@ -108,7 +108,13 @@ public:
     typename std::enable_if_t<std::is_same_v<model::SubTree, ModelT>, model::SubTree> insertNode(
       const std::string & tree_name, const NodeElement * before_this = nullptr);
 
+    template <class ModelT>
+    typename std::enable_if_t<std::is_same_v<model::SubTree, ModelT>, model::SubTree> insertNode(
+      const TreeElement & tree, const NodeElement * before_this = nullptr);
+
     model::SubTree insertSubTreeNode(const std::string & tree_name, const NodeElement * before_this = nullptr);
+
+    model::SubTree insertSubTreeNode(const TreeElement & tree, const NodeElement * before_this = nullptr);
 
     NodeElement insertTree(const TreeElement & tree, const NodeElement * before_this = nullptr);
 
@@ -171,7 +177,7 @@ public:
 
     NodeElement & setConditionalScript(BT::PostCond type, const Script & script);
 
-    NodeElement & setName(const std::string & instance_name);
+    virtual NodeElement & setName(const std::string & instance_name);
 
     /// @brief Name of the behavior tree node given during registration.
     virtual std::string getRegistrationName() const;
@@ -180,6 +186,8 @@ public:
     virtual std::string getName() const;
 
     std::string getFullyQualifiedName() const;
+
+    const TreeDocument & getParentDocument() const;
 
     const std::vector<NodeElement> deepApplyConst(ConstDeepApplyCallback apply_callback) const;
 
@@ -214,6 +222,12 @@ public:
 
     TreeElement & operator=(const TreeElement & other);
 
+    bool operator==(const TreeElement & other) const;
+
+    bool operator!=(const TreeElement & other) const;
+
+    TreeElement & setName(const std::string & tree_name) override;
+
     std::string getName() const override;
 
     TreeElement & makeRoot();
@@ -239,7 +253,6 @@ public:
     NodeElement & setPorts() = delete;
     NodeElement & resetPorts() = delete;
     NodeElement & setConditionalScript() = delete;
-    NodeElement & setName() = delete;
   };
 
   TreeDocument(
@@ -272,7 +285,7 @@ public:
 
   TreeElement newTreeFromResource(const TreeResource & resource, const std::string & tree_name = "");
 
-  bool hasTree(const std::string & tree_name) const;
+  bool hasTreeName(const std::string & tree_name) const;
 
   TreeElement getTree(const std::string & tree_name);
 
@@ -380,6 +393,13 @@ inline typename std::enable_if_t<std::is_same_v<model::SubTree, ModelT>, model::
 TreeDocument::NodeElement::insertNode(const std::string & tree_name, const NodeElement * before_this)
 {
   return insertSubTreeNode(tree_name, before_this);
+}
+
+template <class ModelT>
+inline typename std::enable_if_t<std::is_same_v<model::SubTree, ModelT>, model::SubTree>
+TreeDocument::NodeElement::insertNode(const TreeElement & tree, const NodeElement * before_this)
+{
+  return insertSubTreeNode(tree, before_this);
 }
 
 template <class ModelT>

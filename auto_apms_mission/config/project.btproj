@@ -6,23 +6,23 @@
         <Action ID="Error">
             <input_port name="message" type="std::string">Error message. Creates a generic error message if empty.</input_port>
         </Action>
-        <SubTree ID="HandleContingency" editable="true">
-            <input_port name="event_id">Most recently detected event</input_port>
-        </SubTree>
-        <SubTree ID="HandleEmergency" editable="true">
-            <input_port name="event_id">Most recently detected event</input_port>
-        </SubTree>
-        <SubTree ID="IsContingency" editable="true">
-            <input_port name="event_id">Most recently detected event</input_port>
-        </SubTree>
-        <SubTree ID="IsEmergency" editable="true">
-            <input_port name="event_id">Most recently detected event</input_port>
-        </SubTree>
         <Action ID="Logger">
             <input_port name="message" type="BT::Any">Message to be logged via rclcpp::Logger.</input_port>
             <input_port name="level" default="INFO" type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
         </Action>
-        <SubTree ID="MonitorEvents" editable="true">
+        <SubTree ID="__HandleContingency__" editable="true">
+            <input_port name="event_id">Most recently detected event</input_port>
+        </SubTree>
+        <SubTree ID="__HandleEmergency__" editable="true">
+            <input_port name="event_id">Most recently detected event</input_port>
+        </SubTree>
+        <SubTree ID="__IsContingency__" editable="true">
+            <input_port name="event_id">Most recently detected event</input_port>
+        </SubTree>
+        <SubTree ID="__IsEmergency__" editable="true">
+            <input_port name="event_id">Most recently detected event</input_port>
+        </SubTree>
+        <SubTree ID="__MonitorEvents__" editable="true">
             <output_port name="event_id">Most recently detected event</output_port>
         </SubTree>
     </TreeNodesModel>

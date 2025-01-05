@@ -1,34 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4"
       main_tree_to_execute="MissionOrchestrator">
-  <BehaviorTree ID="BringUp">
-    <SequenceWithMemory>
-      <AlwaysSuccess/>
-    </SequenceWithMemory>
-  </BehaviorTree>
-
-  <BehaviorTree ID="HandleContingency">
-    <AlwaysSuccess/>
-  </BehaviorTree>
-
-  <BehaviorTree ID="HandleEmergency">
-    <AlwaysSuccess/>
-  </BehaviorTree>
-
-  <BehaviorTree ID="IsContingency">
-    <AlwaysSuccess/>
-  </BehaviorTree>
-
-  <BehaviorTree ID="IsEmergency">
-    <AlwaysSuccess/>
-  </BehaviorTree>
-
   <BehaviorTree ID="MissionOrchestrator">
     <SequenceWithMemory>
       <Script name="InitVars"
-              code="prev_event_id := &apos;&apos;;&#10;event_id := &apos;&apos;;&#10;is_emergency := false;&#10;contingency_done := true"/>
+              code="prev_event_id := &apos;&apos;;&#10;event_id := &apos;&apos;;&#10;is_emergency := false;&#10;contingency_inactive := true"/>
       <Fallback>
-        <SubTree ID="BringUp"/>
+        <SubTree ID="__BringUp__"/>
         <Error name="BringUpError"
                message="Error during mission bringup"/>
       </Fallback>
@@ -36,12 +14,12 @@
                 success_count="1">
         <KeepRunningUntilFailure>
           <ForceSuccess>
-            <Sequence>
+            <Sequence _failureIf="is_emergency == true">
               <Sequence>
                 <Script name="SetPreviousEvent"
                         code="prev_event_id = event_id"/>
                 <ForceSuccess>
-                  <SubTree ID="MonitorEvents"
+                  <SubTree ID="__MonitorEvents__"
                            event_id="{=}"
                            _description="This subtree sets event_id to a non-empty string if an event is detected (SUCCESS) or to the empty string if this is not the case (FAILURE)."
                            _onFailure="event_id = &apos;&apos;"/>
@@ -49,53 +27,51 @@
                 <ScriptCondition name="DidEventChange"
                                  code="prev_event_id != event_id"/>
               </Sequence>
-              <Sequence _skipIf="is_emergency == true">
-                <Fallback>
-                  <Sequence>
-                    <ScriptCondition code="event_id == &apos;&apos;"/>
-                    <ForceSuccess>
-                      <Logger message="Reset event"
-                              level="WARN"/>
-                    </ForceSuccess>
-                  </Sequence>
-                  <Sequence>
-                    <SubTree ID="IsEmergency"
-                             event_id="{=}"
-                             _onSuccess="is_emergency = true"/>
-                    <ForceSuccess>
-                      <Logger message="Emergency detected"
-                              level="WARN"/>
-                    </ForceSuccess>
-                  </Sequence>
-                  <Sequence>
-                    <SubTree ID="IsContingency"
-                             event_id="{=}"
-                             _onSuccess="contingency_done = false"/>
-                    <ForceSuccess>
-                      <Logger message="Contingency detected"
-                              level="WARN"/>
-                    </ForceSuccess>
-                  </Sequence>
-                  <Error name="UnkownEventID"
-                         message=""/>
-                </Fallback>
-                <Logger name="NewEventID"
-                        message="{event_id}"
-                        level="WARN"
-                        _skipIf="event_id == &apos;&apos;"/>
-              </Sequence>
+              <Fallback>
+                <Sequence>
+                  <ScriptCondition code="event_id == &apos;&apos;"/>
+                  <ForceSuccess>
+                    <Logger name="ResetEvent"
+                            message="Mission continues"
+                            level="WARN"/>
+                  </ForceSuccess>
+                </Sequence>
+                <Sequence>
+                  <SubTree ID="__IsEmergency__"
+                           event_id="{=}"
+                           _onSuccess="is_emergency = true"/>
+                  <ForceSuccess>
+                    <Logger name="EmergencyEvent"
+                            message="{event_id}"
+                            level="WARN"/>
+                  </ForceSuccess>
+                </Sequence>
+                <Sequence>
+                  <SubTree ID="__IsContingency__"
+                           event_id="{=}"
+                           _onSuccess="contingency_inactive = false"/>
+                  <ForceSuccess>
+                    <Logger name="ContingencyEvent"
+                            message="{event_id}"
+                            level="WARN"/>
+                  </ForceSuccess>
+                </Sequence>
+                <Error name="UnkownEventID"
+                       message=""/>
+              </Fallback>
             </Sequence>
           </ForceSuccess>
         </KeepRunningUntilFailure>
         <RetryUntilSuccessful num_attempts="-1">
-          <ReactiveFallback _description="If contingency_handled is true and event_id still holds the previous value and is not reset to the empty string by the event monitor, no action is preformed (SKIPPED)">
+          <ReactiveFallback>
             <Sequence _while="event_id == &apos;&apos; &amp;&amp; is_emergency == false">
               <RetryUntilSuccessful name="HaltContingencyHandler"
                                     num_attempts="-1">
-                <ScriptCondition code="contingency_done == true"/>
+                <ScriptCondition name="WaitForContingencyHandlerHalted"
+                                 code="contingency_inactive == true"/>
               </RetryUntilSuccessful>
               <Fallback>
-                <SubTree ID="RunMission"/>
+                <SubTree ID="__RunMission__"/>
                 <Error name="MissionError"
                        message="Unexpected error during mission"/>
               </Fallback>
@@ -103,20 +79,21 @@
             <Sequence _skipIf="is_emergency == false">
               <RetryUntilSuccessful name="HaltContingencyHandler"
                                     num_attempts="-1">
-                <ScriptCondition code="contingency_done == true"/>
+                <ScriptCondition name="WaitForContingencyHandlerHalted"
+                                 code="contingency_inactive == true"/>
               </RetryUntilSuccessful>
               <Fallback>
-                <SubTree ID="HandleEmergency"
+                <SubTree ID="__HandleEmergency__"
                          event_id="{=}"/>
                 <Error name="EmergencyHandlingError"
                        message="{event_id}"/>
               </Fallback>
             </Sequence>
             <ForceFailure _description="We want to restart the mission when the contingency is handled. Thus we must return FAILURE when this is done"
-                          _skipIf="contingency_done == true">
-              <Fallback _onSuccess="contingency_done = true"
-                        _onHalted="contingency_done = true">
-                <SubTree ID="HandleContingency"
+                          _skipIf="contingency_inactive == true">
+              <Fallback _onSuccess="contingency_inactive = true"
+                        _onHalted="contingency_inactive = true">
+                <SubTree ID="__HandleContingency__"
                          event_id="{=}"/>
                 <Error name="ContingencyHandlingError"
                        message="{event_id}"/>
@@ -126,24 +103,46 @@
         </RetryUntilSuccessful>
       </Parallel>
       <Fallback>
-        <SubTree ID="ShutDown"/>
+        <SubTree ID="__ShutDown__"/>
         <Error name="ShutDownError"
                message="Error during mission shutdown"/>
       </Fallback>
     </SequenceWithMemory>
   </BehaviorTree>
 
-  <BehaviorTree ID="MonitorEvents">
-    <AlwaysFailure/>
-  </BehaviorTree>
-
-  <BehaviorTree ID="RunMission">
+  <BehaviorTree ID="__BringUp__">
     <SequenceWithMemory>
       <AlwaysSuccess/>
     </SequenceWithMemory>
   </BehaviorTree>
 
-  <BehaviorTree ID="ShutDown">
+  <BehaviorTree ID="__HandleContingency__">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="__HandleEmergency__">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="__IsContingency__">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="__IsEmergency__">
+    <AlwaysSuccess/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="__MonitorEvents__">
+    <AlwaysFailure/>
+  </BehaviorTree>
+
+  <BehaviorTree ID="__RunMission__">
+    <SequenceWithMemory>
+      <AlwaysSuccess/>
+    </SequenceWithMemory>
+  </BehaviorTree>
+
+  <BehaviorTree ID="__ShutDown__">
     <SequenceWithMemory>
       <AlwaysSuccess/>
     </SequenceWithMemory>
@@ -155,22 +154,6 @@
       <input_port name="message"
                   type="std::string">Error message. Creates a generic error message if empty.</input_port>
     </Action>
-    <SubTree ID="HandleContingency"
-             editable="true">
-      <input_port name="event_id">Most recently detected event</input_port>
-    </SubTree>
-    <SubTree ID="HandleEmergency"
-             editable="true">
-      <input_port name="event_id">Most recently detected event</input_port>
-    </SubTree>
-    <SubTree ID="IsContingency"
-             editable="true">
-      <input_port name="event_id">Most recently detected event</input_port>
-    </SubTree>
-    <SubTree ID="IsEmergency"
-             editable="true">
-      <input_port name="event_id">Most recently detected event</input_port>
-    </SubTree>
     <Action ID="Logger">
       <input_port name="message"
                   type="BT::Any">Message to be logged via rclcpp::Logger.</input_port>
@@ -178,7 +161,23 @@
                   default="INFO"
                   type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
     </Action>
-    <SubTree ID="MonitorEvents"
+    <SubTree ID="__HandleContingency__"
+             editable="true">
+      <input_port name="event_id">Most recently detected event</input_port>
+    </SubTree>
+    <SubTree ID="__HandleEmergency__"
+             editable="true">
+      <input_port name="event_id">Most recently detected event</input_port>
+    </SubTree>
+    <SubTree ID="__IsContingency__"
+             editable="true">
+      <input_port name="event_id">Most recently detected event</input_port>
+    </SubTree>
+    <SubTree ID="__IsEmergency__"
+             editable="true">
+      <input_port name="event_id">Most recently detected event</input_port>
+    </SubTree>
+    <SubTree ID="__MonitorEvents__"
              editable="true">
       <output_port name="event_id">Most recently detected event</output_port>
     </SubTree>

@@ -116,13 +116,30 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
 model::SubTree TreeDocument::NodeElement::insertSubTreeNode(
   const std::string & tree_name, const NodeElement * before_this)
 {
-  if (!doc_ptr_->hasTree(tree_name)) {
+  if (!doc_ptr_->hasTreeName(tree_name)) {
     throw exceptions::TreeDocumentError(
-      "Cannot associate <" + getRegistrationName() + "> node with tree '" + tree_name + "' because it doesn't exist.");
+      "Cannot insert subtree node for tree '" + tree_name + "' because no tree with that name exists.");
   }
   NodeElement ele = insertNode(SUBTREE_ELEMENT_NAME, before_this);
   ele.ele_ptr_->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
   return model::SubTree(ele.doc_ptr_, ele.ele_ptr_);
+}
+
+model::SubTree TreeDocument::NodeElement::insertSubTreeNode(const TreeElement & tree, const NodeElement * before_this)
+{
+  const std::string tree_name = tree.getName();
+  if (doc_ptr_->hasTreeName(tree_name)) {
+    // We don't allow inserting a subtree node for a tree with the same name of another existing tree
+    if (doc_ptr_->getTree(tree_name) != tree) {
+      throw exceptions::TreeDocumentError(
+        "Cannot insert subtree node using the provided tree element, because another tree with name '" + tree_name +
+        "' already exists.");
+    }
+  } else {
+    // Add the tree provided as argument to the document
+    doc_ptr_->mergeTree(tree, false);
+  }
+  return insertSubTreeNode(tree_name, before_this);
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertTree(
@@ -384,6 +401,8 @@ std::string TreeDocument::NodeElement::getFullyQualifiedName() const
   return instance_name + " (" + registration_name + ")";
 }
 
+const TreeDocument & TreeDocument::NodeElement::getParentDocument() const { return *doc_ptr_; }
+
 const std::vector<TreeDocument::NodeElement> TreeDocument::NodeElement::deepApplyConst(
   ConstDeepApplyCallback apply_callback) const
 {
@@ -474,14 +493,33 @@ TreeDocument::TreeElement::TreeElement(TreeDocument * doc_ptr, XMLElement * ele_
 
 TreeDocument::TreeElement & TreeDocument::TreeElement::operator=(const TreeElement & other)
 {
-  const std::string other_name = other.getName();
-  if (auto_apms_util::contains(doc_ptr_->getAllTreeNames(), other_name)) {
-    throw exceptions::TreeDocumentError(
-      "Cannot copy tree '" + other_name + "' because a tree with this name already exists.");
+  if (*this != other) {
+    const std::string other_name = other.getName();
+    if (getName() != other_name && doc_ptr_->hasTreeName(other_name)) {
+      throw exceptions::TreeDocumentError(
+        "Cannot copy tree '" + other_name + "' because another tree with this name already exists.");
+    }
+    removeChildren();
+    if (other.hasChildren()) insertTree(other);  // Insert children of other if existing, otherwise only copy the name
+    ele_ptr_->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, other_name.c_str());
   }
-  removeChildren();
-  if (other.hasChildren()) insertTree(other);  // Insert children of other if existing, otherwise only copy the name
-  ele_ptr_->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, other.getName().c_str());
+  return *this;
+}
+
+bool TreeDocument::TreeElement::operator==(const TreeElement & other) const
+{
+  // Since tree names are unique in a TreeDocuemnt, two TreeElement instances with the same name point to the same tree,
+  // if the pointer to the internal document is equal.
+  // This implementation returns false even if two different trees have the same content, as long as they don't belong
+  // to the same document.
+  return getName() == other.getName() && doc_ptr_ == other.doc_ptr_;
+}
+
+bool TreeDocument::TreeElement::operator!=(const TreeElement & other) const { return !this->operator==(other); }
+
+TreeDocument::TreeElement & TreeDocument::TreeElement::setName(const std::string & tree_name)
+{
+  ele_ptr_->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, tree_name.c_str());
   return *this;
 }
 
@@ -688,7 +726,7 @@ TreeDocument::TreeElement TreeDocument::newTree(const std::string & tree_name)
   if (tree_name.empty()) {
     throw exceptions::TreeDocumentError("Cannot create a new tree with an empty name");
   }
-  if (hasTree(tree_name)) {
+  if (hasTreeName(tree_name)) {
     throw exceptions::TreeDocumentError(
       "Cannot create a new tree with name '" + tree_name + "' because it already exists.");
   }
@@ -745,7 +783,7 @@ TreeDocument::TreeElement TreeDocument::newTreeFromResource(
   return newTreeFromDocument(new_doc, tree_name);
 }
 
-bool TreeDocument::hasTree(const std::string & tree_name) const
+bool TreeDocument::hasTreeName(const std::string & tree_name) const
 {
   if (auto_apms_util::contains(getAllTreeNames(), tree_name)) return true;
   return false;
@@ -761,7 +799,7 @@ TreeDocument & TreeDocument::setRootTreeName(const std::string & tree_name)
   if (tree_name.empty()) {
     throw exceptions::TreeDocumentError("Cannot set root tree name with empty string.");
   }
-  if (!hasTree(tree_name)) {
+  if (!hasTreeName(tree_name)) {
     throw exceptions::TreeDocumentError(
       "Cannot make tree with name '" + tree_name + "' the root tree because it doesn't exist.");
   }
@@ -1070,7 +1108,7 @@ ReturnT TreeDocument::getXMLElementForTreeWithNameImpl(DocumentT & doc, const st
   if (tree_name.empty()) {
     throw exceptions::TreeDocumentError("Cannot get tree with an empty name.");
   }
-  if (!doc.hasTree(tree_name)) {
+  if (!doc.hasTreeName(tree_name)) {
     throw exceptions::TreeDocumentError("Cannot get tree with name '" + tree_name + "' because it doesn't exist.");
   }
   auto child = doc.RootElement()->FirstChildElement(TreeDocument::TREE_ELEMENT_NAME);
@@ -1080,7 +1118,7 @@ ReturnT TreeDocument::getXMLElementForTreeWithNameImpl(DocumentT & doc, const st
   if (!child) {
     throw std::logic_error(
       "Unexpected error trying to get tree element with name '" + tree_name +
-      "'. Since hasTree() returned true, there MUST be a corresponding element.");
+      "'. Since hasTreeName() returned true, there MUST be a corresponding element.");
   }
   return child;
 }

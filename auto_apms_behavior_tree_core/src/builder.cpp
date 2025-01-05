@@ -69,7 +69,7 @@ TreeBuilder & TreeBuilder::setScriptingEnum(const std::string & enum_name, int v
 
 Tree TreeBuilder::instantiate(const std::string & root_tree_name, TreeBlackboardSharedPtr bb_ptr)
 {
-  if (!hasTree(root_tree_name)) {
+  if (!hasTreeName(root_tree_name)) {
     throw exceptions::TreeDocumentError(
       "Cannot instantiate tree with name '" + root_tree_name + "' because it doesn't exist.");
   }
