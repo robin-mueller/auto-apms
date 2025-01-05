@@ -213,7 +213,7 @@ void MissionBuildHandlerBase::buildEventMonitor(
   for (const TreeResource::Identity & monitor_id : sorted_monitor_ids) {
     // We want the monitor to have its own blackboard, so we create a subtree node
     const std::string monitor_tree_name = monitor_id.str();
-    model::SubTree subtree_node = fallback.getParentDocument().hasTreeName(monitor_tree_name) -
+    model::SubTree subtree_node = fallback.getParentDocument().hasTreeName(monitor_tree_name)
                                     ? fallback.insertNode<model::SubTree>(monitor_tree_name)
                                     : fallback.insertNode<model::SubTree>(monitor_doc.getTree(monitor_tree_name));
     subtree_node.setConditionalScript(BT::PostCond::ON_SUCCESS, "event_id := '" + monitor_tree_name + "'");
