@@ -42,19 +42,19 @@ NodeManifest NodeManifest::fromResourceIdentity(const std::string & identity)
 {
   const auto tokens = auto_apms_util::splitString(identity, "::", false);
   std::string package_name = "";
-  std::string metadata_id;
+  std::string file_stem;
   switch (tokens.size()) {
     case 1:
-      metadata_id = tokens[0];
+      file_stem = tokens[0];
       break;
     case 2:
       package_name = tokens[0];
-      metadata_id = tokens[1];
+      file_stem = tokens[1];
       break;
     default:
       throw auto_apms_util::exceptions::ResourceIdentityFormatError(
         "Node manifest resource identity string '" + identity +
-        "' has wrong format. Must be '<package_name>::<metadata_id>'.");
+        "' has wrong format. Must be '<package_name>::<file_stem>'.");
   }
 
   std::set<std::string> search_packages;
@@ -78,7 +78,7 @@ NodeManifest NodeManifest::fromResourceIdentity(const std::string & identity)
           throw auto_apms_util::exceptions::ResourceError(
             "Invalid node manifest resource file (Package: '" + p + "'). Invalid line: " + line + ".");
         }
-        if (parts[0] == metadata_id) {
+        if (parts[0] == file_stem) {
           matching_file_paths.push_back(base_path + "/" + parts[1]);
         }
       }
@@ -91,7 +91,7 @@ NodeManifest NodeManifest::fromResourceIdentity(const std::string & identity)
   }
   if (matching_file_paths.size() > 1) {
     throw auto_apms_util::exceptions::ResourceError(
-      "There are multiple node manifest resources with metadata ID '" + metadata_id + "'.");
+      "There are multiple node manifest resources with metadata ID '" + file_stem + "'.");
   }
   return fromFile(matching_file_paths[0]);
 }
@@ -124,17 +124,17 @@ const NodeManifest::RegistrationOptions & NodeManifest::operator[](const std::st
     "Node '" + node_name + "' doesn't exist in node manifest (Size: " + std::to_string(map_.size()) + ")."};
 }
 
-NodeManifest & NodeManifest::add(const std::string & node_name, const RegistrationOptions & p)
+NodeManifest & NodeManifest::add(const std::string & node_name, const RegistrationOptions & opt)
 {
   if (contains(node_name)) {
     throw exceptions::NodeManifestError{
       "Node '" + node_name + "' already exists in node manifest (Size: " + std::to_string(map_.size()) + ")."};
   }
-  if (!p.valid()) {
+  if (!opt.valid()) {
     throw exceptions::NodeManifestError(
       "Cannot add node '" + node_name + "' to manifest. Parameter class_name must not be empty.");
   }
-  map_[node_name] = p;
+  map_[node_name] = opt;
   return *this;
 }
 
