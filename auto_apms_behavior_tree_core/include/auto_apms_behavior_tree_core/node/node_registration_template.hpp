@@ -22,9 +22,18 @@
 
 namespace auto_apms_behavior_tree::core
 {
+
+/// @cond INTERNAL
+
+/**
+ * @brief Wrapper that encapsulates a registration function for the behavior tree node class provided using template
+ * argument @p T
+ * @tparam T Behavior tree node class.
+ */
 template <
-  typename T, bool requires_ros_node_params =
-                std::is_constructible_v<T, const std::string &, const BT::NodeConfig &, RosNodeContext>>
+  class T, typename = std::enable_if_t<std::is_base_of_v<BT::TreeNode, T>>,
+  bool requires_ros_node_params =
+    std::is_constructible_v<T, const std::string &, const BT::NodeConfig &, RosNodeContext>>
 class NodeRegistrationTemplate : public NodeRegistrationInterface
 {
 public:
@@ -49,5 +58,7 @@ public:
     }
   }
 };
+
+/// @endcond
 
 }  // namespace auto_apms_behavior_tree::core

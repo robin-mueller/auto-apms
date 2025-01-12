@@ -26,7 +26,7 @@ namespace auto_apms_behavior_tree::core
 class NodeManifest;
 }
 
-/// @cond
+/// @cond INTERNAL
 namespace YAML
 {
 template <>
@@ -129,7 +129,7 @@ public:
    * @brief Merges another NodeManifest with this one.
    * @param other Other node manifest.
    * @param replace `true` for automatically replacing entries with the same key. Throws an error if `false`
-   * and `other` contains any keys that also exist in this manifest.
+   * and `other` contains any keys that already exist in this manifest.
    * @return Modified node manifest.
    * @throw auto_apms_behavior_tree::exceptions::NodeManifestError if @p other shares entries and @p replace is `false`.
    */
@@ -169,7 +169,7 @@ private:
 // ################################              DEFINITIONS              ##############################################
 // #####################################################################################################################
 
-/// @cond
+/// @cond INTERNAL
 namespace YAML
 {
 inline Node convert<auto_apms_behavior_tree::core::NodeManifest>::encode(const Manifest & rhs)

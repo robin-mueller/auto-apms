@@ -24,6 +24,13 @@
 namespace auto_apms_behavior_tree::core
 {
 
+/**
+ * @brief Struct that encapsulates the identity string for a declared behavior tree.
+ *
+ * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_declare_trees` in the
+ * CMakeLists.txt of a package. They can be inserted once the corresponding package has been installed to the ROS 2
+ * workspace.
+ */
 struct TreeResourceIdentity
 {
   /**
@@ -31,9 +38,9 @@ struct TreeResourceIdentity
    *
    * To uniquely identify a resource, the @p identity string may contain the
    * `<package_name>`, the `<tree_file_stem>` and the `<tree_name>` separated by `::` in that order. Depending on the
-   * registered resources, it might be convenient to use shorter, less precise signatures. Additionally, if the
-   * delimiter `::` is not present, it's assumed that the string contains the stem of a behavior tree file
-   * `<tree_file_stem>`. All possible identity strings are listed below:
+   * number of registered resources, it might be convenient to use shorter, less precise signatures. Additionally, if
+   * the delimiter `::` is not present, the string is assumed to be the stem of a behavior tree file `<tree_file_stem>`.
+   * All possible identity strings are listed below:
    *
    * - `<package_name>::<tree_file_stem>::<tree_name>`
    *
@@ -64,7 +71,7 @@ struct TreeResourceIdentity
    * @note The delimiter `::` must be kept when tokens are omitted, except when searching for resources using only the
    * file stem.
    *
-   * @param identity Identity string formatted like one of the above.
+   * @param identity Identity string formatted according to one of the patterns above.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    */
   TreeResourceIdentity(const std::string & identity);
@@ -136,7 +143,7 @@ private:
 
 }  // namespace auto_apms_behavior_tree::core
 
-/// @cond
+/// @cond INTERNAL
 namespace YAML
 {
 template <>

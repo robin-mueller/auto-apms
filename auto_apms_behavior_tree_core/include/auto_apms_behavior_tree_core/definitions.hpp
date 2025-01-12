@@ -18,10 +18,13 @@
 #include "behaviortree_cpp/bt_factory.h"
 
 /**
- * @defgroup auto_apms_behavior_tree AutoAPMS - Behavior Tree
- * @brief Useful tooling for Behavior Tree development.
+ * @defgroup auto_apms_behavior_tree Behavior Tree
+ * @brief Useful tooling for incorporating behavior trees for task development.
  */
 
+/**
+ * @brief Useful tooling for incorporating behavior trees for task development.
+ */
 namespace auto_apms_behavior_tree
 {
 

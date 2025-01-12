@@ -88,29 +88,55 @@ TreeDocument::NodeElement::NodeElement(TreeDocument * doc_ptr, XMLElement * ele_
   }
 }
 
-TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
-  const std::string & node_name, const NodeElement * before_this)
+TreeDocument::NodeElement & TreeDocument::NodeElement::operator=(const NodeElement & other)
 {
-  if (const std::set<std::string> names = doc_ptr_->getAvailableNodeNames(true); names.find(node_name) == names.end()) {
+  XMLElement * other_ele = other.ele_ptr_;
+  if (ele_ptr_ != other_ele) {
+    // Copy the other element and all its children
+    other_ele = other_ele->DeepClone(doc_ptr_)->ToElement();
+    // Insert new element in place of this
+    XMLElement * prev = ele_ptr_->PreviousSiblingElement();
+    if (prev) {
+      ele_ptr_->Parent()->InsertAfterChild(ele_ptr_->PreviousSibling(), other_ele);
+    } else {
+      ele_ptr_->Parent()->InsertFirstChild(other_ele);
+    }
+    // Delete this element
+    doc_ptr_->DeleteNode(ele_ptr_);
+    // Update the internal pointer
+    ele_ptr_ = other_ele;
+  }
+  port_names_ = other.port_names_;
+  port_default_values_ = other.port_default_values_;
+  return *this;
+}
+
+bool TreeDocument::NodeElement::operator==(const NodeElement & other) const { return ele_ptr_ == other.ele_ptr_; }
+
+bool TreeDocument::NodeElement::operator!=(const NodeElement & other) const { return !this->operator==(other); }
+
+TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
+  const std::string & name, const NodeElement * before_this)
+{
+  if (const std::set<std::string> names = doc_ptr_->getRegisteredNodeNames(true); names.find(name) == names.end()) {
     throw exceptions::TreeDocumentError(
-      "Cannot insert unkown node <" + node_name +
+      "Cannot insert unkown node <" + name +
       ">. Before inserting a new node, the associated document must register the corresponding behavior tree "
       "node. Consider using a signature of insertNode() that does this automatically.");
   }
-  XMLElement * ele = doc_ptr_->NewElement(node_name.c_str());
+  XMLElement * ele = doc_ptr_->NewElement(name.c_str());
   return insertBeforeImpl(before_this, ele);
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertNode(
-  const std::string & node_name, const NodeRegistrationOptions & registration_options, const NodeElement * before_this)
+  const std::string & name, const NodeRegistrationOptions & registration_options, const NodeElement * before_this)
 {
   // Check if the node name is known. If the user tries to register a node with the same name as one of the native
   // nodes, we want registerNodes to throw since those names are reserved (Therefore we set include_native to false).
-  if (const std::set<std::string> names = doc_ptr_->getAvailableNodeNames(false);
-      names.find(node_name) == names.end()) {
-    doc_ptr_->registerNodes(NodeManifest({{node_name, registration_options}}));
+  if (const std::set<std::string> names = doc_ptr_->getRegisteredNodeNames(false); names.find(name) == names.end()) {
+    doc_ptr_->registerNodes(NodeManifest({{name, registration_options}}));
   }
-  return insertNode(node_name, before_this);
+  return insertNode(name, before_this);
 }
 
 model::SubTree TreeDocument::NodeElement::insertSubTreeNode(
@@ -159,16 +185,16 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTree(
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
-  const TreeDocument & other, const std::string & tree_name, const NodeElement * before_this)
+  const TreeDocument & doc, const std::string & tree_name, const NodeElement * before_this)
 {
-  const std::vector<std::string> other_tree_names = other.getAllTreeNames();
+  const std::vector<std::string> other_tree_names = doc.getAllTreeNames();
   if (other_tree_names.empty()) {
     throw exceptions::TreeDocumentError(
-      "Cannot insert tree '" + tree_name + "' because other document has no <" + TREE_ELEMENT_NAME + "> elements.");
+      "Cannot insert tree '" + tree_name + "' because document has no <" + TREE_ELEMENT_NAME + "> elements.");
   }
   if (!auto_apms_util::contains(other_tree_names, tree_name)) {
     throw exceptions::TreeDocumentError(
-      "Cannot insert tree '" + tree_name + "' because other document doesn't specify a tree with that name.");
+      "Cannot insert tree '" + tree_name + "' because document doesn't specify a tree with that name.");
   }
 
   // List including the target tree name and the names of its dependencies (Trees required by SubTree nodes)
@@ -178,7 +204,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
   // NOTE: All tree elements within a TreeDocument instance always have exactly one child, so we don't have to verify
   // that here again
   TreeDocument temp_doc(doc_ptr_->format_version_, doc_ptr_->tree_node_loader_ptr_);  // Temporary working document
-  other.DeepCopy(&temp_doc);
+  doc.DeepCopy(&temp_doc);
   const TreeElement other_tree(&temp_doc, temp_doc.getXMLElementForTreeWithName(tree_name));
   ConstDeepApplyCallback collect_dependency_tree_names;
   collect_dependency_tree_names = [&required_tree_names, &collect_dependency_tree_names](const NodeElement & ele) {
@@ -199,7 +225,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
   other_tree.deepApplyConst(collect_dependency_tree_names);
 
   // Verify that all child nodes of the trees listed in required_tree_names are known to the builder
-  ConstDeepApplyCallback apply = [available_names = doc_ptr_->getAvailableNodeNames(true)](const NodeElement & ele) {
+  ConstDeepApplyCallback apply = [available_names = doc_ptr_->getRegisteredNodeNames(true)](const NodeElement & ele) {
     return available_names.find(ele.getRegistrationName()) == available_names.end();
   };
   for (const std::string & name : required_tree_names) {
@@ -226,13 +252,13 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
 
   // Clone and insert the target tree
   return insertBeforeImpl(
-    before_this, other.getXMLElementForTreeWithName(tree_name)->FirstChildElement()->DeepClone(doc_ptr_)->ToElement());
+    before_this, doc.getXMLElementForTreeWithName(tree_name)->FirstChildElement()->DeepClone(doc_ptr_)->ToElement());
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromDocument(
-  const TreeDocument & other, const NodeElement * before_this)
+  const TreeDocument & doc, const NodeElement * before_this)
 {
-  return insertTreeFromDocument(other, other.getRootTreeName(), before_this);
+  return insertTreeFromDocument(doc, doc.getRootTreeName(), before_this);
 }
 
 TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromString(
@@ -493,29 +519,16 @@ TreeDocument::TreeElement::TreeElement(TreeDocument * doc_ptr, XMLElement * ele_
 
 TreeDocument::TreeElement & TreeDocument::TreeElement::operator=(const TreeElement & other)
 {
-  if (*this != other) {
-    const std::string other_name = other.getName();
-    if (getName() != other_name && doc_ptr_->hasTreeName(other_name)) {
-      throw exceptions::TreeDocumentError(
-        "Cannot copy tree '" + other_name + "' because another tree with this name already exists.");
-    }
-    removeChildren();
-    if (other.hasChildren()) insertTree(other);  // Insert children of other if existing, otherwise only copy the name
-    ele_ptr_->SetAttribute(TREE_NAME_ATTRIBUTE_NAME, other_name.c_str());
+  const std::string other_tree_name = other.getName();
+  // For a tree replacement to be allowed, the other tree name must be the same or at least not already taken by another
+  // tree inside this document.
+  if (getName() != other_tree_name && doc_ptr_->hasTreeName(other.getName())) {
+    throw exceptions::TreeDocumentError(
+      "Cannot copy tree '" + other.getName() + "' because another tree with this name already exists.");
   }
+  NodeElement::operator=(other);
   return *this;
 }
-
-bool TreeDocument::TreeElement::operator==(const TreeElement & other) const
-{
-  // Since tree names are unique in a TreeDocuemnt, two TreeElement instances with the same name point to the same tree,
-  // if the pointer to the internal document is equal.
-  // This implementation returns false even if two different trees have the same content, as long as they don't belong
-  // to the same document.
-  return getName() == other.getName() && doc_ptr_ == other.doc_ptr_;
-}
-
-bool TreeDocument::TreeElement::operator!=(const TreeElement & other) const { return !this->operator==(other); }
 
 TreeDocument::TreeElement & TreeDocument::TreeElement::setName(const std::string & tree_name)
 {
@@ -542,6 +555,11 @@ NodeManifest TreeDocument::TreeElement::getRequiredNodeManifest() const
     const std::string name = node.getRegistrationName();
     const bool is_native_node = doc_ptr_->native_node_names_.find(name) != doc_ptr_->native_node_names_.end();
     if (!is_native_node && !m.contains(name)) {
+      if (!doc_ptr_->registered_nodes_manifest_.contains(name)) {
+        throw exceptions::NodeManifestError(
+          "Cannot assemble the required node manifest for tree '" + getName() +
+          "' since there are no registration options for node '" + name + "'.");
+      }
       m.add(name, doc_ptr_->registered_nodes_manifest_[name]);
     }
     return false;
@@ -579,7 +597,7 @@ TreeDocument::TreeElement & TreeDocument::TreeElement::removeChildren()
 
 TreeDocument::TreeDocument(const std::string & format_version, NodeRegistrationLoader::SharedPtr tree_node_loader)
 // It's important to initialize XMLDocument using PRESERVE_WHITESPACE, since encoded port data (like
-// NodeRegistrationOptions) may be sensitive to changes in the whitespaces (think of the YAML format)
+// NodeRegistrationOptions) may be sensitive to changes in the whitespaces (think of the YAML format).
 : XMLDocument(true, tinyxml2::PRESERVE_WHITESPACE),
   all_node_classes_package_map_(auto_apms_behavior_tree::core::NodeRegistrationLoader().getClassPackageMap()),
   native_node_names_(BT::BehaviorTreeFactory().builtinNodes()),
@@ -598,6 +616,24 @@ TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool a
   const XMLElement * other_root = other.RootElement();
   if (!other_root) {
     throw exceptions::TreeDocumentError("Cannot merge tree documents: other_root is nullptr.");
+  };
+
+  auto verify_tree_structure = [](const XMLElement * tree_ele) {
+    const char * tree_id = tree_ele->Attribute(TREE_NAME_ATTRIBUTE_NAME);
+    if (!tree_id) {
+      throw exceptions::TreeDocumentError(
+        "Cannot merge tree document: Found a <" + std::string(TREE_ELEMENT_NAME) +
+        "> element that doesn't specify the required attribute '" + TREE_NAME_ATTRIBUTE_NAME + "'.");
+    }
+    const XMLElement * tree_root_child = tree_ele->FirstChildElement();
+    if (!tree_root_child) {
+      throw exceptions::TreeDocumentError(
+        "Cannot merge tree document: Tree '" + std::string(tree_id) + "' has no child nodes.");
+    }
+    if (tree_root_child->NextSibling()) {
+      throw exceptions::TreeDocumentError(
+        "Cannot merge tree document: Tree '" + std::string(tree_id) + "' has more than one child node.");
+    }
   };
 
   const std::vector<std::string> other_tree_names = getAllTreeNamesImpl(other);
@@ -633,21 +669,7 @@ TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool a
 
       // Verify the structure of the behavior tree element
       if (strcmp(child->Name(), TREE_ELEMENT_NAME) == 0) {
-        const char * tree_id = child->Attribute(TREE_NAME_ATTRIBUTE_NAME);
-        if (!tree_id) {
-          throw exceptions::TreeDocumentError(
-            "Cannot merge tree document: Found a <" + std::string(TREE_ELEMENT_NAME) +
-            "> element that doesn't specify the required attribute '" + TREE_NAME_ATTRIBUTE_NAME + "'.");
-        }
-        const XMLElement * tree_root_child = child->FirstChildElement();
-        if (!tree_root_child) {
-          throw exceptions::TreeDocumentError(
-            "Cannot merge tree document: Tree '" + std::string(tree_id) + "' has no child nodes.");
-        }
-        if (tree_root_child->NextSibling()) {
-          throw exceptions::TreeDocumentError(
-            "Cannot merge tree document: Tree '" + std::string(tree_id) + "' has more than one child node.");
-        }
+        verify_tree_structure(child);
       }
 
       // If tree element is valid, append to this document
@@ -662,6 +684,9 @@ TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool a
   } else if (strcmp(other_root->Name(), TREE_ELEMENT_NAME) == 0) {
     // Allow a single behavior tree without <root> element.
     // We assume that the the format complies with the version configured at construction time
+    verify_tree_structure(other_root);
+
+    // If tree element is valid, append to this document
     RootElement()->InsertEndChild(other_root->DeepClone(this));
   } else {
     throw exceptions::TreeDocumentError(
@@ -825,11 +850,6 @@ TreeDocument::TreeElement TreeDocument::getRootTree() { return getTree(getRootTr
 
 TreeDocument & TreeDocument::removeTree(const std::string & tree_name)
 {
-  // We only remove the tree and it's child nodes, but not the registration with the factory, since this just means more
-  // work and is really unnecessary, especially if you take into account that if we remove any node registration now and
-  // insert it again later somewhere inside the document, we would need to register the node again. Since the amount of
-  // memory is not an issue (and the callbacks that we store when registering don't need much anyways), it would just be
-  // extra work. But now you know :)
   RootElement()->DeleteChild(getXMLElementForTreeWithName(tree_name));
   return *this;
 }
@@ -927,7 +947,7 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
   return *this;
 }
 
-std::set<std::string> TreeDocument::getAvailableNodeNames(bool include_native) const
+std::set<std::string> TreeDocument::getRegisteredNodeNames(bool include_native) const
 {
   std::set<std::string> names;
   if (include_native) names = native_node_names_;

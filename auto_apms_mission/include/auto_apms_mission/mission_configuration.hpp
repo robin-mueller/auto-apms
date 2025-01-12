@@ -26,7 +26,7 @@ namespace auto_apms_mission
 struct MissionConfiguration;
 }
 
-/// @cond
+/// @cond INTERNAL
 namespace YAML
 {
 template <>
@@ -71,7 +71,7 @@ struct MissionConfiguration
 // ################################              DEFINITIONS              ##############################################
 // #####################################################################################################################
 
-/// @cond
+/// @cond INTERNAL
 namespace YAML
 {
 inline Node convert<auto_apms_mission::MissionConfiguration>::encode(const Config & rhs)

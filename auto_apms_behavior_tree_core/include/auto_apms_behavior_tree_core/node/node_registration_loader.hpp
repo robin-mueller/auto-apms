@@ -30,13 +30,15 @@ class NodeRegistrationLoader : public auto_apms_util::PluginClassLoader<NodeRegi
 public:
   RCLCPP_SMART_PTR_DEFINITIONS(NodeRegistrationLoader)
 
+  /// Name of the package that contains the base class for this plugin loader.
   static const std::string BASE_PACKAGE_NAME;
+  /// Name of the base class of all plugins to be loaded.
   static const std::string BASE_CLASS_NAME;
 
   /**
    * @brief NodeRegistrationLoader constructor.
    * @param exclude_packages Packages to exclude when searching for associated plugin resources.
-   * @throws See auto_apms_util::makeUnambiguousPluginClassLoader.
+   * @throw See auto_apms_util::makeUnambiguousPluginClassLoader.
    */
   NodeRegistrationLoader(const std::set<std::string> & exclude_packages = {});
 };

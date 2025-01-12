@@ -20,6 +20,14 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
+/**
+ * @defgroup auto_apms_util Common Utilities
+ * @brief Fundamental helper classes and utility functions.
+ */
+
+/**
+ * @brief Fundamental helper classes and utility functions.
+ */
 namespace auto_apms_util
 {
 

@@ -26,7 +26,7 @@ namespace auto_apms_behavior_tree::core
 struct NodeRegistrationOptions;
 }
 
-/// @cond
+/// @cond INTERNAL
 namespace YAML
 {
 template <>
@@ -43,7 +43,7 @@ namespace auto_apms_behavior_tree::core
 {
 
 /**
- * @brief Necessary parameters for loading and registering a behavior tree node class from a shared library using
+ * @brief Parameters for loading and registering a behavior tree node class from a shared library using
  * e.g. NodeRegistrationLoader.
  */
 struct NodeRegistrationOptions
@@ -55,6 +55,9 @@ struct NodeRegistrationOptions
   static const std::string PARAM_NAME_ALLOW_UNREACHABLE;
   static const std::string PARAM_NAME_LOGGER_LEVEL;
 
+  /**
+   * @brief Create the default node registration options.
+   */
   NodeRegistrationOptions() = default;
 
   AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(NodeRegistrationOptions)
@@ -65,22 +68,26 @@ struct NodeRegistrationOptions
    * @brief Default port name of the corresponding ROS 2 communication interface.
    *
    * This has different meaning based on the context:
+   *
    * - RosActionNode: Name of the action server
+   *
    * - RosServiceNode: Name of the service
+   *
    * - RosPublisherNode: Name of the topic to publish to
+   *
    * - RosSubscriberNode: Name of the topic to subscribe to
    *
-   * By default, we look for the communication port name using the node's input port named 'port'.
+   * By default, we look for the communication port name using the node's input port named `port`.
    */
   std::string port = "(input:port)";
-  /// Timeout [s] for initially discovering the associated ROS2 node.
+  /// Period [s] (measured from tree construction) after the server is considered unreachable.
   std::chrono::duration<double> wait_timeout = std::chrono::duration<double>(3);
-  /// Timeout [s] for waiting for a response for the requested service or goal.
+  /// Period [s] (measured from sending a goal request) after the node aborts waiting for a server response.
   std::chrono::duration<double> request_timeout = std::chrono::duration<double>(2);
-  /// Flag whether to tolerate if the action/service node is unreachable when trying to create the client. If set to
-  /// `true`, a warning is written to the logger. Otherwise, an exception is raised.
+  /// Flag whether to tolerate if the action/service is unreachable when trying to create the client. If set to
+  /// `true`, a warning is logged. Otherwise, an exception is raised.
   bool allow_unreachable = false;
-  /// Minimum severity level allowed for logging using the ROS 2 logging API.
+  /// Minimum severity level enabled for logging using the ROS 2 Logger API
   std::string logger_level = "INFO";
 
   /**
@@ -96,7 +103,7 @@ struct NodeRegistrationOptions
 // ################################              DEFINITIONS              ##############################################
 // #####################################################################################################################
 
-/// @cond
+/// @cond INTERNAL
 namespace YAML
 {
 inline Node convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::encode(const Options & rhs)

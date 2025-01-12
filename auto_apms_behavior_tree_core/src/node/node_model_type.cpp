@@ -20,6 +20,13 @@
 
 namespace auto_apms_behavior_tree
 {
+namespace core
+{
+
+TreeDocument::NodeElement NodeModelType::toNodeElement() { return NodeElement(*this); }
+
+}  // namespace core
+
 namespace model
 {
 
@@ -35,7 +42,7 @@ SubTree & SubTree::setBlackboardRemapping(const PortValues & remapping)
     if (!BT::TreeNode::isBlackboardPointer(val)) {
       throw exceptions::TreeDocumentError(
         "When setting the blackboard remapping for a subtree, you must refer to the parent blackboard's entry to remap "
-        "to using the {...} notation (Got: '" +
+        "to using curly brackets (Got: '" +
         val + "').");
     }
     ele_ptr_->SetAttribute(key.c_str(), val.c_str());

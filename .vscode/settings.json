@@ -19,6 +19,7 @@
         "rclpy",
         "rcpputils",
         "RCUTILS",
+        "reimplementation",
         "STREQUAL",
         "tinyxml",
         "waitables",

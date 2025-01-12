@@ -16,7 +16,7 @@
 
 #include "auto_apms_util/string.hpp"
 
-/// @cond
+/// @cond INTERNAL
 namespace BT
 {
 

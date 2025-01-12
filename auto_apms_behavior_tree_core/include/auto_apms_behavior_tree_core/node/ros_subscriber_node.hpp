@@ -29,18 +29,30 @@ namespace auto_apms_behavior_tree::core
 {
 
 /**
- * @brief Abstract class to wrap a Topic subscriber.
- * Considering the example in the tutorial:
- * https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Cpp-Publisher-And-Subscriber.html
+ * @ingroup auto_apms_behavior_tree
+ * @brief Generic behavior tree node wrapper for a ROS 2 subscriber.
  *
- * The corresponding wrapper would be:
+ * When ticked, this node may inspect the last message that has been received on a specific topic. Inheriting classes
+ * must reimplement the virtual methods as described below.
  *
- * class SubscriberNode: RosSubscriberNode<std_msgs::msg::String>
+ * By default, the name of the topic will be determined as follows:
  *
- * The name of the topic will be determined as follows:
+ * 1. If a value is passed using the input port named `port`, use that.
  *
- * 1. If a value is passes in the BT::InputPort "topic_name", use that
- * 2. Otherwise, use the value in RosNodeContext::default_port_name
+ * 2. Otherwise, use the value from NodeRegistrationOptions::port passed on construction as part of RosNodeContext.
+ *
+ * It is possible to customize which port is used to determine the topic name and also extend the input's value
+ * with a prefix or suffix. This is achieved by including the special pattern `(input:<port_name>)` in
+ * NodeRegistrationOptions::port and replacing `<port_name>` with the desired input port name.
+ * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a client
+ * for the topic "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing the string
+ * "foo" to the port with name `my_port`.
+ *
+ * Additionally, the following characteristics depend on NodeRegistrationOptions:
+ *
+ * - logger_level: Minimum severity level enabled for logging using the ROS 2 Logger API.
+ *
+ * @tparam MessageT Type of the ROS 2 message.
  */
 template <class MessageT>
 class RosSubscriberNode : public BT::ConditionNode
@@ -66,16 +78,27 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
+  /**
+   * @brief Constructor.
+   *
+   * Derived nodes are automatically created by TreeBuilder::instantiate when included inside a node manifest
+   * associated with the behavior tree resource.
+   * @param instance_name Name given to this specific node instance.
+   * @param config Structure of internal data determined at runtime by BT::BehaviorTreeFactory.
+   * @param context Additional parameters specific to ROS 2 determined at runtime by TreeBuilder.
+   * @param qos Quality of service settings forwarded to the subscriber.
+   */
   explicit RosSubscriberNode(
     const std::string & instance_name, const Config & config, Context context, const rclcpp::QoS & qos = {10});
 
   virtual ~RosSubscriberNode() { signal_connection_.disconnect(); }
 
   /**
-   * @brief Any subclass of RosTopicNode that accepts parameters must provide a
-   * providedPorts method and call providedBasicPorts in it.
-   * @param addition Additional ports to add to BT port list
-   * @return BT::PortsList Containing basic ports along with node-specific ports
+   * @brief Derived nodes implementing the static method RosSubscriberNode::providedPorts may call this method to also
+   * include the default port for ROS 2 behavior tree nodes.
+   *
+   * @param addition Additional ports to add to the ports list.
+   * @return List of ports containing the default port along with node-specific ports.
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
@@ -85,38 +108,45 @@ public:
   }
 
   /**
-   * @brief Creates list of BT ports
-   * @return BT::PortsList Containing basic ports along with node-specific ports
+   * @brief If a behavior tree requires input/output data ports, the developer must define this method accordingly.
+   * @return List of ports used by this node.
    */
   static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 
-  BT::NodeStatus tick() override final;
-
   /**
-   * @brief Callback invoked on every tick. You must return either SUCCESS or FAILURE.
+   * @brief Callback invoked when the node is ticked.
    *
-   * By default, this function calls RosSubscriberNode::onMessageReceived if a new message was received, otherwise it
-   * immediately returns FAILURE.
-   *
+   * By default, this method forwards the most recent message to RosSubscriberNode::onMessageReceived and leaves it up
+   * to this method to determine the node's return status. If no message has been received yet, it immediately returns
+   * BT::NodeStatus::FAILURE. If you want to change that behavior, you should override this method.
    * @param last_msg_ptr The latest message received, since the last tick. Will be `nullptr` if no new message was
    * received.
-   * @return Status of the node, based on @p last_msg_ptr.
+   * @return Return status of the node based on @p last_msg_ptr.
    */
   virtual BT::NodeStatus onTick(const std::shared_ptr<MessageT> & last_msg_ptr);
 
   /**
-   * @brief Callback invoked when a new message is received. You must return either SUCCESS or FAILURE.
+   * @brief Callback invoked when the node is ticked and a valid message has been received.
    *
-   * This callback won't be invoked if no new message has been received since the last time it was called. If you need
-   * to evaluate an expression every time this node is ticked, refer to RosSubscriberNode::onTick instead.
-   *
+   * This callback won't be invoked if no message is available at the time this node is ticked. If you need
+   * to evaluate an expression every time this node is ticked, refer to RosSubscriberNode::onTick instead and change its
+   * default implementation.
    * @param msg Most recently received message.
-   * @return Status of the node based on @p msg.
+   * @return Return status of the node based on @p msg.
    */
   virtual BT::NodeStatus onMessageReceived(const MessageT & msg);
 
+  /**
+   * @brief Create the ROS 2 subscriber.
+   * @param topic_name Name of the topic.
+   * @return `true` if the subscriber was created successfully, `false` otherwise.
+   */
   bool createSubscriber(const std::string & topic_name);
 
+  /**
+   * @brief Get the name of the topic name this node subscribes to.
+   * @return String representing the topic name.
+   */
   std::string getTopicName() const;
 
 protected:
@@ -124,6 +154,8 @@ protected:
   const rclcpp::Logger logger_;
 
 private:
+  BT::NodeStatus tick() override final;
+
   static std::mutex & registryMutex();
 
   // contains the fully-qualified name of the node and the name of the topic

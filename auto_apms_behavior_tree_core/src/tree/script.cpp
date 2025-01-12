@@ -35,7 +35,7 @@ Script::Script(const char * str) : Script(std::string(str)) {}
 Script & Script::operator+=(const Script & rhs)
 {
   for (const std::string & expr : rhs.expressions_) expressions_.push_back(expr);
-  return *this;  // return the result by reference
+  return *this;
 }
 
 std::string Script::str() const { return auto_apms_util::join(expressions_, "; "); }

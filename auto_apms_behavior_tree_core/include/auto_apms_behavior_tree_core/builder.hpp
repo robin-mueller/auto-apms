@@ -23,10 +23,14 @@
 #include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
 #include "rclcpp/rclcpp.hpp"
 
+/**
+ * @brief Core API for AutoAPMS's behavior tree implementation.
+ */
 namespace auto_apms_behavior_tree::core
 {
 
 /**
+ * @ingroup auto_apms_behavior_tree
  * @brief Class for creating behavior trees according to the builder design pattern.
  *
  * This class extends the functionality provided by BT::BehaviorTreeFactory of
@@ -36,8 +40,6 @@ namespace auto_apms_behavior_tree::core
  * conveniently automates this process for you by querying the available `ament_index` plugin resources implemented and
  * registered by the developer. Additionally, this class allows for building custom XML definitions of trees
  * programmatically.
- *
- * @ingroup auto_apms_behavior_tree
  */
 class TreeBuilder : public TreeDocument
 {

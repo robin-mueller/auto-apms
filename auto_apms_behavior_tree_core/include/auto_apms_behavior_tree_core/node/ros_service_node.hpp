@@ -34,6 +34,11 @@ enum ServiceNodeErrorCode
   INVALID_REQUEST
 };
 
+/**
+ * @brief Convert the service error code to string.
+ * @param err Error code.
+ * @return C-style string.
+ */
 inline const char * toStr(const ServiceNodeErrorCode & err)
 {
   switch (err) {
@@ -48,22 +53,38 @@ inline const char * toStr(const ServiceNodeErrorCode & err)
 }
 
 /**
- * @brief Abstract class use to wrap rclcpp::Client<>
+ * @ingroup auto_apms_behavior_tree
+ * @brief Generic behavior tree node wrapper for a ROS 2 service client.
  *
- * For instance, given the type AddTwoInts described in this tutorial:
- * https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Cpp-Service-And-Client.html
+ * When ticked, this node sends a service request and awaits the response asynchronously. Inheriting classes
+ * must reimplement the virtual methods as described below.
  *
- * the corresponding wrapper would be:
+ * By default, the name of the service will be determined as follows:
  *
- * class AddTwoNumbers: public RosServiceNode<example_interfaces::srv::AddTwoInts>
+ * 1. If a value is passed using the input port named `port`, use that.
  *
- * RosServiceNode will try to be non-blocking for the entire duration of the call.
- * The derived class must reimplement the virtual methods as described below.
+ * 2. Otherwise, use the value from NodeRegistrationOptions::port passed on construction as part of RosNodeContext.
  *
- * The name of the service will be determined as follows:
+ * It is possible to customize which port is used to determine the service name and also extend the input's value
+ * with a prefix or suffix. This is achieved by including the special pattern `(input:<port_name>)` in
+ * NodeRegistrationOptions::port and replacing `<port_name>` with the desired input port name.
+ * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a client
+ * for the service "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing the string
+ * "foo" to the port with name `my_port`.
  *
- * 1. If a value is passes in the BT::InputPort "service_name", use that
- * 2. Otherwise, use the value in RosNodeContext::default_port_name.
+ * Additionally, the following characteristics depend on NodeRegistrationOptions:
+ *
+ * - wait_timeout: Period [s] (measured since tree construction) after the service is considered unreachable.
+ *
+ * - request_timeout: Period [s] (measured since sending a goal request) after the node aborts waiting for a server
+ * response.
+ *
+ * - allow_unreachable: Flag whether to tolerate if the service is unreachable when trying to create the client.
+ * If set to `true`, a warning is logged. Otherwise, an exception is raised.
+ *
+ * - logger_level: Minimum severity level enabled for logging using the ROS 2 Logger API.
+ *
+ * @tparam ServiceT Type of the ROS 2 service.
  */
 template <class ServiceT>
 class RosServiceNode : public BT::ActionNodeBase
@@ -89,16 +110,25 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
+  /**
+   * @brief Constructor.
+   *
+   * Derived nodes are automatically created by TreeBuilder::instantiate when included inside a node manifest
+   * associated with the behavior tree resource.
+   * @param instance_name Name given to this specific node instance.
+   * @param config Structure of internal data determined at runtime by BT::BehaviorTreeFactory.
+   * @param context Additional parameters specific to ROS 2 determined at runtime by TreeBuilder.
+   */
   explicit RosServiceNode(const std::string & instance_name, const Config & config, Context context);
 
   virtual ~RosServiceNode() = default;
 
   /**
-   * @brief Any subclass of RosServiceNode that has ports must implement a
-   * providedPorts method and call providedBasicPorts in it.
+   * @brief ADerived nodes implementing the static method RosServiceNode::providedPorts may call this method to also
+   * include the default port for ROS 2 behavior tree nodes.
    *
-   * @param addition Additional ports to add to BT port list
-   * @return BT::PortsList containing basic ports along with node-specific ports
+   * @param addition Additional ports to add to the ports list.
+   * @return List of ports containing the default port along with node-specific ports.
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
@@ -108,38 +138,49 @@ public:
   }
 
   /**
-   * @brief Creates list of BT ports
-   * @return BT::PortsList Containing basic ports along with node-specific ports
+   * @brief If a behavior tree requires input/output data ports, the developer must define this method accordingly.
+   * @return List of ports used by this node.
    */
   static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 
-  BT::NodeStatus tick() override;
-
-  /// The default halt() implementation.
-  void halt() override;
-
-  /** setRequest is a callback that allows the user to set
-   * the request message (ServiceT::Request).
+  /**
+   * @brief Set the request to be sent to the ROS 2 service.
    *
-   * @param request  the request to be sent to the service provider.
-   *
-   * @return false if the request should not be sent. In that case,
-   * RosServiceNode::onFailure(INVALID_REQUEST) will be called.
+   * The node may deny to query a service call by returning `false`. Otherwise, this method should return `true`.
+   * @param request Request message.
+   * @return `false` if the request should not be sent. In that case, onFailure(INVALID_REQUEST) will be called.
    */
   virtual bool setRequest(typename Request::SharedPtr & request);
 
-  /** Callback invoked when the response is received by the server.
-   * It is up to the user to define if this returns SUCCESS or FAILURE.
+  /**
+   * @brief Callback invoked after the service response was received.
+   *
+   * Based on the response, the node may return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE.
+   * @param response Response message.
+   * @return Final return status of the node.
    */
   virtual BT::NodeStatus onResponseReceived(const typename Response::SharedPtr & response);
 
-  /** Callback invoked when something goes wrong; you can override it.
-   * It must return either SUCCESS or FAILURE.
+  /**
+   * @brief Callback invoked when one of the errors in ServiceNodeErrorCode occur.
+   *
+   * Based on the error code, the node may return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE.
+   * @param error Code for the error that has occurred.
+   * @return Final return status of the node.
    */
   virtual BT::NodeStatus onFailure(ServiceNodeErrorCode error);
 
+  /**
+   * @brief Create the client of the ROS 2 service.
+   * @param service_name Name of the service.
+   * @return `true` if the client was created successfully, `false` otherwise.
+   */
   bool createClient(const std::string & service_name);
 
+  /**
+   * @brief Get the name of the service this node connects with.
+   * @return String representing the service name.
+   */
   std::string getServiceName() const;
 
 protected:
@@ -147,6 +188,10 @@ protected:
   const rclcpp::Logger logger_;
 
 private:
+  BT::NodeStatus tick() override;
+
+  void halt() override;
+
   static std::mutex & getMutex();
 
   // contains the fully-qualified name of the node and the name of the client

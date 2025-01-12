@@ -61,12 +61,12 @@ int main(int argc, char ** argv)
     }
   }
 
-  // Prepare template document
+  // Prepare document
   core::TreeDocument doc;
   doc.registerNodes(node_manifest);
   core::TreeBuilder::TreeElement tree = doc.newTree(NEW_TREE_NAME).makeRoot();
 
-  // Insert template children
+  // Insert children
   tree.insertNode<model::AlwaysSuccess>();
 
   // Add node model

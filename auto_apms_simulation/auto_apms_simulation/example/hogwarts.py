@@ -40,7 +40,6 @@ class HogwartsWorld(World):
         # We set the location and object metadata programmatically, since this is more convenient.
         # However, resetting the world using the GUI doesn't work properly with this approach.
 
-        Location.set_metadata(None)
         Location.metadata.data = {
             "boss": {
                 "footprint": {"type": "box", "dims": [boss_size, boss_size], "height": 0.0},
@@ -52,7 +51,6 @@ class HogwartsWorld(World):
             }
         }
 
-        Object.set_metadata(None)
         Object.metadata.data = {
             "magical_item": {"footprint": {"type": "circle", "radius": boss_size / 12.0}, "height": 0.0},
         }

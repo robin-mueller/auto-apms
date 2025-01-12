@@ -26,11 +26,6 @@ namespace auto_apms_util
 {
 
 /**
- * @defgroup auto_apms_util AutoAPMS - Common utilities
- * @brief Fundamental helper classes and utility functions.
- */
-
-/**
  * @brief Status of the auto_apms_util::ActionWrapper execution process.
  * @ingroup auto_apms_util
  */

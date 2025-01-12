@@ -27,8 +27,30 @@ namespace auto_apms_behavior_tree::core
 {
 
 /**
- * @brief Abstract class to wrap a ROS publisher
+ * @ingroup auto_apms_behavior_tree
+ * @brief Generic behavior tree node wrapper for a ROS 2 publisher.
  *
+ * When ticked, this node publishes a single message to a topic. Inheriting classes must reimplement the virtual methods
+ * as described below.
+ *
+ * By default, the name of the topic will be determined as follows:
+ *
+ * 1. If a value is passed using the input port named `port`, use that.
+ *
+ * 2. Otherwise, use the value from NodeRegistrationOptions::port passed on construction as part of RosNodeContext.
+ *
+ * It is possible to customize which port is used to determine the topic name and also extend the input's value
+ * with a prefix or suffix. This is achieved by including the special pattern `(input:<port_name>)` in
+ * NodeRegistrationOptions::port and replacing `<port_name>` with the desired input port name.
+ * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a client
+ * for the topic "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing the string
+ * "foo" to the port with name `my_port`.
+ *
+ * Additionally, the following characteristics depend on NodeRegistrationOptions:
+ *
+ * - logger_level: Minimum severity level enabled for logging using the ROS 2 Logger API.
+ *
+ * @tparam MessageT Type of the ROS 2 message.
  */
 template <class MessageT>
 class RosPublisherNode : public BT::ConditionNode
@@ -40,17 +62,27 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
+  /**
+   * @brief Constructor.
+   *
+   * Derived nodes are automatically created by TreeBuilder::instantiate when included inside a node manifest
+   * associated with the behavior tree resource.
+   * @param instance_name Name given to this specific node instance.
+   * @param config Structure of internal data determined at runtime by BT::BehaviorTreeFactory.
+   * @param context Additional parameters specific to ROS 2 determined at runtime by TreeBuilder.
+   * @param qos Quality of service settings forwarded to the publisher.
+   */
   explicit RosPublisherNode(
     const std::string & instance_name, const Config & config, Context context, const rclcpp::QoS & qos = {10});
 
   virtual ~RosPublisherNode() = default;
 
   /**
-   * @brief Any subclass of RosPublisherNode that has additional ports must provide a
-   * providedPorts method and call providedBasicPorts in it.
+   * @brief Derived nodes implementing the static method RosPublisherNode::providedPorts may call this method to also
+   * include the default port for ROS 2 behavior tree nodes.
    *
-   * @param addition Additional ports to add to BT port list
-   * @return BT::PortsList Containing basic ports along with node-specific ports
+   * @param addition Additional ports to add to the ports list.
+   * @return List of ports containing the default port along with node-specific ports.
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
@@ -60,25 +92,32 @@ public:
   }
 
   /**
-   * @brief Creates list of BT ports
-   * @return BT::PortsList Containing basic ports along with node-specific ports
+   * @brief If a behavior tree requires input/output data ports, the developer must define this method accordingly.
+   * @return List of ports used by this node.
    */
   static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 
-  BT::NodeStatus tick() override final;
-
   /**
-   * @brief setMessage is a callback invoked in tick to allow the user to pass
-   * the message to be published.
+   * @brief Callback invoked when ticked to define the message to be published.
    *
-   * @param msg the message.
-   * @return  return false if anything is wrong and we must not send the message.
-   * the Condition will return FAILURE.
+   * The node may deny to publish a message by returning `false`. Otherwise, this method should return `true`.
+   * @param msg Reference to the message.
+   * @return `false` if no message should be published. In that case, the return status of this node will be
+   * BT::NodeStatus::FAILURE. Otherwise, the message will be published and the node returns BT::NodeStatus::SUCCESS.
    */
   virtual bool setMessage(MessageT & msg);
 
+  /**
+   * @brief Create the ROS 2 publisher.
+   * @param topic_name Name of the topic.
+   * @return `true` if the publisher was created successfully, `false` otherwise.
+   */
   bool createPublisher(const std::string & topic_name);
 
+  /**
+   * @brief Get the name of the topic name this node publishes to.
+   * @return String representing the topic name.
+   */
   std::string getTopicName() const;
 
 protected:
@@ -86,6 +125,8 @@ protected:
   const rclcpp::Logger logger_;
 
 private:
+  BT::NodeStatus tick() override final;
+
   const rclcpp::QoS qos_;
   std::string topic_name_;
   bool dynamic_client_instance_ = false;

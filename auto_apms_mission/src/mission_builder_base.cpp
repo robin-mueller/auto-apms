@@ -172,7 +172,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   }
 
   // Write tree for debugging purposes
-  builder.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
+  // builder.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
 
   return root_tree;
 }

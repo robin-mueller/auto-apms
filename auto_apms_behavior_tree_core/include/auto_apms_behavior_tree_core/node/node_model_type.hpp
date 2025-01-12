@@ -20,17 +20,19 @@
 #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 #include "behaviortree_cpp/basic_types.h"
 
+/// @cond INTERNAL
+
 #define AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_NON_LEAF_THISREF_METHODS(ClassType)                                    \
   ClassType & removeFirstChild(const std::string & registration_name = "", const std::string & instance_name = "") \
   {                                                                                                                \
     NodeElement::removeFirstChild(registration_name, instance_name);                                               \
     return *this;                                                                                                  \
   }                                                                                                                \
-  template <class ModelT>                                                                                          \
-  typename std::enable_if_t<std::is_base_of_v<NodeModelType, ModelT>, ClassType &> removeFirstChild(               \
+  template <class T>                                                                                               \
+  typename std::enable_if_t<std::is_base_of_v<NodeModelType, T>, ClassType &> removeFirstChild(                    \
     const std::string & instance_name = "")                                                                        \
   {                                                                                                                \
-    NodeElement::removeFirstChild<ModelT>(instance_name);                                                          \
+    NodeElement::removeFirstChild<T>(instance_name);                                                               \
     return *this;                                                                                                  \
   }                                                                                                                \
   ClassType & removeChildren()                                                                                     \
@@ -66,13 +68,21 @@
     return *this;                                                                                                \
   }
 
+/// @endcond
+
 namespace auto_apms_behavior_tree
 {
 namespace core
 {
 
+/// @cond INTERNAL
+
 class TreeBuilder;
 
+/**
+ * @brief Abstract base for all automatically generated behavior tree node model classes to be used in interaction with
+ * the TreeDocument API.
+ */
 class NodeModelType : public TreeDocument::NodeElement
 {
 protected:
@@ -82,10 +92,19 @@ public:
   using RegistrationOptions = NodeRegistrationOptions;
   using PortInfos = std::map<std::string, BT::PortInfo>;
 
-  /// @copydoc TreeDocument::NodeElement::getRegistrationName()
   virtual std::string getRegistrationName() const override = 0;
+
+  /**
+   * @brief Convert to a lower level NodeElement object.
+   * @return Base object representing this node.
+   */
+  NodeElement toNodeElement();
 };
 
+/**
+ * @brief Abstract base for automatically generated model classes of behavior tree nodes that are not allowed to have
+ * any children.
+ */
 class LeafNodeModelType : public NodeModelType
 {
 protected:
@@ -105,11 +124,40 @@ public:
   LeafNodeModelType & removeChildren() = delete;
 };
 
+/// @endcond
+
 }  // namespace core
 
+/**
+ * @brief Models for all available behavior tree nodes.
+ *
+ * Behavior tree node models are generated under the namespace `my_package_name::model` when specifying the
+ * `MODEL_HEADER_TARGET` argument of the CMake macro `auto_apms_behavior_tree_declare_nodes` in the CMakeLists.txt of a
+ * package with name `my_package_name`.
+ *
+ * ## Usage
+ *
+ * In the CMakeLists.txt of the package call the macro as follows:
+ * ```cmake
+ * auto_apms_behavior_tree_declare_nodes(node_library_target
+ *     ... # Fully qualified class names of the node plugins
+ *     MODEL_HEADER_TARGET model_header_target
+ * )
+ * ```
+ * After building the package, there is a header file named `node_library_target.hpp` which may be included by the C++
+ * files associated with the target `model_header_target` like this:
+ * ```cpp
+ * #include <my_package_name/node_library_target.hpp>
+ * ```
+ */
 namespace model
 {
 
+/**
+ * @brief Subtree behavior tree node model.
+ *
+ * This model implements extra methods specific to the subtree concept.
+ */
 class SubTree : public core::LeafNodeModelType
 {
   friend class core::TreeDocument::NodeElement;
@@ -118,22 +166,32 @@ private:
   using LeafNodeModelType::LeafNodeModelType;
 
 public:
-  /// @copydoc TreeDocument::NodeElement::getRegistrationName()
+  /// @brief Static method that provides the hard coded registration name of subtree nodes.
   static std::string name();
 
   /// @brief Type of the behavior tree node.
   static BT::NodeType type();
 
-  /// @copydoc TreeDocument::NodeElement::getRegistrationName()
+  /**
+   * @brief Get the type specific name under which all subtree nodes are registered with the behavior tree factory.
+   * @return Registration name of a subtree node.
+   */
   std::string getRegistrationName() const override final;
 
   AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_LEAF_THISREF_METHODS(SubTree)
 
+  /**
+   * @brief Configure which blackboard entries of the subtree node's parent tree should be also available for the
+   * children of the tree this subtree node is pointing to.
+   * @param remapping Mapping of blackboard entry names in the format {subtree_entry_name: original_tree_entry_name}
+   * @return Modified subtree model.
+   */
   SubTree & setBlackboardRemapping(const PortValues & remapping);
 
   /**
    * @brief Set automatic blackboard remapping.
    * @param val `true` to enable and `false` to disable.
+   * @return Modified subtree model.
    */
   SubTree & set_auto_remap(bool val = false);
 

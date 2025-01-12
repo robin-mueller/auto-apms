@@ -30,11 +30,13 @@ class TreeBuildHandlerLoader : public auto_apms_util::PluginClassLoader<TreeBuil
 public:
   RCLCPP_SMART_PTR_DEFINITIONS(TreeBuildHandlerLoader)
 
+  /// Name of the package that contains the base class for this plugin loader.
   static const std::string BASE_PACKAGE_NAME;
+  /// Name of the base class of all plugins to be loaded.
   static const std::string BASE_CLASS_NAME;
 
   /**
-   * @brief TreeBuildHandlerLoader constructor.
+   * @brief Constructor.
    * @param exclude_packages Packages to exclude when searching for associated plugin resources.
    * @throws See auto_apms_util::makeUnambiguousPluginClassLoader.
    */

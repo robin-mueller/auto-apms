@@ -19,7 +19,7 @@
 
 #include "behaviortree_cpp/basic_types.h"
 
-/// @cond
+/// @cond INTERNAL
 namespace BT
 {
 

@@ -9,9 +9,6 @@
 
 **Auto**mated **A**ction **P**lanning and **M**ission **S**afeguarding for Robotics.
 
-> [!NOTE]
-> This repository is currently a work in progress.
-
 # Features and Motivation
 
 AutoAPMS is a ROS 2 software development framework offering convenient methods and tools to create autonomous robotic missions. It can be applied in any field of robotics as long as the corresponding systems are running ROS 2. Additionally, other popular middlewares like [PX4](https://px4.io/) are supported as well if they offer a possibility for bridging internal messages to ROS 2 topics.

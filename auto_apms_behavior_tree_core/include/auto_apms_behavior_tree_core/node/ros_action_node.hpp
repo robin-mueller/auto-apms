@@ -37,6 +37,11 @@ enum ActionNodeErrorCode
   INVALID_GOAL
 };
 
+/**
+ * @brief Convert the action error code to string.
+ * @param err Error code.
+ * @return C-style string.
+ */
 inline const char * toStr(const ActionNodeErrorCode & err)
 {
   switch (err) {
@@ -53,22 +58,39 @@ inline const char * toStr(const ActionNodeErrorCode & err)
 }
 
 /**
- * @brief Abstract class to wrap rclcpp_action::Client<>
+ * @ingroup auto_apms_behavior_tree
+ * @brief Generic behavior tree node wrapper for a ROS 2 action client.
  *
- * For instance, given the type AddTwoInts described in this tutorial:
- * https://docs.ros.org/en/humble/Tutorials/Intermediate/Writing-an-Action-Server-Client/Cpp.html
+ * When ticked, this node sends an action goal and awaits the execution result asynchronously. When halted, the node
+ * blocks until both the action was cancelled and the result was received. Inheriting classes must reimplement the
+ * virtual methods as described below.
  *
- * the corresponding wrapper would be:
+ * By default, the name of the action will be determined as follows:
  *
- * class FibonacciNode: public RosActionNode<action_tutorials_interfaces::action::Fibonacci>
+ * 1. If a value is passed using the input port named `port`, use that.
  *
- * RosActionNode will try to be non-blocking for the entire duration of the call.
- * The derived class must reimplement the virtual methods as described below.
+ * 2. Otherwise, use the value from NodeRegistrationOptions::port passed on construction as part of RosNodeContext.
  *
- * The name of the action will be determined as follows:
+ * It is possible to customize which port is used to determine the action name and also extend the input's value
+ * with a prefix or suffix. This is achieved by including the special pattern `(input:<port_name>)` in
+ * NodeRegistrationOptions::port and replacing `<port_name>` with the desired input port name.
+ * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a client
+ * for the action "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing the string
+ * "foo" to the port with name `my_port`.
  *
- * 1. If a value is passes in the BT::InputPort "action_name", use that
- * 2. Otherwise, use the value in RosNodeContext::default_port_name.
+ * Additionally, the following characteristics depend on NodeRegistrationOptions:
+ *
+ * - wait_timeout: Period [s] (measured since tree construction) after the action is considered unreachable.
+ *
+ * - request_timeout: Period [s] (measured since sending a goal request) after the node aborts waiting for a server
+ * response.
+ *
+ * - allow_unreachable: Flag whether to tolerate if the action is unreachable when trying to create the client.
+ * If set to `true`, a warning is logged. Otherwise, an exception is raised.
+ *
+ * - logger_level: Minimum severity level enabled for logging using the ROS 2 Logger API.
+ *
+ * @tparam ActionT Type of the ROS 2 action.
  */
 template <class ActionT>
 class RosActionNode : public BT::ActionNodeBase
@@ -96,16 +118,25 @@ public:
   using Config = BT::NodeConfig;
   using Context = RosNodeContext;
 
+  /**
+   * @brief Constructor.
+   *
+   * Derived nodes are automatically created by TreeBuilder::instantiate when included inside a node manifest
+   * associated with the behavior tree resource.
+   * @param instance_name Name given to this specific node instance.
+   * @param config Structure of internal data determined at runtime by BT::BehaviorTreeFactory.
+   * @param context Additional parameters specific to ROS 2 determined at runtime by TreeBuilder.
+   */
   explicit RosActionNode(const std::string & instance_name, const Config & config, Context context);
 
   virtual ~RosActionNode() = default;
 
   /**
-   * @brief Any subclass of RosActionNode that has ports must implement a
-   * providedPorts method and call providedBasicPorts in it.
+   * @brief Derived nodes implementing the static method RosActionNode::providedPorts may call this method to also
+   * include the default port for ROS 2 behavior tree nodes.
    *
-   * @param addition Additional ports to add to BT port list
-   * @return BT::PortsList containing basic ports along with node-specific ports
+   * @param addition Additional ports to add to the ports list.
+   * @return List of ports containing the default port along with node-specific ports.
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
@@ -115,51 +146,73 @@ public:
   }
 
   /**
-   * @brief Creates list of BT ports
-   * @return BT::PortsList Containing basic ports along with node-specific ports
+   * @brief If a behavior tree requires input/output data ports, the developer must define this method accordingly.
+   * @return List of ports used by this node.
    */
   static BT::PortsList providedPorts() { return providedBasicPorts({}); }
 
-  /// @brief  Callback executed when the node is halted. Note that cancelGoal()
-  /// is done automatically.
+  /**
+   * @brief Callback invoked when the node is halted by the behavior tree.
+   *
+   * Afterwards, the ROS 2 action will be cancelled.
+   */
   virtual void onHalt();
 
-  /** setGoal s a callback that allows the user to set
-   *  the goal message (ActionT::Goal).
+  /**
+   * @brief Set the goal message to be sent to the ROS 2 action.
    *
-   * @param goal  the goal to be sent to the action server.
-   *
-   * @return false if the request should not be sent. In that case,
-   * RosActionNode::onFailure(INVALID_GOAL) will be called.
+   * The node may deny to send a goal by returning `false`. Otherwise, this method should return `true`.
+   * @param goal Reference to the goal message.
+   * @return `false` if the request should not be sent. In that case, onFailure(INVALID_GOAL) will be called.
    */
   virtual bool setGoal(Goal & goal);
 
-  /** Callback invoked when the result is received by the server.
-   * It is up to the user to define if the action returns SUCCESS or FAILURE.
+  /**
+   * @brief Callback invoked after the result that is sent by the action server when the goal terminated was received.
+   *
+   * Based on the result message, the node may return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE.
+   * @param result Reference to the result message.
+   * @return Final return status of the node.
    */
   virtual BT::NodeStatus onResultReceived(const WrappedResult & result);
 
-  /** Callback invoked when the feedback is received.
-   * It generally returns RUNNING, but the user can also use this callback to cancel the
-   * current action and return SUCCESS or FAILURE.
+  /**
+   * @brief Callback invoked after action feedback was received.
+   *
+   * The node may cancel the current action by returning BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE. Otherwise,
+   * this should return BT::NodeStatus::RUNNING to indicate that the action should continue.
+   * @param feedback Received feedback message.
+   * @return Final return status of the node.
    */
-  virtual BT::NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback_ptr);
+  virtual BT::NodeStatus onFeedback(const Feedback & feedback);
 
-  /** Callback invoked when something goes wrong.
-   * It must return either SUCCESS or FAILURE.
+  /**
+   * @brief Callback invoked when one of the errors in ActionNodeErrorCode occur.
+   *
+   * Based on the error code, the node may return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE.
+   * @param error Code for the error that has occurred.
+   * @return Final return status of the node.
    */
   virtual BT::NodeStatus onFailure(ActionNodeErrorCode error);
 
-  /// Method used to send a request to the Action server to cancel the current goal
+  /**
+   * @brief Synchronous method that sends a request to the server to cancel the current action.
+   *
+   * This method returns as soon as the action is successfully cancelled or an error occurred in the process.
+   */
   void cancelGoal();
 
-  /// The default halt() implementation will call cancelGoal if necessary.
-  void halt() override;
-
-  BT::NodeStatus tick() override;
-
+  /**
+   * @brief Create the client of the ROS 2 action.
+   * @param action_name Name of the action.
+   * @return `true` if the client was created successfully, `false` otherwise.
+   */
   bool createClient(const std::string & action_name);
 
+  /**
+   * @brief Get the name of the action this node connects with.
+   * @return String representing the action name.
+   */
   std::string getActionName() const;
 
 protected:
@@ -167,6 +220,10 @@ protected:
   const rclcpp::Logger logger_;
 
 private:
+  void halt() override;
+
+  BT::NodeStatus tick() override;
+
   static std::mutex & getMutex();
 
   // contains the fully-qualified name of the node and the name of the client
@@ -252,7 +309,7 @@ inline BT::NodeStatus RosActionNode<ActionT>::onResultReceived(const WrappedResu
 }
 
 template <class ActionT>
-inline BT::NodeStatus RosActionNode<ActionT>::onFeedback(const std::shared_ptr<const Feedback> /*feedback_ptr*/)
+inline BT::NodeStatus RosActionNode<ActionT>::onFeedback(const Feedback & /*feedback*/)
 {
   return BT::NodeStatus::RUNNING;
 }
@@ -477,7 +534,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
     };
     goal_options.feedback_callback =
       [this](typename GoalHandle::SharedPtr /*goal_handle*/, const std::shared_ptr<const Feedback> feedback) {
-        this->on_feedback_state_change_ = onFeedback(feedback);
+        this->on_feedback_state_change_ = onFeedback(*feedback);
         if (this->on_feedback_state_change_ == BT::NodeStatus::IDLE) {
           throw std::logic_error(
             this->context_.getFullyQualifiedTreeNodeName(this) + " - onFeedback() must not return IDLE.");
