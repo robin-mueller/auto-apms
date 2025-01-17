@@ -17,11 +17,24 @@
 #include "auto_apms_behavior_tree/build_handler.hpp"
 #include "auto_apms_mission/mission_configuration.hpp"
 
+/**
+ * @defgroup auto_apms_mission Mission Design
+ * @brief Useful concepts that allow the user to quickly and easily configure custom missions including fallback
+ * mechanisms if something goes wrong.
+ */
+
+/**
+ * @brief Mission design utilities incorporating behavior trees to model the complexity of arbitrary operations.
+ */
 namespace auto_apms_mission
 {
 
 namespace model = auto_apms_behavior_tree::model;
 
+/**
+ * @ingroup auto_apms_mission
+ * @brief Base class for behavior tree build handlers that are used to configure missions including fallback mechanisms.
+ */
 class MissionBuildHandlerBase : public auto_apms_behavior_tree::TreeBuildHandler
 {
 public:
@@ -37,7 +50,7 @@ private:
     const std::string & build_request, const NodeManifest & node_manifest,
     const std::string & root_tree_name) override final;
 
-  TreeDocument::TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) override final;
+  TreeDocument::TreeElement buildTree(TreeDocument & doc, TreeBlackboard & bb) override final;
 
 protected:
   /* Virtual methods */

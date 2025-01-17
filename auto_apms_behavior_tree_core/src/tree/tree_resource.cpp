@@ -165,12 +165,12 @@ TreeResource TreeResource::selectByTreeName(const std::string & tree_name, const
   return TreeResource(package_name + "::::" + tree_name);
 }
 
-TreeResource TreeResource::selectByFileName(const std::string & file_name, const std::string & package_name)
+TreeResource TreeResource::selectByFileStem(const std::string & file_name, const std::string & package_name)
 {
   return TreeResource(package_name + "::" + file_name + "::");
 }
 
-bool TreeResource::hasRootTree() const { return !identity_.tree_name.empty() || !doc_root_tree_name_.empty(); }
+bool TreeResource::hasRootTreeName() const { return !identity_.tree_name.empty() || !doc_root_tree_name_.empty(); }
 
 std::string TreeResource::getRootTreeName() const
 {

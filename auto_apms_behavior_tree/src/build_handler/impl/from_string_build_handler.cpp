@@ -23,7 +23,7 @@ class TreeFromStringBuildHandler : public TreeBuildHandler
 public:
   TreeFromStringBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
   : TreeBuildHandler("tree_from_string", ros_node_ptr, tree_node_loader_ptr),
-    working_doc_(core::TreeDocument::BTCPP_FORMAT_DEFAULT_VERSION, tree_node_loader_ptr)
+    working_doc_(TreeDocument::BTCPP_FORMAT_DEFAULT_VERSION, tree_node_loader_ptr)
   {
   }
 
@@ -60,16 +60,16 @@ public:
     return true;
   }
 
-  TreeDocument::TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & /*bb*/) override final
+  TreeDocument::TreeElement buildTree(TreeDocument & doc, TreeBlackboard & /*bb*/) override final
   {
     // Merge document and adopt root tree
-    builder.mergeTreeDocument(working_doc_, true);
+    doc.mergeTreeDocument(working_doc_, true);
 
-    // Reset the local tree document, as the tree moved to the builder document
+    // Reset the local tree document, as the tree moved to doc
     working_doc_.reset();
 
     // The document MUST have a root tree. We made sure of that during setBuildRequest
-    return builder.getRootTree();
+    return doc.getRootTree();
   }
 
 private:

@@ -24,7 +24,7 @@ public:
   : TreeExecutorNode(
       _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME, TreeExecutorNodeOptions(options)
                                                          .enableScriptingEnumParameters(false, false)
-                                                         .enableBlackboardParameters(false, false))
+                                                         .enableGlobalBlackboardParameters(false, false))
   {
   }
 };
@@ -36,7 +36,7 @@ public:
   : TreeExecutorNode(
       _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME, TreeExecutorNodeOptions(options)
                                                          .enableScriptingEnumParameters(true, true)
-                                                         .enableBlackboardParameters(false, false))
+                                                         .enableGlobalBlackboardParameters(false, false))
   {
   }
 };
@@ -48,7 +48,7 @@ public:
   : TreeExecutorNode(
       _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME, TreeExecutorNodeOptions(options)
                                                          .enableScriptingEnumParameters(false, false)
-                                                         .enableBlackboardParameters(true, true))
+                                                         .enableGlobalBlackboardParameters(true, true))
   {
   }
 };
@@ -60,7 +60,7 @@ public:
   : TreeExecutorNode(
       _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME, TreeExecutorNodeOptions(options)
                                                          .enableScriptingEnumParameters(true, false)
-                                                         .enableBlackboardParameters(false, false))
+                                                         .enableGlobalBlackboardParameters(false, false))
   {
   }
 };
@@ -72,7 +72,7 @@ public:
   : TreeExecutorNode(
       _AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_DEFAULT_NAME, TreeExecutorNodeOptions(options)
                                                          .enableScriptingEnumParameters(false, false)
-                                                         .enableBlackboardParameters(true, false))
+                                                         .enableGlobalBlackboardParameters(true, false))
   {
   }
 };

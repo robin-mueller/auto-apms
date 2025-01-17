@@ -23,6 +23,7 @@
  */
 
 /**
+ * @ingroup auto_apms_behavior_tree
  * @brief Useful tooling for incorporating behavior trees for task development.
  */
 namespace auto_apms_behavior_tree

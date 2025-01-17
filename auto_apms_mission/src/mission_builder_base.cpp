@@ -77,20 +77,20 @@ bool MissionBuildHandlerBase::setBuildRequest(
 }
 
 MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buildTree(
-  TreeBuilder & builder, TreeBlackboard & bb)
+  TreeDocument & doc, TreeBlackboard & bb)
 {
   using namespace auto_apms_behavior_tree::model;
 
   // Load orchestrator tree
   RCLCPP_DEBUG(logger_, "Loading orchestrator tree.");
   TreeDocument::TreeElement root_tree =
-    builder.newTreeFromResource("auto_apms_mission::orchestrator_base::MissionOrchestrator").makeRoot();
+    doc.newTreeFromResource("auto_apms_mission::orchestrator_base::MissionOrchestrator").makeRoot();
 
   RCLCPP_DEBUG(logger_, "Configuring orchestrator root blackboard.");
   configureOrchestratorRootBlackboard(bb);
 
-  TreeDocument::TreeElement is_contingency_tree = builder.getTree("__IsContingency__").removeChildren();
-  TreeDocument::TreeElement is_emergency_tree = builder.getTree("__IsEmergency__").removeChildren();
+  TreeDocument::TreeElement is_contingency_tree = doc.getTree("__IsContingency__").removeChildren();
+  TreeDocument::TreeElement is_emergency_tree = doc.getTree("__IsEmergency__").removeChildren();
 
   if (mission_config_.contingency.empty()) {
     is_contingency_tree.insertNode<model::AlwaysFailure>();
@@ -113,7 +113,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Bring up
   if (!mission_config_.bringup.empty()) {
     RCLCPP_DEBUG(logger_, "Creating bringup subtree.");
-    TreeDocument::TreeElement bringup_tree = builder.getTree("__BringUp__");
+    TreeDocument::TreeElement bringup_tree = doc.getTree("__BringUp__");
     buildBringUp(bringup_tree, mission_config_.bringup);
     if (const BT::Result res = bringup_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Bringup tree is not valid: " + res.error());
@@ -122,7 +122,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
 
   // Mission
   RCLCPP_DEBUG(logger_, "Creating mission subtree.");
-  TreeDocument::TreeElement mission_tree = builder.getTree("__RunMission__");
+  TreeDocument::TreeElement mission_tree = doc.getTree("__RunMission__");
   buildMission(mission_tree, mission_config_.mission);
   if (const BT::Result res = mission_tree.verify(); !res) {
     throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Mission tree is not valid: " + res.error());
@@ -131,7 +131,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Event monitor
   if (!mission_config_.contingency.empty() || !mission_config_.emergency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating event monitor subtree.");
-    TreeDocument::TreeElement event_monitor_tree = builder.getTree("__MonitorEvents__");
+    TreeDocument::TreeElement event_monitor_tree = doc.getTree("__MonitorEvents__");
     buildEventMonitor(event_monitor_tree, mission_config_.contingency, mission_config_.emergency);
     if (const BT::Result res = event_monitor_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -142,7 +142,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Contingency Handling
   if (!mission_config_.contingency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating contingency handler subtree.");
-    TreeDocument::TreeElement contingency_tree = builder.getTree("__HandleContingency__");
+    TreeDocument::TreeElement contingency_tree = doc.getTree("__HandleContingency__");
     buildContingencyHandling(contingency_tree, mission_config_.contingency);
     if (const BT::Result res = contingency_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -153,7 +153,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Emergency Handling
   if (!mission_config_.emergency.empty()) {
     RCLCPP_DEBUG(logger_, "Creating emergency handler subtree.");
-    TreeDocument::TreeElement emergency_tree = builder.getTree("__HandleEmergency__");
+    TreeDocument::TreeElement emergency_tree = doc.getTree("__HandleEmergency__");
     buildEmergencyHandling(emergency_tree, mission_config_.emergency);
     if (const BT::Result res = emergency_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError(
@@ -164,7 +164,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Shut down
   if (!mission_config_.shutdown.empty()) {
     RCLCPP_DEBUG(logger_, "Creating shutdown subtree.");
-    TreeDocument::TreeElement shutdown_tree = builder.getTree("__ShutDown__");
+    TreeDocument::TreeElement shutdown_tree = doc.getTree("__ShutDown__");
     buildShutDown(shutdown_tree, mission_config_.shutdown);
     if (const BT::Result res = shutdown_tree.verify(); !res) {
       throw auto_apms_behavior_tree::exceptions::TreeBuildHandlerError("Shutdown tree is not valid: " + res.error());
@@ -172,7 +172,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   }
 
   // Write tree for debugging purposes
-  // builder.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
+  // doc.writeToFile("/home/robin/Desktop/px4-ros2-env/src/dep/auto-apms/test.xml");
 
   return root_tree;
 }

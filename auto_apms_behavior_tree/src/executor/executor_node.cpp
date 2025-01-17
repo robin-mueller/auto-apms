@@ -55,7 +55,7 @@ TreeExecutorNodeOptions & TreeExecutorNodeOptions::enableScriptingEnumParameters
   return *this;
 }
 
-TreeExecutorNodeOptions & TreeExecutorNodeOptions::enableBlackboardParameters(bool from_overrides, bool dynamic)
+TreeExecutorNodeOptions & TreeExecutorNodeOptions::enableGlobalBlackboardParameters(bool from_overrides, bool dynamic)
 {
   blackboard_parameters_from_overrides_ = from_overrides;
   blackboard_parameters_dynamic_ = dynamic;
@@ -86,7 +86,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
   // Set custom parameter default values.
   // NOTE: We cannot do this before the node is created, because we also need the global parameter overrides here, not
   // just rclcpp::NodeOptions::parameter_overrides (This only contains parameter overrides explicitly provided to the
-  // options object. Generally speaking, this variable doesn't represent all parameter overrides).
+  // options object. So generally speaking, this variable doesn't represent all parameter overrides).
   std::vector<rclcpp::Parameter> new_default_parameters;
   std::map<std::string, rclcpp::ParameterValue> effective_param_overrides =
     node_ptr_->get_node_parameters_interface()->get_parameter_overrides();
@@ -150,7 +150,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
   const auto initial_blackboard = getParameterValuesWithPrefix(BLACKBOARD_PARAM_PREFIX);
   if (!initial_blackboard.empty()) {
     if (executor_options_.blackboard_parameters_from_overrides_) {
-      updateBlackboardWithParameterValues(initial_blackboard, *getGlobalBlackboardPtr());
+      updateGlobalBlackboardWithParameterValues(initial_blackboard);
     } else {
       RCLCPP_WARN(
         logger_,
@@ -227,8 +227,6 @@ std::shared_future<TreeExecutorNode::ExecutionResult> TreeExecutorNode::startExe
 
 std::map<std::string, rclcpp::ParameterValue> TreeExecutorNode::getParameterValuesWithPrefix(const std::string & prefix)
 {
-  // Get all parameters with prefix <prefix> and separator depth 2 (Will match all names like <prefix>.<suffix> but not
-  // <prefix>.<suffix1>.<suffix2> and deeper)
   const auto res = node_ptr_->list_parameters({prefix}, 2);
   std::map<std::string, rclcpp::ParameterValue> value_map;
   for (const std::string & name_with_prefix : res.names) {
@@ -263,7 +261,7 @@ bool TreeExecutorNode::updateScriptingEnumsWithParameterValues(
           break;
         default:
           if (simulate) return false;
-          throw exceptions::ParameterConversionError("Parameter to scripting enum conversion is undefined.");
+          throw exceptions::ParameterConversionError("Parameter to scripting enum conversion is not allowed.");
       }
       set_successfully_map[enum_key] = rclcpp::to_string(pval);
     } catch (const std::exception & e) {
@@ -281,9 +279,10 @@ bool TreeExecutorNode::updateScriptingEnumsWithParameterValues(
   return true;
 }
 
-bool TreeExecutorNode::updateBlackboardWithParameterValues(
-  const std::map<std::string, rclcpp::ParameterValue> & value_map, TreeBlackboard & bb, bool simulate)
+bool TreeExecutorNode::updateGlobalBlackboardWithParameterValues(
+  const std::map<std::string, rclcpp::ParameterValue> & value_map, bool simulate)
 {
+  TreeBlackboard & bb = *getGlobalBlackboardPtr();
   std::map<std::string, std::string> set_successfully_map;
   for (const auto & [entry_key, pval] : value_map) {
     try {
@@ -301,7 +300,7 @@ bool TreeExecutorNode::updateBlackboardWithParameterValues(
       } else {
         throw exceptions::ParameterConversionError(expected.error());
       }
-      translated_blackboard_entries_[entry_key] = pval;
+      translated_global_blackboard_entries_[entry_key] = pval;
       set_successfully_map[entry_key] = rclcpp::to_string(pval);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(
@@ -429,8 +428,7 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
           "Cannot set blackboard entry '" + entry_key + "', because the 'Dynamic blackboard' option is disabled");
       }
       // Validate type of blackboard parameters won't change
-      if (!updateBlackboardWithParameterValues(
-            {{entry_key, p.get_parameter_value()}}, *getGlobalBlackboardPtr(), true)) {
+      if (!updateGlobalBlackboardWithParameterValues({{entry_key, p.get_parameter_value()}}, true)) {
         return create_rejected(
           "Type of blackboard entries must not change. Tried to set entry '" + entry_key +
           "' (Type: " + getGlobalBlackboardPtr()->getEntry(entry_key)->info.typeName() + ") with value '" +
@@ -498,7 +496,7 @@ void TreeExecutorNode::parameter_event_callback_(const rcl_interfaces::msg::Para
       // Change blackboard parameters
       if (const std::string entry_key = stripPrefixFromParameterName(BLACKBOARD_PARAM_PREFIX, param_name);
           !entry_key.empty()) {
-        updateBlackboardWithParameterValues({{entry_key, p.get_parameter_value()}}, *getGlobalBlackboardPtr());
+        updateGlobalBlackboardWithParameterValues({{entry_key, p.get_parameter_value()}}, false);
       }
 
       // Change tree build handler instance
@@ -773,13 +771,13 @@ bool TreeExecutorNode::afterTick()
 
       // If the entry has actually been set with any value during runtime, we update this node's parameters
 
-      if (translated_blackboard_entries_.find(key) == translated_blackboard_entries_.end()) {
+      if (translated_global_blackboard_entries_.find(key) == translated_global_blackboard_entries_.end()) {
         // The key is new, so we must try to infer the parameter's type from BT::Any
         const BT::Expected<rclcpp::ParameterValue> expected =
           createParameterValueFromAny(*any, rclcpp::PARAMETER_NOT_SET);
         if (expected) {
           new_parameters.push_back(rclcpp::Parameter(BLACKBOARD_PARAM_PREFIX + "." + key, expected.value()));
-          translated_blackboard_entries_[key] = expected.value();
+          translated_global_blackboard_entries_[key] = expected.value();
         } else {
           RCLCPP_WARN(
             logger_, "Failed to translate new blackboard entry '%s' (Type: %s) to parameters: %s", key.c_str(),
@@ -788,9 +786,9 @@ bool TreeExecutorNode::afterTick()
       } else {
         // The key is not new, so we can look up the parameter's type and update its value (if it changed)
         const BT::Expected<rclcpp::ParameterValue> expected =
-          createParameterValueFromAny(*any, translated_blackboard_entries_[key].get_type());
+          createParameterValueFromAny(*any, translated_global_blackboard_entries_[key].get_type());
         if (expected) {
-          if (expected.value() != translated_blackboard_entries_[key]) {
+          if (expected.value() != translated_global_blackboard_entries_[key]) {
             new_parameters.push_back(rclcpp::Parameter(BLACKBOARD_PARAM_PREFIX + "." + key, expected.value()));
           }
         } else {

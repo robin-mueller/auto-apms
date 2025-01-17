@@ -27,6 +27,11 @@ class TreeBuildHandlerFactoryTemplate : public TreeBuildHandlerFactoryInterface
     "Cannot convert T* to TreeBuildHandler*. Did you forget to specify the keyword 'public' when inheriting? --> class "
     "T : public TreeBuildHandler");
 
+  static_assert(
+    std::is_constructible_v<T, rclcpp::Node::SharedPtr, core::NodeRegistrationLoader::SharedPtr>,
+    "You must implement a constructor with signature TreeBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, "
+    "NodeLoader::SharedPtr tree_node_loader_ptr).");
+
 public:
   TreeBuildHandlerFactoryTemplate() = default;
   virtual ~TreeBuildHandlerFactoryTemplate() = default;

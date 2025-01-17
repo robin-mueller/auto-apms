@@ -16,8 +16,10 @@
 
 #include <chrono>
 
-#include "action_wrapper_params.hpp"
 #include "auto_apms_util/action_context.hpp"
+// #include "auto_apms_util/action_wrapper_params.hpp" // TODO Uncomment if generate_parameter_library 0.4.0 is
+// available
+#include "action_wrapper_params.hpp"  // TODO Remove if generate_parameter_library 0.4.0 is available
 #include "auto_apms_util/logging.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"

@@ -20,11 +20,11 @@ namespace auto_apms_behavior_tree
 {
 
 TreeStateObserver::TreeStateObserver(
-  const BT::Tree & tree, const rclcpp::Logger & node_logger, std::chrono::seconds max_logging_rate)
+  const BT::Tree & tree, const rclcpp::Logger & node_logger, std::chrono::seconds max_logging_interval)
 : StatusChangeLogger{tree.rootNode()},
   logger_{node_logger},
   root_tree_id_{tree.subtrees[0]->tree_ID},
-  max_logging_rate_{max_logging_rate}
+  max_logging_interval_{max_logging_interval}
 {
 }
 
@@ -58,7 +58,7 @@ void TreeStateObserver::callback(
   const auto key = std::make_pair(node.UID(), createStateChangeBitmask(prev_status, status));
   const bool is_first_log = last_log_map_.count(key) == 0;
 
-  if (is_first_log || timestamp - last_log_map_[key] > max_logging_rate_) {
+  if (is_first_log || timestamp - last_log_map_[key] > max_logging_interval_) {
     if (node.registrationName() == node.name()) {
       RCLCPP_INFO(
         logger_, "[%s] %s '%s' -- %s -> %s", root_tree_id_.c_str(), BT::toStr(node.type()).c_str(), node.name().c_str(),

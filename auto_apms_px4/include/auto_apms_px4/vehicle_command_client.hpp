@@ -26,6 +26,10 @@
 namespace auto_apms_px4
 {
 
+/**
+ * @ingroup auto_apms_px4
+ * @brief Client for sending requests to the PX4 autopilot using the `VehicleCommand` topic.
+ */
 class VehicleCommandClient
 {
   using VehicleCommand = px4_msgs::msg::VehicleCommand;

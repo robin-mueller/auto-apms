@@ -26,6 +26,7 @@
  */
 
 /**
+ * @ingroup auto_apms_util
  * @brief Fundamental helper classes and utility functions.
  */
 namespace auto_apms_util

@@ -22,11 +22,11 @@ set(_AUTO_APMS_SIMULATION__ACTION_NAME__EXECUTE_TASK_ACTION "execute_action")
 #
 
 include(FetchContent)
-set(PYROBOSIM_VERSION "3.2.1")
+set(PYROBOSIM_VERSION "3.3.0")
 FetchContent_Declare(
     pyrobosim
     GIT_REPOSITORY "https://github.com/sea-bass/pyrobosim.git"
-    GIT_TAG        "main" # "${PYROBOSIM_VERSION}" TODO: Use most recent release once pr #311 is present in one
+    GIT_TAG        "${PYROBOSIM_VERSION}"
     GIT_SHALLOW    ON
     GIT_PROGRESS   ON
 )

@@ -23,12 +23,12 @@ class TakeoffTask : public ModeExecutor<auto_apms_interfaces::action::Takeoff>
 {
 public:
   explicit TakeoffTask(const rclcpp::NodeOptions & options)
-  : ModeExecutor{_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME, options, FlightMode::Takeoff}
+  : ModeExecutor(_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME, options, FlightMode::Takeoff)
   {
   }
 
 private:
-  bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr)
+  bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr) override final
   {
     return client.takeoff(goal_ptr->altitude_amsl_m, goal_ptr->heading_rad);
   }

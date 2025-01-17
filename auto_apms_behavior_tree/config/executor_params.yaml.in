@@ -39,7 +39,7 @@ auto_apms_behavior_tree::executor_params:
   ${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_PARAM_TICK_RATE}:
     type: double
     default_value: 0.1
-    description: Rate [s] at which the behavior tree is being ticked.
+    description: Interval [s] at which the behavior tree is being ticked.
     validation:
       gt_eq<>: [0]
 

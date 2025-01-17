@@ -125,7 +125,7 @@ ament_export_dependencies(
     ament_index_cpp
     pluginlib
     yaml_cpp_vendor
-    generate_parameter_library
+    generate_parameter_library # TODO Remove if generate_parameter_library 0.4.0 is available
 )
 
 ament_package(CONFIG_EXTRAS "auto_apms_util-extras.cmake.in")

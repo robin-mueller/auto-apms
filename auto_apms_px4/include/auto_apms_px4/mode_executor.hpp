@@ -21,9 +21,65 @@
 #include "px4_msgs/msg/vehicle_status.hpp"
 #include "px4_ros2/components/wait_for_fmu.hpp"
 
+/**
+ * @defgroup auto_apms_px4 PX4 Autopilot Extension
+ * @brief PX4 integration with AutoAPMS incorporating user-defined modes.
+ */
+
+/**
+ * @ingroup auto_apms_px4
+ * @brief Implementation of PX4 mode peers offered by [px4_ros2_cpp](https://github.com/Auterion/px4-ros2-interface-lib)
+ * enabling integration with AutoAPMS.
+ */
 namespace auto_apms_px4
 {
 
+/**
+ * @ingroup auto_apms_px4
+ * @brief Generic template class for executing a PX4 mode implementing the interface of a standard ROS 2 action.
+ *
+ * The modes to be executed must be registered with the PX4 autopilot server before any action goals are sent. By
+ * default, only the standard PX4 modes may be executed, but the user may also implement custom modes using ModeBase.
+ * Refer to ModeExecutorFactory if you want to set up a ROS 2 node for executing your custom modes.
+ *
+ * ## Usage
+ *
+ * To register a ROS 2 node component that is able to execute for example the [land
+ * mode](https://docs.px4.io/main/en/flight_modes_mc/land.html) when requested, the corresponding executor is
+ * implemented as follows:
+ *
+ * ```cpp
+ * #include "auto_apms_interfaces/action/takeoff.hpp"
+ * #include "auto_apms_px4/mode_executor.hpp"
+ *
+ * namespace my_namespace
+ * {
+ * class MyTakeoffModeExecutor : public auto_apms_px4::ModeExecutor<auto_apms_interfaces::action::Takeoff>
+ * {
+ * public:
+ *   explicit MyTakeoffModeExecutor(const rclcpp::NodeOptions & options)
+ *   : ModeExecutor("my_executor_name", options, FlightMode::Takeoff)
+ *   {
+ *   }
+ *
+ *   bool sendActivationCommand(const VehicleCommandClient & client,
+ *                              std::shared_ptr<const Goal> goal_ptr) override final
+ *   {
+ *     return client.takeoff(goal_ptr->altitude_amsl_m, goal_ptr->heading_rad);
+ *   }
+ * }
+ * }  // namespace my_namespace
+ *
+ * // Register the ROS 2 node component
+ * #include "rclcpp_components/register_node_macro.hpp"
+ * RCLCPP_COMPONENTS_REGISTER_NODE(my_namespace::MyTakeoffModeExecutor)
+ * ```
+ *
+ * @note The package `%auto_apms_px4` comes with ROS 2 node components for the most common standard modes and they work
+ * out of the box.
+ *
+ * @tparam ActionT Type of the ROS 2 action.
+ */
 template <class ActionT>
 class ModeExecutor : public auto_apms_util::ActionWrapper<ActionT>
 {
@@ -36,6 +92,7 @@ class ModeExecutor : public auto_apms_util::ActionWrapper<ActionT>
   };
 
 public:
+  using VehicleCommandClient = auto_apms_px4::VehicleCommandClient;
   using FlightMode = VehicleCommandClient::FlightMode;
   using typename auto_apms_util::ActionWrapper<ActionT>::ActionContextType;
   using typename auto_apms_util::ActionWrapper<ActionT>::Goal;
@@ -85,6 +142,33 @@ private:
   rclcpp::Time activation_command_sent_time_;
   rclcpp::Duration activation_timeout_{0, 0};
 };
+
+/**
+ * @ingroup auto_apms_px4
+ * @brief Helper template class that creates a ModeExecutor for a custom PX4 mode implemented by inheriting from
+ * ModeBase.
+ * @tparam ActionT Type of the ROS 2 action. Must be the same as used by @p ModeT.
+ * @tparam ModeT Custom PX4 mode class.
+ */
+template <class ActionT, class ModeT>
+class ModeExecutorFactory
+{
+public:
+  ModeExecutorFactory(
+    const std::string & action_name, const rclcpp::NodeOptions & options,
+    const std::string & topic_namespace_prefix = "", bool deactivate_before_completion = true);
+
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface();
+
+private:
+  rclcpp::Node::SharedPtr node_ptr_;  // It's necessary to also store the node pointer here for successful destruction
+  std::unique_ptr<ModeBase<ActionT>> mode_ptr_;
+  std::shared_ptr<ModeExecutor<ActionT>> mode_executor_ptr_;
+};
+
+// #####################################################################################################################
+// ################################              DEFINITIONS              ##############################################
+// #####################################################################################################################
 
 template <class ActionT>
 ModeExecutor<ActionT>::ModeExecutor(
@@ -318,22 +402,6 @@ uint8_t ModeExecutor<ActionT>::getModeID() const
 {
   return mode_id_;
 }
-
-template <class ActionT, class ModeT>
-class ModeExecutorFactory
-{
-public:
-  ModeExecutorFactory(
-    const std::string & action_name, const rclcpp::NodeOptions & options,
-    const std::string & topic_namespace_prefix = "", bool deactivate_before_completion = true);
-
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface();
-
-private:
-  rclcpp::Node::SharedPtr node_ptr_;  // It's necessary to also store the node pointer here for successful destruction
-  std::unique_ptr<ModeBase<ActionT>> mode_ptr_;
-  std::shared_ptr<ModeExecutor<ActionT>> mode_executor_ptr_;
-};
 
 template <class ActionT, class ModeT>
 ModeExecutorFactory<ActionT, ModeT>::ModeExecutorFactory(

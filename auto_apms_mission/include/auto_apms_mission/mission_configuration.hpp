@@ -42,6 +42,10 @@ struct convert<auto_apms_mission::MissionConfiguration>
 namespace auto_apms_mission
 {
 
+/**
+ * @ingroup auto_apms_mission
+ * @brief Configuration parameters for standard mission supported by AutoAPMS.
+ */
 struct MissionConfiguration
 {
   using TreeResourceIdentity = auto_apms_behavior_tree::core::TreeResourceIdentity;

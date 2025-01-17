@@ -20,8 +20,28 @@
 namespace auto_apms_behavior_tree
 {
 
+/**
+ * @brief Convert a ROS 2 parameter value to a `BT::Any` object.
+ *
+ * Since the type information of a parameter value is stored internally, it's possible to create the corresponding
+ * `BT::Any` object dynamically.
+ * @param val ROS 2 parameter value.
+ * @return Expected object for `BT::Any`. Holds an error message if the type of @p val couldn't be
+ * converted to a C++ type.
+ */
 BT::Expected<BT::Any> createAnyFromParameterValue(const rclcpp::ParameterValue & val);
 
+/**
+ * @brief Convert a `BT::Any` object to a ROS 2 parameter value.
+ *
+ * You may optionally specify the type of the parameter value to convert to using @p type. If you want to deduce the
+ * type from @p any, set this to `rclcpp::PARAMETER_NOT_SET`.
+ * @param any `BT::Any` object.
+ * @param type Desired type of the parameter value. Set to `rclcpp::PARAMETER_NOT_SET` if it is unkown (e.g. if the
+ * parameter hasn't been set before).
+ * @return Expected object for `rclcpp::ParameterValue`. Holds an error message if @p any couldn't be converted to @p
+ * type.
+ */
 BT::Expected<rclcpp::ParameterValue> createParameterValueFromAny(const BT::Any & any, rclcpp::ParameterType type);
 
 }  // namespace auto_apms_behavior_tree

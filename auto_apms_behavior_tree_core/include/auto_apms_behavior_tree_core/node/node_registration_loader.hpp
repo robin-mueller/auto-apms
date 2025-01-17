@@ -23,7 +23,7 @@ namespace auto_apms_behavior_tree::core
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief A pluginlib::ClassLoader specifically for loading installed behavior tree node plugins.
+ * @brief A `pluginlib::ClassLoader` specifically for loading installed behavior tree node plugins.
  */
 class NodeRegistrationLoader : public auto_apms_util::PluginClassLoader<NodeRegistrationInterface>
 {

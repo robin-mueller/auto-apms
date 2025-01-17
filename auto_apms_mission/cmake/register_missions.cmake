@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Register mission configuration file that will be discoverable using the identity <package_name>::<config_file_stem>
 macro(auto_apms_mission_register_missions)
 
     # Parse arguments

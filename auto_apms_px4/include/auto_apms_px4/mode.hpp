@@ -26,7 +26,14 @@ namespace auto_apms_px4
 {
 
 /**
- * @brief Class to model the mode referring to an external task.
+ * @ingroup auto_apms_px4
+ * @brief Generic template class for a custom PX4 mode.
+ *
+ * The workspace must define a ROS 2 action providing the corresponding goal, feedback and result message types.
+ *
+ * For the user to be able to execute custom PX4 modes that are created by inheriting from this class, a corresponding
+ * ModeExecutorFactory must be defined.
+ * @tparam ActionT Type of the ROS 2 action.
  */
 template <class ActionT>
 class ModeBase : public px4_ros2::ModeBase

@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
+#include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 
@@ -24,17 +24,99 @@
 #include "auto_apms_behavior_tree/builtin_nodes.hpp"
 #include "auto_apms_behavior_tree/util/node.hpp"
 
-// Include exceptions if derived build handlers need to throw an TreeBuildHandlerError
+// Include exceptions if derived build handlers need to throw a TreeBuildHandlerError
 #include "auto_apms_behavior_tree/exceptions.hpp"
 
 namespace auto_apms_behavior_tree
 {
 
 /**
- * @brief Inheriting classes must use the
- * [builder](https://refactoring.guru/design-patterns/builder/cpp/example#lang-features) API offered by
- * core::TreeBuilder inside the pure virtual method buildTree() to configure a behavior tree. Implementing various
- * TreeBuildHandler classes allows TreeExecutorNode to dynamically change the way how a tree is created.
+ * @ingroup auto_apms_behavior_tree
+ * @brief Base class for plugins that implement patterns for creating behavior trees using a standardized interface.
+ *
+ * Inheriting classes must implement TreeBuildHandler::setBuildRequest and TreeBuildHandler::buildTree. A tree build
+ * handler allows TreeExecutorNode to create a behavior tree at runtime when an execution request is received. The user
+ * may change the the way how a behavior tree is created by simply switching to the desired build handler
+ * implementation. For those implementations to be available at runtime, they must be registered using the CMake macro
+ * `auto_apms_behavior_tree_declare_build_handlers` in the CMakeLists.txt of the parent package.
+ *
+ * ## Usage
+ *
+ * Behavior tree build handler plugins are created like this:
+ *
+ * ```cpp
+ * // my_custom_build_handler.cpp
+ *
+ * #include "auto_apms_behavior_tree/build_handler.hpp"
+ *
+ * namespace my_namespace
+ * {
+ * class MyCustomBuildHandler : public TreeBuildHandler
+ * {
+ * public:
+ *   using TreeBuildHandler::TreeBuildHandler;
+ *
+ *   bool setBuildRequest(const std::string & build_request,
+ *                        const NodeManifest & node_manifest,
+ *                        const std::string & root_tree_name) override final
+ *   {
+ *     // Do something when a build request arrives
+ *     // ...
+ *
+ *     // Returning true means accepting the request, false means rejecting it
+ *     return true;
+ *   }
+ *
+ *   TreeDocument::TreeElement buildTree(TreeDocument & doc,
+ *                                       TreeBlackboard & bb) override final
+ *   {
+ *     // Configure the behavior tree
+ *     // ...
+ *
+ *     // The returned tree element will be used as the root tree by TreeExecutorNode. It must belong to doc
+ *     return doc.newTree("MyCustomTree");
+ *   }
+ * }
+ * }  // namespace my_namespace
+ *
+ * // Make sure the plugin class is discoverable
+ * AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(my_namespace::MyCustomBuildHandler)
+ * ```
+ *
+ * Given this implementation, the CMake macro `auto_apms_behavior_tree_declare_build_handlers` must be called in the
+ * CMakeLists.txt of the parent package like this:
+ *
+ * ```cmake
+ * find_package(ament_cmake REQUIRED)
+ * find_package(auto_apms_behavior_tree REQUIRED)
+ *
+ * # Create a shared library
+ * add_library(my_custom_build_handler_lib SHARED
+ *     "my_custom_build_handler.cpp"  # Add the source file
+ * )
+ * ament_target_dependencies(my_custom_build_handler_lib
+ *     auto_apms_behavior_tree  # The library must link against auto_apms_behavior_tree
+ * )
+ *
+ * # Add the plugin to this package's ament_index resources
+ * auto_apms_behavior_tree_declare_build_handlers(my_custom_build_handler_lib
+ *     "my_namespace::MyCustomBuildHandler"
+ * )
+ *
+ * # Make sure to install the shared library to the standard directory
+ * install(
+ *    TARGETS
+ *    my_custom_build_handler_lib
+ *    LIBRARY DESTINATION lib
+ *    ARCHIVE DESTINATION lib
+ *    RUNTIME DESTINATION bin
+ * )
+ * ```
+ *
+ * Once the parent package has been installed, the build handler plugin may be loaded using TreeBuildHandlerLoader. With
+ * a behavior tree executor node, the user may simply set its parameter called `build_handler` to
+ * "my_namespace::MyCustomBuildHandler" (the fully qualified class name). All build requests that the node receives from
+ * this point on are forwarded to this specific build handler implementation.
  */
 class TreeBuildHandler
 {
@@ -47,26 +129,86 @@ public:
   using NodeManifest = core::NodeManifest;
   using TreeResource = core::TreeResource;
   using TreeDocument = core::TreeDocument;
-  using TreeBuilder = core::TreeBuilder;
   using TreeBlackboard = auto_apms_behavior_tree::TreeBlackboard;
 
+  /**
+   * @brief Constructor allowing to give the build handler a specific name.
+   * @param name Name of the build handler.
+   * @param ros_node_ptr Shared pointer to the associated ROS 2 node.
+   * @param tree_node_loader_ptr  Shared pointer to an existing behavior tree node loader that the build handler may
+   * work with.
+   */
   TreeBuildHandler(
     const std::string & name, rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr);
 
+  /**
+   * @brief Constructor.
+   *
+   * This signature is used when creating an instance of this build handler.
+   *
+   * The build handler is given a generic name. To provide a user defined name, reimplement the constructor and
+   * delegate construction to the overload above. This may look something like this:
+   *
+   * ```cpp
+   * MyCustomBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
+   * : TreeBuildHandler("my_custom_name", ros_node_ptr, tree_node_loader_ptr)
+   * {
+   * }
+   * ```
+   * @param ros_node_ptr Shared pointer to the associated ROS 2 node.
+   * @param tree_node_loader_ptr  Shared pointer to an existing behavior tree node loader that the build handler may
+   * work with.
+   */
   TreeBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr);
 
   virtual ~TreeBuildHandler() = default;
 
+  /**
+   * @brief Specify the behavior tree build request encoded in a string.
+   *
+   * Additionally, an associated node manifest and a specific tree name for setting the root tree may be provided. When
+   * using TreeExecutorNode, all arguments are populated using the respective parameters of the incoming
+   * `StartTreeExecutor` action goal. It's up to the specific implementation, if and how they are interpreted.
+   *
+   * The intention with the boolean return value is to indicate whether the respective behavior tree is
+   * allowed to be built or not. Only if this returns `true`, TreeBuildHandler::buildTree is to be called afterwards.
+   * The user must stick to this design pattern and implement this function accordingly.
+   * @param build_request Request that specifies how to build the behavior tree encoded in a string.
+   * @param node_manifest Behavior tree node manifest that specifies which nodes to use and how to load them.
+   * @param root_tree_name Name of the requested root tree.
+   * @return `true` if the build handler accepts the request, `false` if it is rejected.
+   */
   virtual bool setBuildRequest(
     const std::string & build_request, const NodeManifest & node_manifest, const std::string & root_tree_name) = 0;
 
-  virtual TreeDocument::TreeElement buildTree(TreeBuilder & builder, TreeBlackboard & bb) = 0;
+  /**
+   * @brief Build the behavior tree specified before.
+   *
+   * Typically, the build handler stores the information received when TreeBuildHandler::setBuildRequest was called. As
+   * soon as this function is invoked, this information should be looked up and used to configure the corresponding
+   * behavior tree with @p doc. Optionally, initial values for the global blackboard may be set using @p bb.
+   * @param doc Reference to the behavior tree document that is used to instantiate the tree that is built by this
+   * function.
+   * @param bb Reference to the global blackboard that is used as a parent blackboard when instantiating the tree that
+   * is built by this function.
+   * @return Tree element representing one of the trees inside @p doc. It is used to determine the root tree.
+   */
+  virtual TreeDocument::TreeElement buildTree(TreeDocument & doc, TreeBlackboard & bb) = 0;
 
+  /**
+   * @brief Get a shared pointer to the parent `rclcpp::Node` of this build handler.
+   * @return Shared pointer of the associated ROS 2 node.
+   */
   rclcpp::Node::SharedPtr getRosNodePtr() const;
 
+  /**
+   * @brief Get a shared pointer to the class loader instance used for loading the required behavior tree nodes.
+   * @return Shared pointer of the associated behavior tree node loader.
+   */
   NodeLoader::SharedPtr getNodeLoaderPtr() const;
 
 protected:
+  /// ROS 2 logger initialized with the name of the build handler.
   const rclcpp::Logger logger_;
 
 private:

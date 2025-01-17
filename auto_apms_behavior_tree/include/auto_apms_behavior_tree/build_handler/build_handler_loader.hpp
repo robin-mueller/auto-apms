@@ -23,7 +23,7 @@ namespace auto_apms_behavior_tree
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief A pluginlib::ClassLoader specifically for loading installed behavior tree build handler plugins.
+ * @brief A `pluginlib::ClassLoader` specifically for loading installed behavior tree build handler plugins.
  */
 class TreeBuildHandlerLoader : public auto_apms_util::PluginClassLoader<TreeBuildHandlerFactoryInterface>
 {

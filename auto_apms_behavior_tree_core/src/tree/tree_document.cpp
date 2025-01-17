@@ -803,7 +803,7 @@ TreeDocument::TreeElement TreeDocument::newTreeFromResource(
 {
   TreeDocument new_doc(format_version_, tree_node_loader_ptr_);
   new_doc.mergeFile(resource.tree_file_path_);
-  if (resource.hasRootTree()) new_doc.setRootTreeName(resource.getRootTreeName());
+  if (resource.hasRootTreeName()) new_doc.setRootTreeName(resource.getRootTreeName());
   registerNodes(resource.getNodeManifest(), false);
   return newTreeFromDocument(new_doc, tree_name);
 }

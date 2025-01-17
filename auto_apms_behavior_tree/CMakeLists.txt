@@ -330,7 +330,6 @@ ament_export_dependencies(
     auto_apms_util
     auto_apms_interfaces
     auto_apms_behavior_tree_core
-    generate_parameter_library # Any parameter library targets depend on generate_parameter_library's dependencies
 )
 
 ###### Plugins ######

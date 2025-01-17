@@ -42,7 +42,8 @@ class NodeModelType;
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief This class offers a programmatic approach for building behavior trees and stores the data of all tree nodes.
+ * @brief This class offers a programmatic approach for building behavior trees and stores the registration data of all
+ * tree nodes.
  *
  * A single tree document may contain multiple behavior trees (represented by TreeElement). Each behavior tree may
  * contain an arbitrary amount of tree nodes (represented by NodeElement). There are various different types of nodes.
@@ -58,7 +59,8 @@ class NodeModelType;
  * behavior trees from one document to another, the user must explicitly invoke TreeDocument::mergeTreeDocument of
  * another document instance.
  *
- * The XML structure of a tree document looks similar to this:
+ * The XML schema of a tree document is defined [here](https://www.behaviortree.dev/docs/learn-the-basics/xml_format)
+ * and looks similar to this:
  *
  * ```xml
  * <root BTCPP_format="4" main_tree_to_execute="RootTree">
@@ -78,7 +80,7 @@ class NodeModelType;
  * The content of the document can be configured as desired using its member functions. For example like this:
  *
  *  ```cpp
- * #include <auto_apms_behavior_tree_core/tree/tree_document.hpp>
+ * #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
  *
  * // Bring the behavior tree API into scope.
  * using namespace auto_apms_behavior_tree;
@@ -102,8 +104,8 @@ class NodeModelType;
  * incorporating node models as template arguments:
  *
  * ```cpp
- * #include <auto_apms_behavior_tree_core/tree/tree_document.hpp>
- * #include <auto_apms_behavior_tree/builtin_nodes.hpp>  // This includes the node models
+ * #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
+ * #include "auto_apms_behavior_tree/builtin_nodes.hpp"  // This includes the node models
  *
  * // Bring the behavior tree API into scope.
  * using namespace auto_apms_behavior_tree;
@@ -239,7 +241,7 @@ public:
     bool operator!=(const NodeElement & other) const;
 
     /**
-     * @brief Insert a new node to the children of this node.
+     * @brief Add a new node to the children of this node.
      *
      * The given node can only be inserted if it's specified inside the internal node manifest (see also
      * TreeDocument::registerNodes).
@@ -255,7 +257,7 @@ public:
     NodeElement insertNode(const std::string & name, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Register a new node and insert it to the children of this node.
+     * @brief Register a new node and add it to the children of this node.
      *
      * This method automatically tries to register the node with the given @p registration_options.
      * @param name Registration name of the node to be inserted.
@@ -272,7 +274,7 @@ public:
       const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Register a new node and insert it to the children of this node.
+     * @brief Register a new node and add it to the children of this node.
      *
      * This method automatically queries the name and the registration options of the node using the model provided as a
      * template argument.
@@ -289,7 +291,7 @@ public:
       const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Insert a subtree node for a specific tree element to the children of this node.
+     * @brief Add a subtree node for a specific tree element to the children of this node.
      *
      * This method is a convenience overload for NodeElement::insertSubTreeNode enabled only for the subtree node model.
      * @tparam SubTreeT Subtree model type.
@@ -308,7 +310,7 @@ public:
       const std::string & tree_name, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Insert a subtree node for a specific tree element to the children of this node.
+     * @brief Add a subtree node for a specific tree element to the children of this node.
      *
      * The given tree referred to by @p tree will be copied to the document this node belongs to, if it doesn't exist
      * already.
@@ -330,7 +332,7 @@ public:
       const TreeElement & tree, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Insert a subtree node for a specific tree element to the children of this node.
+     * @brief Add a subtree node for a specific tree element to the children of this node.
      * @param tree_name Name of the tree which the subtree node should point to. The parent document must have a tree
      * element with that name.
      * @param before_this Pointer to an existing child node before which the new node will be placed. If `nullptr`,
@@ -344,7 +346,7 @@ public:
     model::SubTree insertSubTreeNode(const std::string & tree_name, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Insert a subtree node for a specific tree element to the children of this node.
+     * @brief Add a subtree node for a specific tree element to the children of this node.
      *
      * The given tree referred to by @p tree will be copied to the document this node belongs to, if it doesn't exist
      * already.
@@ -361,7 +363,7 @@ public:
     model::SubTree insertSubTreeNode(const TreeElement & tree, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate a tree and insert its first child node to the children of this node.
+     * @brief Concatenate a tree and add its first child node to the children of this node.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children of the inserted node are
      * preserved. Therefore, this method effectively concatenates @p tree and copies all its nodes to the tree this node
@@ -378,7 +380,7 @@ public:
     NodeElement insertTree(const TreeElement & tree, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate a tree from a document and insert its first child node to the children of this node.
+     * @brief Concatenate a tree from a document and add its first child node to the children of this node.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children of the inserted node are
      * preserved. Therefore, this method effectively concatenates another tree and copies all its nodes to the tree this
@@ -398,7 +400,7 @@ public:
       const TreeDocument & doc, const std::string & tree_name, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate the root tree of a document and insert its first child node to the children of this node.
+     * @brief Concatenate the root tree of a document and add its first child node to the children of this node.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children of the inserted node are
      * preserved. Therefore, this method effectively concatenates another tree and copies all its nodes to the tree this
@@ -418,7 +420,7 @@ public:
     NodeElement insertTreeFromDocument(const TreeDocument & doc, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate a tree from a document created from a string and insert its first child node to the children
+     * @brief Concatenate a tree from a document created from a string and add its first child node to the children
      * of this node.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children of the inserted node are
@@ -440,7 +442,7 @@ public:
       const std::string & tree_str, const std::string & tree_name, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate the root tree of a document created from a string and insert its first child node to the
+     * @brief Concatenate the root tree of a document created from a string and add its first child node to the
      * children of this node.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children of the inserted node are
@@ -461,7 +463,7 @@ public:
     NodeElement insertTreeFromString(const std::string & tree_str, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate a tree from a document created from a file and insert its first child node to the children of
+     * @brief Concatenate a tree from a document created from a file and add its first child node to the children of
      * this node.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children of the inserted node are
@@ -483,7 +485,7 @@ public:
       const std::string & path, const std::string & tree_name, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate the root tree of a document created from a file and insert its first child node to the
+     * @brief Concatenate the root tree of a document created from a file and add its first child node to the
      * children of this node.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children of the inserted node are
@@ -504,7 +506,7 @@ public:
     NodeElement insertTreeFromFile(const std::string & path, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate a tree from one of the installed package's behavior tree resources and insert its first child
+     * @brief Concatenate a tree from one of the installed package's behavior tree resources and add its first child
      * node to the children of this node.
      *
      * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_declare_trees` in the
@@ -533,7 +535,7 @@ public:
       const TreeResource & resource, const std::string & tree_name, const NodeElement * before_this = nullptr);
 
     /**
-     * @brief Concatenate the root tree of one of the installed package's behavior tree resources and insert its first
+     * @brief Concatenate the root tree of one of the installed package's behavior tree resources and add its first
      * child node to the children of this node.
      *
      * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_declare_trees` in the
