@@ -103,7 +103,7 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
 
   for (auto it = node.begin(); it != node.end(); ++it) {
     const std::string key = it->first.as<std::string>();
-    const Node & val = it->second;
+    const Node val = it->second;
 
     if (key == Config::YAML_KEY_BRINGUP) {
       if (val.IsNull()) continue;
@@ -133,7 +133,7 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
           "Value for key '" + key + "' must be a map but is type " + std::to_string(val.Type()) +
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
       }
-      for (auto it2 = val.begin(); it2 != val.end(); ++it2) {
+      for (YAML::const_iterator it2 = val.begin(); it2 != val.end(); ++it2) {
         const std::string monitor_id = it2->first.as<std::string>();
         if (!it2->second.IsScalar()) {
           throw auto_apms_util::exceptions::YAMLFormatError(
@@ -153,7 +153,7 @@ inline bool convert<auto_apms_mission::MissionConfiguration>::decode(const Node 
           "Value for key '" + key + "' must be a map but is type " + std::to_string(val.Type()) +
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
       }
-      for (auto it2 = val.begin(); it2 != val.end(); ++it2) {
+      for (YAML::const_iterator it2 = val.begin(); it2 != val.end(); ++it2) {
         const std::string monitor_id = it2->first.as<std::string>();
         if (!it2->second.IsScalar()) {
           throw auto_apms_util::exceptions::YAMLFormatError(

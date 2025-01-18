@@ -43,6 +43,9 @@ bool MissionBuildHandlerBase::setBuildRequest(
   } catch (const auto_apms_util::exceptions::ResourceError & e) {
     RCLCPP_WARN(logger_, "%s", e.what());
     return false;
+  } catch (const auto_apms_util::exceptions::YAMLFormatError & e) {
+    RCLCPP_WARN(logger_, "Invalid YAML format of mission configuration '%s': %s", build_request.c_str(), e.what());
+    return false;
   }
   if (!root_tree_name.empty()) {
     RCLCPP_WARN(logger_, "Argument root_tree_name is not empty. Custom root tree names are not allowed.");

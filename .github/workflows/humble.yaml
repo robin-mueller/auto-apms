@@ -1,4 +1,4 @@
-name: ROS 2 Humble Test
+name: ROS 2 Humble
 
 on:
   push:
