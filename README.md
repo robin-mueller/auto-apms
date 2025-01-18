@@ -24,6 +24,10 @@ Key features of the packages in this repository are
 
 All of these features reduce the amount of boilerplate code required for implementing functional robotic missions and make the complex software development process significantly easier, faster and less error prone. For more information and an extensive how-to guide, feel encouraged to visit the [user guide](https://robin-mueller.github.io/auto-apms-guide/intro).
 
+# Installation
+
+
+
 # API Reference
 
 The source code documentation is created using Doxygen >= 1.10 and deployed using GitHub pages. To generate the documentation run the following from the repository's root:

@@ -47,11 +47,12 @@ ament_python_install_package(
     VERSION "${PYROBOSIM_VERSION}"
 )
 install(PROGRAMS
-  "${PYROBOSIM_SOURCE_DIR}/pyrobosim_ros/examples/demo.py"
-  DESTINATION "lib/${PROJECT_NAME}"
+    "${PYROBOSIM_SOURCE_DIR}/pyrobosim_ros/examples/demo.py"
+    DESTINATION "lib/${PROJECT_NAME}"
 )
 rosidl_get_typesupport_target(pyrobosim_msgs_cpp_typesupport_target
-  "pyrobosim_msgs" rosidl_typesupport_cpp)
+    pyrobosim_msgs rosidl_typesupport_cpp
+)
 
 #
 # ------------ Library --------------
@@ -112,6 +113,7 @@ install(
 )
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
+    # Currently, the exported libraries have no external dependencies
 )
 
 ament_python_install_package(
@@ -131,4 +133,4 @@ install(PROGRAMS
     DESTINATION "lib/${PROJECT_NAME}"
 )
 
-ament_package()
+ament_package(CONFIG_EXTRAS "auto_apms_simulation-extras.cmake")

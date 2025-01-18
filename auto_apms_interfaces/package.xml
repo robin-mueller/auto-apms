@@ -6,6 +6,7 @@
     <description>Interfaces for the auto-apms repository</description>
     <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
     <license>Apache License 2.0</license>
+    <url>https://robin-mueller.github.io/auto-apms-guide/</url>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
     <buildtool_depend>rosidl_default_generators</buildtool_depend>

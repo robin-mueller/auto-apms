@@ -24,6 +24,7 @@
  */
 
 /**
+ * @ingroup auto_apms_mission
  * @brief Mission design utilities incorporating behavior trees to model the complexity of arbitrary operations.
  */
 namespace auto_apms_mission

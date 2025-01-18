@@ -6,6 +6,7 @@
   <description>AutoAPMS PX4 Autopilot integration</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
   <license>Apache License 2.0</license>
+  <url>https://robin-mueller.github.io/auto-apms-guide/</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>eigen3_cmake_module</buildtool_depend>

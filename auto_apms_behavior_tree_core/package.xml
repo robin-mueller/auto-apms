@@ -6,6 +6,7 @@
   <description>Core classes and CMake tools for auto_apms_behavior_tree</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
   <license>Apache License 2.0</license>
+  <url>https://robin-mueller.github.io/auto-apms-guide/</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

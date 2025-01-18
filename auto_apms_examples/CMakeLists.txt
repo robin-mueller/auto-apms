@@ -10,6 +10,10 @@ find_package(auto_apms_util REQUIRED)
 find_package(auto_apms_interfaces REQUIRED)
 find_package(auto_apms_behavior_tree REQUIRED)
 find_package(auto_apms_mission REQUIRED)
+find_package(auto_apms_simulation REQUIRED)
+
+# Optional packages
+find_package(auto_apms_px4 QUIET)
 
 #
 # ------------ Example Executables --------------
@@ -26,7 +30,7 @@ endmacro()
 add_and_install_example_executable("src/task_ex1.cpp" auto_apms_util auto_apms_interfaces)
 
 #
-# ------------ Example Behavior Trees --------------
+# ------------ Example Configurations --------------
 #
 
 auto_apms_behavior_tree_declare_trees(
@@ -36,33 +40,31 @@ auto_apms_behavior_tree_declare_trees(
     "auto_apms_behavior_tree::builtin_nodes"
     "auto_apms_simulation::sim_behavior_tree_nodes"
 )
-
-auto_apms_behavior_tree_declare_trees(
-    "config/behavior_tree/relative_goto/relative_goto.xml"
-    NODE_MANIFEST
-    "config/behavior_tree/relative_goto/node_plugins.yaml"
-)
-
-auto_apms_behavior_tree_declare_trees(
-    "config/behavior_tree/px4_contingency_mission/bringup.xml"
-    "config/behavior_tree/px4_contingency_mission/mission.xml"
-    "config/behavior_tree/px4_contingency_mission/shutdown.xml"
-    "config/behavior_tree/px4_contingency_mission/contingency/contingency_land.xml"
-    "config/behavior_tree/px4_contingency_mission/contingency/contingency_hold.xml"
-    "config/behavior_tree/px4_contingency_mission/emergency/emergency_rtl.xml"
-    NODE_MANIFEST
-    "auto_apms_behavior_tree::builtin_nodes"
-    "auto_apms_px4::px4_behavior_tree_nodes"
-)
-
-#
-# ------------ Example Missions --------------
-#
-
 auto_apms_mission_register_missions(
     "config/mission/pyrobosim_hogwarts_mission.yaml"
-    "config/mission/px4_contingency_mission.yaml"
 )
+
+if(auto_apms_px4_FOUND)
+    auto_apms_behavior_tree_declare_trees(
+        "config/behavior_tree/px4/relative_goto/px4_relative_goto.xml"
+        NODE_MANIFEST
+        "config/behavior_tree/px4/relative_goto/node_plugins.yaml"
+    )
+    auto_apms_behavior_tree_declare_trees(
+        "config/behavior_tree/px4/contingency_mission/bringup.xml"
+        "config/behavior_tree/px4/contingency_mission/mission.xml"
+        "config/behavior_tree/px4/contingency_mission/shutdown.xml"
+        "config/behavior_tree/px4/contingency_mission/contingency/contingency_land.xml"
+        "config/behavior_tree/px4/contingency_mission/contingency/contingency_hold.xml"
+        "config/behavior_tree/px4/contingency_mission/emergency/emergency_rtl.xml"
+        NODE_MANIFEST
+        "auto_apms_behavior_tree::builtin_nodes"
+        "auto_apms_px4::px4_behavior_tree_nodes"
+    )
+    auto_apms_mission_register_missions(
+        "config/mission/px4_contingency_mission.yaml"
+    )
+endif()
 
 #
 # ------------ Composite examples launch files --------------
