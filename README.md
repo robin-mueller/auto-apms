@@ -77,6 +77,8 @@ ros2 launch auto_apms_examples pyrobosim_hogwarts_launch.py mission:=true
 
 The robots dynamically decide to retreat and wait until the hallway they are about to cross is not occupied by another one. They basically monitor if a certain event occurs and initialize a certain sequence of action if applicable. Hence, this introduces automatically managed reactive behaviors.
 
+https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
+
 # 📖 Documentation
 
 Make sure to visit the [User Guide](https://robin-mueller.github.io/auto-apms-guide/intro/) for tutorials and best practices when writing software using AutoAPMS.
