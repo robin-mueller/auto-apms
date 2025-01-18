@@ -1,0 +1,46 @@
+name: ROS 2 Humble Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    container:
+      image: ros:humble-ros-base-jammy
+    steps:
+      - name: Setup ROS
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build and Test
+        id: ros-build
+        uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          package-name: auto_apms_util auto_apms_behavior_tree_core auto_apms_behavior_tree auto_apms_px4 auto_apms_mission auto_apms_simulation
+          import-token: ${{ secrets.GITHUB_TOKEN }}
+          target-ros2-distro: humble
+          vcs-repo-file-url: ${GITHUB_WORKSPACE}/dependencies.repos
+          no-symlink-install: true
+          colcon-defaults: |
+            {
+              "test": {
+                "ctest-args": [
+                  "-R", "auto_apms_\\S*_unit_tests"
+                ]
+              }
+            }
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: colcon-logs
+          path: ${{ steps.ros-build.outputs.ros-workspace-directory-name }}/log
+        if: always() # upload the logs even when the build fails
