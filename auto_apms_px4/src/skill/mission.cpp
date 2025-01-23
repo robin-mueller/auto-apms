@@ -12,29 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_interfaces/action/takeoff.hpp"
+#include "auto_apms_interfaces/action/mission.hpp"
 
 #include "auto_apms_px4/mode_executor.hpp"
 
 namespace auto_apms_px4
 {
 
-class TakeoffTask : public ModeExecutor<auto_apms_interfaces::action::Takeoff>
+class MissionSkill : public ModeExecutor<auto_apms_interfaces::action::Mission>
 {
 public:
-  explicit TakeoffTask(const rclcpp::NodeOptions & options)
-  : ModeExecutor(_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME, options, FlightMode::Takeoff)
+  explicit MissionSkill(const rclcpp::NodeOptions & options)
+  : ModeExecutor{_AUTO_APMS_PX4__MISSION_ACTION_NAME, options, FlightMode::Mission}
   {
   }
 
 private:
-  bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr) override final
+  bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr) final
   {
-    return client.takeoff(goal_ptr->altitude_amsl_m, goal_ptr->heading_rad);
+    if (goal_ptr->do_restart) {
+      return client.startMission();
+    }
+    return client.syncActivateFlightMode(FlightMode::Mission);
   }
 };
 
 }  // namespace auto_apms_px4
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::TakeoffTask)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::MissionSkill)

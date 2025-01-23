@@ -94,10 +94,10 @@ private:
   }
 };
 
-class GoToTask : public ModeExecutorFactory<GoToActionType, GoToMode>
+class GoToSkill : public ModeExecutorFactory<GoToActionType, GoToMode>
 {
 public:
-  explicit GoToTask(const rclcpp::NodeOptions & options)
+  explicit GoToSkill(const rclcpp::NodeOptions & options)
   : ModeExecutorFactory{_AUTO_APMS_PX4__GOTO_ACTION_NAME, options}
   {
   }
@@ -106,4 +106,4 @@ public:
 }  // namespace auto_apms_px4
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::GoToTask)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::GoToSkill)

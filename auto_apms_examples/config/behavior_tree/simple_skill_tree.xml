@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="SimpleSkillDemo">
+  <BehaviorTree ID="SimpleSkillDemo">
+    <Sequence>
+      <ForceSuccess>
+        <HasParameter parameter="bb.msg"
+                      node=""
+                      _onSuccess="msg := @msg"
+                      _onFailure="msg := &apos;No blackboard parameter&apos;"/>
+      </ForceSuccess>
+      <ForceSuccess>
+        <HasParameter parameter="bb.n_times"
+                      node=""
+                      _onSuccess="n_times := @n_times"
+                      _onFailure="n_times := 1"/>
+      </ForceSuccess>
+      <SimpleSkillActionNode n_times="{n_times}"
+                             msg="{msg}"/>
+      <SimpleSkillActionNode n_times="1"
+                             msg="Last message"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="HasParameter">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter.</input_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+    </Action>
+    <Action ID="SimpleSkillActionNode">
+      <input_port name="n_times"
+                  type="unsigned char"/>
+      <input_port name="msg"
+                  type="std::string"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>

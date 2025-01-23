@@ -86,7 +86,7 @@ int main(int argc, char ** argv)
      * pluginlib::ClassLoader constructor initially checks wether the package containing the base class is installed.
      * Therefore we MUST avoid triggering this script during build time of auto_apms_behavior_tree_core (Theoretically
      * we could use this script in auto_apms_behavior_tree_core if we only used locally built node plugins, but all
-     * builtin nodes are located in auto_apms_behavior_tree).
+     * standard nodes are located in auto_apms_behavior_tree).
      */
 
     using Loader = auto_apms_util::PluginClassLoader<core::NodeRegistrationInterface>;

@@ -16,8 +16,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "auto_apms_behavior_tree/builtin_nodes.hpp"
 #include "auto_apms_behavior_tree/executor/executor_base.hpp"
+#include "auto_apms_behavior_tree/standard_nodes.hpp"
 #include "auto_apms_behavior_tree/util/node.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_util/filesystem.hpp"
@@ -30,8 +30,13 @@ using namespace auto_apms_behavior_tree;
 
 int main(int argc, char ** argv)
 {
-  if (argc < 2) {
-    std::cerr << "new_tree: Missing inputs! The program requires: \n\t1.) The path of the new behavior tree xml "
+  bool print_help = false;
+  if (argc > 1) {
+    const std::string arg(argv[1]);
+    print_help = "-h" == arg || "--help" == arg;
+  }
+  if (print_help || argc < 2) {
+    std::cerr << "new_tree: The program accepts: \n\t1.) The path of the new behavior tree xml "
                  "file.\n\t2.) Optional: Node plugin manifest identities of installed resources used to create the "
                  "node model. Any arguments after the first one are interpreted as resource identities.\n";
     std::cerr << "Usage: new_tree <tree_file_path> [<node_manifest_identity> ...].\n";

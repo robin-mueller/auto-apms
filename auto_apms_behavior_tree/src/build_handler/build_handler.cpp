@@ -32,6 +32,12 @@ TreeBuildHandler::TreeBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoa
 {
 }
 
+bool TreeBuildHandler::setBuildRequest(
+  const std::string & /*build_request*/, const NodeManifest & /*node_manifest*/, const std::string & /*root_tree_name*/)
+{
+  return true;
+}
+
 rclcpp::Node::SharedPtr TreeBuildHandler::getRosNodePtr() const
 {
   if (ros_node_wptr_.expired()) {

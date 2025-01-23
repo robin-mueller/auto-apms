@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_behavior_tree/builtin_nodes.hpp"
+#include "auto_apms_behavior_tree/standard_nodes.hpp"
 #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 #include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"
 

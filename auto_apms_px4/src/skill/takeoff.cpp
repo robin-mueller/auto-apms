@@ -12,32 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_interfaces/action/enable_hold.hpp"
+#include "auto_apms_interfaces/action/takeoff.hpp"
 
 #include "auto_apms_px4/mode_executor.hpp"
 
 namespace auto_apms_px4
 {
 
-class EnableHoldTask : public ModeExecutor<auto_apms_interfaces::action::EnableHold>
+class TakeoffSkill : public ModeExecutor<auto_apms_interfaces::action::Takeoff>
 {
 public:
-  explicit EnableHoldTask(const rclcpp::NodeOptions & options)
-  : ModeExecutor{_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME, options, FlightMode::Hold, false}
+  explicit TakeoffSkill(const rclcpp::NodeOptions & options)
+  : ModeExecutor(_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME, options, FlightMode::Takeoff)
   {
   }
 
 private:
-  bool isCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus & vehicle_status) final
+  bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr) override final
   {
-    (void)goal_ptr;
-    (void)vehicle_status;
-    // For HOLD mode there is no completion signal. Once activated it is considered complete.
-    return true;
+    return client.takeoff(goal_ptr->altitude_amsl_m, goal_ptr->heading_rad);
   }
 };
 
 }  // namespace auto_apms_px4
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::EnableHoldTask)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::TakeoffSkill)

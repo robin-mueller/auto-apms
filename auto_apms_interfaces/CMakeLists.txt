@@ -13,6 +13,10 @@ set(TEST_SOURCES
     "action/TestActionWrapper.action"
 )
 
+set(EXAMPLE_SOURCES
+    "action/ExampleSimpleSkill.action"
+)
+
 set(MESSAGE_SOURCES
 )
 set(SERVICE_SOURCES
@@ -29,7 +33,9 @@ set(ACTION_SOURCES
     "action/CommandTreeExecutor.action"
 )
 
-rosidl_generate_interfaces(${PROJECT_NAME} ${TEST_SOURCES} ${ACTION_SOURCES} ${SERVICE_SOURCES} ${MESSAGE_SOURCES}
-    DEPENDENCIES geometry_msgs)
+rosidl_generate_interfaces(${PROJECT_NAME}
+    ${TEST_SOURCES} ${EXAMPLE_SOURCES} ${ACTION_SOURCES} ${SERVICE_SOURCES} ${MESSAGE_SOURCES}
+    DEPENDENCIES geometry_msgs
+)
 
 ament_package()

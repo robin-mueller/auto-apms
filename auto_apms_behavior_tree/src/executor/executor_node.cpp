@@ -23,6 +23,7 @@
 #include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_util/container.hpp"
 #include "auto_apms_util/string.hpp"
+#include "pluginlib/exceptions.hpp"
 #include "rclcpp/utilities.hpp"
 
 namespace auto_apms_behavior_tree
@@ -133,6 +134,16 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
     initial_params.build_handler_exclude_packages.begin(), initial_params.build_handler_exclude_packages.end()));
 
   // Instantiate behavior tree build handler
+  if (
+    initial_params.build_handler != PARAM_VALUE_NO_BUILD_HANDLER &&
+    !build_handler_loader_ptr_->isClassAvailable(initial_params.build_handler)) {
+    throw exceptions::TreeExecutorError(
+      "Cannot load build handler '" + initial_params.build_handler +
+      "' because no corresponding ament_index resource was found. Make sure that you spelled the build handler's "
+      "name correctly "
+      "and registered it by calling auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of the "
+      "corresponding package.");
+  }
   loadBuildHandler(initial_params.build_handler);
 
   // Collect scripting enum and blackboard parameters from initial parameters
@@ -331,12 +342,15 @@ void TreeExecutorNode::loadBuildHandler(const std::string & name)
     try {
       build_handler_ptr_ =
         build_handler_loader_ptr_->createUniqueInstance(name)->makeUnique(node_ptr_, tree_node_loader_ptr_);
-    } catch (const std::exception & e) {
-      throw exceptions::TreeBuildError(
+    } catch (const pluginlib::CreateClassException & e) {
+      throw exceptions::TreeExecutorError(
         "An error occurred when trying to create an instance of tree build handler class '" + name +
-        "'. Remember that the AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER macro must be "
-        "called in the source file for the class to be discoverable. Error message: " +
+        "'. This might be because you forgot to call the AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER macro "
+        "in the source file: " +
         e.what());
+    } catch (const std::exception & e) {
+      throw exceptions::TreeExecutorError(
+        "An error occurred when trying to create an instance of tree build handler class '" + name + "': " + e.what());
     }
   }
   current_build_handler_name_ = name;
@@ -459,16 +473,17 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
       const std::string class_name = p.as_string();
       if (class_name != PARAM_VALUE_NO_BUILD_HANDLER && !build_handler_loader_ptr_->isClassAvailable(class_name)) {
         return create_rejected(
-          "There is no tree build handler class named '" + class_name +
-          "'. Make sure that it's spelled correctly and registered by calling "
-          "auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of the "
+          "Cannot load build handler '" + class_name +
+          "' because no corresponding ament_index resource was found. Make sure that you spelled the build handler's "
+          "name correctly "
+          "and registered it by calling auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of the "
           "corresponding package");
       }
     }
 
     // At this point, if the parameter hasn't been declared, we do not support it.
     if (!node_ptr_->has_parameter(param_name)) {
-      return create_rejected("Not one of the supported parameter names");
+      return create_rejected("Parameter '" + param_name + "' is not supported");
     }
   }
 

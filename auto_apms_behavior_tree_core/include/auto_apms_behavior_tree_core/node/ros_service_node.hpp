@@ -68,6 +68,7 @@ inline const char * toStr(const ServiceNodeErrorCode & err)
  * It is possible to customize which port is used to determine the service name and also extend the input's value
  * with a prefix or suffix. This is achieved by including the special pattern `(input:<port_name>)` in
  * NodeRegistrationOptions::port and replacing `<port_name>` with the desired input port name.
+ *
  * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a client
  * for the service "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing the string
  * "foo" to the port with name `my_port`.
@@ -147,15 +148,19 @@ public:
    * @brief Set the request to be sent to the ROS 2 service.
    *
    * The node may deny to query a service call by returning `false`. Otherwise, this method should return `true`.
+   *
+   * By default, this callback returns `true`.
    * @param request Request message.
-   * @return `false` if the request should not be sent. In that case, onFailure(INVALID_REQUEST) will be called.
+   * @return `false` if the request should not be sent. In that case, `onFailure(INVALID_REQUEST)` will be called.
    */
   virtual bool setRequest(typename Request::SharedPtr & request);
 
   /**
    * @brief Callback invoked after the service response was received.
    *
-   * Based on the response, the node may return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE.
+   * Based on the response, the node may return `BT::NodeStatus::SUCCESS` or `BT::NodeStatus::FAILURE`.
+   *
+   * By default, this callback always returns `BT::NodeStatus::SUCCESS`.
    * @param response Response message.
    * @return Final return status of the node.
    */
@@ -164,7 +169,9 @@ public:
   /**
    * @brief Callback invoked when one of the errors in ServiceNodeErrorCode occur.
    *
-   * Based on the error code, the node may return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE.
+   * Based on the error code, the node may return `BT::NodeStatus::SUCCESS` or `BT::NodeStatus::FAILURE`.
+   *
+   * By default, this callback throws `auto_apms_behavior_tree::exceptions::RosNodeError` and interrupts the tree.
    * @param error Code for the error that has occurred.
    * @return Final return status of the node.
    */
@@ -194,7 +201,6 @@ private:
 
   static std::mutex & getMutex();
 
-  // contains the fully-qualified name of the node and the name of the client
   static ClientsRegistry & getRegistry();
 
 private:

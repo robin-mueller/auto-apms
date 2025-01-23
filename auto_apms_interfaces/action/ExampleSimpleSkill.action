@@ -1,0 +1,8 @@
+# Request
+string msg
+uint8 n_times 1
+---
+# Result
+float64 time_required
+---
+# Feedback

@@ -21,7 +21,7 @@
 namespace auto_apms_px4
 {
 
-class ArmDisarmTask : public auto_apms_util::ActionWrapper<auto_apms_interfaces::action::ArmDisarm>
+class ArmDisarmSkill : public auto_apms_util::ActionWrapper<auto_apms_interfaces::action::ArmDisarm>
 {
   enum State
   {
@@ -39,7 +39,7 @@ class ArmDisarmTask : public auto_apms_util::ActionWrapper<auto_apms_interfaces:
   const VehicleCommandClient vehicle_command_client_;
 
 public:
-  explicit ArmDisarmTask(const rclcpp::NodeOptions & options)
+  explicit ArmDisarmSkill(const rclcpp::NodeOptions & options)
   : ActionWrapper{_AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME, options}, vehicle_command_client_{*this->node_ptr_}
   {
     vehicle_status_sub_ptr_ = this->node_ptr_->create_subscription<px4_msgs::msg::VehicleStatus>(
@@ -119,4 +119,4 @@ private:
 }  // namespace auto_apms_px4
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::ArmDisarmTask)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::ArmDisarmSkill)

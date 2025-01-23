@@ -37,14 +37,14 @@
         },
         // Behavior tree related tasks
         {
-            "label": "New Behavior Tree file",
-            "detail": "Write a generic and empty behavior tree to the opened .xml file",
+            "label": "Write empty behavior tree",
+            "detail": "Write the basic XML of an empty behavior tree to the current opened .xml file",
             "type": "shell",
             "command": "ros2 run auto_apms_behavior_tree new_tree ${file} ${input:nodeManifestResourceIdentity}",
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Run Behavior Tree",
+            "label": "Run behavior tree",
             "detail": "Run an installed behavior tree",
             "type": "shell",
             "command": "ros2 run auto_apms_behavior_tree run_tree ${input:treeResourceIdentity}",

@@ -27,13 +27,19 @@ using namespace auto_apms_behavior_tree;
 
 int main(int argc, char ** argv)
 {
-  if (argc < 2) {
-    std::cerr << "run_tree: Missing inputs! The program requires: \n\t1.) Single string specifying the behavior tree "
-                 "build request to be passed to the tree executor's build handler.\n";
-    std::cerr << "Usage: run_tree <build_request>\n";
+  bool print_help = false;
+  std::string build_request = "";
+  if (argc > 1) {
+    const std::string arg(argv[1]);
+    print_help = "-h" == arg || "--help" == arg;
+    if (!print_help) build_request = auto_apms_util::trimWhitespaces(arg);
+  }
+  if (print_help) {
+    std::cerr << "run_tree: The program accepts: \n\t1.) Optional: Single string specifying the behavior tree "
+                 "build request to be passed to the build handler loaded by the underlying tree executor node.\n";
+    std::cerr << "Usage: run_tree [<build_request>]\n";
     return EXIT_FAILURE;
   }
-  const std::string build_request(auto_apms_util::trimWhitespaces(argv[1]));
 
   // Ensure that rclcpp is not shut down before the tree has been halted (on destruction) and all pending actions have
   // been successfully canceled

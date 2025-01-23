@@ -12,31 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_interfaces/action/rtl.hpp"
+#include "auto_apms_interfaces/action/enable_hold.hpp"
 
 #include "auto_apms_px4/mode_executor.hpp"
 
 namespace auto_apms_px4
 {
 
-class RTLTask : public ModeExecutor<auto_apms_interfaces::action::RTL>
+class EnableHoldSkill : public ModeExecutor<auto_apms_interfaces::action::EnableHold>
 {
 public:
-  explicit RTLTask(const rclcpp::NodeOptions & options)
-  : ModeExecutor{_AUTO_APMS_PX4__RTL_ACTION_NAME, options, FlightMode::RTL}
+  explicit EnableHoldSkill(const rclcpp::NodeOptions & options)
+  : ModeExecutor{_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME, options, FlightMode::Hold, false}
   {
   }
 
 private:
-  // PX4 seems to not always give a completed signal for RTL, so check for disarmed as a fallback completed state
-  bool isCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus & vehicle_status)
+  bool isCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus & vehicle_status) final
   {
-    return ModeExecutor::isCompleted(goal_ptr, vehicle_status) ||
-           vehicle_status.arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_DISARMED;
+    (void)goal_ptr;
+    (void)vehicle_status;
+    // For HOLD mode there is no completion signal. Once activated it is considered complete.
+    return true;
   }
 };
 
 }  // namespace auto_apms_px4
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::RTLTask)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::EnableHoldSkill)

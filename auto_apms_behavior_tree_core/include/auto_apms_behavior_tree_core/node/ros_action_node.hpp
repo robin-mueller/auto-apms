@@ -74,6 +74,7 @@ inline const char * toStr(const ActionNodeErrorCode & err)
  * It is possible to customize which port is used to determine the action name and also extend the input's value
  * with a prefix or suffix. This is achieved by including the special pattern `(input:<port_name>)` in
  * NodeRegistrationOptions::port and replacing `<port_name>` with the desired input port name.
+ *
  * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a client
  * for the action "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing the string
  * "foo" to the port with name `my_port`.
@@ -124,7 +125,7 @@ public:
    * Derived nodes are automatically created by TreeBuilder::instantiate when included inside a node manifest
    * associated with the behavior tree resource.
    * @param instance_name Name given to this specific node instance.
-   * @param config Structure of internal data determined at runtime by BT::BehaviorTreeFactory.
+   * @param config Structure of internal data determined at runtime by `BT::BehaviorTreeFactory`.
    * @param context Additional parameters specific to ROS 2 determined at runtime by TreeBuilder.
    */
   explicit RosActionNode(const std::string & instance_name, const Config & config, Context context);
@@ -155,6 +156,8 @@ public:
    * @brief Callback invoked when the node is halted by the behavior tree.
    *
    * Afterwards, the ROS 2 action will be cancelled.
+   *
+   * By default, this callback does nothing.
    */
   virtual void onHalt();
 
@@ -162,6 +165,8 @@ public:
    * @brief Set the goal message to be sent to the ROS 2 action.
    *
    * The node may deny to send a goal by returning `false`. Otherwise, this method should return `true`.
+   *
+   * By default, this callback always returns `true`.
    * @param goal Reference to the goal message.
    * @return `false` if the request should not be sent. In that case, onFailure(INVALID_GOAL) will be called.
    */
@@ -170,7 +175,10 @@ public:
   /**
    * @brief Callback invoked after the result that is sent by the action server when the goal terminated was received.
    *
-   * Based on the result message, the node may return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE.
+   * Based on the result message, the node may return `BT::NodeStatus::SUCCESS` or `BT::NodeStatus::FAILURE`.
+   *
+   * By default, this callback returns `BT::NodeStatus::SUCCESS` if the action finished or was canceled successfully.
+   * Otherwise it returns `BT::NodeStatus::FAILURE`.
    * @param result Reference to the result message.
    * @return Final return status of the node.
    */
@@ -179,8 +187,10 @@ public:
   /**
    * @brief Callback invoked after action feedback was received.
    *
-   * The node may cancel the current action by returning BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE. Otherwise,
-   * this should return BT::NodeStatus::RUNNING to indicate that the action should continue.
+   * The node may cancel the current action by returning `BT::NodeStatus::SUCCESS` or `BT::NodeStatus::FAILURE`.
+   * Otherwise, this should return `BT::NodeStatus::RUNNING` to indicate that the action should continue.
+   *
+   * By default, this callback always returns `BT::NodeStatus::RUNNING`.
    * @param feedback Received feedback message.
    * @return Final return status of the node.
    */
@@ -189,7 +199,9 @@ public:
   /**
    * @brief Callback invoked when one of the errors in ActionNodeErrorCode occur.
    *
-   * Based on the error code, the node may return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE.
+   * Based on the error code, the node may return `BT::NodeStatus::SUCCESS` or `BT::NodeStatus::FAILURE`.
+   *
+   * By default, this callback throws `auto_apms_behavior_tree::exceptions::RosNodeError` and interrupts the tree.
    * @param error Code for the error that has occurred.
    * @return Final return status of the node.
    */

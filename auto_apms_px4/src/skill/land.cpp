@@ -20,10 +20,10 @@
 namespace auto_apms_px4
 {
 
-class LandTask : public ModeExecutor<auto_apms_interfaces::action::Land>
+class LandSkill : public ModeExecutor<auto_apms_interfaces::action::Land>
 {
 public:
-  explicit LandTask(const rclcpp::NodeOptions & options)
+  explicit LandSkill(const rclcpp::NodeOptions & options)
   : ModeExecutor(_AUTO_APMS_PX4__LAND_ACTION_NAME, options, FlightMode::Land)
   {
     px4_ros2::Context context(*node_ptr_, "");
@@ -50,4 +50,4 @@ private:
 }  // namespace auto_apms_px4
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::LandTask)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::LandSkill)

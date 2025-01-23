@@ -30,10 +30,11 @@
 # :type ARGN: list of strings
 # :param NODE_MANIFEST: Path or identifier of the node manifest YAML file.
 # :type NODE_MANIFEST: string
-# :param MODEL_HEADER_TARGET: If specified, generate a C++ header that
-#   defines model classes for all behavior tree nodes given in ARGN and
-#   add it to the includes of this shared library target.
-# :type MODEL_HEADER_TARGET: string
+# :param NODE_MODEL_HEADER_TARGET: Name of a shared library target. If specified,
+#   generate a C++ header that defines model classes for all behavior tree
+#   nodes specified inside the node manifest files provided under NODE_MANIFEST and
+#   add it to the includes of the given target.
+# :type NODE_MODEL_HEADER_TARGET: string
 #
 # @public
 #
@@ -41,7 +42,7 @@ macro(auto_apms_behavior_tree_declare_nodes target)
 
     # Parse arguments
     set(options "")
-    set(oneValueArgs MODEL_HEADER_TARGET)
+    set(oneValueArgs NODE_MODEL_HEADER_TARGET)
     set(multiValueArgs NODE_MANIFEST)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -59,8 +60,14 @@ macro(auto_apms_behavior_tree_declare_nodes target)
     endforeach()
 
     # Automatically create node metadata if any manifest files are provided
-    if(NOT "${ARGS_NODE_MANIFEST}" STREQUAL "")
-        auto_apms_behavior_tree_generate_node_metadata("${target}" ${ARGS_NODE_MANIFEST} MODEL_HEADER_TARGET "${ARGS_MODEL_HEADER_TARGET}")
+    if("${ARGS_NODE_MANIFEST}" STREQUAL "")
+        if(NOT "${ARGS_NODE_MODEL_HEADER_TARGET}" STREQUAL "")
+            message(WARNING
+                "Argument NODE_MODEL_HEADER_TARGET requires that you also specify NODE_MANIFEST. Unless you don't specify both arguments, NODE_MODEL_HEADER_TARGET will be ignored."
+            )
+        endif()
+    else()
+        auto_apms_behavior_tree_generate_node_metadata("${target}" ${ARGS_NODE_MANIFEST} NODE_MODEL_HEADER_TARGET "${ARGS_NODE_MODEL_HEADER_TARGET}")
     endif()
 
 endmacro()

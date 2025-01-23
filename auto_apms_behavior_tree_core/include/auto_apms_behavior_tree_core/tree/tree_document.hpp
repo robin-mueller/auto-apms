@@ -47,7 +47,9 @@ class NodeModelType;
  *
  * A single tree document may contain multiple behavior trees (represented by TreeElement). Each behavior tree may
  * contain an arbitrary amount of tree nodes (represented by NodeElement). There are various different types of nodes.
- * For each builtin node, there is a model available under the `auto_apms_behavior_tree::model` namespace. Refer to the
+ * For each one of the [standard
+ * nodes](https://robin-mueller.github.io/auto-apms-guide/usage/creating-behaviors/implement-nodes#standard-nodes-reference),
+ * there is a model available under the `auto_apms_behavior_tree::model` namespace. Refer to the
  * [BehaviorTree.CPP](https://www.behaviortree.dev/docs/learn-the-basics/BT_basics) website for more infos on the basic
  * concepts of behavior trees used in this implementation.
  *
@@ -105,7 +107,7 @@ class NodeModelType;
  *
  * ```cpp
  * #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
- * #include "auto_apms_behavior_tree/builtin_nodes.hpp"  // This includes the node models
+ * #include "auto_apms_behavior_tree/standard_nodes.hpp"  // This includes the node models
  *
  * // Bring the behavior tree API into scope.
  * using namespace auto_apms_behavior_tree;

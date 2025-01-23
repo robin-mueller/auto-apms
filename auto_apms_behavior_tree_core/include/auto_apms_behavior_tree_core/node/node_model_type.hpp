@@ -132,8 +132,8 @@ public:
  * @brief Models for all available behavior tree nodes.
  *
  * Behavior tree node models are generated under the namespace `my_package_name::model` when specifying the
- * `MODEL_HEADER_TARGET` argument of the CMake macro `auto_apms_behavior_tree_declare_nodes` in the CMakeLists.txt of a
- * package with name `my_package_name`.
+ * `NODE_MODEL_HEADER_TARGET` argument of the CMake macro `auto_apms_behavior_tree_declare_nodes` in the CMakeLists.txt
+ * of a package with name `my_package_name`.
  *
  * ## Usage
  *
@@ -141,7 +141,7 @@ public:
  * ```cmake
  * auto_apms_behavior_tree_declare_nodes(node_library_target
  *     ... # Fully qualified class names of the node plugins
- *     MODEL_HEADER_TARGET model_header_target
+ *     NODE_MODEL_HEADER_TARGET model_header_target
  * )
  * ```
  * After building the package, there is a header file named `node_library_target.hpp` which may be included by the C++

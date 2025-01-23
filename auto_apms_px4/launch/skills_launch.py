@@ -16,14 +16,14 @@ from launch import LaunchDescription
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
-ALL_TASK_NAMES = [
-    "auto_apms_px4::ArmDisarmTask",
-    "auto_apms_px4::EnableHoldTask",
-    "auto_apms_px4::GoToTask",
-    "auto_apms_px4::LandTask",
-    "auto_apms_px4::TakeoffTask",
-    "auto_apms_px4::RTLTask",
-    "auto_apms_px4::MissionTask",
+ALL_SKILL_NAMES = [
+    "auto_apms_px4::ArmDisarmSkill",
+    "auto_apms_px4::EnableHoldSkill",
+    "auto_apms_px4::GoToSkill",
+    "auto_apms_px4::LandSkill",
+    "auto_apms_px4::TakeoffSkill",
+    "auto_apms_px4::RTLSkill",
+    "auto_apms_px4::MissionSkill",
 ]
 
 
@@ -31,13 +31,13 @@ def generate_launch_description():
     return LaunchDescription(
         [
             ComposableNodeContainer(
-                name="task_container_node",
+                name="skill_container_node",
                 namespace="",
-                exec_name="task_container",
+                exec_name="skill_container",
                 package="rclcpp_components",
                 executable="component_container",
                 composable_node_descriptions=[
-                    ComposableNode(package="auto_apms_px4", plugin=name) for name in ALL_TASK_NAMES
+                    ComposableNode(package="auto_apms_px4", plugin=name) for name in ALL_SKILL_NAMES
                 ],
                 output="screen",
                 emulate_tty=True,

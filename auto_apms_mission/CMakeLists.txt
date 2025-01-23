@@ -85,7 +85,7 @@ auto_apms_behavior_tree_declare_build_handlers(mission_builder
 auto_apms_behavior_tree_declare_trees(
     "config/orchestrator_base.xml"
     NODE_MANIFEST
-    "auto_apms_behavior_tree::builtin_nodes"
+    "auto_apms_behavior_tree::standard_nodes"
 )
 
 #

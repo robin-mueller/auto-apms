@@ -44,6 +44,7 @@ namespace auto_apms_behavior_tree::core
  * It is possible to customize which port is used to determine the topic name and also extend the input's value
  * with a prefix or suffix. This is achieved by including the special pattern `(input:<port_name>)` in
  * NodeRegistrationOptions::port and replacing `<port_name>` with the desired input port name.
+ *
  * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a client
  * for the topic "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing the string
  * "foo" to the port with name `my_port`.

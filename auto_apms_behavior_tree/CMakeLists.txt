@@ -179,10 +179,10 @@ rclcpp_components_register_nodes(executor_node_components
 )
 
 #
-# ------------ Builtin Behavior Tree Node Plugins --------------
+# ------------ Standard Behavior Tree Nodes --------------
 #
 
-add_library(builtin_nodes SHARED
+add_library(standard_nodes SHARED
     "src/node/logger.cpp"
     "src/node/throw_exception.cpp"
     "src/node/start_executor.cpp"
@@ -193,18 +193,18 @@ add_library(builtin_nodes SHARED
 
     "src/util/parameter.cpp"
 )
-# Make parameter util available for builtin nodes too, but don't include anything that's not also been added to the sources
-target_include_directories(builtin_nodes PRIVATE
+# Make parameter util available for standard nodes too, but don't include anything that's not also been added to the sources
+target_include_directories(standard_nodes PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(builtin_nodes
+ament_target_dependencies(standard_nodes
     rclcpp
     rcl_interfaces
     auto_apms_interfaces
     auto_apms_behavior_tree_core
 )
-auto_apms_behavior_tree_declare_nodes(builtin_nodes
+auto_apms_behavior_tree_declare_nodes(standard_nodes
     "auto_apms_behavior_tree::Logger"
     "auto_apms_behavior_tree::ThrowException"
     "auto_apms_behavior_tree::StartExecutor"
@@ -237,25 +237,25 @@ auto_apms_behavior_tree_declare_nodes(builtin_nodes
 
     "auto_apms_behavior_tree::HasParameter"
     NODE_MANIFEST
-    "config/builtin_nodes.yaml.in"
-    MODEL_HEADER_TARGET
+    "config/standard_nodes.yaml.in"
+    NODE_MODEL_HEADER_TARGET
     auto_apms_behavior_tree
 )
 
 #
-# ------------ Tree build handlers --------------
+# ------------ Standard Behavior Tree Build Handlers --------------
 #
 
-add_library(builtin_build_handlers SHARED
+add_library(standard_build_handlers SHARED
     "src/build_handler/impl/from_string_build_handler.cpp"
     "src/build_handler/impl/from_resource_build_handler.cpp"
 )
-target_link_libraries(builtin_build_handlers auto_apms_behavior_tree)
+target_link_libraries(standard_build_handlers auto_apms_behavior_tree)
 
 # In the original package, we need to manually include this before being able to call the macro.
 # However, it is automatically available for all downstream packages.
 include("cmake/declare_build_handlers.cmake")
-auto_apms_behavior_tree_declare_build_handlers(builtin_build_handlers
+auto_apms_behavior_tree_declare_build_handlers(standard_build_handlers
     "auto_apms_behavior_tree::TreeFromStringBuildHandler"
     "auto_apms_behavior_tree::TreeFromResourceBuildHandler"
 )
@@ -283,18 +283,18 @@ target_link_libraries(new_tree auto_apms_behavior_tree)
 if(BUILD_TESTING)
     find_package(ament_cmake_gtest REQUIRED)
 
-    # To include the builtin_nodes manifest, we can pass the target name
-    # that was previously associated with the generation of the respective metadata.
+    # To include the standard_nodes manifest, we use the ID of the node manifest resource
+    # (This will work even though the resource might not have been installed yet)
     auto_apms_behavior_tree_declare_trees(
         "test/trees/infinite_w_bb_flags.xml"
         NODE_MANIFEST
-        builtin_nodes
+        "${PROJECT_NAME}::standard_nodes"
     )
 
     auto_apms_behavior_tree_declare_trees(
         "test/trees/builtin_nodes_test.xml"
         NODE_MANIFEST
-        builtin_nodes
+        "${PROJECT_NAME}::standard_nodes"
     )
 
     # ament_add_gtest(${PROJECT_NAME}_unit_tests
@@ -335,8 +335,8 @@ ament_export_dependencies(
 ###### Plugins ######
 install(
     TARGETS
-    builtin_nodes
-    builtin_build_handlers
+    standard_nodes
+    standard_build_handlers
     executor_node_components
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

@@ -25,7 +25,7 @@ bool isFileEmpty(const std::string & path)
 {
   std::ifstream file(path);
   if (!file.is_open()) {
-    throw std::runtime_error("Couldn't open output file'" + path + "' to check if it is empty.");
+    throw std::runtime_error("Couldn't open output file '" + path + "' to check if it is empty.");
   }
   // Read the file character by character
   char ch;

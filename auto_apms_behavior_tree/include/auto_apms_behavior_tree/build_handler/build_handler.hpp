@@ -21,7 +21,7 @@
 #include "rclcpp/node.hpp"
 
 // Include all built in node models and helpers for convenience
-#include "auto_apms_behavior_tree/builtin_nodes.hpp"
+#include "auto_apms_behavior_tree/standard_nodes.hpp"
 #include "auto_apms_behavior_tree/util/node.hpp"
 
 // Include exceptions if derived build handlers need to throw a TreeBuildHandlerError
@@ -34,11 +34,15 @@ namespace auto_apms_behavior_tree
  * @ingroup auto_apms_behavior_tree
  * @brief Base class for plugins that implement patterns for creating behavior trees using a standardized interface.
  *
- * Inheriting classes must implement TreeBuildHandler::setBuildRequest and TreeBuildHandler::buildTree. A tree build
- * handler allows TreeExecutorNode to create a behavior tree at runtime when an execution request is received. The user
- * may change the the way how a behavior tree is created by simply switching to the desired build handler
- * implementation. For those implementations to be available at runtime, they must be registered using the CMake macro
- * `auto_apms_behavior_tree_declare_build_handlers` in the CMakeLists.txt of the parent package.
+ * Inheriting classes must implement TreeBuildHandler::buildTree. Additionally, the user is given the possibility to
+ * define specific rules for when to accept a request and what to do when one arrives. This can be achieved by
+ * overriding TreeBuildHandler::setBuildRequest. By default, all requests are accepted and the arguments of that method
+ * are ignored.
+ *
+ * A tree build handler allows TreeExecutorNode to create a behavior tree at runtime when an execution
+ * request is received. The user may change the the way how a behavior tree is created by simply switching to the
+ * desired build handler implementation. To make those implementations available at runtime, the user must register them
+ * using the CMake macro `auto_apms_behavior_tree_declare_build_handlers` in the CMakeLists.txt of the parent package.
  *
  * ## Usage
  *
@@ -61,6 +65,7 @@ namespace auto_apms_behavior_tree
  *                        const std::string & root_tree_name) override final
  *   {
  *     // Do something when a build request arrives
+ *     // When this isn't overriden, all requests are accepted regardless the arguments given above
  *     // ...
  *
  *     // Returning true means accepting the request, false means rejecting it
@@ -166,20 +171,22 @@ public:
   /**
    * @brief Specify the behavior tree build request encoded in a string.
    *
-   * Additionally, an associated node manifest and a specific tree name for setting the root tree may be provided. When
+   * Additionally, you may provide an associated node manifest and a specific tree name for setting the root tree. When
    * using TreeExecutorNode, all arguments are populated using the respective parameters of the incoming
    * `StartTreeExecutor` action goal. It's up to the specific implementation, if and how they are interpreted.
    *
    * The intention with the boolean return value is to indicate whether the respective behavior tree is
    * allowed to be built or not. Only if this returns `true`, TreeBuildHandler::buildTree is to be called afterwards.
    * The user must stick to this design pattern and implement this function accordingly.
+   *
+   * By default, this callback always returns `true`.
    * @param build_request Request that specifies how to build the behavior tree encoded in a string.
    * @param node_manifest Behavior tree node manifest that specifies which nodes to use and how to load them.
    * @param root_tree_name Name of the requested root tree.
    * @return `true` if the build handler accepts the request, `false` if it is rejected.
    */
   virtual bool setBuildRequest(
-    const std::string & build_request, const NodeManifest & node_manifest, const std::string & root_tree_name) = 0;
+    const std::string & build_request, const NodeManifest & node_manifest, const std::string & root_tree_name);
 
   /**
    * @brief Build the behavior tree specified before.

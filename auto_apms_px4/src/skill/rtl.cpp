@@ -12,32 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "auto_apms_interfaces/action/mission.hpp"
+#include "auto_apms_interfaces/action/rtl.hpp"
 
 #include "auto_apms_px4/mode_executor.hpp"
 
 namespace auto_apms_px4
 {
 
-class MissionTask : public ModeExecutor<auto_apms_interfaces::action::Mission>
+class RTLSkill : public ModeExecutor<auto_apms_interfaces::action::RTL>
 {
 public:
-  explicit MissionTask(const rclcpp::NodeOptions & options)
-  : ModeExecutor{_AUTO_APMS_PX4__MISSION_ACTION_NAME, options, FlightMode::Mission}
+  explicit RTLSkill(const rclcpp::NodeOptions & options)
+  : ModeExecutor{_AUTO_APMS_PX4__RTL_ACTION_NAME, options, FlightMode::RTL}
   {
   }
 
 private:
-  bool sendActivationCommand(const VehicleCommandClient & client, std::shared_ptr<const Goal> goal_ptr) final
+  // PX4 seems to not always give a completed signal for RTL, so check for disarmed as a fallback completed state
+  bool isCompleted(std::shared_ptr<const Goal> goal_ptr, const px4_msgs::msg::VehicleStatus & vehicle_status)
   {
-    if (goal_ptr->do_restart) {
-      return client.startMission();
-    }
-    return client.syncActivateFlightMode(FlightMode::Mission);
+    return ModeExecutor::isCompleted(goal_ptr, vehicle_status) ||
+           vehicle_status.arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_DISARMED;
   }
 };
 
 }  // namespace auto_apms_px4
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::MissionTask)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::RTLSkill)

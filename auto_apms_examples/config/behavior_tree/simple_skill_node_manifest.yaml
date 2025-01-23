@@ -1,0 +1,7 @@
+SimpleSkillActionNode:
+  class_name: auto_apms_examples::SimpleSkillClient
+  port: simple_skill
+
+HasParameter:
+  class_name: auto_apms_behavior_tree::HasParameter
+  port: (input:node)/list_parameters

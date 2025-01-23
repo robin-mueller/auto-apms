@@ -42,9 +42,14 @@ extern const std::string ACTION_WRAPPER_PARAM_NAME_LOOP_RATE;
 extern const std::string ACTION_WRAPPER_PARAM_NAME_FEEDBACK_RATE;
 
 /**
- * @brief Generic base class for implementing robot skills or actions.
+ * @brief Generic base class for implementing robot skills using the ROS 2 action concept.
  *
- * A auto_apms_util::ActionWrapper is a wrapper for a rclcpp_action::Server providing convenient extension points.
+ * This wraps a `rclcpp_action::Server` and provides convenient extension points for the user. You must implement the
+ * pure virtual method ActionWrapper::executeGoal when inheriting from this class.
+ *
+ * @note ActionWrapper::executeGoal and ActionWrapper::cancelGoal are intended to work asynchronously. This means
+ * that a timer repeatedly invokes these callbacks until the returned status is either ActionStatus::SUCCESS or
+ * ActionStatus::FAILURE.
  *
  * @ingroup auto_apms_util
  */
@@ -92,6 +97,8 @@ private:
 
   /**
    * @brief Callback for handling an incoming action goal request.
+   *
+   * By default, all goals are accepted.
    * @param goal_ptr Goal request.
    * @return `true` for accepting the request and `false` for rejecting it.
    */
@@ -99,6 +106,8 @@ private:
 
   /**
    * @brief Configure the initial action result that is set once a goal is accepted.
+   *
+   * By default, the respective type defaults are used.
    * @param goal_ptr Accepted action goal.
    * @param result_ptr Shared action result to be modified.
    */
@@ -106,6 +115,8 @@ private:
 
   /**
    * @brief Callback for handling an incoming cancel request.
+   *
+   * By default, cancelling a goal is always accepted.
    * @param goal_ptr Original goal of the action to be canceled.
    * @param result_ptr Shared action result to be modified.
    * @return `true` for accepting the request and `false` for rejecting it.
@@ -113,7 +124,12 @@ private:
   virtual bool onCancelRequest(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
 
   /**
-   * @brief Callback that executes work when the goal is cancelling.
+   * @brief Callback that executes work asynchronously when the goal is cancelling.
+   *
+   * By default, this callback does nothing.
+   *
+   * You must return ActionStatus::RUNNING, if this callback's work is not done yet and it should be invoked again.
+   * Otherwise, return ActionStatus::SUCCESS or ActionStatus::FAILURE to cancel respectively abort the goal.
    * @param goal_ptr Original goal of the action that is being canceled.
    * @param result_ptr Shared action result to be modified.
    * @return Status of the cancellation routine.
@@ -121,7 +137,10 @@ private:
   virtual Status cancelGoal(std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Result> result_ptr);
 
   /**
-   * @brief Callback that executes work when the goal is executing.
+   * @brief Callback that executes work asynchronously when the goal is executing.
+   *
+   * You must return ActionStatus::RUNNING, if this callback's work is not done yet and it should be invoked again.
+   * Otherwise, return ActionStatus::SUCCESS or ActionStatus::FAILURE to succeed respectively abort the goal.
    * @param goal_ptr Original goal of the action that is being executed.
    * @param feedback_ptr Shared action feedback that is published according to the configured feedback rate.
    * @param result_ptr Shared action result to be modified.

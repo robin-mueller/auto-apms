@@ -30,8 +30,13 @@ using namespace auto_apms_behavior_tree;
 
 int main(int argc, char ** argv)
 {
-  if (argc < 2) {
-    std::cerr << "run_tree_node: Missing inputs! The program requires: \n\t1.) YAML representation of "
+  bool print_help = false;
+  if (argc > 1) {
+    const std::string arg(argv[1]);
+    print_help = "-h" == arg || "--help" == arg;
+  }
+  if (print_help || argc < 2) {
+    std::cerr << "run_tree_node: The program accepts: \n\t1.) YAML representation of "
                  "NodeRegistrationOptions encoded in a string.\n\t2.) Optional: YAML map of specific node port values "
                  "encoded in a string.\n";
     std::cerr << "Usage: run_tree_node <registration_params> [<port_values>]\n";

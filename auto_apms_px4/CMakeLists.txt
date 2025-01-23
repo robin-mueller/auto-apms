@@ -51,19 +51,19 @@ ament_generate_version_header(auto_apms_px4 HEADER_PATH "${PROJECT_NAME}/version
 # ------------ Tasks --------------
 #
 
-add_library(px4_tasks SHARED
-    "src/task/arm_disarm.cpp"
-    "src/task/enable_hold.cpp"
-    "src/task/goto.cpp"
-    "src/task/land.cpp"
-    "src/task/takeoff.cpp"
-    "src/task/rtl.cpp"
-    "src/task/mission.cpp"
+add_library(px4_skills SHARED
+    "src/skill/arm_disarm.cpp"
+    "src/skill/enable_hold.cpp"
+    "src/skill/goto.cpp"
+    "src/skill/land.cpp"
+    "src/skill/takeoff.cpp"
+    "src/skill/rtl.cpp"
+    "src/skill/mission.cpp"
 )
-target_link_libraries(px4_tasks
+target_link_libraries(px4_skills
     auto_apms_px4
 )
-target_compile_definitions(px4_tasks PRIVATE
+target_compile_definitions(px4_skills PRIVATE
     _AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME="${_AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME}"
     _AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME="${_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME}"
     _AUTO_APMS_PX4__GOTO_ACTION_NAME="${_AUTO_APMS_PX4__GOTO_ACTION_NAME}"
@@ -72,20 +72,20 @@ target_compile_definitions(px4_tasks PRIVATE
     _AUTO_APMS_PX4__TAKEOFF_ACTION_NAME="${_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME}"
     _AUTO_APMS_PX4__MISSION_ACTION_NAME="${_AUTO_APMS_PX4__MISSION_ACTION_NAME}"
 )
-ament_target_dependencies(px4_tasks
+ament_target_dependencies(px4_skills
     rclcpp_components
     tf2_eigen
     auto_apms_util
 )
 
-rclcpp_components_register_nodes(px4_tasks
-    "auto_apms_px4::ArmDisarmTask"
-    "auto_apms_px4::EnableHoldTask"
-    "auto_apms_px4::GoToTask"
-    "auto_apms_px4::LandTask"
-    "auto_apms_px4::TakeoffTask"
-    "auto_apms_px4::RTLTask"
-    "auto_apms_px4::MissionTask"
+rclcpp_components_register_nodes(px4_skills
+    "auto_apms_px4::ArmDisarmSkill"
+    "auto_apms_px4::EnableHoldSkill"
+    "auto_apms_px4::GoToSkill"
+    "auto_apms_px4::LandSkill"
+    "auto_apms_px4::TakeoffSkill"
+    "auto_apms_px4::RTLSkill"
+    "auto_apms_px4::MissionSkill"
 )
 
 #
@@ -122,7 +122,7 @@ auto_apms_behavior_tree_declare_nodes(px4_behavior_tree_nodes
     "auto_apms_px4::ReadGlobalPosition"
     NODE_MANIFEST
     "config/px4_behavior_tree_nodes.yaml.in"
-    MODEL_HEADER_TARGET
+    NODE_MODEL_HEADER_TARGET
     auto_apms_px4
 )
 
@@ -152,7 +152,7 @@ ament_export_dependencies(
 ##### Plugin libraries ######
 install(
     TARGETS
-    px4_tasks
+    px4_skills
     px4_behavior_tree_nodes
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
