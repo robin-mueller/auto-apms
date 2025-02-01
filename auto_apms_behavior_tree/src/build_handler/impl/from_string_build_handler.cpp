@@ -18,6 +18,12 @@
 namespace auto_apms_behavior_tree
 {
 
+/**
+ * @brief Standard build handler for building a behavior tree directly from an XML string.
+ *
+ * This build handler requires the user to encode the XML of a behavior tree and pass it as the build request.
+ * This may be done for example using TreeDocument::writeToString.
+ */
 class TreeFromStringBuildHandler : public TreeBuildHandler
 {
 public:

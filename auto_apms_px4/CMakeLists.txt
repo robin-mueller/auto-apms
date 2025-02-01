@@ -92,7 +92,7 @@ rclcpp_components_register_nodes(px4_skills
 # ------------ Behavior tree nodes --------------
 #
 
-add_library(px4_behavior_tree_nodes SHARED
+add_library(behavior_tree_nodes SHARED
     "src/node/action/arm.cpp"
     "src/node/action/disarm.cpp"
     "src/node/action/enable_hold.cpp"
@@ -104,12 +104,12 @@ add_library(px4_behavior_tree_nodes SHARED
     "src/node/action/takeoff.cpp"
     "src/node/sub/glob_pos.cpp"
 )
-ament_target_dependencies(px4_behavior_tree_nodes
+ament_target_dependencies(behavior_tree_nodes
     px4_msgs
     auto_apms_interfaces
     auto_apms_behavior_tree_core
 )
-auto_apms_behavior_tree_declare_nodes(px4_behavior_tree_nodes
+auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
     "auto_apms_px4::ArmAction"
     "auto_apms_px4::DisarmAction"
     "auto_apms_px4::EnableHoldAction"
@@ -121,7 +121,7 @@ auto_apms_behavior_tree_declare_nodes(px4_behavior_tree_nodes
     "auto_apms_px4::TakeoffAction"
     "auto_apms_px4::ReadGlobalPosition"
     NODE_MANIFEST
-    "config/px4_behavior_tree_nodes.yaml.in"
+    "config/behavior_tree_nodes.yaml.in"
     NODE_MODEL_HEADER_TARGET
     auto_apms_px4
 )
@@ -153,7 +153,7 @@ ament_export_dependencies(
 install(
     TARGETS
     px4_skills
-    px4_behavior_tree_nodes
+    behavior_tree_nodes
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin

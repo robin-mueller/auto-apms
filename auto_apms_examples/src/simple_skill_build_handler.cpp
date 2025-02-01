@@ -13,6 +13,15 @@
 // limitations under the License.
 
 /**
+ * @example simple_skill_build_handler.cpp
+ *
+ * Example for implementing a behavior tree build handler incorporating the `SimpleSkillClient` defined in
+ * simple_skill_node.cpp.
+ *
+ * @sa https://robin-mueller.github.io/auto-apms-guide/usage/
+ */
+
+/**
  * Implement the behavior tree build handler for programmatically building the simple skill tree.
  */
 

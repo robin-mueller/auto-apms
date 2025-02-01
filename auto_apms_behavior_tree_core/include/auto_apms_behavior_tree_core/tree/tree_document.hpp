@@ -42,8 +42,8 @@ class NodeModelType;
 
 /**
  * @ingroup auto_apms_behavior_tree
- * @brief This class offers a programmatic approach for building behavior trees and stores the registration data of all
- * tree nodes.
+ * @brief Document Object Model (DOM) for the behavior tree XML schema. This class offers a programmatic approach for
+ * building behavior trees and stores the registration data of all associated nodes.
  *
  * A single tree document may contain multiple behavior trees (represented by TreeElement). Each behavior tree may
  * contain an arbitrary amount of tree nodes (represented by NodeElement). There are various different types of nodes.
@@ -71,7 +71,7 @@ class NodeModelType;
  *     <!-- Each behavior tree element has exactly one child. This child may again have zero or more children -->
  *   </BehaviorTree>
  *   <BehaviorTree ID="AnotherTree">
- *     <!-- Each behavior tree element has exactly one child. This child may again have zero or more children -->
+ *     <!-- ... -->
  *   </BehaviorTree>
  * </root>
  * ```
@@ -107,7 +107,7 @@ class NodeModelType;
  *
  * ```cpp
  * #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
- * #include "auto_apms_behavior_tree/standard_nodes.hpp"  // This includes the node models
+ * #include "auto_apms_behavior_tree/behavior_tree_nodes.hpp"  // This includes the node models
  *
  * // Bring the behavior tree API into scope.
  * using namespace auto_apms_behavior_tree;
@@ -129,6 +129,10 @@ class NodeModelType;
  * The former approach can be achieved using the API offered by the `auto_apms_behavior_tree_core` package, while the
  * latter requires to build and link against the `%auto_apms_behavior_tree` package, since the node models are generated
  * automatically by that package.
+ *
+ * @sa <a
+ * href="https://robin-mueller.github.io/auto-apms-guide/usage/tutorials/building-behavior-trees#using-treedocument">
+ * Tutorial: Building Behavior Trees Programmatically</a>
  */
 class TreeDocument : private tinyxml2::XMLDocument
 {
@@ -158,6 +162,8 @@ public:
     std::string port_type;
     /// Default value of the port encoded as string.
     std::string port_default;
+    /// Flag whether the port implements a default value or not.
+    bool port_has_default;
     /// Description of the port.
     std::string port_description;
     /// Direction of the port.
@@ -1274,8 +1280,8 @@ public:
    * This makes it possible to add any nodes specified in @p tree_node_manifest to the tree.
    *
    * @param tree_node_manifest Parameters for locating and configuring the behavior tree node plugins.
-   * @param override If @p tree_node_manifest specifies nodes that have already been registered, unregister the
-   * existing plugin and use the new one instead.
+   * @param override If @p tree_node_manifest specifies node registration names that have already been used before,
+   * unregister the existing plugin and use the new one instead.
    * @throw auto_apms_behavior_tree::exceptions::NodeRegistrationError if registration fails.
    */
   virtual TreeDocument & registerNodes(const NodeManifest & tree_node_manifest, bool override = false);

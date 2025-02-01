@@ -265,7 +265,7 @@ PYTHON_DOCSTRING       = YES
 # documentation from any documented member that it re-implements.
 # The default value is: YES.
 
-INHERIT_DOCS           = YES
+INHERIT_DOCS           = NO
 
 # If the SEPARATE_MEMBER_PAGES tag is set to YES then Doxygen will produce a new
 # page for each member. If set to NO, the documentation of a member will be part
@@ -571,7 +571,7 @@ EXTRACT_STATIC         = NO
 # for Java sources.
 # The default value is: YES.
 
-EXTRACT_LOCAL_CLASSES  = NO
+EXTRACT_LOCAL_CLASSES  = YES
 
 # This flag is only useful for Objective-C code. If set to YES, local methods,
 # which are defined in the implementation section but not in the interface are
@@ -1007,7 +1007,9 @@ INPUT                  = "auto_apms_util/include/auto_apms_util" \
                          "auto_apms_mission/include/auto_apms_mission" \
                          "auto_apms_mission/src" \
                          "auto_apms_simulation/include/auto_apms_simulation" \
-                         "auto_apms_simulation/src"
+                         "auto_apms_simulation/src" \
+                         "auto_apms_examples/src"
+
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1142,7 +1144,7 @@ EXCLUDE_SYMBOLS        =
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           =
+EXAMPLE_PATH           = "auto_apms_examples/src"
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and

@@ -18,6 +18,13 @@
 namespace auto_apms_behavior_tree
 {
 
+/**
+ * @brief Standard build handler for building a behavior tree from an installed resource.
+ *
+ * This build handler accepts a single tree resource identity string as a build request.
+ *
+ * @sa core::TreeResource
+ */
 class TreeFromResourceBuildHandler : public TreeBuildHandler
 {
 public:

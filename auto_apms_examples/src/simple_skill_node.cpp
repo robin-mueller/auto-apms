@@ -12,6 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @example simple_skill_node.cpp
+ *
+ * Example for implementing a skill that simply prints a message a specific amount of times to the terminal. Both a
+ * server and a client are created using AutoAPMS.
+ *
+ * @sa https://robin-mueller.github.io/auto-apms-guide/usage/
+ */
+
 #include <chrono>
 
 #include "auto_apms_interfaces/action/example_simple_skill.hpp"

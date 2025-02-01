@@ -34,7 +34,7 @@ private:
   }
 };
 
-class MultipleNodesMissionBuildHandler : public MissionBuildHandlerBase
+class MultiNodeMissionBuildHandler : public MissionBuildHandlerBase
 {
 public:
   using MissionBuildHandlerBase::MissionBuildHandlerBase;
@@ -155,4 +155,4 @@ private:
 }  // namespace auto_apms_mission
 
 AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::SingleNodeMissionBuildHandler)
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::MultipleNodesMissionBuildHandler)
+AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::MultiNodeMissionBuildHandler)

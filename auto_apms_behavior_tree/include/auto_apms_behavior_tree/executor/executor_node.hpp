@@ -16,14 +16,12 @@
 
 #include "auto_apms_behavior_tree/build_handler/build_handler_loader.hpp"
 #include "auto_apms_behavior_tree/executor/executor_base.hpp"
-// #include "auto_apms_behavior_tree/executor_params.hpp" // TODO Uncomment if generate_parameter_library 0.4.0 is
-// available
+#include "auto_apms_behavior_tree/executor_params.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
 #include "auto_apms_interfaces/action/command_tree_executor.hpp"
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_util/action_context.hpp"
-#include "executor_params.hpp"  // TODO Remove if generate_parameter_library 0.4.0 is available
 #include "rclcpp/rclcpp.hpp"
 
 namespace auto_apms_behavior_tree

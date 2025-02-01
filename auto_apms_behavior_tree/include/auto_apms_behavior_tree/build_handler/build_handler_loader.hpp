@@ -37,8 +37,11 @@ public:
 
   /**
    * @brief Constructor.
+   *
+   * Parses the workspace for build handler plugins and performs an ambiguity check that is supposed to detect
+   * duplicate class names. If any duplicate class names are found, it throws an error.
    * @param exclude_packages Packages to exclude when searching for associated plugin resources.
-   * @throws See auto_apms_util::makeUnambiguousPluginClassLoader.
+   * @throw See PluginClassLoader::makeUnambiguousPluginClassLoader.
    */
   TreeBuildHandlerLoader(const std::set<std::string> & exclude_packages = {});
 };

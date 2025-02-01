@@ -87,11 +87,30 @@ std::vector<std::string> collectPluginXMLPaths(const std::set<std::string> & exc
 
 /// @}
 
+// clang-format off
 /**
  * @ingroup auto_apms_util
- * @brief Class for loading plugin resources registered according to the conventions defined by the pluginlib package.
+ * @brief Class for loading plugin resources registered according to the conventions defined by the
+ * [pluginlib](https://wiki.ros.org/pluginlib) package.
  * @tparam BaseT Base class of the plugin.
+ *
+ * For a class to be discoverable, you must call the C++ macro `PLUGINLIB_EXPORT_CLASS` and provide the arguments
+ * according to your definitions. AutoAPMS provides convenient wrappers that encapsulate this macro.
+ *
+ * You must also make sure, that you create a plugins.xml file, add the corresponding entries and export it in the
+ * CMakeLists.txt of your ROS 2 package. Again, AutoAPMS provides convenient wrapper macros for specific use cases.
+ *
+ * If you did all the above and want to instantiate a plugin class, you must call e.g. createSharedInstance and provide
+ * a lookup name for the plugin formatted like this:
+ *
+ * - `<namespace>::<class_name>`
+ *
+ * | Token Name | Description |
+ * | :---: | :--- |
+ * | `<namespace>` | Full C++ namespace that the class `<class_name>` can be found in. It can be flat `foo` or arbitrarily nested `foo::bar` (individual levels must be separated by `::`). |
+ * | `<class_name>` | Name you specified when declaring the plugin class using the `class` keyword in C++. If the class takes template arguments, you must provide it using the `MyClass<T>` syntax as you would in the source code. |
  */
+// clang-format on
 template <typename BaseT>
 class PluginClassLoader : public pluginlib::ClassLoader<BaseT>
 {
@@ -131,7 +150,7 @@ public:
    * @param exclude_packages Packages to exclude when searching for plugins.
    * @param reserved_names Map of reserved class names and the package name that makes the reservation. If any of these
    * class names are found, an error is being raised (Used internally during build time when installed resources aren't
-   * availabel yet).
+   * available yet).
    * @throws ament_index_cpp::PackageNotFoundError if @p base_package is not installed.
    * @throws auto_apms_util::exceptions::ResourceError if no plugins of type @p base_class were found.
    * @throws auto_apms_util::exceptions::ResourceError if multiple packages register a resource using the same class
@@ -142,6 +161,10 @@ public:
     const std::set<std::string> & exclude_packages = {},
     const std::map<std::string, std::string> & reserved_names = {});
 
+  /**
+   * @brief Retrieve a map that contains information about which package a plugin class belongs to.
+   * @return Mapping according to {class_name: package_name}.
+   */
   std::map<std::string, std::string> getClassPackageMap();
 };
 

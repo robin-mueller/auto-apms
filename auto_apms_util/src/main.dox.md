@@ -1,4 +1,4 @@
-\mainpage AutoAPMS API Reference
+\mainpage C++ API Documentation
 
 <img src="https://robin-mueller.github.io/auto-apms-guide/logo/logo.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:70%">
 
@@ -18,4 +18,4 @@ This is the automatically generated documentation for the C++ API offered by the
 For further information see the links below:
 
 - [GitHub](https://github.com/robin-mueller/auto-apms)
-- [User Guide](https://robin-mueller.github.io/auto-apms-guide/intro)
+- [User Guide](https://robin-mueller.github.io/auto-apms-guide/introduction/about)

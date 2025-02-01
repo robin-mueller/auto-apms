@@ -1047,7 +1047,10 @@ TreeDocument::NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & do
         port_info.port_type = c;
       }
       if (const char * c = port_ele->Attribute("default")) {
+        port_info.port_has_default = true;
         port_info.port_default = c;
+      } else {
+        port_info.port_has_default = false;
       }
       if (const char * c = port_ele->GetText()) {
         port_info.port_description = c;

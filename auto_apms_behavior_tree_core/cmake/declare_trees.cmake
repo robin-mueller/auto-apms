@@ -21,10 +21,10 @@
 #
 # :param ARGN: Behavior tree XML files to be added to this package's resources.
 # :type ARGN: list of files
-# :param NODE_MANIFEST: Path or identifier of the node manifest YAML file.
-#   If specified, behavior tree nodes associated with this manifest are
-#   loaded automatically and available for every tree under ARGN.
-# :type NODE_MANIFEST: string
+# :param NODE_MANIFEST: One or more relative paths or existing resource identities of node manifests.
+#   If specified, behavior tree nodes associated with this manifest can be
+#   loaded automatically and are available for every tree under ARGN.
+# :type NODE_MANIFEST: list of strings
 #
 # @public
 #

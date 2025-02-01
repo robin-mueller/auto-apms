@@ -15,21 +15,21 @@
 
 # 💡 Motivation and Features
 
-AutoAPMS is a ROS 2 software development framework offering convenient methods and tools to create autonomous robotic missions. It can be applied in any field of robotics as long as the corresponding systems are running ROS 2. Additionally, other popular middlewares like [PX4](https://px4.io/) are supported as well if they offer a possibility for bridging internal messages to ROS 2 topics.
+AutoAPMS is a ROS 2 software development framework offering an end-to-end solution for enabling autonomous robotic operation. It can be applied in any field of robotics as long as the corresponding systems are running ROS 2. Other popular middlewares like [PX4](https://px4.io/) are also supported (they must offer a possibility for bridging internal messages to ROS 2 topics).
 
-Key features of the packages in this repository are
+Developers of real-time systems benefit from:
 
-- Generic ROS 2 node design for implementing real-time tasks
-- Modular, plugin-based approach for implementing robotic skills/actions
+- Tools and methods for designing cooperative systems
+- Modular, plugin-based approach for implementing robotic skills/tasks
+- User-friendly task planning system adopting the behavior tree paradigm
 - Standardized, highly configurable behavior tree executor
-- Powerful behavior tree builder C++ API
+- Powerful behavior tree builder API
 - Automated contingency and emergency management system
 - Useful command line tools for running and orchestrating missions
 
-All of these features reduce the amount of boilerplate code required for implementing functional robotic missions and make the complex software development process significantly easier, faster and less error prone.
+All of these features reduce the amount of boilerplate code required when creating functional robotic applications and make the complex software development process significantly easier, faster and less error prone.
 
-> [!TIP]
-> For more information and an extensive how-to guides, feel encouraged to visit the 👉 [**User Guide**](https://robin-mueller.github.io/auto-apms-guide/intro) 👈.
+For more information and an extensive how-to guide, feel encouraged to visit the 👉 [**AutoAPMS Website**](https://robin-mueller.github.io/auto-apms-guide/) 👈.
 
 # 🚀 Setup and Demonstration
 
@@ -90,9 +90,9 @@ The robots dynamically decide to retreat and wait until the hallway they are abo
 
 https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
 
-# 📖 Documentation
+# 🎓 Documentation
 
-Make sure to visit the [User Guide](https://robin-mueller.github.io/auto-apms-guide/intro/) for tutorials and best practices when writing software using AutoAPMS.
+Make sure to visit the [User Guide](https://robin-mueller.github.io/auto-apms-guide/introduction/about) for tutorials and best practices when writing software using AutoAPMS.
 
 We also offer an extensive [API Documentation](https://robin-mueller.github.io/auto-apms/) which is created using Doxygen >= 1.10. To generate the documentation run the following from the repository's root:
 

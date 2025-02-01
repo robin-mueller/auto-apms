@@ -73,20 +73,20 @@ target_link_libraries(auto_apms_simulation
 # ------------ Behavior tree nodes --------------
 #
 
-add_library(sim_behavior_tree_nodes SHARED
+add_library(behavior_tree_nodes SHARED
     "src/node/set_location_state.cpp"
     "src/node/request_world_state.cpp"
     "src/node/get_robot_state.cpp"
     "src/node/execute_task_action.cpp"
 )
-target_link_libraries(sim_behavior_tree_nodes
+target_link_libraries(behavior_tree_nodes
     "${pyrobosim_msgs_cpp_typesupport_target}"
     auto_apms_simulation
 )
-ament_target_dependencies(sim_behavior_tree_nodes
+ament_target_dependencies(behavior_tree_nodes
     auto_apms_behavior_tree_core
 )
-auto_apms_behavior_tree_declare_nodes(sim_behavior_tree_nodes
+auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
     "auto_apms_simulation::SetLocationState"
     "auto_apms_simulation::IsLocationOccupied"
     "auto_apms_simulation::RobotSharesCurrentLocation"
@@ -95,7 +95,7 @@ auto_apms_behavior_tree_declare_nodes(sim_behavior_tree_nodes
     "auto_apms_simulation::PickObject"
     "auto_apms_simulation::PlaceObject"
     NODE_MANIFEST
-    "config/sim_behavior_tree_nodes.yaml.in"
+    "config/behavior_tree_nodes.yaml.in"
 )
 
 #
@@ -122,7 +122,7 @@ ament_python_install_package(
 
 install(
     TARGETS
-    sim_behavior_tree_nodes
+    behavior_tree_nodes
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin

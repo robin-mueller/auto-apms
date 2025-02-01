@@ -144,7 +144,7 @@ struct TreeResourceIdentity
  * using namespace auto_apms_behavior_tree;
  *
  * // For example, use the fully qualified tree resource identity signature
- * const std::string identity_string = "my_package_name::my_tree_file::MyBehaviorTree";
+ * const std::string identity_string = "my_package::my_behavior_tree::MyTreeName";
  *
  * // You may use the proxy class for a tree resource identity
  * core::TreeResourceIdentity identity(identity_string);
@@ -155,13 +155,13 @@ struct TreeResourceIdentity
  *
  * // The resource object may for example be used with TreeDocument
  * core::TreeDocument doc;
- * doc.mergeResource(resource);  // Add "MyBehaviorTree" to the document
+ * doc.mergeResource(resource);  // Add "MyTreeName" to the document
  *
  * // This also works, so creating a resource object is not strictly necessary
  * doc.mergeResource(identity_string)
  *
  * // The simplest approach is this
- * doc.mergeResource("my_package_name::my_tree_file::MyBehaviorTree");
+ * doc.mergeResource("my_package::my_behavior_tree::MyTreeName");
  * ```
  *
  */

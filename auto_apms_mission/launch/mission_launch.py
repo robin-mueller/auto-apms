@@ -36,7 +36,7 @@ def spawn_orchestrator_node(context: LaunchContext):
                         [
                             "'auto_apms_mission::SingleNodeMissionBuildHandler' if bool('",
                             context.launch_configurations["use_multiple_nodes"],
-                            "') else 'auto_apms_mission::MultipleNodesMissionBuildHandler'",
+                            "') else 'auto_apms_mission::MultiNodeMissionBuildHandler'",
                         ]
                     ),
                     "allow_other_build_handlers": False,

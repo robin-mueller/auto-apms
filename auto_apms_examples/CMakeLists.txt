@@ -81,8 +81,8 @@ auto_apms_behavior_tree_declare_trees(
     "config/behavior_tree/pyrobosim/hogwarts_contingency.xml"
     NODE_MANIFEST
     # We combine previously installed node manifests
-    "auto_apms_behavior_tree::standard_nodes"
-    "auto_apms_simulation::sim_behavior_tree_nodes"
+    "auto_apms_behavior_tree::behavior_tree_nodes"
+    "auto_apms_simulation::behavior_tree_nodes"
 )
 auto_apms_mission_register_missions(
     "config/mission/pyrobosim_hogwarts_mission.yaml"
@@ -102,8 +102,8 @@ if(auto_apms_px4_FOUND)
         "config/behavior_tree/px4/contingency_mission/contingency/contingency_hold.xml"
         "config/behavior_tree/px4/contingency_mission/emergency/emergency_rtl.xml"
         NODE_MANIFEST
-        "auto_apms_behavior_tree::standard_nodes"
-        "auto_apms_px4::px4_behavior_tree_nodes"
+        "auto_apms_behavior_tree::behavior_tree_nodes"
+        "auto_apms_px4::behavior_tree_nodes"
     )
     auto_apms_mission_register_missions(
         "config/mission/px4_contingency_mission.yaml"

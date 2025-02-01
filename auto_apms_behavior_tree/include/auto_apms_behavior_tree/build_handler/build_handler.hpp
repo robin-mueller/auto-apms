@@ -21,7 +21,7 @@
 #include "rclcpp/node.hpp"
 
 // Include all built in node models and helpers for convenience
-#include "auto_apms_behavior_tree/standard_nodes.hpp"
+#include "auto_apms_behavior_tree/behavior_tree_nodes.hpp"
 #include "auto_apms_behavior_tree/util/node.hpp"
 
 // Include exceptions if derived build handlers need to throw a TreeBuildHandlerError
@@ -36,8 +36,8 @@ namespace auto_apms_behavior_tree
  *
  * Inheriting classes must implement TreeBuildHandler::buildTree. Additionally, the user is given the possibility to
  * define specific rules for when to accept a request and what to do when one arrives. This can be achieved by
- * overriding TreeBuildHandler::setBuildRequest. By default, all requests are accepted and the arguments of that method
- * are ignored.
+ * overriding TreeBuildHandler::setBuildRequest. By default, all requests are accepted and the arguments of the build
+ * request are ignored.
  *
  * A tree build handler allows TreeExecutorNode to create a behavior tree at runtime when an execution
  * request is received. The user may change the the way how a behavior tree is created by simply switching to the
@@ -49,13 +49,14 @@ namespace auto_apms_behavior_tree
  * Behavior tree build handler plugins are created like this:
  *
  * ```cpp
- * // my_custom_build_handler.cpp
+ * // src/my_build_handler.cpp
  *
  * #include "auto_apms_behavior_tree/build_handler.hpp"
  *
  * namespace my_namespace
  * {
- * class MyCustomBuildHandler : public TreeBuildHandler
+ *
+ * class MyCustomBuildHandler : public auto_apms_behavior_tree::TreeBuildHandler
  * {
  * public:
  *   using TreeBuildHandler::TreeBuildHandler;
@@ -64,8 +65,9 @@ namespace auto_apms_behavior_tree
  *                        const NodeManifest & node_manifest,
  *                        const std::string & root_tree_name) override final
  *   {
- *     // Do something when a build request arrives
- *     // When this isn't overriden, all requests are accepted regardless the arguments given above
+ *     // Do something when a build request arrives. If this isn't overridden,
+ *     // all requests are accepted regardless of the arguments given above.
+ *
  *     // ...
  *
  *     // Returning true means accepting the request, false means rejecting it
@@ -76,12 +78,16 @@ namespace auto_apms_behavior_tree
  *                                       TreeBlackboard & bb) override final
  *   {
  *     // Configure the behavior tree
+ *     TreeDocument::TreeElement tree = doc.newTree("MyTreeName");
+ *
  *     // ...
  *
- *     // The returned tree element will be used as the root tree by TreeExecutorNode. It must belong to doc
- *     return doc.newTree("MyCustomTree");
+ *     // The returned tree element must point to a behavior tree within doc
+ *     // and will be used as the root tree.
+ *     return tree;
  *   }
- * }
+ * };
+ *
  * }  // namespace my_namespace
  *
  * // Make sure the plugin class is discoverable
@@ -96,32 +102,38 @@ namespace auto_apms_behavior_tree
  * find_package(auto_apms_behavior_tree REQUIRED)
  *
  * # Create a shared library
- * add_library(my_custom_build_handler_lib SHARED
- *     "my_custom_build_handler.cpp"  # Add the source file
+ * add_library(my_build_handler_library_target SHARED
+ *     "src/my_build_handler.cpp"  # Add the source file
  * )
- * ament_target_dependencies(my_custom_build_handler_lib
+ * ament_target_dependencies(my_build_handler_library_target
  *     auto_apms_behavior_tree  # The library must link against auto_apms_behavior_tree
  * )
  *
  * # Add the plugin to this package's ament_index resources
- * auto_apms_behavior_tree_declare_build_handlers(my_custom_build_handler_lib
+ * auto_apms_behavior_tree_declare_build_handlers(my_build_handler_library_target
  *     "my_namespace::MyCustomBuildHandler"
  * )
  *
- * # Make sure to install the shared library to the standard directory
+ * # Install the shared library to the standard directory
  * install(
- *    TARGETS
- *    my_custom_build_handler_lib
- *    LIBRARY DESTINATION lib
- *    ARCHIVE DESTINATION lib
- *    RUNTIME DESTINATION bin
+ *     TARGETS
+ *     my_build_handler_library_target
+ *     LIBRARY DESTINATION lib
+ *     ARCHIVE DESTINATION lib
+ *     RUNTIME DESTINATION bin
  * )
+ *
+ * ament_package()
  * ```
  *
  * Once the parent package has been installed, the build handler plugin may be loaded using TreeBuildHandlerLoader. With
  * a behavior tree executor node, the user may simply set its parameter called `build_handler` to
  * "my_namespace::MyCustomBuildHandler" (the fully qualified class name). All build requests that the node receives from
  * this point on are forwarded to this specific build handler implementation.
+ *
+ * @sa <a
+ *href="https://robin-mueller.github.io/auto-apms-guide/usage/tutorials/building-behavior-trees#using-treebuildhandler">
+ * Tutorial: Using Behavior Tree Build Handlers</a>
  */
 class TreeBuildHandler
 {

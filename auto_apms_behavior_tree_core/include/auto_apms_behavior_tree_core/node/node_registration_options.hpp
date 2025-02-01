@@ -77,6 +77,14 @@ struct NodeRegistrationOptions
    *
    * - RosSubscriberNode: Name of the topic to subscribe to
    *
+   * It is possible to customize which port is used to determine the action/service/topic name and also extend the
+   * input's value with a prefix or suffix. This is achieved by using the special pattern `(input:<port_name>)` in
+   * and replacing `<port_name>` with the desired input port name.
+   *
+   * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a
+   * client for the action "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing
+   * the string "foo" to the port with name `my_port`.
+   *
    * By default, we look for the communication port name using the node's input port named `port`.
    */
   std::string port = "(input:port)";

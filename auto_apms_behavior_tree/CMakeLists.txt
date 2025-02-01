@@ -182,7 +182,7 @@ rclcpp_components_register_nodes(executor_node_components
 # ------------ Standard Behavior Tree Nodes --------------
 #
 
-add_library(standard_nodes SHARED
+add_library(behavior_tree_nodes SHARED
     "src/node/logger.cpp"
     "src/node/throw_exception.cpp"
     "src/node/start_executor.cpp"
@@ -194,17 +194,17 @@ add_library(standard_nodes SHARED
     "src/util/parameter.cpp"
 )
 # Make parameter util available for standard nodes too, but don't include anything that's not also been added to the sources
-target_include_directories(standard_nodes PRIVATE
+target_include_directories(behavior_tree_nodes PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(standard_nodes
+ament_target_dependencies(behavior_tree_nodes
     rclcpp
     rcl_interfaces
     auto_apms_interfaces
     auto_apms_behavior_tree_core
 )
-auto_apms_behavior_tree_declare_nodes(standard_nodes
+auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
     "auto_apms_behavior_tree::Logger"
     "auto_apms_behavior_tree::ThrowException"
     "auto_apms_behavior_tree::StartExecutor"
@@ -288,13 +288,13 @@ if(BUILD_TESTING)
     auto_apms_behavior_tree_declare_trees(
         "test/trees/infinite_w_bb_flags.xml"
         NODE_MANIFEST
-        "${PROJECT_NAME}::standard_nodes"
+        "${PROJECT_NAME}::behavior_tree_nodes"
     )
 
     auto_apms_behavior_tree_declare_trees(
         "test/trees/builtin_nodes_test.xml"
         NODE_MANIFEST
-        "${PROJECT_NAME}::standard_nodes"
+        "${PROJECT_NAME}::behavior_tree_nodes"
     )
 
     # ament_add_gtest(${PROJECT_NAME}_unit_tests
@@ -335,7 +335,7 @@ ament_export_dependencies(
 ###### Plugins ######
 install(
     TARGETS
-    standard_nodes
+    behavior_tree_nodes
     standard_build_handlers
     executor_node_components
     LIBRARY DESTINATION lib

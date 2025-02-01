@@ -44,7 +44,7 @@ namespace auto_apms_mission
 
 /**
  * @ingroup auto_apms_mission
- * @brief Configuration parameters for standard mission supported by AutoAPMS.
+ * @brief Configuration parameters for standard missions supported by AutoAPMS.
  */
 struct MissionConfiguration
 {
@@ -60,6 +60,16 @@ struct MissionConfiguration
 
   AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(MissionConfiguration)
 
+  /**
+   * @brief Create a mission configuration from an installed resource.
+   *
+   * The resource identity must be specified in the format `<package_name>::<config_file_stem>` or simply
+   * `<config_file_stem>`.
+   * @param identity Identity of the  mission configuration resource.
+   * @return Object created from the corresponding resource.
+   * @throw auto_apms_util::exceptions::ResourceIdentityFormatError if @p identity has wrong format.
+   * @throw auto_apms_util::exceptions::ResourceError if resource cannot be determined using @p identity.
+   */
   static MissionConfiguration fromResourceIdentity(const std::string identity);
 
   std::vector<TreeResourceIdentity> bringup;

@@ -87,6 +87,10 @@ target_link_libraries(create_node_model auto_apms_behavior_tree_core)
 add_executable(create_node_model_header "src/cli/create_node_model_header.cpp")
 target_link_libraries(create_node_model_header auto_apms_behavior_tree_core)
 
+# Generate the behavior tree node documentation for all nodes available in this workspace
+add_executable(create_node_reference_markdown "src/cli/create_node_reference_markdown.cpp")
+target_link_libraries(create_node_reference_markdown auto_apms_behavior_tree_core)
+
 #
 # ------------ Packaging --------------
 #
@@ -115,6 +119,7 @@ install(
     create_node_manifest
     create_node_model
     create_node_model_header
+    create_node_reference_markdown
     DESTINATION "lib/${PROJECT_NAME}"
 )
 

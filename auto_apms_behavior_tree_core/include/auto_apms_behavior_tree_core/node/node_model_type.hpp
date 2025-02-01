@@ -75,8 +75,6 @@ namespace auto_apms_behavior_tree
 namespace core
 {
 
-/// @cond INTERNAL
-
 class TreeBuilder;
 
 /**
@@ -124,8 +122,6 @@ public:
   LeafNodeModelType & removeChildren() = delete;
 };
 
-/// @endcond
-
 }  // namespace core
 
 /**
@@ -147,8 +143,12 @@ public:
  * After building the package, there is a header file named `node_library_target.hpp` which may be included by the C++
  * files associated with the target `model_header_target` like this:
  * ```cpp
- * #include <my_package_name/node_library_target.hpp>
+ * #include "my_package_name/node_library_target.hpp"
  * ```
+ *
+ * @sa <a
+ * href="https://robin-mueller.github.io/auto-apms-guide/usage/concepts/common-resources#behavior-tree-node-models">
+ * Common Resources: Behavior Tree Node Models</a>
  */
 namespace model
 {

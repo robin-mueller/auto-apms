@@ -130,7 +130,7 @@ PortInfos port_infos;
 )";
       for (const core::TreeBuilder::NodePortInfo & info : model.port_infos) {
         content << "port_infos.insert(BT::CreatePort<"<< info.port_type <<">(BT::convertFromString<BT::PortDirection>(\"" << info.port_direction << "\"), \"" << info.port_name << "\", \"" << info.port_description << "\"));\n";
-        if (!info.port_default.empty() && !BT::TreeNode::isBlackboardPointer(info.port_default)) {
+        if (info.port_has_default && !BT::TreeNode::isBlackboardPointer(info.port_default)) {
           content << "port_infos[\"" << info.port_name << "\"].setDefaultValue(BT::convertFromString<" << info.port_type << ">(\"" << info.port_default << "\"));\n";
         }
       }
@@ -175,10 +175,10 @@ return RegistrationOptions::decode(R"()" << options.encode() << ")\");" << R"(
 ///
 /// )" << info.port_description << R"(
 )" << node_name << " & set_" << info.port_name << "(const std::string & str";
-        if (info.port_default.empty()) {
-          content << ")";
-        } else {
+        if (info.port_has_default) {
           content << " = \"" << info.port_default << "\")";
+        } else {
+          content << ")";
         }
         content << R"(
 {
@@ -222,7 +222,7 @@ return BT::convertFromString<)" << info.port_type << ">(get_" << info.port_name 
       out_stream << content.str();
       out_stream.close();
     } else {
-      throw std::runtime_error("Error opening node model header file '" + header_path.string() + "'.");
+      throw std::runtime_error("Error opening node model header file '" + header_path.string() + "'");
     }
   } catch (const std::exception & e) {
     std::cerr << "ERROR (create_node_model_header): " << e.what() << "\n";

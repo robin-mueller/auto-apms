@@ -35,6 +35,9 @@
  *
  * - auto_apms_behavior_tree::core::RosSubscriberNode
  *
+ * One may also inherit from one of the other base classes provided by BehaviorTree.CPP if the functionality to be
+ * implemented doesn't require ROS 2 interfaces.
+ *
  * @param type Fully qualified name of the class.
  */
 #define AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(type)                 \

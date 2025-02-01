@@ -45,11 +45,11 @@ namespace auto_apms_behavior_tree::core
  * To create an executable behavior tree object, one must configure the tree using the inherited TreeDocument API.
  * Afterwards, the behavior tree may be instantiated using the factory method TreeBuilder::instantiate.
  *
- * The most convenient way of building and executing behavior trees is by using the included TreeBuildHandler plugins
- * integrated with the TreeExecutorNode concept. The user may also implement their own build handlers and expose them to
- * an executor node.
+ * The most convenient way of building and executing behavior trees is by using the TreeBuildHandler plugins that come
+ * with AutoAPMS and are fully integrated with the TreeExecutorNode concept.
  *
- * TODO Insert links to user guide showcasing the use of build handlers with executor nodes
+ * @sa <a href="https://robin-mueller.github.io/auto-apms-guide/usage/tutorials/deploying-a-behavior">Tutorial:
+ * Deploying a Behavior</a>
  */
 class TreeBuilder : public TreeDocument
 {

@@ -46,7 +46,7 @@ namespace auto_apms_behavior_tree::core
  * @ingroup auto_apms_behavior_tree
  * @brief Data structure for information about which behavior tree node plugin to load and how to configure them.
  *
- * The concept of a node manifest is introduced to enable TreeBuilder to dynamically load and register an arbitrary
+ * The concept of a node manifest is introduced to enable TreeDocument to dynamically load and register an arbitrary
  * amount of behavior tree node plugins implemented by ROS 2 packages. The node manifest contains information
  * about the individual registration options required at construction time and the names that must be used inside the
  * behavior tree to refer to respective node implementations.
@@ -82,22 +82,17 @@ namespace auto_apms_behavior_tree::core
  *
  * ```yaml
  * FooNode:  # Registration name of behavior tree node used to look up the following parameters.
- *   class_name: my_package_name::FooNodeImplementation  # Required name of the C++ class (with namespaces)
- *   port: optional_prefix/(input:port)  # Or you may specify a constant port name
+ *   class_name: my_package::MyCustomNodeClass  # Required name of the C++ class (with namespaces)
+ *   port: optional_prefix/(input:port)/optional_suffix  # Or you may specify a constant port name
  *   wait_timeout: 3  # Float number
  *   request_timeout: 2  # Float number
  *   allow_unreachable: false  # Boolean value
  *   logger_level: INFO  # One of DEBUG, INFO, WARN, ERROR, FATAL, UNSET (no case sensitive)
  *
- * BarNode:  # Registration name of behavior tree node used to look up the following parameters.
- *   class_name: my_package_name::BarNodeImplementation  # Required name of the C++ class (with namespaces)
- *   port: (input:port)/optional_suffix  # Or you may specify a constant port name
- *   wait_timeout: 3  # Float number
- *   request_timeout: 2  # Float number
- *   allow_unreachable: false  # Boolean value
- *   logger_level: INFO  # One of DEBUG, INFO, WARN, ERROR, FATAL, UNSET (no case sensitive)
+ * BarNode:
+ *   # ...
  *
- * # There may be as many keys as you want
+ * # There may be as many registration names as you want
  * ...
  * ```
  *
@@ -133,7 +128,7 @@ public:
   /**
    * @brief Create a node manifest from an installed resource.
    *
-   * The resource identity must be specified in the format `<package_name>::<file_stem>` or simply `<file_stem>`.
+   * The resource identity must be specified in the format `<package_name>::<metadata_id>` or simply `<metadata_id>`.
    * @param identity Identity of the node manifest resource.
    * @return Node manifest created from the corresponding resource.
    * @throw auto_apms_util::exceptions::ResourceIdentityFormatError if @p identity has wrong format.
@@ -187,8 +182,8 @@ public:
   /**
    * @brief Merges another NodeManifest with this one.
    * @param other Other node manifest.
-   * @param replace `true` for automatically replacing entries with the same key. Throws an error if `false`
-   * and `other` contains any keys that already exist in this manifest.
+   * @param replace `true` for automatically replacing entries with the same key (same registration name). Throws an
+   * error if `false` and `other` contains any keys that already exist in this manifest.
    * @return Modified node manifest.
    * @throw auto_apms_behavior_tree::exceptions::NodeManifestError if @p other shares entries and @p replace is `false`.
    */

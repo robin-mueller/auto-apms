@@ -13,8 +13,7 @@
 # limitations under the License.
 
 #
-# Add plugins that register behavior tree nodes at runtime to the
-# package's resources.
+# Add behavior tree node plugins to the package's resources.
 #
 # This macro must be called to make behavior tree node plugins available
 # at runtime and configure their registration with the behavior tree
@@ -28,8 +27,9 @@
 # :param ARGN: The unique names of node classes being declared with this
 #   macro call and exported by the shared library target.
 # :type ARGN: list of strings
-# :param NODE_MANIFEST: Path or identifier of the node manifest YAML file.
-# :type NODE_MANIFEST: string
+# :param NODE_MANIFEST: One or more relative paths or existing resource identities of node manifests.
+#   Multiple file paths are concatenated to a single one.
+# :type NODE_MANIFEST: list of strings
 # :param NODE_MODEL_HEADER_TARGET: Name of a shared library target. If specified,
 #   generate a C++ header that defines model classes for all behavior tree
 #   nodes specified inside the node manifest files provided under NODE_MANIFEST and
