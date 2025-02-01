@@ -3,7 +3,7 @@ name: Lint
 on:
   push:
     branches:
-      - master
+      - humble
   pull_request:
     branches:
       - "*"
