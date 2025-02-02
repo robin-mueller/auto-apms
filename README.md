@@ -27,7 +27,7 @@ Developers of real-time systems benefit from:
 - Automated contingency and emergency management system
 - Useful command line tools for running and orchestrating missions
 
-All of these features reduce the amount of boilerplate code required when creating functional robotic applications and make the complex software development process significantly easier, faster and less error prone.
+All of these features reduce the amount of code required when creating functional robotic applications and make the complex software development process significantly easier, faster and less error prone.
 
 For more information and an extensive how-to guide, feel encouraged to visit the 👉 [**AutoAPMS Website**](https://robin-mueller.github.io/auto-apms-guide/) 👈.
 

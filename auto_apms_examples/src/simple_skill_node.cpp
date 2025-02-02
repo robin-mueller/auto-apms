@@ -18,7 +18,9 @@
  * Example for implementing a skill that simply prints a message a specific amount of times to the terminal. Both a
  * server and a client are created using AutoAPMS.
  *
- * @sa https://robin-mueller.github.io/auto-apms-guide/usage/
+ * @sa <a
+ * href="https://robin-mueller.github.io/auto-apms-guide/usage/tutorials/creating-a-behavior-from-scratch">
+ * Tutorial: Creating a Behavior From Scratch</a>
  */
 
 #include <chrono>
