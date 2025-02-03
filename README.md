@@ -27,7 +27,7 @@ Developers of real-time systems benefit from:
 - Straightforward contingency and emergency management concept
 - Standardized interfaces and command line tools for running and orchestrating the operation
 
-All of these features aim to **simplify and automate the manual development work**. Alltogether, they frame a unified toolset for implementing behavior-based systems and make it significantly more user-friendly and less error prone to design and execute robotic applications.
+These features aim to **simplify and automate the manual development work**. Altogether, they frame a unified toolset for implementing behavior-based systems and make it significantly more user-friendly and less error prone to design and execute robotic applications.
 
 For more information and an extensive how-to guide, feel encouraged to visit the 👉 [**AutoAPMS Website**](https://robin-mueller.github.io/auto-apms-guide/) 👈.
 
