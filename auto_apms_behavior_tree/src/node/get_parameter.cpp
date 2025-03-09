@@ -49,9 +49,6 @@ public:
     // There is no string conversion function for variables that are type initialized using the value port if the
     // BT::Any version is used. To prevent errors when using these variables in e.g. the scripting language we have to
     // set the type to BT::AnyTypeAllowed to truly indicate that the type is not set by this port
-    // NOTE: Currently setOutput<BT::Any> is not allowed when port was declared with some other type (See
-    // https://github.com/BehaviorTree/BehaviorTree.CPP/issues/893). Therefore, GetParameter doesn't work currently...
-    // use one of the statically typed versions instead
     using AnyType = typename std::conditional_t<std::is_same_v<BT::Any, T>, BT::AnyTypeAllowed, T>;
     return {
       BT::InputPort<std::string>(
