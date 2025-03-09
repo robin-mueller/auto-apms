@@ -7,7 +7,7 @@
 <h3>Automated Action Planning and Mission Safeguarding for Robotics</h3>
 
 <a href="https://robin-mueller.github.io/auto-apms-guide/">![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)</a>
-<a href="https://doi.org/10.5220/0012951500003822">![DOI](https://zenodo.org/badge/DOI/10.5220/0012951500003822.svg)</a>
+<a href="https://doi.org/10.5281/zenodo.14790307">![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)</a>
 <a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
 <a href="https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml">![humble](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml/badge.svg)</a>
 
@@ -19,15 +19,15 @@ AutoAPMS is a ROS 2 software development framework offering an end-to-end soluti
 
 Developers of real-time systems benefit from:
 
-- Tools and methods for designing cooperative systems
+- Convenient resource management integrating deeply with CMake
 - Modular, plugin-based approach for implementing robotic skills/tasks
-- User-friendly task planning system adopting the behavior tree paradigm
-- Standardized, highly configurable behavior tree executor
-- Powerful behavior tree builder API
-- Automated contingency and emergency management system
-- Useful command line tools for running and orchestrating missions
+- User-friendly behavior design adopting the behavior tree paradigm
+- Flexible, highly configurable behavior executor
+- Powerful C++ behavior tree builder API
+- Straightforward contingency and emergency management concept
+- Standardized interfaces and command line tools for running and orchestrating the operation
 
-All of these features reduce the amount of code required when creating functional robotic applications and make the complex software development process significantly easier, faster and less error prone.
+These features aim to **simplify and automate the manual development work**. Altogether, they frame a unified toolset for implementing behavior-based systems and make it significantly more user-friendly and less error prone to design and execute robotic applications.
 
 For more information and an extensive how-to guide, feel encouraged to visit the 👉 [**AutoAPMS Website**](https://robin-mueller.github.io/auto-apms-guide/) 👈.
 
