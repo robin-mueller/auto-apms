@@ -54,6 +54,9 @@ Afterwards, install all required dependencies. We assume that you already instal
 rosdep init  # Skip this if rosdep has already been initialized
 rosdep update
 rosdep install --from-paths src --ignore-src -y
+
+# Python packages for simulation (not all are available with rosdep)
+python3 -m pip install -r src/auto-apms/auto_apms_simulation/requirements.txt
 ```
 
 Then, build and install all of the source packages up to `auto_apms_examples`.
