@@ -16,7 +16,6 @@
   <depend>rclpy</depend>
 
   <!-- Python packages -->
-  <depend>python3-pip</depend>
   <depend>python3-transforms3d</depend>
   <depend>python3-matplotlib</depend>
   <depend>python3-numpy</depend>
