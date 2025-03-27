@@ -813,10 +813,12 @@ bool TreeExecutorNode::afterTick()
         }
       }
     }
-    const rcl_interfaces::msg::SetParametersResult result = node_ptr_->set_parameters_atomically(new_parameters);
-    if (!result.successful) {
-      throw exceptions::TreeExecutorError(
-        "Unexpectedly failed to set parameters inferred from global blackboard. Reason: " + result.reason);
+    if (!new_parameters.empty()) {
+      const rcl_interfaces::msg::SetParametersResult result = node_ptr_->set_parameters_atomically(new_parameters);
+      if (!result.successful) {
+        throw exceptions::TreeExecutorError(
+          "Unexpectedly failed to set parameters inferred from global blackboard. Reason: " + result.reason);
+      }
     }
   }
 

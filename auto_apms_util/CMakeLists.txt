@@ -13,6 +13,7 @@ find_package(ament_index_cpp REQUIRED)
 find_package(generate_parameter_library REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 option(AUTO_APMS_UTIL_DEBUG_LOGGING "Enable debug logging severity" OFF)
 if(AUTO_APMS_UTIL_DEBUG_LOGGING)
@@ -56,15 +57,14 @@ target_compile_definitions(auto_apms_util PRIVATE
 target_compile_definitions(auto_apms_util PUBLIC
     _AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB="${_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB}"
 )
-ament_target_dependencies(auto_apms_util
-    rclcpp
-    rcpputils
-    rclcpp_action
-    ament_index_cpp
-    pluginlib
-    yaml_cpp_vendor
-)
-target_link_libraries(auto_apms_util
+target_link_libraries(auto_apms_util PUBLIC
+    rclcpp::rclcpp
+    rcpputils::rcpputils
+    rclcpp_action::rclcpp_action
+    ament_index_cpp::ament_index_cpp
+    pluginlib::pluginlib
+    yaml-cpp::yaml-cpp
+
     action_wrapper_params
 )
 
@@ -125,6 +125,7 @@ ament_export_dependencies(
     ament_index_cpp
     pluginlib
     yaml_cpp_vendor
+    yaml-cpp
 )
 
 ament_package(CONFIG_EXTRAS "auto_apms_util-extras.cmake.in")

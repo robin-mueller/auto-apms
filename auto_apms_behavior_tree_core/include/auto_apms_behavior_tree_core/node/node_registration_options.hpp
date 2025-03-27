@@ -132,9 +132,9 @@ inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::dec
       "YAML::Node for auto_apms_behavior_tree::core::NodeRegistrationOptions must be map but is type " +
       std::to_string(node.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
 
-  for (auto it = node.begin(); it != node.end(); ++it) {
+  for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
     const std::string key = it->first.as<std::string>();
-    const Node & val = it->second;
+    const Node val = it->second;
     if (!val.IsScalar())
       throw auto_apms_util::exceptions::YAMLFormatError(
         "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
