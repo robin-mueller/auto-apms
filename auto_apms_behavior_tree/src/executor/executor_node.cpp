@@ -130,8 +130,9 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
     std::set<std::string>(initial_params.node_exclude_packages.begin(), initial_params.node_exclude_packages.end()));
 
   // Create behavior tree build handler loader
-  build_handler_loader_ptr_ = TreeBuildHandlerLoader::make_unique(std::set<std::string>(
-    initial_params.build_handler_exclude_packages.begin(), initial_params.build_handler_exclude_packages.end()));
+  build_handler_loader_ptr_ = TreeBuildHandlerLoader::make_unique(
+    std::set<std::string>(
+      initial_params.build_handler_exclude_packages.begin(), initial_params.build_handler_exclude_packages.end()));
 
   // Instantiate behavior tree build handler
   if (

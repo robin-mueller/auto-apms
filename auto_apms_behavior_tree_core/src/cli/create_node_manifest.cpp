@@ -106,9 +106,10 @@ int main(int argc, char ** argv)
     if (!other_packages_with_node_plugins.empty()) {
       // When creating the node plugin loader, reserve the class names this package is building when checking for
       // ambiguous declarations. This forces us to use the auto_apms_util::PluginClassLoader constructor.
-      Loader * ptr = new Loader(Loader::makeUnambiguousPluginClassLoader(
-        core::NodeRegistrationLoader::BASE_PACKAGE_NAME, core::NodeRegistrationLoader::BASE_CLASS_NAME,
-        exclude_build_package, reserved_names));
+      Loader * ptr = new Loader(
+        Loader::makeUnambiguousPluginClassLoader(
+          core::NodeRegistrationLoader::BASE_PACKAGE_NAME, core::NodeRegistrationLoader::BASE_CLASS_NAME,
+          exclude_build_package, reserved_names));
       loader_ptr = std::unique_ptr<Loader>(ptr);
     }
 

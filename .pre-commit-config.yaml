@@ -32,17 +32,17 @@ repos:
 
   # Python hooks
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 25.1.0
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
+    rev: 7.1.2
     hooks:
       - id: flake8
 
   # CPP hooks
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v19.1.5" # Use the sha / tag you want to point at
+    rev: "v20.1.0" # Use the sha / tag you want to point at
     hooks:
       - id: clang-format
         types_or: [c++, c]
@@ -55,7 +55,7 @@ repos:
 
   # GitHub Workflow hooks
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.4
+    rev: v1.7.7
     hooks:
       - id: actionlint
 
@@ -64,6 +64,6 @@ repos:
     hooks:
       - id: ament_copyright
         name: ament_copyright
-        entry: bash -c "source /opt/ros/humble/setup.bash && exec ament_copyright --add-missing 'Robin Müller' apache2"
+        entry: bash -c "source /opt/ros/jazzy/setup.bash && exec ament_copyright --add-missing 'Robin Müller' apache2"
         language: system
         types: [file]
