@@ -13,7 +13,7 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     container:
-      image: ros:humble-ros-base-jammy
+      image: ros:humble
     steps:
       - name: Setup ROS
         uses: ros-tooling/setup-ros@v0.7
