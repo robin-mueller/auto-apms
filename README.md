@@ -9,6 +9,7 @@
 <a href="https://robin-mueller.github.io/auto-apms-guide/">![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)</a>
 <a href="https://doi.org/10.5281/zenodo.14790307">![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)</a>
 <a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
+<a href="https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml">![jazzy](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml/badge.svg)</a>
 <a href="https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml">![humble](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml/badge.svg)</a>
 
 </div>
@@ -38,6 +39,7 @@ AutoAPMS is **designed for Linux**. The following ROS 2 versions are supported:
 | ROS 2 Version | OS | Status |
 | :-------------: | :-----------: | :-----------: |
 | [Humble Hawksbill](https://docs.ros.org/en/humble/index.html) | [Ubuntu 22.04 (Jammy Jellyfish)](https://releases.ubuntu.com/jammy/) | [![ROS 2 Humble Test](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml) |
+| [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) | [Ubuntu 24.04 (Noble Numbat)](https://releases.ubuntu.com/noble/) | [![ROS 2 Jazzy Test](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml) |
 
 The following installation guide helps you getting started with AutoAPMS by building the source code yourself. Finally, you may test your installation by running an example.
 
@@ -65,7 +67,6 @@ Then, build and install all of the source packages up to `auto_apms_examples`.
 > We highly recommend building your workspace using the `symlink-install` option since AutoAPMS extensively utilizes XML and YAML resources. This option installs symbolic links to those non-compiled source files meaning that you don't need to rebuild again and again when you're for example tweaking a behavior tree document file. Instead, your changes take effect immediately and you just need to restart your application.
 
 ```bash
-source /opt/ros/humble/setup.bash
 colcon build --packages-up-to auto_apms_examples --symlink-install
 ```
 
