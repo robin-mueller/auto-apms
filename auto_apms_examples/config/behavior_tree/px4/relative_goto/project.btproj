@@ -1,37 +1,179 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4" project_name="relative_goto">
-    <include path="relative_goto.xml"/>
+    <include path="px4_relative_goto.xml"/>
     <!-- Description of Node Models (used by Groot) -->
     <TreeNodesModel>
         <Action ID="Arm">
             <input_port name="wait_until_ready_to_arm" default="true" type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
-            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
         </Action>
-        <Action ID="Disarm">
-            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
-        </Action>
+        <Action ID="Disarm"/>
+        <Action ID="EnableHold"/>
         <Action ID="Error">
             <input_port name="message" type="std::string">Error message. Creates a generic error message if empty.</input_port>
         </Action>
-        <Action ID="GoTo">
-            <input_port name="lat" type="double">Target latitude</input_port>
-            <input_port name="lon" type="double">Target longitude</input_port>
-            <input_port name="alt" type="double">Target altitude in meter (AMSL)</input_port>
-            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
-        </Action>
-        <Action ID="Land">
-            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
-        </Action>
-        <Condition ID="ReadGlobalPosition">
-            <output_port name="pos_vec" default="{pos_vec}" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position vector (latitude [°], longitude [°], altitude AMSL [m])</output_port>
+        <Condition ID="GetGlobalPosition">
             <output_port name="alt" default="{alt}" type="double">Current altitude in meter (AMSL)</output_port>
-            <output_port name="lat" default="{lat}" type="double">Current latitude in degree [°]</output_port>
             <output_port name="lon" default="{lon}" type="double">Current longitude in degree [°]</output_port>
-            <input_port name="port" type="std::string">Name of the ROS 2 topic to subscribe to.</input_port>
+            <output_port name="lat" default="{lat}" type="double">Current latitude in degree [°]</output_port>
+            <output_port name="vector" default="{pos_vec}" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position vector (latitude [°], longitude [°], altitude AMSL [m])</output_port>
         </Condition>
+        <Condition ID="GetLocalPosition">
+            <output_port name="down" default="{down}" type="double">Current down [m] relative to origin</output_port>
+            <output_port name="east" default="{east}" type="double">Current east [m] relative to origin</output_port>
+            <output_port name="north" default="{north}" type="double">Current north [m] relative to origin</output_port>
+            <output_port name="vector" default="{pos_vec}" type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current local position vector (north [m], east [m], down [m])</output_port>
+        </Condition>
+        <Action ID="GetParameter">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="BT::AnyTypeAllowed">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterBool">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="bool">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterBoolVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;bool, std::allocator&lt;bool&gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterByteVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;unsigned char, std::allocator&lt;unsigned char&gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterDouble">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="double">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterDoubleVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;double, std::allocator&lt;double&gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterInt">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="long">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterIntVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;long, std::allocator&lt;long&gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterString">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::string">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GetParameterStringVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to get.</input_port>
+            <output_port name="value" type="std::vector&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt;">Output port for the parameter's value.</output_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="GoTo">
+            <input_port name="reached_thresh_yaw" default="7.000000" type="double">Maximum heading error [°] under which the position is considered reached</input_port>
+            <input_port name="reached_thresh_vel" default="0.300000" type="double">Maximum velocity error [m/s] under which the position is considered reached</input_port>
+            <input_port name="reached_thresh_pos" default="0.500000" type="double">Maximum position error [m] under which the position is considered reached</input_port>
+            <input_port name="max_heading_rate" default="30.000000" type="double">Maximum heading rate [°/s]</input_port>
+            <input_port name="max_vertical_vel" default="5.000000" type="double">Maximum vertical velocity [m/s]</input_port>
+            <input_port name="max_horizontal_vel" default="10.000000" type="double">Maximum horizontal velocity [m/s]</input_port>
+            <input_port name="yaw" type="double">Desired yaw position in degree from north (heading) [-180°, 180)</input_port>
+            <input_port name="z" type="double">Override vector entry Z</input_port>
+            <input_port name="y" type="double">Override vector entry Y</input_port>
+            <input_port name="x" type="double">Override vector entry X</input_port>
+            <input_port name="vector" type="Eigen::Matrix&lt;double, -1, -1, 0, -1, -1&gt;">Target position as a row vector (separated by ;)</input_port>
+            <input_port name="frame" default="global" type="std::string">Reference frame: 'global' (Latitude, longitude, altitude (AMSL)) or 'local' (North, east, down from start)</input_port>
+        </Action>
+        <Action ID="HaltExecutor">
+            <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
+        </Action>
+        <Action ID="HasParameter">
+            <input_port name="parameter" type="std::string">Name of the parameter.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="Land"/>
+        <Action ID="Logger">
+            <input_port name="message" type="BT::AnyTypeAllowed">Message to be logged via rclcpp::Logger.</input_port>
+            <input_port name="level" default="INFO" type="std::string">Logger level. Must be one of [UNSET, DEBUG, INFO, WARN, ERROR, FATAL] but is not case sensitive.</input_port>
+        </Action>
+        <Action ID="Mission">
+            <input_port name="do_restart" default="false" type="bool">Wether to restart (true) or resume (false) the mission.</input_port>
+        </Action>
+        <Action ID="PauseExecutor">
+            <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
+        </Action>
+        <Action ID="RTL"/>
+        <Action ID="ResumeExecutor">
+            <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
+        </Action>
+        <Action ID="SetParameter">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="BT::AnyTypeAllowed">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterBool">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="bool">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterBoolVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;bool, std::allocator&lt;bool&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterByteVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;unsigned char, std::allocator&lt;unsigned char&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterDouble">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="double">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterDoubleVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;double, std::allocator&lt;double&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterInt">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="long">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterIntVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;long, std::allocator&lt;long&gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterString">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::string">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="SetParameterStringVec">
+            <input_port name="parameter" type="std::string">Name of the parameter to be set.</input_port>
+            <input_port name="value" type="std::vector&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt;">Value of the parameter to be set.</input_port>
+            <input_port name="node" type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
+        </Action>
+        <Action ID="StartExecutor">
+            <input_port name="executor" type="std::string">Name of the executor responsible for building and running the specified behavior tree.</input_port>
+            <input_port name="build_request" type="std::string">String passed to the tree build handler defining which tree is to be built.</input_port>
+            <input_port name="build_handler" type="std::string">Fully qualified class name of the build handler that is supposed to take care of the request. If empty, use the current one.</input_port>
+            <input_port name="root_tree" type="std::string">Name of the root tree. If empty, let the build handler determine the root tree.</input_port>
+            <input_port name="node_manifest" type="std::string">YAML/JSON formatted string encoding the name and the registration options for the tree nodes supposed to be loaded before building the tree.</input_port>
+            <input_port name="node_overrides" type="std::string">YAML/JSON formatted string encoding the name and the registration options for any tree nodes supposed to override previously loaded ones.</input_port>
+            <input_port name="clear_blackboard" default="true" type="bool">Boolean flag wether to clear the existing blackboard entries before the execution starts or not.</input_port>
+            <input_port name="attach" default="true" type="bool">Boolean flag wether to attach to the execution process or start in detached mode.</input_port>
+        </Action>
         <Action ID="Takeoff">
             <input_port name="alt" type="double">Target takeoff altitude in meter (AMSL)</input_port>
-            <input_port name="port" type="std::string">Name of the ROS 2 action.</input_port>
+        </Action>
+        <Action ID="TerminateExecutor">
+            <input_port name="executor" type="std::string">Name of the executor to command.</input_port>
         </Action>
     </TreeNodesModel>
 </root>

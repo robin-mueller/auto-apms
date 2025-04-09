@@ -27,11 +27,11 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({BT::InputPort<bool>(
+    return {BT::InputPort<bool>(
       INPUT_KEY_WAIT, true,
       "Wait for the UAV to be ready for arming. If false and UAV is not "
       "ready to arm, will "
-      "be rejected.")});
+      "be rejected.")};
   }
 
   bool setGoal(Goal & goal)

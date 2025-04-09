@@ -18,7 +18,9 @@ find_package(auto_apms_interfaces REQUIRED)
 
 set(_AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME "arm_disarm")
 set(_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME "enable_hold")
-set(_AUTO_APMS_PX4__GOTO_ACTION_NAME "go_to")
+set(_AUTO_APMS_PX4__GOTO_ACTION_PREFIX "go_to_")
+set(_AUTO_APMS_PX4__GOTO_GLOBAL_ACTION_NAME "${_AUTO_APMS_PX4__GOTO_ACTION_PREFIX}global")
+set(_AUTO_APMS_PX4__GOTO_LOCAL_ACTION_NAME "${_AUTO_APMS_PX4__GOTO_ACTION_PREFIX}local")
 set(_AUTO_APMS_PX4__LAND_ACTION_NAME "land")
 set(_AUTO_APMS_PX4__RTL_ACTION_NAME "rtl")
 set(_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME "takeoff")
@@ -66,7 +68,8 @@ target_link_libraries(px4_skills
 target_compile_definitions(px4_skills PRIVATE
     _AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME="${_AUTO_APMS_PX4__ARM_DISARM_ACTION_NAME}"
     _AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME="${_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME}"
-    _AUTO_APMS_PX4__GOTO_ACTION_NAME="${_AUTO_APMS_PX4__GOTO_ACTION_NAME}"
+    _AUTO_APMS_PX4__GOTO_GLOBAL_ACTION_NAME="${_AUTO_APMS_PX4__GOTO_GLOBAL_ACTION_NAME}"
+    _AUTO_APMS_PX4__GOTO_LOCAL_ACTION_NAME="${_AUTO_APMS_PX4__GOTO_LOCAL_ACTION_NAME}"
     _AUTO_APMS_PX4__LAND_ACTION_NAME="${_AUTO_APMS_PX4__LAND_ACTION_NAME}"
     _AUTO_APMS_PX4__RTL_ACTION_NAME="${_AUTO_APMS_PX4__RTL_ACTION_NAME}"
     _AUTO_APMS_PX4__TAKEOFF_ACTION_NAME="${_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME}"
@@ -81,7 +84,8 @@ ament_target_dependencies(px4_skills
 rclcpp_components_register_nodes(px4_skills
     "auto_apms_px4::ArmDisarmSkill"
     "auto_apms_px4::EnableHoldSkill"
-    "auto_apms_px4::GoToSkill"
+    "auto_apms_px4::GoToGlobalSkill"
+    "auto_apms_px4::GoToLocalSkill"
     "auto_apms_px4::LandSkill"
     "auto_apms_px4::TakeoffSkill"
     "auto_apms_px4::RTLSkill"
@@ -96,15 +100,15 @@ add_library(behavior_tree_nodes SHARED
     "src/node/action/arm.cpp"
     "src/node/action/disarm.cpp"
     "src/node/action/enable_hold.cpp"
-    "src/node/action/goto_vec.cpp"
     "src/node/action/goto.cpp"
     "src/node/action/land.cpp"
     "src/node/action/mission.cpp"
     "src/node/action/rtl.cpp"
     "src/node/action/takeoff.cpp"
-    "src/node/sub/glob_pos.cpp"
+    "src/node/sub/get_position.cpp"
 )
 ament_target_dependencies(behavior_tree_nodes
+    Eigen3
     px4_msgs
     auto_apms_interfaces
     auto_apms_behavior_tree_core
@@ -113,17 +117,16 @@ auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
     "auto_apms_px4::ArmAction"
     "auto_apms_px4::DisarmAction"
     "auto_apms_px4::EnableHoldAction"
-    "auto_apms_px4::GoToVectorAction"
     "auto_apms_px4::GoToAction"
     "auto_apms_px4::LandAction"
     "auto_apms_px4::MissionAction"
     "auto_apms_px4::RTLAction"
     "auto_apms_px4::TakeoffAction"
-    "auto_apms_px4::ReadGlobalPosition"
+    "auto_apms_px4::GetPosition<GlobalPositionMsg>"
+    "auto_apms_px4::GetPosition<LocalPositionMsg>"
     NODE_MANIFEST
     "config/behavior_tree_nodes.yaml.in"
-    NODE_MODEL_HEADER_TARGET
-    auto_apms_px4
+    NODE_MODEL_HEADER_TARGET auto_apms_px4
 )
 
 #
@@ -143,6 +146,7 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
     px4_msgs
     px4_ros2_cpp
+    eigen3_cmake_module
     Eigen3
     auto_apms_interfaces
     auto_apms_util

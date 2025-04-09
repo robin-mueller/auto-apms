@@ -13,14 +13,9 @@ EnableHold:
   port: ${_AUTO_APMS_PX4__ENABLE_HOLD_ACTION_NAME}
   logger_level: DEBUG
 
-GoToVector:
-  class_name: auto_apms_px4::GoToAction
-  port: ${_AUTO_APMS_PX4__GOTO_ACTION_NAME}
-  logger_level: DEBUG
-
 GoTo:
   class_name: auto_apms_px4::GoToAction
-  port: ${_AUTO_APMS_PX4__GOTO_ACTION_NAME}
+  port: ${_AUTO_APMS_PX4__GOTO_ACTION_PREFIX}(input:frame)
   logger_level: DEBUG
 
 Land:
@@ -43,7 +38,12 @@ Takeoff:
   port: ${_AUTO_APMS_PX4__TAKEOFF_ACTION_NAME}
   logger_level: DEBUG
 
-ReadGlobalPosition:
-  class_name: auto_apms_px4::ReadGlobalPosition
+GetGlobalPosition:
+  class_name: auto_apms_px4::GetPosition<GlobalPositionMsg>
   port: /fmu/out/vehicle_global_position
+  logger_level: DEBUG
+
+GetLocalPosition:
+  class_name: auto_apms_px4::GetPosition<LocalPositionMsg>
+  port: /fmu/out/vehicle_local_position
   logger_level: DEBUG

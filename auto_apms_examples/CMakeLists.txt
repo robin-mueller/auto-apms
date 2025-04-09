@@ -92,7 +92,8 @@ if(auto_apms_px4_FOUND)
     auto_apms_behavior_tree_declare_trees(
         "config/behavior_tree/px4/relative_goto/px4_relative_goto.xml"
         NODE_MANIFEST
-        "config/behavior_tree/px4/relative_goto/node_plugins.yaml"
+        "auto_apms_behavior_tree::behavior_tree_nodes"
+        "auto_apms_px4::behavior_tree_nodes"
     )
     auto_apms_behavior_tree_declare_trees(
         "config/behavior_tree/px4/contingency_mission/bringup.xml"

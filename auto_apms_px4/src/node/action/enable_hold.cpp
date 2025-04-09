@@ -23,6 +23,8 @@ class EnableHoldAction : public auto_apms_behavior_tree::core::RosActionNode<aut
 {
 public:
   using RosActionNode::RosActionNode;
+
+  static BT::PortsList providedPorts() { return {}; }
 };
 
 }  // namespace auto_apms_px4

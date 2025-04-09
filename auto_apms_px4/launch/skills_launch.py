@@ -19,7 +19,8 @@ from launch_ros.descriptions import ComposableNode
 ALL_SKILL_NAMES = [
     "auto_apms_px4::ArmDisarmSkill",
     "auto_apms_px4::EnableHoldSkill",
-    "auto_apms_px4::GoToSkill",
+    "auto_apms_px4::GoToGlobalSkill",
+    "auto_apms_px4::GoToLocalSkill",
     "auto_apms_px4::LandSkill",
     "auto_apms_px4::TakeoffSkill",
     "auto_apms_px4::RTLSkill",
@@ -39,6 +40,7 @@ def generate_launch_description():
                 composable_node_descriptions=[
                     ComposableNode(package="auto_apms_px4", plugin=name) for name in ALL_SKILL_NAMES
                 ],
+                # ros_arguments=["--log-level", "go_to_local_node:=DEBUG"],
                 output="screen",
                 emulate_tty=True,
             )

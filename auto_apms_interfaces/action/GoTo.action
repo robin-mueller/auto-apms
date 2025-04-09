@@ -1,12 +1,19 @@
 # Request
-float64 lat  # latitude [deg] (47.1234567°, not 471234567°)
-float64 lon  # longitude [deg]  (8.1234567°, not 81234567°)
-float64 alt  # altitude AMSL [m]
+geometry_msgs/Point pos  # Global: lat [°], lon [°], alt (AMSL) [m] - Local: north [m], east [m], down [m]
 bool head_towards_destination true  # Wether to always control the heading in direction of destination
-float32 heading_clockwise_from_north_rad 0  # Heading from north clockwise in local frame (NED). Only used if head_towards_destination is false
+float32 heading_clockwise_from_north_deg 0  # Heading as angle from north axis [-180°, 180°) (in mathematically positive direction for right handed coord systems) in local frame (NED). Only used if head_towards_destination is false
+float32 max_vertical_vel_m_s 5  # Maximum vertical velocity [m/s]
+float32 max_horizontal_vel_m_s 10  # Maximum horizontal velocity [m/s]
+float32 max_heading_rate_deg_s 30  # Maximum heading rate [°/s]
+float32 reached_thresh_pos_m 0.5  # Maximum position error [m] under which the position is considered reached
+float32 reached_thresh_vel_m_s 0.3  # Maximum velocity error [m/s] under which the position is considered reached
+float32 reached_thresh_heading_deg 7  # Maximum heading error [°] under which the position is considered reached
 ---
 # Result
+geometry_msgs/Point remaining_dist  # Remaining distance to pos from end position (NED)
+float32 remaining_heading_deg  # Remaining error in heading [°]
 ---
 # Feedback
-geometry_msgs/Point remaining_distance_f_ned  # Remaining distance vector to destination in local frame (NED)
-float32 remaining_time_s  # Estimated remaining time until arrival
+geometry_msgs/Point remaining_dist  # Remaining distance vector from current position to destination (NED)
+float32 remaining_heading_deg  # Remaining degrees to reach target heading [°]
+float32 remaining_time_s  # Estimated remaining time until arrivalINPUT_KEY_FRAME

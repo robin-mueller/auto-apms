@@ -3,80 +3,105 @@
       main_tree_to_execute="RelativeGoTo">
   <BehaviorTree ID="RelativeGoTo">
     <Fallback>
-      <SequenceWithMemory>
-        <ReadGlobalPosition pos_vec="{pos_vec}"
-                            alt="{alt}"
-                            lat="{lat}"
-                            lon="{lon}"
-                            port=""
-                            _onSuccess="new_alt := alt + 10;&#10;new_lon := lon + 0.0001"/>
-        <Arm wait_until_ready_to_arm="true"
-             port=""/>
-        <Takeoff alt="{new_alt}"
-                 port=""/>
-        <GoTo lat="{lat}"
-              lon="{new_lon}"
-              alt="{new_alt}"
-              port=""/>
-        <Land port=""/>
-        <Disarm port=""/>
-      </SequenceWithMemory>
+      <Sequence>
+        <Sequence name="GetParameters">
+          <Fallback>
+            <HasParameter parameter="bb.x"
+                          node=""/>
+            <Script code="@x := 0.0"/>
+          </Fallback>
+          <Fallback>
+            <HasParameter parameter="bb.y"
+                          node=""/>
+            <Script code="@y := 0.0"/>
+          </Fallback>
+          <Fallback>
+            <HasParameter parameter="bb.z"
+                          node=""/>
+            <Script code="@z := 0.0"/>
+          </Fallback>
+        </Sequence>
+        <RetryUntilSuccessful num_attempts="-1"
+                              _onSuccess="x := north + @x; y := east + @y; z := down + @z">
+          <GetLocalPosition down="{down}"
+                            east="{east}"
+                            north="{north}"
+                            vector="{pos_vec}"/>
+        </RetryUntilSuccessful>
+        <GoTo reached_thresh_yaw="7.000000"
+              reached_thresh_vel="0.300000"
+              reached_thresh_pos="0.500000"
+              max_heading_rate="30.000000"
+              max_vertical_vel="5.000000"
+              max_horizontal_vel="10.000000"
+              z="{z}"
+              y="{y}"
+              x="{x}"
+              vector="{pos_vec}"
+              frame="local"/>
+      </Sequence>
       <Error message="relative_goto failed"/>
     </Fallback>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Action ID="Arm">
-      <input_port name="wait_until_ready_to_arm"
-                  default="true"
-                  type="bool">Wait for the UAV to be ready for arming. If false and UAV is not ready to arm, will be rejected.</input_port>
-      <input_port name="port"
-                  type="std::string">Name of the ROS 2 action.</input_port>
-    </Action>
-    <Action ID="Disarm">
-      <input_port name="port"
-                  type="std::string">Name of the ROS 2 action.</input_port>
-    </Action>
     <Action ID="Error">
       <input_port name="message"
                   type="std::string">Error message. Creates a generic error message if empty.</input_port>
     </Action>
-    <Action ID="GoTo">
-      <input_port name="lat"
-                  type="double">Target latitude</input_port>
-      <input_port name="lon"
-                  type="double">Target longitude</input_port>
-      <input_port name="alt"
-                  type="double">Target altitude in meter (AMSL)</input_port>
-      <input_port name="port"
-                  type="std::string">Name of the ROS 2 action.</input_port>
-    </Action>
-    <Action ID="Land">
-      <input_port name="port"
-                  type="std::string">Name of the ROS 2 action.</input_port>
-    </Action>
-    <Condition ID="ReadGlobalPosition">
-      <output_port name="pos_vec"
+    <Condition ID="GetLocalPosition">
+      <output_port name="down"
+                   default="{down}"
+                   type="double">Current down [m] relative to origin</output_port>
+      <output_port name="east"
+                   default="{east}"
+                   type="double">Current east [m] relative to origin</output_port>
+      <output_port name="north"
+                   default="{north}"
+                   type="double">Current north [m] relative to origin</output_port>
+      <output_port name="vector"
                    default="{pos_vec}"
-                   type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current global position vector (latitude [°], longitude [°], altitude AMSL [m])</output_port>
-      <output_port name="alt"
-                   default="{alt}"
-                   type="double">Current altitude in meter (AMSL)</output_port>
-      <output_port name="lat"
-                   default="{lat}"
-                   type="double">Current latitude in degree [°]</output_port>
-      <output_port name="lon"
-                   default="{lon}"
-                   type="double">Current longitude in degree [°]</output_port>
-      <input_port name="port"
-                  type="std::string">Name of the ROS 2 topic to subscribe to.</input_port>
+                   type="Eigen::Matrix&lt;double, 3, 1, 0, 3, 1&gt;">Current local position vector (north [m], east [m], down [m])</output_port>
     </Condition>
-    <Action ID="Takeoff">
-      <input_port name="alt"
-                  type="double">Target takeoff altitude in meter (AMSL)</input_port>
-      <input_port name="port"
-                  type="std::string">Name of the ROS 2 action.</input_port>
+    <Action ID="GoTo">
+      <input_port name="reached_thresh_yaw"
+                  default="7.000000"
+                  type="double">Maximum heading error [°] under which the position is considered reached</input_port>
+      <input_port name="reached_thresh_vel"
+                  default="0.300000"
+                  type="double">Maximum velocity error [m/s] under which the position is considered reached</input_port>
+      <input_port name="reached_thresh_pos"
+                  default="0.500000"
+                  type="double">Maximum position error [m] under which the position is considered reached</input_port>
+      <input_port name="max_heading_rate"
+                  default="30.000000"
+                  type="double">Maximum heading rate [°/s]</input_port>
+      <input_port name="max_vertical_vel"
+                  default="5.000000"
+                  type="double">Maximum vertical velocity [m/s]</input_port>
+      <input_port name="max_horizontal_vel"
+                  default="10.000000"
+                  type="double">Maximum horizontal velocity [m/s]</input_port>
+      <input_port name="yaw"
+                  type="double">Desired yaw position in degree from north (heading) [-180°, 180)</input_port>
+      <input_port name="z"
+                  type="double">Override vector entry Z</input_port>
+      <input_port name="y"
+                  type="double">Override vector entry Y</input_port>
+      <input_port name="x"
+                  type="double">Override vector entry X</input_port>
+      <input_port name="vector"
+                  type="Eigen::Matrix&lt;double, -1, -1, 0, -1, -1&gt;">Target position as a row vector (separated by ;)</input_port>
+      <input_port name="frame"
+                  default="global"
+                  type="std::string">Reference frame: 'global' (Latitude, longitude, altitude (AMSL)) or 'local' (North, east, down from start)</input_port>
+    </Action>
+    <Action ID="HasParameter">
+      <input_port name="parameter"
+                  type="std::string">Name of the parameter.</input_port>
+      <input_port name="node"
+                  type="std::string">Name of the targeted ROS 2 node. Leave empty to target this executor's node.</input_port>
     </Action>
   </TreeNodesModel>
 

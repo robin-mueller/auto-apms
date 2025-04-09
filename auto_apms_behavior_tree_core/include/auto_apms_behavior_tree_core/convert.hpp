@@ -16,6 +16,7 @@
 
 #include <string>
 #include <vector>
+#include <Eigen/Geometry>
 
 #include "behaviortree_cpp/basic_types.h"
 
@@ -33,6 +34,9 @@ template <>
 [[nodiscard]] std::vector<int64_t> convertFromString<std::vector<int64_t>>(StringView str);
 
 template <>
+[[nodiscard]] Eigen::MatrixXd convertFromString<Eigen::MatrixXd>(StringView str);
+
+template <>
 [[nodiscard]] std::string toStr<std::vector<uint8_t>>(const std::vector<uint8_t> & value);
 
 template <>
@@ -43,6 +47,9 @@ template <>
 
 template <>
 [[nodiscard]] std::string toStr<std::vector<double>>(const std::vector<double> & value);
+
+template <>
+[[nodiscard]] std::string toStr<Eigen::MatrixXd>(const Eigen::MatrixXd & value);
 
 template <>
 [[nodiscard]] std::string toStr<std::vector<std::string>>(const std::vector<std::string> & value);

@@ -26,25 +26,25 @@ namespace auto_apms_px4
 
 using GoToActionType = auto_apms_interfaces::action::GoTo;
 
-class GoToMode : public PositionAwareMode<GoToActionType>
+class GoToGlobalMode : public PositionAwareMode<GoToActionType>
 {
-  std::shared_ptr<px4_ros2::GotoGlobalSetpointType> goto_setpoint_ptr_;
+  std::shared_ptr<px4_ros2::GotoGlobalSetpointType> goto_global_setpoint_ptr_;
   Eigen::Vector3d position_target_f_glob_;
   float heading_target_rad_;
 
 public:
-  GoToMode(
+  GoToGlobalMode(
     rclcpp::Node & node, const px4_ros2::ModeBase::Settings & settings, const std::string & topic_namespace_prefix,
     std::shared_ptr<ActionContextType> action_context_ptr)
   : PositionAwareMode{node, settings, topic_namespace_prefix, action_context_ptr}
   {
-    goto_setpoint_ptr_ = std::make_shared<px4_ros2::GotoGlobalSetpointType>(*this);
+    goto_global_setpoint_ptr_ = std::make_shared<px4_ros2::GotoGlobalSetpointType>(*this);
   }
 
 private:
   void OnActivateWithGoal(std::shared_ptr<const Goal> goal_ptr) final
   {
-    position_target_f_glob_ = Eigen::Vector3d(goal_ptr->lat, goal_ptr->lon, goal_ptr->alt);
+    position_target_f_glob_ = Eigen::Vector3d(goal_ptr->pos.x, goal_ptr->pos.y, goal_ptr->pos.z);
 
     // Heading target has to be in rad clockwise from north
     if (goal_ptr->head_towards_destination) {
@@ -52,7 +52,7 @@ private:
       heading_target_rad_ =
         px4_ros2::headingToGlobalPosition(vehicle_global_position_ptr_->position(), position_target_f_glob_);
     } else {
-      heading_target_rad_ = goal_ptr->heading_clockwise_from_north_rad;
+      heading_target_rad_ = px4_ros2::wrapPi(px4_ros2::degToRad(goal_ptr->heading_clockwise_from_north_deg));
     }
 
     auto double_to_string = [](double num, int decimals) {
@@ -62,43 +62,136 @@ private:
     };
 
     RCLCPP_DEBUG(
-      node().get_logger(), "GoTo target: Position: [%s°, %s°, %sm] - Heading: %f",
+      node().get_logger(), "GoToGlobal target: Position: [%s°, %s°, %sm] - Heading: %f°",
       double_to_string(position_target_f_glob_.x(), 10).c_str(),
       double_to_string(position_target_f_glob_.y(), 10).c_str(),
-      double_to_string(position_target_f_glob_.z(), 2).c_str(), heading_target_rad_);
+      double_to_string(position_target_f_glob_.z(), 2).c_str(), px4_ros2::radToDeg(heading_target_rad_));
   }
+
   void UpdateSetpointWithGoal(
-    float dt_s, std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+    float /*dt_s*/, std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
     std::shared_ptr<Result> result_ptr) final
   {
-    (void)goal_ptr;
-    (void)dt_s;
-    (void)result_ptr;
-
-    goto_setpoint_ptr_->update(position_target_f_glob_, heading_target_rad_);
+    goto_global_setpoint_ptr_->update(
+      position_target_f_glob_, heading_target_rad_, goal_ptr->max_horizontal_vel_m_s, goal_ptr->max_vertical_vel_m_s,
+      px4_ros2::degToRad(goal_ptr->max_heading_rate_deg_s));
 
     // Remaining distance to target
     Eigen::Vector3d distance_f_ned =
       px4_ros2::vectorToGlobalPosition(vehicle_global_position_ptr_->position(), position_target_f_glob_)
         .cast<double>();
-    tf2::convert(distance_f_ned, feedback_ptr->remaining_distance_f_ned);
+    tf2::convert(distance_f_ned, feedback_ptr->remaining_dist);
+
+    // Remaining degrees until target heading
+    feedback_ptr->remaining_heading_deg =
+      px4_ros2::radToDeg(px4_ros2::wrapPi(heading_target_rad_ - vehicle_attitude_ptr_->yaw()));
 
     // Estimated remaining time. Use only velocity in direction of target for estimation.
     feedback_ptr->remaining_time_s =
       distance_f_ned.norm() /
       (vehicle_local_position_ptr_->velocityNed().cast<double>().dot(distance_f_ned.normalized()));
 
-    if (IsPositionReached(position_target_f_glob_)) {
+    if (
+      IsGlobalPositionReached(
+        position_target_f_glob_, goal_ptr->reached_thresh_pos_m, goal_ptr->reached_thresh_vel_m_s) &&
+      IsHeadingReached(heading_target_rad_, px4_ros2::degToRad(goal_ptr->reached_thresh_heading_deg))) {
+      result_ptr->remaining_dist = feedback_ptr->remaining_dist;
+      result_ptr->remaining_heading_deg = feedback_ptr->remaining_heading_deg;
       completed(px4_ros2::Result::Success);
     }
   }
 };
 
-class GoToSkill : public ModeExecutorFactory<GoToActionType, GoToMode>
+class GoToLocalMode : public PositionAwareMode<GoToActionType>
+{
+  std::shared_ptr<px4_ros2::GotoSetpointType> goto_local_setpoint_ptr_;
+  Eigen::Vector3d position_target_f_ned_;
+  float heading_target_rad_;
+
+public:
+  GoToLocalMode(
+    rclcpp::Node & node, const px4_ros2::ModeBase::Settings & settings, const std::string & topic_namespace_prefix,
+    std::shared_ptr<ActionContextType> action_context_ptr)
+  : PositionAwareMode{node, settings, topic_namespace_prefix, action_context_ptr}
+  {
+    goto_local_setpoint_ptr_ = std::make_shared<px4_ros2::GotoSetpointType>(*this);
+  }
+
+private:
+  void OnActivateWithGoal(std::shared_ptr<const Goal> goal_ptr) final
+  {
+    position_target_f_ned_ = Eigen::Vector3d(goal_ptr->pos.x, goal_ptr->pos.y, goal_ptr->pos.z);
+
+    // Heading target has to be in rad clockwise from north
+    if (goal_ptr->head_towards_destination) {
+      // Heading target needs to be in interval [-pi, pi] (from north)
+      const px4_msgs::msg::VehicleLocalPosition & pos = vehicle_local_position_ptr_->last();
+      const Eigen::Vector2d pos_vec(pos.x, pos.y);
+      const Eigen::Vector2d d = position_target_f_ned_.head<2>() - pos_vec;
+      heading_target_rad_ = px4_ros2::wrapPi(atan2(d.y(), d.x()));
+    } else {
+      heading_target_rad_ = px4_ros2::wrapPi(px4_ros2::degToRad(goal_ptr->heading_clockwise_from_north_deg));
+    }
+
+    auto double_to_string = [](double num, int decimals) {
+      std::stringstream stream;
+      stream << std::fixed << std::setprecision(decimals) << num;
+      return stream.str();
+    };
+
+    RCLCPP_DEBUG(
+      node().get_logger(), "GoToLocal target: Position: [%sm, %sm, %sm] - Heading: %f°",
+      double_to_string(position_target_f_ned_.x(), 2).c_str(), double_to_string(position_target_f_ned_.y(), 2).c_str(),
+      double_to_string(position_target_f_ned_.z(), 2).c_str(), px4_ros2::radToDeg(heading_target_rad_));
+  }
+
+  void UpdateSetpointWithGoal(
+    float /*dt_s*/, std::shared_ptr<const Goal> goal_ptr, std::shared_ptr<Feedback> feedback_ptr,
+    std::shared_ptr<Result> result_ptr) final
+  {
+    goto_local_setpoint_ptr_->update(
+      position_target_f_ned_.cast<float>(), heading_target_rad_, goal_ptr->max_horizontal_vel_m_s, goal_ptr->max_vertical_vel_m_s,
+      px4_ros2::degToRad(goal_ptr->max_heading_rate_deg_s));
+
+    // Remaining distance to target
+    Eigen::Vector3d distance_f_ned =
+      px4_ros2::vectorToGlobalPosition(vehicle_global_position_ptr_->position(), position_target_f_ned_).cast<double>();
+    tf2::convert(distance_f_ned, feedback_ptr->remaining_dist);
+
+    // Remaining degrees until target heading
+    feedback_ptr->remaining_heading_deg =
+      px4_ros2::radToDeg(px4_ros2::wrapPi(heading_target_rad_ - vehicle_attitude_ptr_->yaw()));
+
+    // Estimated remaining time. Use only velocity in direction of target for estimation.
+    feedback_ptr->remaining_time_s =
+      distance_f_ned.norm() /
+      (vehicle_local_position_ptr_->velocityNed().cast<double>().dot(distance_f_ned.normalized()));
+
+    if (
+      IsLocalPositionReached(
+        position_target_f_ned_, goal_ptr->reached_thresh_pos_m, goal_ptr->reached_thresh_vel_m_s) &&
+      IsHeadingReached(heading_target_rad_, px4_ros2::degToRad(goal_ptr->reached_thresh_heading_deg))) {
+      result_ptr->remaining_dist = feedback_ptr->remaining_dist;
+      result_ptr->remaining_heading_deg = feedback_ptr->remaining_heading_deg;
+      completed(px4_ros2::Result::Success);
+    }
+  }
+};
+
+class GoToGlobalSkill : public ModeExecutorFactory<GoToActionType, GoToGlobalMode>
 {
 public:
-  explicit GoToSkill(const rclcpp::NodeOptions & options)
-  : ModeExecutorFactory{_AUTO_APMS_PX4__GOTO_ACTION_NAME, options}
+  explicit GoToGlobalSkill(const rclcpp::NodeOptions & options)
+  : ModeExecutorFactory{_AUTO_APMS_PX4__GOTO_GLOBAL_ACTION_NAME, options}
+  {
+  }
+};
+
+class GoToLocalSkill : public ModeExecutorFactory<GoToActionType, GoToLocalMode>
+{
+public:
+  explicit GoToLocalSkill(const rclcpp::NodeOptions & options)
+  : ModeExecutorFactory{_AUTO_APMS_PX4__GOTO_LOCAL_ACTION_NAME, options}
   {
   }
 };
@@ -106,4 +199,5 @@ public:
 }  // namespace auto_apms_px4
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::GoToSkill)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::GoToGlobalSkill)
+RCLCPP_COMPONENTS_REGISTER_NODE(auto_apms_px4::GoToLocalSkill)

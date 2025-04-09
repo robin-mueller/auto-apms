@@ -79,7 +79,7 @@ Tree TreeBuilder::instantiate(const std::string & root_tree_name, TreeBlackboard
     tree = factory_.createTree(root_tree_name, bb_ptr);
     factory_.clearRegisteredBehaviorTrees();
   } catch (const std::exception & e) {
-    throw exceptions::TreeBuildError("Error during instantiate(): " + std::string(e.what()));
+    throw exceptions::TreeBuildError("Error during TreeBuilder::instantiate(): " + std::string(e.what()));
   }
   return tree;
 }
@@ -90,8 +90,8 @@ Tree TreeBuilder::instantiate(TreeBlackboardSharedPtr bb_ptr)
   throw exceptions::TreeBuildError(
     "Cannot instantiate tree without a root tree name. You must either specify the attribute '" +
     std::string(TreeDocument::ROOT_TREE_ATTRIBUTE_NAME) +
-    "' of the tree document's root element or call setRootTreeName() to define the root tree. Alternatively, you may "
-    "call a different signature of instantiate().");
+    "' of the tree document's root element or call TreeDocument::setRootTreeName() to define the root tree. Alternatively, you may "
+    "call a different signature of TreeBuilder::instantiate().");
 }
 
 }  // namespace auto_apms_behavior_tree::core

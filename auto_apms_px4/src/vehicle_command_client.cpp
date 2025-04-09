@@ -66,8 +66,8 @@ VehicleCommandClient::SendCommandResult VehicleCommandClient::syncSendVehicleCom
   const px4_msgs::msg::VehicleCommand & cmd) const
 {
   SendCommandResult result = SendCommandResult::REJECTED;
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(vehicle_command_ack_sub_);
+  using AckWaitSet = rclcpp::StaticWaitSet<1, 0, 0, 0, 0, 0>;
+  AckWaitSet wait_set({{{vehicle_command_ack_sub_}}});
 
   bool got_reply = false;
   auto start_time = std::chrono::steady_clock::now();
@@ -80,7 +80,7 @@ VehicleCommandClient::SendCommandResult VehicleCommandClient::syncSendVehicleCom
       break;
     }
 
-    auto wait_ret = wait_set.wait(command_timeout_ - (now - start_time));
+    rclcpp::WaitResult<AckWaitSet> wait_ret = wait_set.wait(command_timeout_ - (now - start_time));
 
     if (wait_ret.kind() == rclcpp::WaitResultKind::Ready) {
       px4_msgs::msg::VehicleCommandAck ack;
@@ -88,26 +88,24 @@ VehicleCommandClient::SendCommandResult VehicleCommandClient::syncSendVehicleCom
 
       if (vehicle_command_ack_sub_->take(ack, info)) {
         if (ack.command == cmd.command && ack.target_component == cmd.source_component) {
-          RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - received ack result %i", cmd.command, ack.result);
+          RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - Received acknowledgement %i", cmd.command, ack.result);
           if (ack.result == px4_msgs::msg::VehicleCommandAck::VEHICLE_CMD_RESULT_ACCEPTED) {
             result = SendCommandResult::ACCEPTED;
           }
           got_reply = true;
         }
       } else {
-        RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - message not valid", cmd.command);
+        RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - Acknowledgement message not valid", cmd.command);
       }
     }
   }
 
-  wait_set.remove_subscription(vehicle_command_ack_sub_);
-
   if (!got_reply) {
     result = SendCommandResult::TIMEOUT;
-    RCLCPP_WARN(logger_, "syncSendVehicleCommand: Command %i - timeout, no ack received", cmd.command);
+    RCLCPP_WARN(logger_, "syncSendVehicleCommand: Command %i - Timeout, no acknowledgement received", cmd.command);
   }
 
-  RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - returned %s", cmd.command, toStr(result).c_str());
+  RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - Result code: %s", cmd.command, toStr(result).c_str());
 
   return result;
 }

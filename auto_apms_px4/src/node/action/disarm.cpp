@@ -23,7 +23,7 @@ class DisarmAction : public auto_apms_behavior_tree::core::RosActionNode<auto_ap
 public:
   using RosActionNode::RosActionNode;
 
-  static BT::PortsList providedPorts() { return providedBasicPorts({}); }
+  static BT::PortsList providedPorts() { return {}; }
 
   bool setGoal(Goal & goal)
   {

@@ -100,9 +100,21 @@ protected:
     vehicle_attitude_ptr_ = std::make_shared<px4_ros2::OdometryAttitude>(*this);
   }
 
-  bool IsPositionReached(const Eigen::Vector3d & target_position_f_glob) const;
-  bool IsAltitudeReached(float target_altitude_amsl_m) const;
-  bool IsHeadingReached(float target_heading_rad) const;
+  bool IsGlobalPositionReached(
+    const Eigen::Vector3d & target_position_f_glob, double reached_thresh_pos_m = 0.5,
+    double reached_thresh_vel_m_s = 0.3) const;
+
+  bool IsLocalPositionReached(
+    const Eigen::Vector3d & target_position_f_ned, double reached_thresh_pos_m = 0.5,
+    double reached_thresh_vel_m_s = 0.3) const;
+
+  bool IsGlobalAltitudeReached(
+    float target_altitude_amsl_m, double reached_thresh_pos_m = 0.5, double reached_thresh_vel_m_s = 0.3) const;
+
+  bool IsLocalAltitudeReached(
+    float target_altitude_hagl_m, double reached_thresh_pos_m = 0.5, double reached_thresh_vel_m_s = 0.3) const;
+
+  bool IsHeadingReached(float target_heading_rad, double reached_thresh_heading_rad = 0.12) const;
 
 protected:
   std::shared_ptr<px4_ros2::OdometryGlobalPosition> vehicle_global_position_ptr_;
@@ -111,31 +123,50 @@ protected:
 };
 
 template <class ActionT>
-bool PositionAwareMode<ActionT>::IsPositionReached(const Eigen::Vector3d & target_position_f_glob) const
+bool PositionAwareMode<ActionT>::IsGlobalPositionReached(
+  const Eigen::Vector3d & target_position_f_glob, double reached_thresh_pos_m, double reached_thresh_vel_m_s) const
 {
-  static constexpr float kPositionErrorThresholdMeter = 0.5f;           // [m]
-  static constexpr float kVelocityErrorThresholdMeterPerSecond = 0.3f;  // [m/s]
   const float position_error_m =
     px4_ros2::distanceToGlobalPosition(vehicle_global_position_ptr_->position(), target_position_f_glob);
-  return (position_error_m < kPositionErrorThresholdMeter) &&
-         (vehicle_local_position_ptr_->velocityNed().norm() < kVelocityErrorThresholdMeterPerSecond);
+  return (position_error_m < reached_thresh_pos_m) &&
+         (vehicle_local_position_ptr_->velocityNed().norm() <= reached_thresh_vel_m_s);
 }
 
 template <class ActionT>
-bool PositionAwareMode<ActionT>::IsAltitudeReached(float target_altitude_amsl_m) const
+bool PositionAwareMode<ActionT>::IsLocalPositionReached(
+  const Eigen::Vector3d & target_position_f_ned, double reached_thresh_pos_m, double reached_thresh_vel_m_s) const
 {
-  auto target_position_f_glob = vehicle_global_position_ptr_->position();
+  const px4_msgs::msg::VehicleLocalPosition & pos = vehicle_local_position_ptr_->last();
+  const Eigen::Vector3d vec(pos.x, pos.y, pos.z);
+  const double position_error_m = (target_position_f_ned - vec).norm();
+  return (position_error_m < reached_thresh_pos_m) &&
+         (vehicle_local_position_ptr_->velocityNed().norm() <= reached_thresh_vel_m_s);
+}
+
+template <class ActionT>
+bool PositionAwareMode<ActionT>::IsGlobalAltitudeReached(
+  float target_altitude_amsl_m, double reached_thresh_pos_m, double reached_thresh_vel_m_s) const
+{
+  Eigen::Vector3d target_position_f_glob = vehicle_global_position_ptr_->position();
   target_position_f_glob.z() = target_altitude_amsl_m;
-  return IsPositionReached(target_position_f_glob);
+  return IsGlobalPositionReached(target_position_f_glob, reached_thresh_pos_m, reached_thresh_vel_m_s);
 }
 
 template <class ActionT>
-bool PositionAwareMode<ActionT>::IsHeadingReached(float target_heading_rad) const
+bool PositionAwareMode<ActionT>::IsLocalAltitudeReached(
+  float target_altitude_hagl_m, double reached_thresh_pos_m, double reached_thresh_vel_m_s) const
 {
-  using namespace px4_ros2::literals;
-  static constexpr float kHeadingErrorThresholdRad = 7.0_deg;
-  const float heading_error_wrapped = px4_ros2::wrapPi(target_heading_rad - vehicle_attitude_ptr_->yaw());
-  return fabsf(heading_error_wrapped) < kHeadingErrorThresholdRad;
+  const px4_msgs::msg::VehicleLocalPosition & pos = vehicle_local_position_ptr_->last();
+  const Eigen::Vector3d target_position_f_ned(pos.x, pos.y, target_altitude_hagl_m);
+  return IsLocalPositionReached(target_position_f_ned, reached_thresh_pos_m, reached_thresh_vel_m_s);
+}
+
+template <class ActionT>
+bool PositionAwareMode<ActionT>::IsHeadingReached(float target_heading_rad, double reached_thresh_heading_rad) const
+{
+  const float heading_error_wrapped =
+    px4_ros2::wrapPi(target_heading_rad - vehicle_attitude_ptr_->yaw());
+  return fabsf(heading_error_wrapped) <= fabsf(reached_thresh_heading_rad);
 }
 
 }  // namespace auto_apms_px4

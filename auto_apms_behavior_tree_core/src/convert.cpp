@@ -14,6 +14,8 @@
 
 #include "auto_apms_behavior_tree_core/convert.hpp"
 
+#include <sstream>
+
 #include "auto_apms_util/string.hpp"
 
 /// @cond INTERNAL
@@ -57,6 +59,46 @@ std::vector<int64_t> convertFromString<std::vector<int64_t>>(StringView str)
 }
 
 template <>
+Eigen::MatrixXd convertFromString<Eigen::MatrixXd>(StringView str)
+{
+  const std::string input_str(str);
+  std::vector<std::vector<double>> values;
+  std::stringstream matrix_stream(input_str);
+  std::string row_str;
+
+  // Parse each row (separated by commas)
+  while (std::getline(matrix_stream, row_str, ',')) {
+    std::stringstream row_stream(row_str);
+    std::string value_str;
+    std::vector<double> row_values;
+
+    // Parse each value in the row (separated by semicolons)
+    while (std::getline(row_stream, value_str, ';')) {
+      row_values.push_back(convertFromString<double>(value_str));
+    }
+
+    if (!row_values.empty()) {
+      values.push_back(row_values);
+    }
+  }
+
+  // Create the matrix
+  if (values.empty()) {
+    return Eigen::MatrixXd();
+  }
+  size_t rows = values.size();
+  size_t cols = values[0].size();
+  Eigen::MatrixXd matrix(rows, cols);
+
+  for (size_t i = 0; i < rows; ++i) {
+    for (size_t j = 0; j < std::min(cols, values[i].size()); ++j) {
+      matrix(i, j) = values[i][j];
+    }
+  }
+  return matrix;
+}
+
+template <>
 std::string toStr(const std::vector<uint8_t> & value)
 {
   return auto_apms_util::join(value, ";");
@@ -78,6 +120,15 @@ template <>
 std::string toStr<std::vector<double>>(const std::vector<double> & value)
 {
   return auto_apms_util::join(value, ";");
+}
+
+template <>
+std::string toStr<Eigen::MatrixXd>(const Eigen::MatrixXd & value)
+{
+  Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ";", ",", "", "", "", "");
+  std::stringstream ss;
+  ss << value.format(fmt);
+  return ss.str();
 }
 
 template <>
