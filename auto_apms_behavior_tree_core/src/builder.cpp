@@ -90,7 +90,8 @@ Tree TreeBuilder::instantiate(TreeBlackboardSharedPtr bb_ptr)
   throw exceptions::TreeBuildError(
     "Cannot instantiate tree without a root tree name. You must either specify the attribute '" +
     std::string(TreeDocument::ROOT_TREE_ATTRIBUTE_NAME) +
-    "' of the tree document's root element or call TreeDocument::setRootTreeName() to define the root tree. Alternatively, you may "
+    "' of the tree document's root element or call TreeDocument::setRootTreeName() to define the root tree. "
+    "Alternatively, you may "
     "call a different signature of TreeBuilder::instantiate().");
 }
 

@@ -164,8 +164,7 @@ bool PositionAwareMode<ActionT>::IsLocalAltitudeReached(
 template <class ActionT>
 bool PositionAwareMode<ActionT>::IsHeadingReached(float target_heading_rad, double reached_thresh_heading_rad) const
 {
-  const float heading_error_wrapped =
-    px4_ros2::wrapPi(target_heading_rad - vehicle_attitude_ptr_->yaw());
+  const float heading_error_wrapped = px4_ros2::wrapPi(target_heading_rad - vehicle_attitude_ptr_->yaw());
   return fabsf(heading_error_wrapped) <= fabsf(reached_thresh_heading_rad);
 }
 

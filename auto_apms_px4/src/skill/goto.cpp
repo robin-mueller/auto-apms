@@ -150,8 +150,8 @@ private:
     std::shared_ptr<Result> result_ptr) final
   {
     goto_local_setpoint_ptr_->update(
-      position_target_f_ned_.cast<float>(), heading_target_rad_, goal_ptr->max_horizontal_vel_m_s, goal_ptr->max_vertical_vel_m_s,
-      px4_ros2::degToRad(goal_ptr->max_heading_rate_deg_s));
+      position_target_f_ned_.cast<float>(), heading_target_rad_, goal_ptr->max_horizontal_vel_m_s,
+      goal_ptr->max_vertical_vel_m_s, px4_ros2::degToRad(goal_ptr->max_heading_rate_deg_s));
 
     // Remaining distance to target
     Eigen::Vector3d distance_f_ned =

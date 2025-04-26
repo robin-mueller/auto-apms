@@ -88,7 +88,8 @@ VehicleCommandClient::SendCommandResult VehicleCommandClient::syncSendVehicleCom
 
       if (vehicle_command_ack_sub_->take(ack, info)) {
         if (ack.command == cmd.command && ack.target_component == cmd.source_component) {
-          RCLCPP_DEBUG(logger_, "syncSendVehicleCommand: Command %i - Received acknowledgement %i", cmd.command, ack.result);
+          RCLCPP_DEBUG(
+            logger_, "syncSendVehicleCommand: Command %i - Received acknowledgement %i", cmd.command, ack.result);
           if (ack.result == px4_msgs::msg::VehicleCommandAck::VEHICLE_CMD_RESULT_ACCEPTED) {
             result = SendCommandResult::ACCEPTED;
           }

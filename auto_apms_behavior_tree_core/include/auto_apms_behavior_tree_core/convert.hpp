@@ -14,9 +14,9 @@
 
 #pragma once
 
+#include <Eigen/Geometry>
 #include <string>
 #include <vector>
-#include <Eigen/Geometry>
 
 #include "behaviortree_cpp/basic_types.h"
 

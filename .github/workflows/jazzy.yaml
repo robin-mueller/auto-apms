@@ -51,3 +51,37 @@ jobs:
           name: colcon-logs
           path: ${{ steps.ros-build.outputs.ros-workspace-directory-name }}/log
         if: always() # upload the logs even when the build fails
+
+      - name: Generate Behavior Tree Node Reference
+        if: github.event_name == 'push'
+        run: |
+          source install/setup.bash
+          ros2 run auto_apms_behavior_tree_core create_node_reference_markdown create_node_reference_markdown_output.md include_native auto_apms_behavior_tree::behavior_tree_nodes auto_apms_simulation::behavior_tree_nodes auto_apms_px4::behavior_tree_nodes
+
+      - name: Checkout Documentation Repo
+        if: github.event_name == 'push'
+        uses: actions/checkout@v4
+        with:
+          repository: robin-mueller/auto-apms-guide
+          token: ${{ secrets.DOCS_REPO_PAT }}
+          path: docs-repo
+
+      - name: Copy Updated Docs
+        if: github.event_name == 'push'
+        run: |
+          cp create_node_reference_markdown_output.md docs-repo/src/reference/create_node_reference_markdown_output.md
+
+      - name: Commit and Push Documentation
+        if: github.event_name == 'push'
+        run: |
+          cd docs-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update behavior tree node reference"
+            git push
+          fi
