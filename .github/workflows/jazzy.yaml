@@ -54,8 +54,9 @@ jobs:
 
       - name: Generate Behavior Tree Node Reference
         if: github.event_name == 'push'
+        shell: bash
         run: |
-          source install/setup.bash
+          source ${{ steps.ros-build.outputs.ros-workspace-directory-name }}/install/setup.bash
           ros2 run auto_apms_behavior_tree_core create_node_reference_markdown create_node_reference_markdown_output.md include_native auto_apms_behavior_tree::behavior_tree_nodes auto_apms_simulation::behavior_tree_nodes auto_apms_px4::behavior_tree_nodes
 
       - name: Checkout Documentation Repo
@@ -65,6 +66,7 @@ jobs:
           repository: robin-mueller/auto-apms-guide
           token: ${{ secrets.DOCS_REPO_PAT }}
           path: docs-repo
+          ref: master
 
       - name: Copy Updated Docs
         if: github.event_name == 'push'
