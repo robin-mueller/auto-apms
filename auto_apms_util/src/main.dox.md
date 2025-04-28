@@ -4,7 +4,7 @@
 
 <div align="center">
 
-<h3>Automated Action Planning and Mission Safeguarding for Robotics</h3>
+<h3>Automated Action Planning and Management System for Robotics</h3>
 
 <a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
 
