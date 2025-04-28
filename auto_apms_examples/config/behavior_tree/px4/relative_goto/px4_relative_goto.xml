@@ -92,7 +92,7 @@
       <input_port name="x"
                   type="double">Override vector entry X</input_port>
       <input_port name="vector"
-                  type="Eigen::Matrix&lt;double, -1, -1, 0, -1, -1&gt;">Target position as a row vector (separated by ;)</input_port>
+                  type="Eigen::Matrix&lt;double, -1, -1, 0, -1, -1&gt;">Target position as a row vector (separated by ';')</input_port>
       <input_port name="frame"
                   default="global"
                   type="std::string">Reference frame: 'global' (Latitude, longitude, altitude (AMSL)) or 'local' (North, east, down from start)</input_port>

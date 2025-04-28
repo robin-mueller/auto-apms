@@ -4,7 +4,7 @@
 
 <div align="center">
 
-<h3>Automated Action Planning and Mission Safeguarding for Robotics</h3>
+<h3>Automated Action Planning and Management System</h3>
 
 <a href="https://robin-mueller.github.io/auto-apms-guide/">![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)</a>
 <a href="https://doi.org/10.5281/zenodo.14790307">![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)</a>
@@ -28,7 +28,7 @@ Developers of real-time systems benefit from:
 - Straightforward contingency and emergency management concept
 - Standardized interfaces and command line tools for running and orchestrating the operation
 
-These features aim to **simplify and automate the manual development work**. Altogether, they frame a unified toolset for implementing behavior-based systems and make it significantly more user-friendly and less error prone to design and execute robotic applications.
+These features offer the developer a **streamlined approach for designing intelligent robotic applications**. Altogether, they frame a unified toolset for implementing behavior-based systems and make it significantly more user-friendly and less error prone to deploy autonomous operations.
 
 For more information and an extensive how-to guide, feel encouraged to visit the 👉 [**AutoAPMS Website**](https://robin-mueller.github.io/auto-apms-guide/) 👈.
 
@@ -62,9 +62,6 @@ python3 -m pip install -r src/auto-apms/auto_apms_simulation/requirements.txt
 ```
 
 Then, build and install all of the source packages up to `auto_apms_examples`.
-
-> [!NOTE]
-> We highly recommend building your workspace using the `symlink-install` option since AutoAPMS extensively utilizes XML and YAML resources. This option installs symbolic links to those non-compiled source files meaning that you don't need to rebuild again and again when you're for example tweaking a behavior tree document file. Instead, your changes take effect immediately and you just need to restart your application.
 
 ```bash
 colcon build --packages-up-to auto_apms_examples --symlink-install

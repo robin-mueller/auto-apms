@@ -44,7 +44,7 @@ public:
       BT::InputPort<std::string>(
         INPUT_KEY_FRAME, "global",
         "Reference frame: 'global' (Latitude, longitude, altitude (AMSL)) or 'local' (North, east, down from start)"),
-      BT::InputPort<Eigen::MatrixXd>(INPUT_KEY_VEC, "Target position as a row vector (separated by ;)"),
+      BT::InputPort<Eigen::MatrixXd>(INPUT_KEY_VEC, "Target position as a row vector (separated by ';')"),
       BT::InputPort<double>(INPUT_KEY_X, "Override vector entry X"),
       BT::InputPort<double>(INPUT_KEY_Y, "Override vector entry Y"),
       BT::InputPort<double>(INPUT_KEY_Z, "Override vector entry Z"),
