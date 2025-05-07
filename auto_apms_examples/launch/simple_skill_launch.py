@@ -14,7 +14,8 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import LaunchConfigurationEquals
+from launch.substitutions import EqualsSubstitution, LaunchConfiguration
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
 
 
@@ -30,7 +31,7 @@ def generate_launch_description():
                 executable="run_tree",
                 arguments=["auto_apms_examples::simple_skill_tree::SimpleSkillDemo"],
                 parameters=[{"bb.msg": "Custom message", "bb.n_times": 10}],
-                condition=LaunchConfigurationEquals("approach", "graphical"),
+                condition=IfCondition(EqualsSubstitution(LaunchConfiguration("approach"), "graphical")),
             ),
             Node(
                 package="auto_apms_behavior_tree",
@@ -42,7 +43,7 @@ def generate_launch_description():
                         "bb.n_times": 10,
                     }
                 ],
-                condition=LaunchConfigurationEquals("approach", "programmatic"),
+                condition=IfCondition(EqualsSubstitution(LaunchConfiguration("approach"), "programmatic")),
             ),
         ]
     )
