@@ -16,6 +16,8 @@
 
 #include <functional>
 
+#include "px4_ros2/utils/message_version.hpp"
+
 namespace auto_apms_px4
 {
 
@@ -37,11 +39,12 @@ VehicleCommandClient::VehicleCommandClient(rclcpp::Node & node, const std::chron
 : node_{node}, logger_{node.get_logger().get_child("vehicle_command_client")}, command_timeout_{command_timeout}
 {
   // Create vehicle command publisher and acknowledgement signal subscriber
-  vehicle_command_pub_ = node_.create_publisher<px4_msgs::msg::VehicleCommand>("/fmu/in/vehicle_command", 10);
+  vehicle_command_pub_ = node_.create_publisher<px4_msgs::msg::VehicleCommand>(
+    "/fmu/in/vehicle_command" + px4_ros2::getMessageNameVersion<px4_msgs::msg::VehicleCommand>(), 10);
 
   vehicle_command_ack_sub_ = node_.create_subscription<px4_msgs::msg::VehicleCommandAck>(
-    "/fmu/out/vehicle_command_ack", rclcpp::QoS(1).best_effort(),
-    [](px4_msgs::msg::VehicleCommandAck::UniquePtr msg) { (void)msg; });
+    "/fmu/out/vehicle_command_ack" + px4_ros2::getMessageNameVersion<px4_msgs::msg::VehicleCommandAck>(),
+    rclcpp::QoS(1).best_effort(), [](px4_msgs::msg::VehicleCommandAck::UniquePtr msg) { (void)msg; });
 }
 
 VehicleCommandClient::SendCommandResult VehicleCommandClient::syncSendVehicleCommand(

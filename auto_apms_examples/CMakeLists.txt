@@ -14,6 +14,9 @@ find_package(auto_apms_mission REQUIRED)
 
 # Optional packages
 find_package(auto_apms_px4 QUIET)
+if(NOT auto_apms_px4_FOUND)
+    message(WARNING "auto_apms_px4 not found. No PX4 examples will be generated.")
+endif()
 
 #
 # ------------ Example Libraries --------------
@@ -64,8 +67,6 @@ macro(add_and_install_example_executable source_file)
     install(TARGETS ${example_target_name} DESTINATION "lib/${PROJECT_NAME}")
 endmacro()
 
-add_and_install_example_executable("src/px4_takeoff_land.cpp" auto_apms_util auto_apms_interfaces)
-
 #
 # ------------ Example Resources --------------
 #
@@ -89,6 +90,8 @@ auto_apms_mission_register_missions(
 )
 
 if(auto_apms_px4_FOUND)
+    add_and_install_example_executable("src/px4_takeoff_land.cpp" auto_apms_util auto_apms_interfaces)
+
     auto_apms_behavior_tree_declare_trees(
         "config/behavior_tree/px4/relative_goto/px4_relative_goto.xml"
         NODE_MANIFEST

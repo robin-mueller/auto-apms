@@ -20,6 +20,7 @@
 #include "px4_msgs/msg/mode_completed.hpp"
 #include "px4_msgs/msg/vehicle_status.hpp"
 #include "px4_ros2/components/wait_for_fmu.hpp"
+#include "px4_ros2/utils/message_version.hpp"
 
 /**
  * @defgroup auto_apms_px4 PX4 Bridge
@@ -211,11 +212,13 @@ template <class ActionT>
 void ModeExecutor<ActionT>::setUp()
 {
   vehicle_status_sub_ptr_ = this->node_ptr_->template create_subscription<px4_msgs::msg::VehicleStatus>(
-    "/fmu/out/vehicle_status", rclcpp::QoS(1).best_effort(),
+    "/fmu/out/vehicle_status" + px4_ros2::getMessageNameVersion<px4_msgs::msg::VehicleStatus>(),
+    rclcpp::QoS(1).best_effort(),
     [this](px4_msgs::msg::VehicleStatus::UniquePtr msg) { last_vehicle_status_ptr_ = std::move(msg); });
 
   mode_completed_sub_ptr_ = this->node_ptr_->template create_subscription<px4_msgs::msg::ModeCompleted>(
-    "/fmu/out/mode_completed", rclcpp::QoS(1).best_effort(), [this](px4_msgs::msg::ModeCompleted::UniquePtr msg) {
+    "/fmu/out/mode_completed" + px4_ros2::getMessageNameVersion<px4_msgs::msg::ModeCompleted>(),
+    rclcpp::QoS(1).best_effort(), [this](px4_msgs::msg::ModeCompleted::UniquePtr msg) {
       if (msg->nav_state == mode_id_) {
         if (msg->result == px4_msgs::msg::ModeCompleted::RESULT_SUCCESS) {
           this->mode_completed_ = true;
