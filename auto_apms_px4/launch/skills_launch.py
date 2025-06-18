@@ -40,7 +40,6 @@ def generate_launch_description():
                 composable_node_descriptions=[
                     ComposableNode(package="auto_apms_px4", plugin=name) for name in ALL_SKILL_NAMES
                 ],
-                # ros_arguments=["--log-level", "go_to_local_node:=DEBUG"],
                 output="screen",
                 emulate_tty=True,
             )

@@ -425,7 +425,7 @@ ModeExecutorFactory<ActionT, ModeT>::ModeExecutorFactory(
   const auto action_context_ptr = std::make_shared<auto_apms_util::ActionContext<ActionT>>(node_ptr_->get_logger());
 
   mode_ptr_ = std::make_unique<ModeT>(
-    *node_ptr_, px4_ros2::ModeBase::Settings("mode_" + action_name), topic_namespace_prefix, action_context_ptr);
+    *node_ptr_, px4_ros2::ModeBase::Settings(action_name), topic_namespace_prefix, action_context_ptr);
 
   if (!px4_ros2::waitForFMU(*node_ptr_, std::chrono::seconds(3))) {
     throw std::runtime_error("No message from FMU");
