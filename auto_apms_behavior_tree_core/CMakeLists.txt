@@ -6,6 +6,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(action_msgs REQUIRED)
@@ -97,6 +98,9 @@ target_link_libraries(create_node_reference_markdown auto_apms_behavior_tree_cor
 #
 # ------------ Packaging --------------
 #
+
+# Python tools
+ament_python_install_package(${PROJECT_NAME})
 
 ###### Export libraries ######
 install(
