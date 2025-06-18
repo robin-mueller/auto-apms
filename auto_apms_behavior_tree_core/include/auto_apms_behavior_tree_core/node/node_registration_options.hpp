@@ -95,8 +95,8 @@ struct NodeRegistrationOptions
   /// Flag whether to tolerate if the action/service is unreachable when trying to create the client. If set to
   /// `true`, a warning is logged. Otherwise, an exception is raised.
   bool allow_unreachable = false;
-  /// Minimum severity level enabled for logging using the ROS 2 Logger API
-  std::string logger_level = "INFO";
+  /// Minimum ROS 2 logging severity level for this particular node. Empty means to inherit the parent logging severity.
+  std::string logger_level = "";
 
   /**
    * @brief Verify that the options are valid (e.g. all required values are set).

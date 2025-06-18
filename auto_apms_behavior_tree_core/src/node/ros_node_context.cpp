@@ -45,12 +45,14 @@ rclcpp::Logger RosNodeContext::getBaseLogger() const { return base_logger_; }
 rclcpp::Logger RosNodeContext::getChildLogger(const std::string & name)
 {
   const rclcpp::Logger child_logger = base_logger_.get_child(name);
-  try {
-    auto_apms_util::setLoggingSeverity(child_logger, registration_options_.logger_level);
-  } catch (const auto_apms_util::exceptions::SetLoggingSeverityError & e) {
-    RCLCPP_ERROR(
-      base_logger_, "Failed to set the logging severity for the child logger using the node's registration options: %s",
-      e.what());
+  if (!registration_options_.logger_level.empty()) {
+    try {
+      auto_apms_util::setLoggingSeverity(child_logger, registration_options_.logger_level);
+    } catch (const auto_apms_util::exceptions::SetLoggingSeverityError & e) {
+      RCLCPP_ERROR(
+        base_logger_,
+        "Failed to set the logging severity for the child logger using the node's registration options: %s", e.what());
+    }
   }
   return child_logger;
 }

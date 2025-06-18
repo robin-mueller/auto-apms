@@ -48,7 +48,7 @@ int main(int argc, char ** argv)
 
   // Create executor node
   rclcpp::NodeOptions opt;
-  TreeExecutorNode executor("run_tree_cpp", opt);
+  TreeExecutorNode executor("run_tree", opt);
   const rclcpp::Logger logger = executor.getNodePtr()->get_logger();
 
   // Start tree execution

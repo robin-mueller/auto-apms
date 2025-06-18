@@ -75,6 +75,10 @@ rclcpp::NodeOptions TreeExecutorNodeOptions::getROSNodeOptions() const
   opt.automatically_declare_parameters_from_overrides(
     scripting_enum_parameters_from_overrides_ || blackboard_parameters_from_overrides_);
   opt.allow_undeclared_parameters(scripting_enum_parameters_dynamic_ || blackboard_parameters_dynamic_);
+
+  // Default configuration
+  opt.enable_logger_service(true);
+
   return opt;
 }
 
