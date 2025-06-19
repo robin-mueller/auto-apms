@@ -331,6 +331,7 @@ ament_export_dependencies(
     rclcpp
     rclcpp_action
     tinyxml2_vendor
+    std_srvs
     auto_apms_util
     auto_apms_interfaces
     auto_apms_behavior_tree_core
