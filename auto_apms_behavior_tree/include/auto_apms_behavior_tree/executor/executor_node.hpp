@@ -23,6 +23,7 @@
 #include "auto_apms_interfaces/action/start_tree_executor.hpp"
 #include "auto_apms_util/action_context.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 namespace auto_apms_behavior_tree
 {
@@ -260,6 +261,13 @@ protected:
     const std::string & build_handler_request, const std::string & root_tree_name,
     const core::NodeManifest & node_manifest = {}, const core::NodeManifest & node_overrides = {});
 
+  /**
+   * @brief Reset the global blackboard and clear all entries. This also unsets the corresponding parameters.
+   * @return `true` if blackboard was cleared, `false` if executor is not idle meaning that the blackboard cannot be
+   * cleared.
+   */
+  virtual bool clearGlobalBlackboard() override;
+
 private:
   /* Executor specific virtual overrides */
 
@@ -306,6 +314,7 @@ private:
   StartActionContext start_action_context_;
   rclcpp_action::Server<CommandActionContext::Type>::SharedPtr command_action_ptr_;
   rclcpp::TimerBase::SharedPtr command_timer_ptr_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr clear_blackboard_service_ptr_;
 };
 
 }  // namespace auto_apms_behavior_tree

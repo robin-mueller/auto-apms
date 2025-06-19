@@ -188,12 +188,27 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
     std::bind(&TreeExecutorNode::handle_command_cancel_, this, _1),
     std::bind(&TreeExecutorNode::handle_command_accept_, this, _1));
 
+  clear_blackboard_service_ptr_ = node_ptr_->create_service<std_srvs::srv::Trigger>(
+    std::string(node_ptr_->get_name()) + _AUTO_APMS_BEHAVIOR_TREE__CLEAR_BLACKBOARD_SERVICE_NAME_SUFFIX,
+    [this](
+      const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+      std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+      response->success = this->clearGlobalBlackboard();
+      if (response->success) {
+        response->message = "Blackboard was cleared successfully";
+      } else {
+        response->message = "Blackboard cannot be cleared, because executor is in state " +
+                            toStr(this->getExecutionState()) + " but must be idling";
+      }
+      RCLCPP_DEBUG_STREAM(this->logger_, response->message);
+    });
+
   // Adding the local on_set_parameters_callback after the parameter listeners from generate_parameters_library
   // are created makes sure that this callback will be evaluated before the listener callbacks.
   // This is desired to keep the internal parameter struct in sync, because the callbacks of the listeners implicitly
   // set them if the change is accepted. Otherwise, they would be set even if the local callback rejects the change.
-  // We DO NOT set any variables in this callback, but only check if the request to change certain parameters is valid.
-  // The actual change is performed in the callback registered with rclcpp::ParameterEventListener
+  // We DO NOT set any variables in this callback, but only check if the request to change certain parameters is
+  // valid. The actual change is performed in the callback registered with rclcpp::ParameterEventListener
   on_set_parameters_callback_handle_ptr_ =
     node_ptr_->add_on_set_parameters_callback([this](const std::vector<rclcpp::Parameter> & parameters) {
       return this->on_set_parameters_callback_(parameters);
@@ -377,9 +392,9 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   // the tree later. Otherwise a segmentation fault might occur since memory allocated for the arguments might be
   // released at the time the method returns.
   return [this, root_tree_name, node_manifest, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
-    // Currently, BehaviorTree.CPP requires the memory allocated by the factory to persist even after the tree has been
-    // created, so we make the builder a unique pointer that is only reset when a new tree is to be created.
-    // See https://github.com/BehaviorTree/BehaviorTree.CPP/issues/890
+    // Currently, BehaviorTree.CPP requires the memory allocated by the factory to persist even after the tree has
+    // been created, so we make the builder a unique pointer that is only reset when a new tree is to be created. See
+    // https://github.com/BehaviorTree/BehaviorTree.CPP/issues/890
     builder_ptr_.reset(new TreeBuilder(
       node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_));
 
@@ -401,6 +416,18 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
     // Finally, instantiate the tree
     return builder_ptr_->instantiate(instantiate_name, bb_ptr);
   };
+}
+
+bool TreeExecutorNode::clearGlobalBlackboard()
+{
+  if (TreeExecutorBase::clearGlobalBlackboard()) {
+    const auto res = node_ptr_->list_parameters({BLACKBOARD_PARAM_PREFIX}, 2);
+    for (const std::string & name : res.names) {
+      node_ptr_->undeclare_parameter(name);
+    };
+    return true;
+  }
+  return false;
 }
 
 rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_callback_(
@@ -481,7 +508,8 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
           "Cannot load build handler '" + class_name +
           "' because no corresponding ament_index resource was found. Make sure that you spelled the build handler's "
           "name correctly "
-          "and registered it by calling auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of the "
+          "and registered it by calling auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of "
+          "the "
           "corresponding package");
       }
     }
@@ -551,7 +579,8 @@ rclcpp_action::GoalResponse TreeExecutorNode::handle_start_goal_(
     } else if (goal_ptr->build_handler != current_build_handler_name_) {
       RCLCPP_WARN(
         logger_,
-        "Goal %s was REJECTED: Current tree build handler '%s' must not change since the 'Allow other build handlers' "
+        "Goal %s was REJECTED: Current tree build handler '%s' must not change since the 'Allow other build "
+        "handlers' "
         "option is disabled.",
         rclcpp_action::to_string(uuid).c_str(), current_build_handler_name_.c_str());
       return rclcpp_action::GoalResponse::REJECT;
@@ -599,10 +628,6 @@ void TreeExecutorNode::handle_start_accept_(std::shared_ptr<StartActionContext::
 {
   // Clear blackboard parameters if desired
   if (goal_handle_ptr->get_goal()->clear_blackboard) {
-    const auto res = node_ptr_->list_parameters({BLACKBOARD_PARAM_PREFIX}, 2);
-    for (const std::string & name : res.names) {
-      node_ptr_->undeclare_parameter(name);
-    };
     clearGlobalBlackboard();
   }
 

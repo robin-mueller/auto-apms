@@ -249,6 +249,19 @@ TreeExecutorBase::TreeExitBehavior TreeExecutorBase::onTreeExit(bool /*success*/
 
 void TreeExecutorBase::onTermination(const ExecutionResult & /*result*/) {}
 
+bool TreeExecutorBase::clearGlobalBlackboard()
+{
+  ExecutionState curr_state = getExecutionState();
+  if (curr_state == ExecutionState::IDLE) {
+    global_blackboard_ptr_ = TreeBlackboard::create();
+    return true;
+  }
+  RCLCPP_WARN(
+    logger_, "clearGlobalBlackboard() was called when executor is %s, but this is only allowed when IDLE. Ignoring...",
+    toStr(curr_state).c_str());
+  return false;
+}
+
 void TreeExecutorBase::setControlCommand(ControlCommand cmd) { control_command_ = cmd; }
 
 bool TreeExecutorBase::isBusy() { return execution_timer_ptr_ && !execution_timer_ptr_->is_canceled(); }
@@ -273,8 +286,6 @@ std::string TreeExecutorBase::getTreeName()
 }
 
 TreeBlackboardSharedPtr TreeExecutorBase::getGlobalBlackboardPtr() { return global_blackboard_ptr_; }
-
-void TreeExecutorBase::clearGlobalBlackboard() { global_blackboard_ptr_ = TreeBlackboard::create(); }
 
 TreeStateObserver & TreeExecutorBase::getStateObserver()
 {

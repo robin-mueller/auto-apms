@@ -177,6 +177,13 @@ private:
 
 public:
   /**
+   * @brief Reset the global blackboard and clear all entries.
+   * @return `true` if blackboard was cleared, `false` if executor is not idle meaning that the blackboard cannot be
+   * cleared.
+   */
+  virtual bool clearGlobalBlackboard();
+
+  /**
    * @brief Set the command that handles the control flow of the execution routine.
    *
    * @note The given control command is not validated, so the user must be careful when using this low-level setter.
@@ -216,11 +223,6 @@ public:
    * @return Shared pointer to the global blackboard.
    */
   TreeBlackboardSharedPtr getGlobalBlackboardPtr();
-
-  /**
-   * @brief Reset the global blackboard and clear all entries.
-   */
-  void clearGlobalBlackboard();
 
   /**
    * @brief Get a reference to the current behavior tree state observer.

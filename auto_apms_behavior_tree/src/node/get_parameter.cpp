@@ -81,7 +81,7 @@ public:
     }
     rclcpp::ParameterValue val(response->values[0]);
     if (val.get_type() == rclcpp::PARAMETER_NOT_SET) {
-      RCLCPP_WARN(
+      RCLCPP_DEBUG(
         logger_, "%s - Tried to get undeclared parameter '%s'.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
         requested_parameter_name_.c_str());
       return BT::NodeStatus::FAILURE;
