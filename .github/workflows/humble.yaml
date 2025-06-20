@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - humble
-  pull_request:
-    branches:
-      - "*"
 
 jobs:
   build_and_test:
