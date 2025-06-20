@@ -133,6 +133,12 @@ install(
 )
 
 install(
+    PROGRAMS
+    "${PROJECT_NAME}/tree/find_tree_names.py"
+    DESTINATION "lib/${PROJECT_NAME}"
+)
+
+install(
     DIRECTORY "include/${PROJECT_NAME}"
     DESTINATION "include"
 )

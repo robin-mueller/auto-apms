@@ -42,43 +42,56 @@ macro(auto_apms_behavior_tree_declare_trees)
         if(NOT EXISTS "${_tree_abs_path__source}")
             message(
                 FATAL_ERROR
-                "auto_apms_behavior_tree_declare_trees(): Behavior tree file ${_tree_abs_path__source} does not exist."
+                "auto_apms_behavior_tree_declare_trees(): Behavior tree file ${_path_argument} does not exist."
             )
         endif()
 
         # Verify that the file hasn't been registered.
-        if("${_path_argument}" IN_LIST _package_tree_file_abs_paths__source)
+        if("${_tree_abs_path__source}" IN_LIST _package_tree_file_abs_paths__source)
             message(
                 FATAL_ERROR
                 "auto_apms_behavior_tree_declare_trees(): Behavior tree file ${_path_argument} has already been registered."
             )
         endif()
-        list(APPEND _package_tree_file_abs_paths__source "${_path_argument}")
+        list(APPEND _package_tree_file_abs_paths__source "${_tree_abs_path__source}")
 
         get_filename_component(_tree_file_name "${_tree_abs_path__source}" NAME)
         get_filename_component(_tree_file_stem "${_tree_abs_path__source}" NAME_WE)
 
         # Collect all available behavior tree IDs
-        file(READ "${_tree_abs_path__source}" _tree_file_content)
-        string(REGEX MATCHALL "<BehaviorTree ID=\"[A-Za-z0-9_]+\">" _matches "${_tree_file_content}")
-        if("${_matches}" STREQUAL "")
+        execute_process(
+            COMMAND
+            "${_AUTO_APMS_BEHAVIOR_TREE_CORE__FIND_TREE_NAMES_CMD}"
+            "${_tree_abs_path__source}"
+            OUTPUT_VARIABLE _tree_file_tree_names
+            RESULT_VARIABLE _return_code
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(NOT _return_code EQUAL 0)
             message(
                 FATAL_ERROR
-                "auto_apms_behavior_tree_declare_trees(): Behavior tree file ${_tree_abs_path__source} doesn't specify any valid behavior trees."
+                "auto_apms_behavior_tree_declare_trees(): Failed to get a list of all behavior tree names contained in ${_path_argument}."
             )
         endif()
-        set(_tree_file_tree_names "")
-        foreach(_match ${_matches})
-            string(REGEX MATCH "<BehaviorTree ID=\"([A-Za-z0-9_]+)\">" _ "${_match}")
-            set(_tree_name ${CMAKE_MATCH_1})
-            # Verify no duplicate tree IDs inside file
-            if("${_tree_name}" IN_LIST _tree_file_tree_names)
+
+        # Check if there are any behavior trees
+        if("${_tree_file_tree_names}" STREQUAL "")
+            message(
+                FATAL_ERROR
+                "auto_apms_behavior_tree_declare_trees(): Behavior tree file ${_path_argument} doesn't specify any valid behavior trees."
+            )
+        endif()
+
+        # Verify no duplicate tree IDs inside file
+        set(_seen_names "")
+        foreach(_name ${_tree_file_tree_names})
+            if("${_name}" IN_LIST _seen_names)
                 message(
                     FATAL_ERROR
-                    "auto_apms_behavior_tree_declare_trees(): Behavior tree with name '${_tree_name}' exists multiple times in file ${_path_argument}."
+                    "auto_apms_behavior_tree_declare_trees(): Behavior tree with name '${_name}' exists multiple times in file ${_path_argument}."
                 )
             endif()
-            list(APPEND _tree_file_tree_names "${_tree_name}")
+            list(APPEND _seen_names "${_name}")
         endforeach()
 
         # Prevent ambiguous tree identities
@@ -101,6 +114,13 @@ macro(auto_apms_behavior_tree_declare_trees)
             endif()
             math(EXPR _index "${_index} + 1")
         endforeach()
+
+        # Track the tree file so CMake knows it's an input dependency
+        configure_file(
+            "${_tree_abs_path__source}"
+            "${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}/${_tree_file_name}"
+            COPYONLY
+        )
 
         # Store file stem and associated tree names
         set(_temp_names "${_tree_file_tree_names}")
