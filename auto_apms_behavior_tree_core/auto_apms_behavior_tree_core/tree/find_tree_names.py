@@ -31,7 +31,7 @@ def find_tree_names_in_string(xml_str: str) -> list[str]:
     return re.findall(PATTERN, xml_str)
 
 
-def find_tree_names_in_file(xml_file):
+def find_tree_names_in_file(xml_file: str) -> list[str]:
     """Finds all behavior tree names in an XML file.
 
     :param xml_file: Path to XML file.
@@ -41,10 +41,9 @@ def find_tree_names_in_file(xml_file):
     """
     with open(xml_file, "r") as file:
         xml_content = file.read()
+    return find_tree_names_in_string(xml_content)
 
-    return re.findall(PATTERN, xml_content)
 
-
-# Used in CMakeLists.txt
+# Used in declare_trees.cmake
 if __name__ == "__main__":
     print(*find_tree_names_in_file(sys.argv[1]), sep=";")

@@ -48,7 +48,9 @@ int main(int argc, char ** argv)
 
   // Create executor node
   rclcpp::NodeOptions opt;
-  TreeExecutorNode executor("run_tree", opt);
+  TreeExecutorNodeOptions executor_opt(opt);
+  executor_opt.setDefaultBuildHandler("auto_apms_behavior_tree::TreeFromResourceBuildHandler");
+  TreeExecutorNode executor("run_tree", executor_opt);
   const rclcpp::Logger logger = executor.getNodePtr()->get_logger();
 
   // Start tree execution
