@@ -115,18 +115,21 @@ macro(auto_apms_behavior_tree_declare_trees)
             math(EXPR _index "${_index} + 1")
         endforeach()
 
-        # Track the tree file so CMake knows it's an input dependency
-        configure_file(
-            "${_tree_abs_path__source}"
-            "${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}/${_tree_file_name}"
-            COPYONLY
-        )
-
         # Store file stem and associated tree names
         set(_temp_names "${_tree_file_tree_names}")
         string(REPLACE ";" "|" _temp_names "${_temp_names}")
         list(APPEND _package_tree_names "${_temp_names}")
         list(APPEND _package_tree_file_stems "${_tree_file_stem}")
+
+        # Track the tree file so CMake knows it's an input dependency
+        # Make sure to give the file a unique name
+        list(LENGTH _package_tree_file_stems _num)
+        set(_tree_file_name__unique "tree${_num}_${_tree_file_name}")
+        configure_file(
+            "${_tree_abs_path__source}"
+            "${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}/${_tree_file_name__unique}"
+            COPYONLY
+        )
 
         set(_tree_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_DIR_RELATIVE__TREE}")
         set(_node_manifest_rel_paths__install "") # Empty string if no manifest is given
@@ -242,10 +245,11 @@ macro(auto_apms_behavior_tree_declare_trees)
         # Install behavior tree
         install(
             FILES "${_tree_abs_path__source}"
-            DESTINATION "${_tree_rel_dir__install}")
+            DESTINATION "${_tree_rel_dir__install}/${_tree_file_name__unique}.d"
+        )
 
         # Fill resource info
-        set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_file_tree_names}|${_tree_rel_dir__install}/${_tree_file_name}|${_node_manifest_rel_paths__install}\n")
+        set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_file_tree_names}|${_tree_rel_dir__install}/${_tree_file_name__unique}.d/${_tree_file_name}|${_node_manifest_rel_paths__install}\n")
     endforeach()
 
 endmacro()
