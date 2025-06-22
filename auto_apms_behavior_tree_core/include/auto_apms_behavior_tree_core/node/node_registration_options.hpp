@@ -54,6 +54,7 @@ struct NodeRegistrationOptions
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
   static const std::string PARAM_NAME_ALLOW_UNREACHABLE;
   static const std::string PARAM_NAME_LOGGER_LEVEL;
+  static const std::string PARAM_NAME_EXTRA;
 
   /**
    * @brief Create the default node registration options.
@@ -97,6 +98,9 @@ struct NodeRegistrationOptions
   bool allow_unreachable = false;
   /// Minimum ROS 2 logging severity level for this particular node. Empty means to inherit the parent logging severity.
   std::string logger_level = "";
+  /// Flexible YAML node which allows providing additional and customized registration options to the behavior tree node
+  /// implementation.
+  YAML::Node extra;
 
   /**
    * @brief Verify that the options are valid (e.g. all required values are set).
@@ -123,6 +127,7 @@ inline Node convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::enc
   node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
   node[Options::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
   node[Options::PARAM_NAME_LOGGER_LEVEL] = rhs.logger_level;
+  node[Options::PARAM_NAME_EXTRA] = rhs.extra;
   return node;
 }
 inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::decode(const Node & node, Options & rhs)
@@ -135,11 +140,18 @@ inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::dec
   for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
     const std::string key = it->first.as<std::string>();
     const Node val = it->second;
+
+    // Any valid yaml is allowed as extra options
+    if (key == Options::PARAM_NAME_EXTRA) {
+      rhs.extra = val;
+      continue;
+    }
+
+    // The following options may only be scalar
     if (!val.IsScalar())
       throw auto_apms_util::exceptions::YAMLFormatError(
         "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
         " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
-
     if (key == Options::PARAM_NAME_CLASS) {
       rhs.class_name = val.as<std::string>();
       continue;
@@ -164,6 +176,7 @@ inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::dec
       rhs.logger_level = val.as<std::string>();
       continue;
     }
+
     // Unkown parameter
     throw auto_apms_util::exceptions::YAMLFormatError("Unkown parameter name '" + key + "'.");
   }
