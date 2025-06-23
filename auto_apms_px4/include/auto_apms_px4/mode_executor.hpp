@@ -427,10 +427,18 @@ ModeExecutorFactory<ActionT, ModeT>::ModeExecutorFactory(
   mode_ptr_ = std::make_unique<ModeT>(
     *node_ptr_, px4_ros2::ModeBase::Settings(action_name), topic_namespace_prefix, action_context_ptr);
 
-  if (!px4_ros2::waitForFMU(*node_ptr_, std::chrono::seconds(3))) {
-    throw std::runtime_error("No message from FMU");
-  } else {
-    RCLCPP_DEBUG(node_ptr_->get_logger(), "FMU availability test successful.");
+  constexpr int max_retries = 5;
+  bool fmu_available = false;
+  for (int attempt = 0; attempt < max_retries; ++attempt) {
+    if (px4_ros2::waitForFMU(*node_ptr_, std::chrono::seconds(3))) {
+      fmu_available = true;
+      RCLCPP_DEBUG(node_ptr_->get_logger(), "FMU availability test successful (attempt %d).", attempt + 1);
+      break;
+    }
+    RCLCPP_WARN(node_ptr_->get_logger(), "No message from FMU (attempt %d/%d). Retrying...", attempt + 1, max_retries);
+  }
+  if (!fmu_available) {
+    throw std::runtime_error("No message from FMU after multiple attempts");
   }
 
   if (!mode_ptr_->doRegister()) {
