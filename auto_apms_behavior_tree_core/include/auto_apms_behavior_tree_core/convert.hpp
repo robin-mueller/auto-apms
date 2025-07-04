@@ -34,6 +34,9 @@ template <>
 [[nodiscard]] std::vector<int64_t> convertFromString<std::vector<int64_t>>(StringView str);
 
 template <>
+[[nodiscard]] std::vector<float> convertFromString<std::vector<float>>(StringView str);
+
+template <>
 [[nodiscard]] Eigen::MatrixXd convertFromString<Eigen::MatrixXd>(StringView str);
 
 template <>

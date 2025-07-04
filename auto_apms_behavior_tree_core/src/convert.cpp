@@ -59,6 +59,18 @@ std::vector<int64_t> convertFromString<std::vector<int64_t>>(StringView str)
 }
 
 template <>
+std::vector<float> convertFromString<std::vector<float>>(StringView str)
+{
+  auto parts = splitString(str, ';');
+  std::vector<float> output;
+  output.reserve(parts.size());
+  for (const StringView & part : parts) {
+    output.push_back(convertFromString<float>(part));
+  }
+  return output;
+}
+
+template <>
 Eigen::MatrixXd convertFromString<Eigen::MatrixXd>(StringView str)
 {
   const std::string input_str(str);
