@@ -262,7 +262,7 @@ class TreeResource:
         return identity
 
 
-def get_all_behavior_trees() -> List[TreeResource]:
+def get_all_behavior_tree_resources() -> List[TreeResource]:
     """
     Retrieves all available behavior tree resources registered in the system.
 
