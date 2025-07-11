@@ -6,6 +6,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rcpputils REQUIRED)
 find_package(rclcpp_action REQUIRED)
@@ -94,6 +95,10 @@ endif()
 # ------------ Packaging --------------
 #
 
+# Python tools
+ament_python_install_package(${PROJECT_NAME})
+
+# Export libraries
 install(
     TARGETS
     auto_apms_util
@@ -102,6 +107,16 @@ install(
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+    rclcpp
+    rcpputils
+    rclcpp_action
+    ament_index_cpp
+    pluginlib
+    yaml_cpp_vendor
+    yaml-cpp
+)
 
 install(
     DIRECTORY include/${PROJECT_NAME}
@@ -115,17 +130,6 @@ install(
 install(
     DIRECTORY cmake
     DESTINATION share/${PROJECT_NAME}
-)
-
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(
-    rclcpp
-    rcpputils
-    rclcpp_action
-    ament_index_cpp
-    pluginlib
-    yaml_cpp_vendor
-    yaml-cpp
 )
 
 ament_package(CONFIG_EXTRAS "auto_apms_util-extras.cmake.in")

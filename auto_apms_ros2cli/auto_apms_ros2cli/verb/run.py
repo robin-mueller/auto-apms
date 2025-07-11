@@ -13,8 +13,11 @@
 # limitations under the License.
 
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
-from auto_apms_behavior_tree_core import get_all_behavior_tree_resources
-from auto_apms_ros2cli.verb import VerbExtension
+from auto_apms_behavior_tree.resources import (
+    get_all_behavior_tree_resources,
+    get_all_behavior_tree_build_handler_plugins,
+)
+from ..verb import VerbExtension
 from ..api import sync_run_behavior_locally, parse_key_value_args, PrefixFilteredChoicesCompleter
 
 
@@ -26,12 +29,21 @@ class RunVerb(VerbExtension):
         tree_id_arg = parser.add_argument(
             "tree_id",
             type=str,
-            help="Tree identifier in format <package>::<file_stem>::<tree_name>",
+            help="Tree identifier",
+            metavar="<package>::<file_stem>::<tree_name>",
         )
         tree_resources = get_all_behavior_tree_resources()
         trees = [str(tree.identity) for tree in tree_resources]
         tree_id_arg.completer = PrefixFilteredChoicesCompleter(trees)
 
+        build_handler_arg = parser.add_argument(
+            "--build-handler",
+            type=str,
+            help="Build handler plugin class",
+            metavar="<namespace>::<class_name>",
+        )
+        build_handler_plugins = get_all_behavior_tree_build_handler_plugins()
+        build_handler_arg.completer = PrefixFilteredChoicesCompleter(build_handler_plugins)
         parser.add_argument(
             "--blackboard",
             nargs="*",
@@ -68,6 +80,8 @@ class RunVerb(VerbExtension):
         """Main function for the run verb."""
         # Collect static parameters if specified
         static_params = {}
+        if args.build_handler is not None:
+            static_params["build_handler"] = args.build_handler
         if args.tick_rate is not None:
             static_params["tick_rate"] = args.tick_rate
         if args.groot2_port is not None:

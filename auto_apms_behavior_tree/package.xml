@@ -9,8 +9,10 @@
   <url>https://robin-mueller.github.io/auto-apms-guide/</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>ament_index_python</depend>
   <depend>rcl_interfaces</depend>
   <depend>std_srvs</depend>
   <depend>rclcpp_action</depend>

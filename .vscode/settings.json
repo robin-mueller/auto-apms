@@ -32,10 +32,9 @@
     },
     "C_Cpp.clang_format_fallbackStyle": "none",
     "C_Cpp.clang_format_style": "file:${workspaceFolder}/.clang-format",
+    "C_Cpp.doxygen.generatedStyle": "/**",
     "cSpell.enabled": true,
     "cSpell.enabledFileTypes": {
         "cpp": true
     },
-    "python.analysis.autoImportCompletions": true,
-    "C_Cpp.doxygen.generatedStyle": "/**"
 }

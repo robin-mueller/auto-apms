@@ -6,6 +6,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
@@ -316,7 +317,10 @@ endif()
 # ------------ Packaging --------------
 #
 
-###### Export libraries ######
+# Python tools
+ament_python_install_package(${PROJECT_NAME})
+
+#Export libraries
 install(
     TARGETS
     executor_params
@@ -337,7 +341,7 @@ ament_export_dependencies(
     auto_apms_behavior_tree_core
 )
 
-###### Plugins ######
+# Plugins
 install(
     TARGETS
     behavior_tree_nodes

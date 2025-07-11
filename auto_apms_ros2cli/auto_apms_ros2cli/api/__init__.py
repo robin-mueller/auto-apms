@@ -31,7 +31,7 @@ from ros2cli.node import HIDDEN_NODE_PREFIX
 from ros2cli.node.strategy import DirectNode, NodeStrategy
 from ros2param.api import call_get_parameters, call_set_parameters, get_value
 from ros2run.api import run_executable, get_executable_path
-from auto_apms_behavior_tree_core import TreeResource
+from auto_apms_behavior_tree_core.resources import TreeResource
 
 try:
     from argcomplete.completers import ChoicesCompleter

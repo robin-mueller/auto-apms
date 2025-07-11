@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_apms_behavior_tree_core import get_all_behavior_tree_resources
-from auto_apms_ros2cli.verb import VerbExtension
+from auto_apms_behavior_tree_core.resources import get_all_behavior_tree_resources
+from ..verb import VerbExtension
 
 
 class ListVerb(VerbExtension):

@@ -104,7 +104,7 @@ target_link_libraries(create_node_reference_markdown auto_apms_behavior_tree_cor
 # Python tools
 ament_python_install_package(${PROJECT_NAME})
 
-###### Export libraries ######
+# Export libraries
 install(
     TARGETS
     auto_apms_behavior_tree_core
@@ -136,7 +136,7 @@ install(
 
 install(
     PROGRAMS
-    "${PROJECT_NAME}/tree/find_tree_names.py"
+    "${PROJECT_NAME}/util/find_tree_names.py"
     DESTINATION "lib/${PROJECT_NAME}"
 )
 

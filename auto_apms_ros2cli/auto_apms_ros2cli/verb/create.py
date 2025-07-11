@@ -14,8 +14,7 @@
 
 """Create verb for AUTO-APMS behavior tree management."""
 
-from auto_apms_ros2cli.verb import VerbExtension
-from ..utils import print_info, print_error
+from ..verb import VerbExtension
 
 
 class CreateVerb(VerbExtension):
@@ -43,19 +42,6 @@ class CreateVerb(VerbExtension):
 
     def main(self, *, args):
         """Main function for the create verb."""
-        # This is a placeholder implementation for creating behavior trees
-        # In a real implementation, you would:
-        # 1. Find the target package directory
-        # 2. Create the behavior tree XML file from template
-        # 3. Update package.xml if needed
 
-        print_info(f"Creating behavior tree '{args.name}' with template '{args.template}'")
-
-        if args.package:
-            print_info(f"Target package: {args.package}")
-        else:
-            print_info("Using current directory/package")
-
-        # Placeholder implementation
-        print_error("Create functionality not yet implemented")
-        return 1
+        print("Create functionality not yet implemented")
+        return 0
