@@ -249,7 +249,18 @@ macro(auto_apms_behavior_tree_declare_trees)
         )
 
         # Fill resource info
-        set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_file_tree_names}|${_tree_rel_dir__install}/${_tree_file_name__unique}.d/${_tree_file_name}|${_node_manifest_rel_paths__install}\n")
+        set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__TREE "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__TREE}${_tree_file_stem}|${_tree_file_tree_names}|${_tree_rel_dir__install}/${_tree_file_name__unique}.d/${_tree_file_name}|${_node_manifest_rel_paths__install}\n")
+
+        # Register all declared trees as separate behaviors
+        set(_tree_resource_ids "")
+        foreach(_tree_name ${_tree_file_tree_names})
+            list(APPEND _tree_resource_ids "${_tree_file_stem}::${_tree_name}")
+        endforeach()
+        auto_apms_behavior_tree_register_behaviors(
+            ${_tree_resource_ids}
+            BUILD_HANDLER "auto_apms_behavior_tree::TreeFromResourceBuildHandler"
+            CATEGORY "tree"
+        )
     endforeach()
 
 endmacro()

@@ -28,36 +28,30 @@
 namespace auto_apms_behavior_tree::core
 {
 
-TreeResourceIdentity::TreeResourceIdentity(const std::string & identity)
+TreeResourceIdentity::TreeResourceIdentity(const std::string & identity) : BehaviorResourceIdentity(identity)
 {
-  std::vector<std::string> tokens = auto_apms_util::splitString(identity, "::", false);
+  std::vector<std::string> tokens =
+    auto_apms_util::splitString(resource_name, BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR, false);
+  // If only a single token is given, assume it's file_stem
   if (tokens.size() == 1) {
-    tokens.insert(tokens.begin(), "");
     tokens.push_back("");
   }
-  if (tokens.size() != 3) {
+  if (tokens.size() != 2) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
-      "Identity string '" + identity + "' has wrong format. Number of string tokens separated by '::' must be 3.");
+      "Tree resource identity string '" + identity +
+      "' is invalid. Resource name must contain 2 tokens (separated by " +
+      BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR + ").");
   }
-  package_name = tokens[0];
-  file_stem = tokens[1];
-  tree_name = tokens[2];
+  file_stem = tokens[0];
+  tree_name = tokens[1];
   if (file_stem.empty() && tree_name.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
       "Behavior tree resource identity string '" + identity +
-      "' has wrong format. It's not allowed to omit both <tree_file_stem> and <tree_name>.");
+      "' is invalid. It's not allowed to omit both <tree_file_stem> and <tree_name>.");
   }
 }
 
 TreeResourceIdentity::TreeResourceIdentity(const char * identity) : TreeResourceIdentity(std::string(identity)) {}
-
-bool TreeResourceIdentity::operator==(const TreeResourceIdentity & other) const { return str() == other.str(); }
-
-bool TreeResourceIdentity::operator<(const TreeResourceIdentity & other) const { return str() < other.str(); }
-
-std::string TreeResourceIdentity::str() const { return package_name + "::" + file_stem + "::" + tree_name; }
-
-bool TreeResourceIdentity::empty() const { return package_name.empty() && file_stem.empty() && tree_name.empty(); }
 
 TreeResource::TreeResource(const Identity & identity) : identity_(identity)
 {

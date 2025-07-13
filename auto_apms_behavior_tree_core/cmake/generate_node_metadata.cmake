@@ -155,7 +155,7 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
             # General build information for node plugins compiled by this package.
             # Generator expressions cannot be evaluated yet since execute_process is handled at configuration time.
             # However, we don't require the correct library paths yet.
-            "${_AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO}"
+            "${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_BUILD_INFO}"
 
             "${PROJECT_NAME}"  # Name of the package that builds the behavior tree model
             "${_generated_node_manifest_abs_path__build}"  # File to write the behavior tree node plugin manifest to
@@ -168,7 +168,7 @@ macro(auto_apms_behavior_tree_generate_node_metadata metadata_id)
         message(
             FATAL_ERROR
             "Failed to create node plugin manifest '${metadata_id}' (Return code: ${_return_code}). Manifest files: [${ARGS_UNPARSED_ARGUMENTS}]
-Build info: [${_AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO}]
+Build info: [${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_BUILD_INFO}]
 Output file: ${_generated_node_manifest_abs_path__build}
 ${_error}"
 )
@@ -283,6 +283,6 @@ Otherwise, building downstream packages won't work unless they add this dependen
 
     # Store the metadata information for reusing it during auto_apms_behavior_tree_declare_trees()
     list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_BUILD_INFO "${metadata_id}@${_generated_node_manifest_abs_path__build}")
-    set(_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE_MANIFEST "${_AUTO_APMS_BEHAVIOR_TREE__RESOURCE_FILE__NODE_MANIFEST}${metadata_id}|${_generated_node_manifest_rel_dir__install}/${_generated_node_manifest_file_name}\n")
+    set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__NODE_MANIFEST "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__NODE_MANIFEST}${metadata_id}|${_generated_node_manifest_rel_dir__install}/${_generated_node_manifest_file_name}\n")
 
 endmacro()

@@ -21,8 +21,11 @@ find_package(auto_apms_util REQUIRED)
 #
 
 # Core resources
+set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR "auto_apms_behavior_tree_core__behavior")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST "auto_apms_behavior_tree_core__node_manifest")
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE "auto_apms_behavior_tree_core__tree")
+
+set(_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY "default")
 
 # Node manifest registration parameters
 set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_CLASS "class_name")
@@ -46,6 +49,7 @@ add_library(auto_apms_behavior_tree_core SHARED
     "src/tree/script.cpp"
     "src/tree/tree_resource.cpp"
     "src/tree/tree_document.cpp"
+    "src/behavior.cpp"
     "src/builder.cpp"
     "src/convert.cpp"
 )
@@ -56,6 +60,7 @@ target_include_directories(auto_apms_behavior_tree_core PUBLIC
 target_compile_definitions(auto_apms_behavior_tree_core PRIVATE
     _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST}"
     _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE}"
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY="${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY}"
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_CLASS="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_CLASS}"
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT}"
     _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT}"

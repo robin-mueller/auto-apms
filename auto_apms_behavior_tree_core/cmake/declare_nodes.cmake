@@ -56,7 +56,7 @@ macro(auto_apms_behavior_tree_declare_nodes target)
     # Append build information of the specified node plugins (<class_name>@<library_path>).
     # Make sure to do before calling generating the node metadata (Otherwise build info would be unavailable).
     foreach(_class_name ${ARGS_UNPARSED_ARGUMENTS})
-        list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_BUILD_INFO "${_class_name}@$<TARGET_FILE:${target}>")
+        list(APPEND _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_BUILD_INFO "${_class_name}@$<TARGET_FILE:${target}>")
     endforeach()
 
     # Automatically create node metadata if any manifest files are provided

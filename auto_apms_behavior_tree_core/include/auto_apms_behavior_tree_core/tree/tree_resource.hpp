@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "auto_apms_behavior_tree_core/behavior.hpp"
 #include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
 #include "auto_apms_util/yaml.hpp"
 
@@ -29,10 +30,10 @@ namespace auto_apms_behavior_tree::core
  *
  * Its only purpose is to create the corresponding instance of TreeResource.
  */
-struct TreeResourceIdentity
+struct TreeResourceIdentity : public BehaviorResourceIdentity
 {
   /**
-   * @brief Constructor of a behavior tree resource identity object.
+   * @brief Constructor of a tree resource identity object.
    *
    * @p identity must be formatted like `<package_name>::<tree_file_stem>::<tree_name>`.
    * @param identity Identity string for a specific behavior tree resource.
@@ -50,30 +51,12 @@ struct TreeResourceIdentity
   TreeResourceIdentity(const char * identity);
 
   /**
-   * @brief Constructor of an empty tree resource identity object.
+   * @brief Constructor of an empty behavior tree resource identity object.
    *
-   * The user must manually populate the member fields according to the resource this object should identify.
+   * The user must manually populate the member fields according to the behavior tree this object should identify.
    */
   TreeResourceIdentity() = default;
 
-  bool operator==(const TreeResourceIdentity & other) const;
-
-  bool operator<(const TreeResourceIdentity & other) const;
-
-  /**
-   * @brief Create the corresponding identity string.
-   * @return Identity string for a behavior tree resource.
-   */
-  std::string str() const;
-
-  /**
-   * @brief Determine whether this tree resource identity object is considered empty.
-   * @return `true` if none of the member fields are set, `false` otherwise.
-   */
-  bool empty() const;
-
-  /// Name of the package that registers the resource.
-  std::string package_name;
   /// Name of the file (without extension) that contains the resource's tree document.
   std::string file_stem;
   /// Name of a specific tree inside the resource's tree document.

@@ -43,6 +43,8 @@ using rcpputils::join;
  * @brief Split a string into multiple tokens using a specific delimiter string (Delimiter may consist of multiple
  * characters).
  *
+ * If @p delimiter is not found, the string is returned as is and the vector will have exactly one element.
+ *
  * Will remove empty strings if @p remove_empty is `true` (Default). So for example with the delimiter being
  * `::` passing the string `::foo` will output a vector with one elements {"foo"}. If you want {"", "foo"}, you must set
  * @p remove_empty to `false`.
