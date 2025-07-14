@@ -110,7 +110,7 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
  *
  * Given the user has specified a behavior tree named `MyBehaviorTree` inside the XML file `config/my_tree_file.xml`,
  * the CMake macro `auto_apms_behavior_tree_declare_trees` must be called in the CMakeLists.txt of the parent package
- * (for example `my_package_name`) like this:
+ * (for example `my_package`) like this:
  *
  * ```cmake
  * auto_apms_behavior_tree_declare_trees(
@@ -119,7 +119,7 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
  * ```
  *
  * The macro automatically parses the given files and detects the names of the trees inside. In the C++ source code, one
- * may use this resource, after the parent package `my_package_name` has been installed, like this:
+ * may use this resource, after the parent package `my_package` has been installed, like this:
  *
  * ```cpp
  * #include "auto_apms_behavior_tree_core/tree/tree_resource.hpp"

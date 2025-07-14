@@ -31,15 +31,11 @@ BehaviorResourceIdentity::BehaviorResourceIdentity(const std::string & identity)
   // Get the category name
   std::string resource_part;
   if (std::size_t pos = identity.find(BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR); pos == std::string::npos) {
-    category_name = _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY;
+    category_name = "";
     resource_part = identity;
   } else {
     category_name = identity.substr(0, pos);
     resource_part = identity.substr(pos + BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR.size());
-  }
-  if (category_name.empty()) {
-    throw auto_apms_util::exceptions::ResourceIdentityFormatError(
-      "Behavior resource identity string '" + identity + "' is invalid: Category name must not be empty.");
   }
   if (resource_part.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
@@ -70,8 +66,12 @@ bool BehaviorResourceIdentity::operator<(const BehaviorResourceIdentity & other)
 
 std::string BehaviorResourceIdentity::str() const
 {
-  return category_name + BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR + package_name +
-         BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR + resource_name;
+  std::string str;
+  if (!category_name.empty()) {
+    str += category_name + BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR;
+  }
+  str += package_name + BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR + resource_name;
+  return str;
 }
 
 bool BehaviorResourceIdentity::empty() const { return package_name.empty() && resource_name.empty(); }
