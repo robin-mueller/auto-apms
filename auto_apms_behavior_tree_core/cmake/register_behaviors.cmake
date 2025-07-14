@@ -58,13 +58,13 @@ macro(auto_apms_behavior_tree_register_behaviors)
     set(_behavior_file_abs_paths__source "")
     foreach(_arg ${ARGS_UNPARSED_ARGUMENTS})
         # Verify no duplicate behaviors
-        if("${_arg}" IN_LIST _all_args)
+        if("${ARGS_CATEGORY}${_arg}" IN_LIST _all_args)
             message(
                 FATAL_ERROR
-                "auto_apms_behavior_tree_register_behaviors(): '${_arg}' was already used to register a behavior. A behavior can only be registered once by the same package"
+                "auto_apms_behavior_tree_register_behaviors(): '${_arg}' was already used to register a behavior in category '${ARGS_CATEGORY}'. A behavior can only be registered once per category and package"
             )
         endif()
-        list(APPEND _all_args "${_arg}")
+        list(APPEND _all_args "${ARGS_CATEGORY}${_arg}")
 
         # Check if arg is path or raw string
         get_filename_component(_path "${_arg}" REALPATH)

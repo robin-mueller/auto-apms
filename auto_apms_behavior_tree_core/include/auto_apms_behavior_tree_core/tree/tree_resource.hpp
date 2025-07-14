@@ -71,6 +71,10 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
  * CMakeLists.txt of a package. They can be discovered once the corresponding package has been installed to the ROS 2
  * workspace.
  *
+ * @note `auto_apms_behavior_tree_declare_trees` replaces `auto_apms_behavior_tree_register_behaviors` when registering
+ * behavior trees and the user should only invoke the former. Registering the corresponding behavior resource
+ * information is handled fully automatically for tree resources.
+ *
  * The user may refer to a specific resource using an identity string that may contain the tokens `<package_name>`,
  * `<tree_file_stem>` and `<tree_name>` separated by `::` in that order. Depending on the number of registered
  * resources, it might be convenient to use shorter, less precise signatures. Additionally, if the delimiter `::` is not
@@ -147,22 +151,21 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
  * doc.mergeResource("my_package::my_behavior_tree::MyTreeName");
  * ```
  *
+ * @sa BehaviorResource
  */
-class TreeResource
+class TreeResource : public BehaviorResourceTemplate<TreeResourceIdentity>
 {
   friend class TreeDocument;
   friend class TreeBuilder;
 
 public:
-  using Identity = TreeResourceIdentity;
-
   /**
    * @brief Assemble a behavior tree resource using a TreeResourceIdentity.
    * @param identity Tree resource identity object.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
    * identity.
    */
-  TreeResource(const Identity & identity);
+  TreeResource(const TreeResourceIdentity & identity);
 
   /**
    * @brief Assemble a behavior tree resource identified by a string.
@@ -196,7 +199,7 @@ public:
    * @throws auto_apms_util::exceptions::ResourceError if the corresponding behavior tree cannot be found using the
    * given arguments.
    */
-  static TreeResource selectByTreeName(const std::string & tree_name, const std::string & package_name = "");
+  static TreeResource findByTreeName(const std::string & tree_name, const std::string & package_name = "");
 
   /**
    * @brief Find an installed behavior tree resource using a specific behavior tree XML file stem.
@@ -211,7 +214,7 @@ public:
    * @throws auto_apms_util::exceptions::ResourceError if the corresponding behavior tree cannot be found using the
    * given arguments.
    */
-  static TreeResource selectByFileStem(const std::string & file_stem, const std::string & package_name = "");
+  static TreeResource findByFileStem(const std::string & file_stem, const std::string & package_name = "");
 
   /**
    * @brief Determine if this behavior tree resource specifies a root tree.
@@ -249,12 +252,6 @@ public:
   NodeManifest getNodeManifest() const;
 
   /**
-   * @brief Get the name of the package this resource was registered by.
-   * @return Package name.
-   */
-  std::string getPackageName() const;
-
-  /**
    * @brief Get the file stem of the XML file containing the tree document associated with this resource.
    * @return File stem of the associated XML file.
    */
@@ -266,11 +263,9 @@ public:
    * refer to. If empty, do not refer to a specific behavior tree.
    * @return Tree resource identity string.
    */
-  Identity createIdentity(const std::string & tree_name = "") const;
+  TreeResourceIdentity createIdentity(const std::string & tree_name = "") const;
 
 private:
-  const TreeResourceIdentity identity_;
-  std::string package_name_;
   std::string tree_file_path_;
   std::vector<std::string> node_manifest_file_paths_;
   std::string doc_root_tree_name_;

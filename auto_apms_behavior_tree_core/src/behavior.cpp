@@ -14,21 +14,11 @@
 
 #include "auto_apms_behavior_tree_core/behavior.hpp"
 
-#include <filesystem>
-
-#include "ament_index_cpp/get_resource.hpp"
-#include "auto_apms_behavior_tree_core/definitions.hpp"
-#include "auto_apms_behavior_tree_core/exceptions.hpp"
-#include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
-#include "auto_apms_util/resource.hpp"
-#include "auto_apms_util/string.hpp"
-
 namespace auto_apms_behavior_tree::core
 {
 
 BehaviorResourceIdentity::BehaviorResourceIdentity(const std::string & identity)
 {
-  // Get the category name
   std::string resource_part;
   if (std::size_t pos = identity.find(BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR); pos == std::string::npos) {
     category_name = "";
