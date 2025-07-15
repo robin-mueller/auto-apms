@@ -16,6 +16,7 @@
 
 #include <fstream>
 
+#include "auto_apms_behavior_tree_core/behavior.hpp"
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_util/resource.hpp"
 #include "auto_apms_util/string.hpp"
@@ -40,7 +41,7 @@ NodeManifest NodeManifest::fromFiles(const std::vector<std::string> & paths)
 
 NodeManifest NodeManifest::fromResourceIdentity(const std::string & identity)
 {
-  const auto tokens = auto_apms_util::splitString(identity, "::", false);
+  const auto tokens = auto_apms_util::splitString(identity, RESOURCE_IDENTITY_RESOURCE_SEPARATOR, false);
   std::string package_name = "";
   std::string file_stem;
   switch (tokens.size()) {
@@ -53,8 +54,8 @@ NodeManifest NodeManifest::fromResourceIdentity(const std::string & identity)
       break;
     default:
       throw auto_apms_util::exceptions::ResourceIdentityFormatError(
-        "Node manifest resource identity string '" + identity +
-        "' has wrong format. Must be '<package_name>::<file_stem>'.");
+        "Node manifest resource identity string '" + identity + "' has wrong format. Must be '<package_name>" +
+        RESOURCE_IDENTITY_RESOURCE_SEPARATOR + "<metadata_id>'.");
   }
 
   std::set<std::string> search_packages;

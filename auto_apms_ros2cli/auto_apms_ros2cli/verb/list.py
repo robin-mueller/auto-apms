@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_apms_behavior_tree_core.resources import get_all_behavior_tree_resources
+from collections import defaultdict
+from auto_apms_behavior_tree_core.resources import get_all_behavior_resources, RESOURCE_IDENTITY_CATEGORY_SEPARATOR
 from ..verb import VerbExtension
 
 
@@ -25,7 +26,20 @@ class ListVerb(VerbExtension):
 
     def main(self, *, args):
         """Main function for the list verb."""
-        trees = sorted(get_all_behavior_tree_resources(), key=lambda tree: tree.identity.package_name)
-        for tree in trees:
-            print(str(tree.identity))
+        behaviors = get_all_behavior_resources()
+        print("Total:", len(behaviors))
+
+        # Group behaviors by category
+        categorized_resources = defaultdict(list)
+        for identity, resource in behaviors.items():
+            categorized_resources[resource.category_name].append(
+                str(identity).split(RESOURCE_IDENTITY_CATEGORY_SEPARATOR, 2)[-1]
+            )
+
+        # Print grouped behaviors
+        for category, items in categorized_resources.items():
+            print(f"{category}{RESOURCE_IDENTITY_CATEGORY_SEPARATOR}")
+            for identity in items:
+                print(f"    {identity}")
+
         return 0

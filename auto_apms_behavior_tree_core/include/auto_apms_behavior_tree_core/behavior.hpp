@@ -31,10 +31,10 @@ namespace auto_apms_behavior_tree::core
 {
 
 /// Delimiter used to separate the category name from the rest.
-static const std::string BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR = "/";
+static const std::string RESOURCE_IDENTITY_CATEGORY_SEPARATOR = "/";
 
 /// Delimiter used to separate the package name and resource name.
-static const std::string BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR = "::";
+static const std::string RESOURCE_IDENTITY_RESOURCE_SEPARATOR = "::";
 
 /**
  * @brief Struct that encapsulates the identity string for a registered behavior.
@@ -272,10 +272,6 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
   }
 
   size_t matching_count = 0;
-  std::string matching_package_name;
-  std::string matchting_category_name;
-  std::string matching_resource_content;
-  std::string matching_default_build_handler;
   for (const auto & p : search_packages) {
     std::string content;
     std::string base_path;
@@ -287,35 +283,34 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
           throw auto_apms_util::exceptions::ResourceError(
             "Invalid behavior tree resource file (Package: '" + p + "'). Invalid line: " + line + ".");
         }
-        const std::string & found_resource_name =
+        package_ = p;
+        category_ = parts[2];
+        default_build_handler_ = parts[1];
+        const std::string found_resource_name =
           std::filesystem::path(parts[0]).stem().string();  // Simply returns the string if not a file
-        const std::string & found_default_build_handler = parts[1];
-        const std::string & found_category_name = parts[2];
 
         // Determine if resource is matching
         if (identity_.category_name.empty()) {
+          // Disregard the category if not provided with the identity
           if (found_resource_name != identity_.resource_name) {
             continue;
           }
-        } else if (found_category_name != identity_.category_name || found_resource_name != identity_.resource_name) {
+        } else if (category_ != identity_.category_name || found_resource_name != identity_.resource_name) {
           continue;
         }
 
         matching_count++;
-        matching_package_name = p;
-        matchting_category_name = found_category_name;
-        if (std::filesystem::is_regular_file(base_path + "/" + parts[0])) {
-          std::ifstream file(base_path + "/" + parts[0]);
+        if (const std::string resource_path = base_path + "/" + parts[0];
+            std::filesystem::is_regular_file(resource_path)) {
+          std::ifstream file(resource_path);
           if (!file) {
             throw auto_apms_util::exceptions::ResourceError(
-              "Failed to open behavior resource file '" + base_path + "/" + parts[0] + "'");
+              "Failed to open behavior resource file '" + resource_path + "'");
           }
-          matching_resource_content =
-            std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+          content_ = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         } else {
-          matching_resource_content = parts[0];
+          content_ = parts[0];
         }
-        matching_default_build_handler = found_default_build_handler;
       }
     }
   }
@@ -328,12 +323,6 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
     throw auto_apms_util::exceptions::ResourceError(
       "Behavior resource identity '" + identity_.str() + "' is ambiguous. You must be more precise.");
   }
-
-  // Set the member fields since we've found the matching resource
-  package_ = matching_package_name;
-  category_ = matchting_category_name;
-  content_ = matching_resource_content;
-  default_build_handler_ = matching_default_build_handler;
 }
 
 template <class T, typename U>
@@ -353,8 +342,8 @@ inline BehaviorResourceTemplate<T, U> BehaviorResourceTemplate<T, U>::find(
   const std::string & resource_name, const std::string & package_name, const std::string & category_name)
 {
   return BehaviorResourceTemplate(
-    category_name + BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR + package_name +
-    BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR + resource_name);
+    category_name + RESOURCE_IDENTITY_CATEGORY_SEPARATOR + package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR +
+    resource_name);
 }
 
 template <class T, typename U>

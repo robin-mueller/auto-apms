@@ -20,24 +20,24 @@ namespace auto_apms_behavior_tree::core
 BehaviorResourceIdentity::BehaviorResourceIdentity(const std::string & identity)
 {
   std::string resource_part;
-  if (std::size_t pos = identity.find(BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR); pos == std::string::npos) {
+  if (std::size_t pos = identity.find(RESOURCE_IDENTITY_CATEGORY_SEPARATOR); pos == std::string::npos) {
     category_name = "";
     resource_part = identity;
   } else {
     category_name = identity.substr(0, pos);
-    resource_part = identity.substr(pos + BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR.size());
+    resource_part = identity.substr(pos + RESOURCE_IDENTITY_CATEGORY_SEPARATOR.size());
   }
   if (resource_part.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
       "Behavior resource identity string '" + identity + "' is invalid: Package and resource name must not be empty.");
   }
-  if (std::size_t pos = resource_part.find(BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR); pos == std::string::npos) {
+  if (std::size_t pos = resource_part.find(RESOURCE_IDENTITY_RESOURCE_SEPARATOR); pos == std::string::npos) {
     // If only a single token is given, assume it's resource_name
     package_name = "";
     resource_name = resource_part;
   } else {
     package_name = resource_part.substr(0, pos);
-    resource_name = resource_part.substr(pos + BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR.size());
+    resource_name = resource_part.substr(pos + RESOURCE_IDENTITY_RESOURCE_SEPARATOR.size());
   }
   if (package_name.empty() && resource_name.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
@@ -58,9 +58,9 @@ std::string BehaviorResourceIdentity::str() const
 {
   std::string str;
   if (!category_name.empty()) {
-    str += category_name + BEHAVIOR_RESOURCE_IDENTITY_CATEGORY_SEPARATOR;
+    str += category_name + RESOURCE_IDENTITY_CATEGORY_SEPARATOR;
   }
-  str += package_name + BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR + resource_name;
+  str += package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + resource_name;
   return str;
 }
 

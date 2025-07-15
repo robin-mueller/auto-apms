@@ -15,15 +15,23 @@
 import ament_index_python
 import os
 import yaml
-from dataclasses import dataclass
-from pathlib import Path
 
+from pathlib import Path
 from auto_apms_util.resources import *
 
+RESOURCE_TYPE_NAME__BEHAVIOR = "auto_apms_behavior_tree_core__behavior"
 RESOURCE_TYPE_NAME__TREE = "auto_apms_behavior_tree_core__tree"
 RESOURCE_TYPE_NAME__NODE_MANIFEST = "auto_apms_behavior_tree_core__node_manifest"
 
 BASE_CLASS_TYPE__BEHAVIOR_TREE_NODE = "auto_apms_behavior_tree::core::NodeRegistrationInterface"
+
+# Delimiters used in resource identities
+RESOURCE_IDENTITY_CATEGORY_SEPARATOR = "/"
+RESOURCE_IDENTITY_RESOURCE_SEPARATOR = "::"
+
+# Default behavior categories
+DEFAULT_BEHAVIOR_CATEGORY = "default"
+DEFAULT_BEHAVIOR_CATEGORY_TREE = "tree"
 
 
 class ResourceIdentityFormatError(Exception):
@@ -34,157 +42,220 @@ class ResourceError(Exception):
     pass
 
 
+class NodeManifestError(Exception):
+    pass
+
+
+class BehaviorResourceIdentity:
+    """
+    Base class that encapsulates the identity string for a registered behavior.
+
+    This is the Python equivalent of auto_apms_behavior_tree::core::BehaviorResourceIdentity.
+    """
+
+    def __init__(self, identity: str = None):
+        """
+        Initialize a behavior resource identity from an identity string.
+
+        Identity must be formatted like `<category_name>/<package_name>::<resource_name>`.
+        Both category_name and package_name are optional.
+
+        Args:
+            identity: Identity string for a specific behavior resource, or None for manual creation.
+        """
+        self.category_name = ""
+        self.package_name = ""
+        self.resource_name = ""
+
+        if identity is None:
+            return
+
+        # Parse category and resource parts
+        resource_part = identity
+        if RESOURCE_IDENTITY_CATEGORY_SEPARATOR in identity:
+            category_pos = identity.find(RESOURCE_IDENTITY_CATEGORY_SEPARATOR)
+            self.category_name = identity[:category_pos]
+            resource_part = identity[category_pos + len(RESOURCE_IDENTITY_CATEGORY_SEPARATOR) :]
+
+        # Parse package and resource name
+        if RESOURCE_IDENTITY_RESOURCE_SEPARATOR in resource_part:
+            separator_pos = resource_part.find(RESOURCE_IDENTITY_RESOURCE_SEPARATOR)
+            self.package_name = resource_part[:separator_pos]
+            self.resource_name = resource_part[separator_pos + len(RESOURCE_IDENTITY_RESOURCE_SEPARATOR) :]
+        else:
+            # If only a single token is given, assume it's resource_name
+            self.package_name = ""
+            self.resource_name = resource_part
+
+        if not self.package_name and not self.resource_name:
+            raise ResourceIdentityFormatError(
+                f"Behavior resource identity string '{identity}' is invalid. Package and resource name must not be empty."
+            )
+
+    def __str__(self) -> str:
+        """Create the corresponding identity string."""
+        result = ""
+        if self.category_name:
+            result += self.category_name + RESOURCE_IDENTITY_CATEGORY_SEPARATOR
+        result += self.package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + self.resource_name
+        return result
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other: "BehaviorResourceIdentity") -> bool:
+        return str(self) == str(other)
+
+    def __lt__(self, other: "BehaviorResourceIdentity") -> bool:
+        return str(self) < str(other)
+
+    def empty(self) -> bool:
+        """Determine whether this behavior resource identity object is considered empty."""
+        return not self.package_name and not self.resource_name
+
+
+class BehaviorResource:
+    """
+    Class containing behavior resource data.
+
+    This is the Python equivalent of auto_apms_behavior_tree::core::BehaviorResource.
+    """
+
+    def __init__(self, identity: BehaviorResourceIdentity | str):
+        """
+        Initialize a behavior resource using an identity.
+
+        Args:
+            identity: BehaviorResourceIdentity object or identity string.
+        """
+        if isinstance(identity, str):
+            self._identity = BehaviorResourceIdentity(identity)
+        else:
+            self._identity = identity
+
+        # Load resource data from ament index
+        self._package = ""
+        self._category = ""
+        self._content = ""
+        self._default_build_handler = ""
+
+        # Find the resource in the ament index - search across all packages if needed
+        search_packages: set[str] = set()
+        if self._identity.package_name:
+            search_packages.add(self._identity.package_name)
+        else:
+            search_packages = get_packages_with_resource_type(RESOURCE_TYPE_NAME__BEHAVIOR)
+
+        matching_count = 0
+        for package in search_packages:
+            content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__BEHAVIOR, package)
+
+            # Parse content to find the specific resource
+            for line in content.splitlines():
+                parts = line.split("|")
+                if len(parts) != 3:
+                    raise ResourceError(f"Invalid behavior resource file (Package: '{package}'). Invalid line: {line}.")
+
+                self._package = package
+                self._category = parts[2]
+                self._default_build_handler = parts[1]
+                found_resource_name = Path(parts[0]).stem  # Simply returns the string if not a file
+
+                # Determine if resource is matching
+                if not self._identity.category_name:
+                    # Disregard the category if not provided with the identity
+                    if found_resource_name != self._identity.resource_name:
+                        continue
+                elif (
+                    self._identity.category_name != self._category
+                    or found_resource_name != self._identity.resource_name
+                ):
+                    continue
+
+                # Found matching resource
+                matching_count += 1
+                resource_path = os.path.join(base_path, parts[0])
+                if os.path.isfile(resource_path):
+                    with open(resource_path, "r") as f:
+                        self._content = f.read()
+                else:
+                    self._content = parts[0]
+
+        if matching_count == 0:
+            raise ResourceError(f"No behavior resource with identity '{self._identity}' was registered.")
+        if matching_count > 1:
+            raise ResourceError(
+                f"Behavior resource identity '{self._identity}' is ambiguous. You must be more precise."
+            )
+
+    @staticmethod
+    def find(resource_name: str, package_name: str = "", category_name: str = "") -> "BehaviorResource":
+        """
+        Find a behavior resource by name.
+
+        Args:
+            resource_name: Name of the resource to find.
+            package_name: Optional package name to narrow search.
+            category_name: Optional category name to narrow search.
+
+        Returns:
+            BehaviorResource instance for the found resource.
+
+        Raises:
+            ResourceError: If resource cannot be found.
+        """
+        return BehaviorResource(
+            category_name
+            + RESOURCE_IDENTITY_CATEGORY_SEPARATOR
+            + package_name
+            + RESOURCE_IDENTITY_RESOURCE_SEPARATOR
+            + resource_name
+        )
+
+    @property
+    def category_name(self) -> str:
+        return self._category
+
+    @property
+    def package_name(self) -> str:
+        return self._package
+
+    @property
+    def resource_content(self) -> str:
+        return self._content
+
+    @property
+    def default_build_handler(self) -> str:
+        return self._default_build_handler
+
+
 class NodeManifest:
     """
-    Data structure for information about which behavior tree node plugin to load and how to configure them.
+    Data structure holding information about which behavior tree node plugin to load and how to configure them.
 
     This is the Python equivalent of auto_apms_behavior_tree::core::NodeManifest.
     A node manifest is a collection of dictionaries mapped by node names.
     """
 
-    def __init__(self, identity: str = None, node_map: dict[str, dict] = None):
+    def __init__(self, node_dict: dict[str, dict] = None):
         """
-        Initialize a node manifest from an identity string or from a node map.
+        Initialize a node manifest from a dictionary.
 
         Args:
-            identity: Identity to load from resources (format: "package::metadata_id" or "metadata_id"), or None for manual creation
-            node_map: Dictionary mapping node names to node option dictionaries for manual creation
+            node_dict: Dictionary mapping node names to node registration options for manual creation
         """
-        self._node_map: dict[str, dict] = {}
-
-        if node_map is not None:
-            # Manual creation with provided node map
-            self._identity = ""
-            self._package_name = ""
-            self._manifest_file_path = ""
-            self._node_map = node_map.copy()
-            return
-
-        if identity is None:
-            # Empty manifest
-            self._identity = ""
-            self._package_name = ""
-            self._manifest_file_path = ""
-            return
-
-        # Load from resource identity
-        self._identity = identity
-
-        # Parse identity string formatted as <package_name>::<metadata_id>
-        tokens = identity.split("::")
-        if len(tokens) == 1:
-            tokens.insert(0, "")
-
-        if len(tokens) != 2:
-            raise ResourceIdentityFormatError(
-                f"Identity string '{identity}' has wrong format. Number of string tokens separated by '::' must be 2."
-            )
-
-        package_name = tokens[0]
-        metadata_id = tokens[1]
-
-        if not metadata_id:
-            raise ResourceIdentityFormatError(
-                f"Node manifest resource identity string '{identity}' has wrong format. " "Metadata ID cannot be empty."
-            )
-
-        # Find the resource in the ament index
-        search_packages: set[str] = set()
-        if package_name:
-            search_packages.add(package_name)
-        else:
-            search_packages = set(ament_index_python.get_resources(RESOURCE_TYPE_NAME__NODE_MANIFEST))
-
-        matching_count = 0
-        self._package_name = ""
-        self._manifest_file_path = ""
-
-        for package in search_packages:
-            try:
-                content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__NODE_MANIFEST, package)
-
-                for line in content.splitlines():
-                    if not line:
-                        continue
-
-                    # Parse resource line format: metadata_id|manifest_path
-                    parts = line.split("|")
-                    if len(parts) != 2:
-                        raise ResourceError(
-                            f"Invalid node manifest resource file (Package: '{package}'). Invalid line: {line}."
-                        )
-
-                    found_metadata_id = parts[0]
-                    manifest_path = parts[1]
-
-                    # Check if this matches our search criteria
-                    if found_metadata_id != metadata_id:
-                        continue
-
-                    matching_count += 1
-                    self._package_name = package
-                    self._manifest_file_path = os.path.join(base_path, manifest_path)
-
-                    # Load the manifest data
-                    if os.path.isfile(self._manifest_file_path):
-                        with open(self._manifest_file_path, "r") as f:
-                            manifest_data = yaml.safe_load(f)
-                            if not isinstance(manifest_data, dict):
-                                raise ResourceError(
-                                    f"Node manifest file '{self._manifest_file_path}' is not a valid YAML mapping."
-                                )
-
-                            # Store raw dictionaries
-                            for node_name, node_data in manifest_data.items():
-                                if isinstance(node_data, dict):
-                                    self._node_map[node_name] = node_data.copy()
-                                else:
-                                    raise ResourceError(
-                                        f"Invalid node data for '{node_name}' in manifest '{self._manifest_file_path}'"
-                                    )
-                    else:
-                        raise ResourceError(f"Node manifest file '{self._manifest_file_path}' does not exist.")
-
-            except Exception as e:
-                raise ResourceError(f"Error processing package {package}: {e}")
-
-        if matching_count == 0:
-            raise ResourceError(f"No node manifest with identity '{identity}' was registered.")
-        if matching_count > 1:
-            raise ResourceError(f"Resource identity '{identity}' is ambiguous. You must be more precise.")
-
-    @property
-    def identity(self) -> str:
-        """Get the identity of this node manifest."""
-        return self._identity
-
-    @property
-    def package_name(self) -> str:
-        """Get the package name that registered this manifest."""
-        return self._package_name
-
-    @property
-    def metadata_id(self) -> str:
-        """Get the metadata ID of this manifest."""
-        if "::" in self._identity:
-            return self._identity.split("::")[-1]
-        return self._identity
+        self._node_dict: dict[str, dict] = node_dict
 
     @property
     def data(self) -> dict[str, dict]:
         """Get the manifest data as a dictionary of node option dictionaries."""
-        return self._node_map.copy()
-
-    @property
-    def file_path(self) -> str:
-        """Get the absolute path to the manifest file."""
-        return self._manifest_file_path
+        return self._node_dict.copy()
 
     def get_node_names(self) -> list[str]:
         """Get all node names defined in this manifest."""
-        return list(self._node_map.keys())
+        return list(self._node_dict.keys())
 
-    def get_node_options(self, node_name: str) -> dict:
+    def get_node_registration_options(self, node_name: str) -> dict:
         """
         Get registration options for a specific node.
 
@@ -197,13 +268,13 @@ class NodeManifest:
         Raises:
             KeyError: If the node name is not found in the manifest.
         """
-        if node_name not in self._node_map:
+        if node_name not in self._node_dict:
             raise KeyError(f"Node '{node_name}' not found in manifest '{self._identity}'")
-        return self._node_map[node_name].copy()
+        return self._node_dict[node_name].copy()
 
     def has_node(self, node_name: str) -> bool:
         """Check if a node is defined in this manifest."""
-        return node_name in self._node_map
+        return node_name in self._node_dict
 
     def add_node(self, node_name: str, options: dict) -> "NodeManifest":
         """
@@ -223,10 +294,10 @@ class NodeManifest:
             raise ValueError(f"Options for node '{node_name}' must be a dictionary")
         if not options.get("class_name", "").strip():
             raise ValueError(f"Invalid registration options for node '{node_name}': class_name is required")
-        if node_name in self._node_map:
+        if node_name in self._node_dict:
             raise ValueError(f"Node '{node_name}' already exists in manifest")
 
-        self._node_map[node_name] = options.copy()
+        self._node_dict[node_name] = options.copy()
         return self
 
     def remove_node(self, node_name: str) -> "NodeManifest":
@@ -242,9 +313,9 @@ class NodeManifest:
         Raises:
             KeyError: If node_name doesn't exist.
         """
-        if node_name not in self._node_map:
+        if node_name not in self._node_dict:
             raise KeyError(f"Node '{node_name}' not found in manifest")
-        del self._node_map[node_name]
+        del self._node_dict[node_name]
         return self
 
     def merge(self, other: "NodeManifest", replace: bool = False) -> "NodeManifest":
@@ -262,27 +333,19 @@ class NodeManifest:
         Raises:
             ValueError: If other shares entries and replace is False.
         """
-        for node_name, options in other._node_map.items():
-            if node_name in self._node_map and not replace:
+        for node_name, options in other._node_dict.items():
+            if node_name in self._node_dict and not replace:
                 raise ValueError(f"Node '{node_name}' already exists and replace=False")
-            self._node_map[node_name] = options
+            self._node_dict[node_name] = options
         return self
 
     def size(self) -> int:
         """Get the number of behavior tree nodes this manifest holds registration options for."""
-        return len(self._node_map)
+        return len(self._node_dict)
 
     def empty(self) -> bool:
         """Determine whether any node registration options have been added to the manifest."""
-        return len(self._node_map) == 0
-
-    def to_dict(self) -> dict:
-        """Convert the manifest to a dictionary representation suitable for YAML serialization."""
-        result = {}
-        for node_name, options in self._node_map.items():
-            # Since options are already dictionaries, we can use them directly
-            result[node_name] = dict(options)
-        return result
+        return len(self._node_dict) == 0
 
     def to_file(self, file_path: str) -> None:
         """
@@ -296,9 +359,42 @@ class NodeManifest:
         """
         try:
             with open(file_path, "w") as f:
-                yaml.dump(self.to_dict(), f, default_flow_style=False)
+                yaml.dump(self._node_dict, f, default_flow_style=False)
         except Exception as e:
             raise IOError(f"Failed to write manifest to file '{file_path}': {e}")
+
+    @staticmethod
+    def from_file(file_path: str) -> "NodeManifest":
+        """
+        Create a node plugin manifest from a YAML file.
+
+        Args:
+            file_path: Path to the manifest file.
+
+        Returns:
+            NodeManifest created from the file.
+
+        Raises:
+            yaml.error.YAMLError: If the file does not contain a valid YAML mapping.
+            IOError: If the file cannot be read.
+        """
+        try:
+            with open(file_path, "r") as f:
+                data = yaml.safe_load(f)
+                if not isinstance(data, dict):
+                    raise yaml.error.YAMLError(f"File '{file_path}' does not contain a valid YAML mapping")
+
+                manifest = NodeManifest()
+                for node_name, node_data in data.items():
+                    if isinstance(node_data, dict):
+                        manifest.add_node(node_name, node_data)
+                    else:
+                        raise yaml.error.YAMLError(f"Invalid node data for '{node_name}' in file '{file_path}'")
+
+                return manifest
+
+        except Exception as e:
+            raise IOError(f"Failed to load manifest from file '{file_path}': {e}")
 
     @staticmethod
     def from_files(file_paths: list[str]) -> "NodeManifest":
@@ -312,30 +408,14 @@ class NodeManifest:
             NodeManifest created by merging all files.
 
         Raises:
-            ValueError: If merge fails for any file.
-            IOError: If any file cannot be read.
+            NodeManifestError: If merge fails for any file.
         """
         manifest = NodeManifest()
-
         for file_path in file_paths:
             try:
-                with open(file_path, "r") as f:
-                    data = yaml.safe_load(f)
-                    if not isinstance(data, dict):
-                        raise ValueError(f"File '{file_path}' does not contain a valid YAML mapping")
-
-                    file_manifest = NodeManifest()
-                    for node_name, node_data in data.items():
-                        if isinstance(node_data, dict):
-                            file_manifest.add_node(node_name, node_data)
-                        else:
-                            raise ValueError(f"Invalid node data for '{node_name}' in file '{file_path}'")
-
-                    manifest.merge(file_manifest, replace=True)
-
+                manifest.merge(NodeManifest.from_file(file_path), replace=True)
             except Exception as e:
-                raise IOError(f"Failed to load manifest from file '{file_path}': {e}")
-
+                raise NodeManifestError(f"Error creating node manifest from multiple files: {e}")
         return manifest
 
     @staticmethod
@@ -355,189 +435,167 @@ class NodeManifest:
             ResourceIdentityFormatError: If identity has wrong format.
             ResourceError: If resource cannot be determined using identity.
         """
-        return NodeManifest(identity)
+        tokens = identity.split(RESOURCE_IDENTITY_RESOURCE_SEPARATOR)
+        package_name = ""
+        file_stem = ""
 
-    @staticmethod
-    def find_by_metadata_id(metadata_id: str, package_name: str = "") -> "NodeManifest":
-        """
-        Find a node manifest by its metadata ID.
-
-        Args:
-            metadata_id: The metadata ID to search for.
-            package_name: Optional package name to restrict search.
-
-        Returns:
-            NodeManifest object matching the criteria.
-        """
-        return NodeManifest(f"{package_name}::{metadata_id}")
-
-
-@dataclass
-class TreeResourceIdentity:
-    package_name: str
-    file_stem: str
-    tree_name: str
-
-    def __init__(self, identity: str = None):
-        if identity is None:
-            self.package_name = ""
-            self.file_stem = ""
-            self.tree_name = ""
-            return
-
-        # Parse identity string formatted as <package_name>::<file_stem>::<tree_name>
-        tokens = identity.split("::")
         if len(tokens) == 1:
-            tokens.insert(0, "")
-            tokens.append("")
-
-        if len(tokens) != 3:
+            file_stem = tokens[0]
+        elif len(tokens) == 2:
+            package_name = tokens[0]
+            file_stem = tokens[1]
+        else:
             raise ResourceIdentityFormatError(
-                f"Identity string '{identity}' has wrong format. Number of string tokens separated by '::' must be 3."
+                f"Node manifest resource identity string '{identity}' has wrong format. "
+                f"Must be '<package_name>{RESOURCE_IDENTITY_RESOURCE_SEPARATOR}<metadata_id>'."
             )
 
-        self.package_name = tokens[0]
-        self.file_stem = tokens[1]
-        self.tree_name = tokens[2]
+        search_packages: set[str] = set()
+        if package_name:
+            search_packages.add(package_name)
+        else:
+            search_packages = set(ament_index_python.get_resources(RESOURCE_TYPE_NAME__NODE_MANIFEST))
+
+        matching_file_paths: list[str] = []
+        for package in search_packages:
+            content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__NODE_MANIFEST, package)
+            lines = content.splitlines()
+            for line in lines:
+                parts = line.split("|")
+                if len(parts) != 2:
+                    raise ResourceError(
+                        f"Invalid node manifest resource file (Package: '{package}'). Invalid line: {line}."
+                    )
+                if parts[0] == file_stem:
+                    matching_file_paths.append(os.path.join(base_path, parts[1]))
+
+        if not matching_file_paths:
+            raise ResourceError(f"No node manifest resource was found using identity '{identity}'.")
+        if len(matching_file_paths) > 1:
+            raise ResourceError(f"There are multiple node manifest resources with metadata ID '{file_stem}'.")
+
+        return NodeManifest.from_files([matching_file_paths[0]])
+
+
+class TreeResourceIdentity(BehaviorResourceIdentity):
+    """
+    Struct that encapsulates the identity string for a declared behavior tree.
+
+    This is the Python equivalent of auto_apms_behavior_tree::core::TreeResourceIdentity.
+    """
+
+    def __init__(self, identity: str = None):
+        """
+        Initialize a tree resource identity from an identity string.
+
+        Identity must be formatted like `<package_name>::<tree_file_stem>::<tree_name>`.
+
+        Args:
+            identity: Identity string for a specific behavior tree resource, or None for manual creation.
+        """
+        self.file_stem = ""
+        self.tree_name = ""
+
+        if identity is None:
+            super().__init__()
+            return
+
+        # First, let the parent class parse the basic structure
+        super().__init__(identity)
+
+        # If no category is explicitly specified, use a special default for behavior trees
+        if not self.category_name or self.category_name == DEFAULT_BEHAVIOR_CATEGORY:
+            self.category_name = DEFAULT_BEHAVIOR_CATEGORY_TREE
+
+        # Parse the resource_name part to extract file_stem and tree_name
+        tokens = self.resource_name.split(RESOURCE_IDENTITY_RESOURCE_SEPARATOR)
+
+        # If only a single token is given, assume it's file_stem
+        if len(tokens) == 1:
+            tokens.append("")
+
+        if len(tokens) != 2:
+            raise ResourceIdentityFormatError(
+                f"Tree resource identity string '{identity}' is invalid. "
+                f"Resource name must contain 2 tokens (separated by {RESOURCE_IDENTITY_RESOURCE_SEPARATOR})."
+            )
+
+        self.file_stem = tokens[0]
+        self.tree_name = tokens[1]
 
         if not self.file_stem and not self.tree_name:
             raise ResourceIdentityFormatError(
-                f"Behavior tree resource identity string '{identity}' has wrong format. "
+                f"Behavior tree resource identity string '{identity}' is invalid. "
                 "It's not allowed to omit both <tree_file_stem> and <tree_name>."
             )
 
-    def __str__(self) -> str:
-        return f"{self.package_name}::{self.file_stem}::{self.tree_name}"
 
-    def __eq__(self, other: "TreeResourceIdentity") -> bool:
-        return str(self) == str(other)
+class TreeResource(BehaviorResource):
+    """
+    Class containing behavior tree resource data.
 
-    def __lt__(self, other: "TreeResourceIdentity") -> bool:
-        return str(self) < str(other)
+    This is the Python equivalent of auto_apms_behavior_tree::core::TreeResource.
+    """
 
-    def empty(self) -> bool:
-        return not (self.package_name or self.file_stem or self.tree_name)
-
-
-class TreeResource:
     def __init__(self, identity: TreeResourceIdentity | str):
         """Initialize a tree resource from an identity object or string."""
         if isinstance(identity, str):
-            self._resource_identity = TreeResourceIdentity(identity)
+            self._identity = TreeResourceIdentity(identity)
         else:
-            self._resource_identity = identity
+            self._identity = identity
 
-        if self._resource_identity.empty():
-            raise ResourceIdentityFormatError("Cannot create TreeResource with empty identity.")
+        # Initialize the base class
+        super().__init__(self._identity)
 
-        # Find the resource in the ament index
-        search_packages: set[str] = set()
-        if self._resource_identity.package_name:
-            search_packages.add(self._resource_identity.package_name)
-        else:
-            search_packages = set(ament_index_python.get_resources(RESOURCE_TYPE_NAME__TREE))
-
-        matching_count = 0
-        self._package_name = ""
         self._tree_file_path = ""
         self._node_manifest_file_paths: list[str] = []
-        self._doc_root_tree_name = ""
 
-        for package in search_packages:
-            try:
-                content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__TREE, package)
+        matching_count = 0
+        content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__TREE, self.package_name)
+        for line in content.splitlines():
+            # Parse resource line format: tree_file_stem|tree_names|file_path|manifest_paths
+            parts = line.split("|")
+            if len(parts) != 4:
+                raise ResourceError(
+                    f"Invalid behavior tree resource file (Package: '{self.package_name}'). Invalid line: {line}."
+                )
 
-                for line in content.splitlines():
-                    if not line:
+            found_tree_file_stem = parts[0]
+            found_tree_names = parts[1].split(";") if parts[1] else []
+
+            # Determine if resource matches the identity
+            if self._identity.tree_name:
+                if self._identity.file_stem:
+                    if (
+                        found_tree_file_stem != self._identity.file_stem
+                        or self._identity.tree_name not in found_tree_names
+                    ):
                         continue
+                else:
+                    if self._identity.tree_name not in found_tree_names:
+                        continue
+            else:
+                if found_tree_file_stem != self._identity.file_stem:
+                    continue
 
-                    # Parse resource line format: tree_file_stem|tree_names|file_path|manifest_paths
-                    parts = line.split("|")
-                    if len(parts) != 4:
-                        raise ResourceError(
-                            f"Invalid behavior tree resource file (Package: '{package}'). Invalid line: {line}."
-                        )
+            matching_count += 1
+            self._tree_file_path = os.path.join(base_path, parts[2])
 
-                    found_tree_file_stem = parts[0]
-                    found_tree_names = parts[1].split(";")
-
-                    # Determine if resource matches the identity
-                    if self._resource_identity.tree_name:
-                        if self._resource_identity.file_stem:
-                            if (
-                                found_tree_file_stem != self._resource_identity.file_stem
-                                or self._resource_identity.tree_name not in found_tree_names
-                            ):
-                                continue
-                        else:
-                            if self._resource_identity.tree_name not in found_tree_names:
-                                continue
+            # Handle manifest paths
+            if parts[3]:
+                for path in parts[3].split(";"):
+                    if os.path.isabs(path):
+                        self._node_manifest_file_paths.append(path)
                     else:
-                        if found_tree_file_stem != self._resource_identity.file_stem:
-                            continue
-
-                    matching_count += 1
-                    self._package_name = package
-                    self._tree_file_path = os.path.join(base_path, parts[2])
-
-                    # Handle manifest paths
-                    for path in parts[3].split(";"):
-                        if os.path.isabs(path):
-                            self._node_manifest_file_paths.append(path)
-                        else:
-                            self._node_manifest_file_paths.append(os.path.join(base_path, path))
-
-            except Exception as e:
-                print(f"Error processing package {package}: {e}")
-                raise
+                        self._node_manifest_file_paths.append(os.path.join(base_path, path))
 
         if matching_count == 0:
-            raise ResourceError(f"No behavior tree file with identity '{self._resource_identity}' was registered.")
+            raise ResourceError(f"No behavior tree file with identity '{self._identity}' was registered.")
         if matching_count > 1:
-            raise ResourceError(
-                f"Resource identity '{self._resource_identity}' is ambiguous. You must be more precise."
-            )
-
-    @property
-    def identity(self) -> TreeResourceIdentity:
-        return self._resource_identity
-
-    @property
-    def content(self) -> str:
-        """
-        Writes the XML content of the behavior tree resource in a string an returns it.
-        """
-        with open(self._tree_file_path, "r") as f:
-            xml_content = f.read()
-        return xml_content
-
-    @property
-    def node_manifest(self) -> dict:
-        """
-        Concatenate and merge all node manifest YAML files into a single dictionary.
-        Duplicate keys are not allowed and will raise a ValueError.
-        Returns:
-            dict: The merged dictionary containing all node manifests.
-        Raises:
-            FileNotFoundError: If a manifest file does not exist.
-            ValueError: If a manifest is not a YAML mapping or contains duplicate keys.
-        """
-        merged = {}
-        for manifest_path in self._node_manifest_file_paths:
-            if not os.path.isfile(manifest_path):
-                raise FileNotFoundError(f"Node manifest file not found: {manifest_path}")
-            with open(manifest_path, "r") as f:
-                data = yaml.safe_load(f)
-                if not isinstance(data, dict):
-                    raise ValueError(f"Node manifest {manifest_path} is not a YAML mapping")
-                for k in data:
-                    if k in merged:
-                        raise ValueError(f"Duplicate node name '{k}' found in node manifest: {manifest_path}")
-                merged.update(data)
-        return merged
+            raise ResourceError(f"Resource identity '{self._identity}' is ambiguous. You must be more precise.")
 
     @staticmethod
-    def select_by_tree_name(tree_name: str, package_name: str = "") -> "TreeResource":
+    def find_by_tree_name(tree_name: str, package_name: str = "") -> "TreeResource":
         """
         Find an installed behavior tree resource using a specific behavior tree name.
 
@@ -548,10 +606,12 @@ class TreeResource:
         Returns:
             TreeResource: The matching behavior tree resource.
         """
-        return TreeResource(f"{package_name}::::{tree_name}")
+        return TreeResource(
+            package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + tree_name
+        )
 
     @staticmethod
-    def select_by_file_stem(file_stem: str, package_name: str = "") -> "TreeResource":
+    def find_by_file_stem(file_stem: str, package_name: str = "") -> "TreeResource":
         """
         Find an installed behavior tree resource using a specific behavior tree XML file stem.
 
@@ -562,44 +622,70 @@ class TreeResource:
         Returns:
             TreeResource: The matching behavior tree resource.
         """
-        return TreeResource(f"{package_name}::{file_stem}::")
+        return TreeResource(
+            package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + file_stem + RESOURCE_IDENTITY_RESOURCE_SEPARATOR
+        )
 
-    def get_package_name(self) -> str:
+    @property
+    def file_stem(self) -> str:
         """
-        Get the name of the package this resource was registered by.
-
-        Returns:
-            str: The package name.
-        """
-        return self._package_name
-
-    def get_file_stem(self) -> str:
-        """
-        Get the file stem of the XML file containing the tree document.
-
-        Returns:
-            str: The file stem.
+        Get the file stem of the behavior tree resource.
         """
         return Path(self._tree_file_path).stem
 
-    def create_identity(self, tree_name: str = "") -> TreeResourceIdentity:
+    @property
+    def content(self) -> str:
         """
-        Create a valid tree resource identity representing this resource.
-
-        Args:
-            tree_name (str, optional): The tree name to use in the identity. Default: Refer to the main tree.
-
-        Returns:
-            TreeResourceIdentity: The constructed identity.
+        Get the XML content of the behavior tree resource.
         """
-        identity = TreeResourceIdentity()
-        identity.package_name = self._package_name
-        identity.file_stem = self.get_file_stem()
-        identity.tree_name = tree_name
-        return identity
+        with open(self._tree_file_path, "r") as f:
+            return f.read()
+
+    @property
+    def node_manifest(self) -> NodeManifest:
+        """
+        Get concatenated node manifest YAML files as a single dictionary.
+        """
+        return NodeManifest.from_files(self._node_manifest_file_paths)
 
 
-def get_all_behavior_tree_resources(exclude_packages: set[str] = None) -> list[TreeResource]:
+def get_all_behavior_resources(exclude_packages: set[str] = None) -> dict[BehaviorResourceIdentity, BehaviorResource]:
+    """
+    Retrieves all available/installed behavior resources.
+
+    This function scans all packages that have registered behavior resources,
+    parses their resource files, and constructs a list of `BehaviorResource` objects
+    representing each available behavior.
+
+    Returns:
+        A dictionary of behavior resources mapped with their identities.
+
+    Raises:
+        ValueError: If a resource file contains an invalid line.
+    """
+    behaviors: dict[BehaviorResourceIdentity, BehaviorResource] = {}
+    for package in get_packages_with_resource_type(RESOURCE_TYPE_NAME__BEHAVIOR, exclude_packages):
+        content, _ = ament_index_python.get_resource(RESOURCE_TYPE_NAME__BEHAVIOR, package)
+        for line in content.splitlines():
+            parts = line.split("|")
+            if len(parts) != 3:
+                raise ValueError(f"Invalid behavior resource file (Package: '{package}'). Invalid line: {line}.")
+
+            category = parts[2]
+            resource_name = Path(parts[0]).stem  # Simply returns the string if not a file
+            identity = BehaviorResourceIdentity(
+                category
+                + RESOURCE_IDENTITY_CATEGORY_SEPARATOR
+                + package
+                + RESOURCE_IDENTITY_RESOURCE_SEPARATOR
+                + resource_name
+            )
+            behaviors[identity] = BehaviorResource(identity)
+
+    return dict(sorted(behaviors.items()))
+
+
+def get_all_tree_resources(exclude_packages: set[str] = None) -> dict[TreeResourceIdentity, TreeResource]:
     """
     Retrieves all available/installed behavior tree resources.
 
@@ -608,24 +694,15 @@ def get_all_behavior_tree_resources(exclude_packages: set[str] = None) -> list[T
     representing each available behavior tree.
 
     Returns:
-        List[TreeResource]: A sorted list of `TreeResource` objects, each corresponding
-        to a discovered behavior tree resource.
+        A dictionary of tree resources mapped with their identities.
 
     Raises:
         ValueError: If a resource file contains an invalid line.
     """
-    trees = []
-
-    # Get all packages that have registered behavior tree resources
-    packages = get_packages_with_resource_type(RESOURCE_TYPE_NAME__TREE, exclude_packages)
-    for package in packages:
-        # Get the content of the resource file
-        content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__TREE, package)
-
+    trees: dict[TreeResourceIdentity, TreeResource] = {}
+    for package in get_packages_with_resource_type(RESOURCE_TYPE_NAME__TREE, exclude_packages):
+        content, _ = ament_index_python.get_resource(RESOURCE_TYPE_NAME__TREE, package)
         for line in content.splitlines():
-            if not line:
-                continue
-
             parts = line.split("|")
             if len(parts) != 4:
                 raise ValueError(f"Invalid behavior tree resource file (Package: '{package}'). Invalid line: {line}.")
@@ -636,13 +713,19 @@ def get_all_behavior_tree_resources(exclude_packages: set[str] = None) -> list[T
             # Create TreeResource for each tree name
             for tree_name in tree_names:
                 if tree_name:  # Skip empty tree names
-                    tree = TreeResource(f"{package}::{file_stem}::{tree_name}")
-                    trees.append(tree)
+                    identity = TreeResourceIdentity(
+                        package
+                        + RESOURCE_IDENTITY_RESOURCE_SEPARATOR
+                        + file_stem
+                        + RESOURCE_IDENTITY_RESOURCE_SEPARATOR
+                        + tree_name
+                    )
+                    trees[identity] = TreeResource(identity)
 
-    return sorted(trees, key=lambda x: str(x.identity))
+    return dict(sorted(trees.items()))
 
 
-def get_all_behavior_tree_node_plugins(exclude_packages: set[str] = None) -> list[str]:
+def get_all_tree_node_plugins(exclude_packages: set[str] = None) -> list[str]:
     """
     Get all behavior tree node plugin names.
 
@@ -653,7 +736,7 @@ def get_all_behavior_tree_node_plugins(exclude_packages: set[str] = None) -> lis
         exclude_packages: Packages to exclude when searching for plugins.
 
     Returns:
-        List of all behavior tree node plugin names.
+        list[str]: List of all behavior tree node plugin names.
 
     Raises:
         ResourceError: If failed to find or parse plugin manifest files.
@@ -661,41 +744,31 @@ def get_all_behavior_tree_node_plugins(exclude_packages: set[str] = None) -> lis
     return get_plugin_names_with_base_type(BASE_CLASS_TYPE__BEHAVIOR_TREE_NODE, exclude_packages)
 
 
-def get_all_behavior_tree_node_manifest_resources(exclude_packages: set[str] = None) -> list[NodeManifest]:
+def get_all_tree_node_manifest_resources(exclude_packages: set[str] = None) -> dict[str, NodeManifest]:
     """
-    Get all available node manifest resources as NodeManifest objects.
+    Get all available node manifest resources.
 
     Args:
         exclude_packages: Packages to exclude when searching for manifests.
 
     Returns:
-        List of all NodeManifest objects.
+        Dictionary of all node manifest resources with their identities as keys.
 
     Raises:
         ResourceError: If failed to find or parse manifest files.
     """
-    manifests = []
-    packages = get_packages_with_resource_type(RESOURCE_TYPE_NAME__NODE_MANIFEST, exclude_packages)
+    manifests: dict[str, NodeManifest] = {}
+    for package in get_packages_with_resource_type(RESOURCE_TYPE_NAME__NODE_MANIFEST, exclude_packages):
+        content, _ = ament_index_python.get_resource(RESOURCE_TYPE_NAME__NODE_MANIFEST, package)
+        for line in content.splitlines():
+            # Parse resource line format: metadata_id|manifest_path
+            parts = line.split("|")
+            if len(parts) != 2:
+                raise ResourceError(
+                    f"Invalid node manifest resource file (Package: '{package}'). Invalid line: {line}."
+                )
+            metadata_id = parts[0]
+            identity = package + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + metadata_id
+            manifests[identity] = NodeManifest.from_resource_identity(identity)
 
-    for package in packages:
-        try:
-            content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__NODE_MANIFEST, package)
-
-            for line in content.splitlines():
-                if not line:
-                    continue
-
-                # Parse resource line format: metadata_id|manifest_path
-                parts = line.split("|")
-                if len(parts) != 2:
-                    raise ResourceError(
-                        f"Invalid node manifest resource file (Package: '{package}'). Invalid line: {line}."
-                    )
-
-                metadata_id = parts[0]
-                manifests.append(NodeManifest(f"{package}::{metadata_id}"))
-
-        except Exception as e:
-            raise ResourceError(f"Error reading node manifest from package '{package}': {e}")
-
-    return sorted(manifests, key=lambda x: x.identity)
+    return manifests

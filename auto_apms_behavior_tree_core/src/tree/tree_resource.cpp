@@ -36,7 +36,7 @@ TreeResourceIdentity::TreeResourceIdentity(const std::string & identity) : Behav
   }
 
   std::vector<std::string> tokens =
-    auto_apms_util::splitString(resource_name, BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR, false);
+    auto_apms_util::splitString(resource_name, RESOURCE_IDENTITY_RESOURCE_SEPARATOR, false);
   // If only a single token is given, assume it's file_stem
   if (tokens.size() == 1) {
     tokens.push_back("");
@@ -44,8 +44,7 @@ TreeResourceIdentity::TreeResourceIdentity(const std::string & identity) : Behav
   if (tokens.size() != 2) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
       "Tree resource identity string '" + identity +
-      "' is invalid. Resource name must contain 2 tokens (separated by " +
-      BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR + ").");
+      "' is invalid. Resource name must contain 2 tokens (separated by " + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + ").");
   }
   file_stem = tokens[0];
   tree_name = tokens[1];
@@ -61,8 +60,6 @@ TreeResourceIdentity::TreeResourceIdentity(const char * identity) : TreeResource
 TreeResource::TreeResource(const TreeResourceIdentity & identity) : BehaviorResourceTemplate(identity)
 {
   size_t matching_count = 0;
-  std::string matching_tree_file_path;
-  std::vector<std::string> matching_node_manifest_file_paths;
   std::string content;
   std::string base_path;
   if (ament_index_cpp::get_resource(
@@ -92,9 +89,9 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : BehaviorReso
       }
 
       matching_count++;
-      matching_tree_file_path = base_path + "/" + parts[2];
+      tree_file_path_ = base_path + "/" + parts[2];
       for (const std::string & path : auto_apms_util::splitString(parts[3], ";")) {
-        matching_node_manifest_file_paths.push_back(
+        node_manifest_file_paths_.push_back(
           std::filesystem::path(path).is_absolute() ? path : (base_path + "/" + path));
       }
     }
@@ -108,10 +105,6 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : BehaviorReso
     throw auto_apms_util::exceptions::ResourceError(
       "Behavior tree resource identity '" + identity_.str() + "' is ambiguous. You must be more precise.");
   }
-
-  // Set the member fields since we've found the matching resource
-  tree_file_path_ = matching_tree_file_path;
-  node_manifest_file_paths_ = matching_node_manifest_file_paths;
 
   // Verify that the file is ok
   TreeDocument doc;
@@ -145,15 +138,13 @@ TreeResource::TreeResource(const char * identity) : TreeResource(std::string(ide
 TreeResource TreeResource::findByTreeName(const std::string & tree_name, const std::string & package_name)
 {
   return TreeResource(
-    package_name + BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR + BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR +
-    tree_name);
+    package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + tree_name);
 }
 
 TreeResource TreeResource::findByFileStem(const std::string & file_name, const std::string & package_name)
 {
   return TreeResource(
-    package_name + BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR + file_name +
-    BEHAVIOR_RESOURCE_IDENTITY_RESOURCE_SEPARATOR);
+    package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + file_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR);
 }
 
 bool TreeResource::hasRootTreeName() const { return !identity_.tree_name.empty() || !doc_root_tree_name_.empty(); }
