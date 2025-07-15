@@ -28,7 +28,7 @@ def spawn_orchestrator_node(context: LaunchContext):
     return [
         Node(
             package="auto_apms_behavior_tree",
-            executable="run_tree",
+            executable="run_behavior",
             name=context.launch_configurations["orchestrator_name"],
             parameters=[
                 {

@@ -270,8 +270,8 @@ auto_apms_behavior_tree_declare_build_handlers(standard_build_handlers
 #
 
 # Run a behavior tree registered with the ament resource index
-add_executable(run_tree "src/cli/run_tree.cpp")
-target_link_libraries(run_tree auto_apms_behavior_tree)
+add_executable(run_behavior "src/cli/run_behavior.cpp")
+target_link_libraries(run_behavior auto_apms_behavior_tree)
 
 # Run a single behavior tree node registered with the ament resource index
 add_executable(run_tree_node "src/cli/run_tree_node.cpp")
@@ -354,7 +354,7 @@ install(
 
 install(
     TARGETS
-    run_tree
+    run_behavior
     run_tree_node
     new_tree
     DESTINATION "lib/${PROJECT_NAME}"

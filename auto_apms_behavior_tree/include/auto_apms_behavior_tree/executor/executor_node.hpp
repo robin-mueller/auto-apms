@@ -96,7 +96,7 @@ private:
  * A behavior tree can be executed via command line:
  *
  * ```sh
- * ros2 run auto_apms_behavior_tree run_tree <tree_build_request>
+ * ros2 run auto_apms_behavior_tree run_behavior <build_request>
  * ```
  *
  * Alternatively, an executor can also be included as part of a ROS 2 components container. The following executor

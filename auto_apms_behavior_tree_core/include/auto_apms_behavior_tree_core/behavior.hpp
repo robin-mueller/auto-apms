@@ -23,6 +23,7 @@
 
 #include "ament_index_cpp/get_resource.hpp"
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
+#include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
 #include "auto_apms_util/resource.hpp"
 #include "auto_apms_util/string.hpp"
 #include "auto_apms_util/yaml.hpp"
@@ -44,7 +45,7 @@ struct BehaviorResourceIdentity
   /**
    * @brief Constructor of a behavior resource identity object.
    *
-   * @p identity must be formatted like `<category_name>/<package_name>::<resource_name>`.
+   * @p identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
    * @param identity Identity string for a specific behavior resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    */
@@ -53,7 +54,7 @@ struct BehaviorResourceIdentity
   /**
    * @brief Constructor of a behavior resource identity object.
    *
-   * @p identity must be formatted like `<category_name>/<package_name>::<resource_name>`.
+   * @p identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
    * @param identity C-style identity string for a specific behavior resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    */
@@ -88,8 +89,8 @@ struct BehaviorResourceIdentity
   std::string category_name;
   /// Name of the package that registers the behavior resource.
   std::string package_name;
-  /// Name or identifier for a single registered behavior.
-  std::string resource_name;
+  /// Alias for a single registered behavior.
+  std::string behavior_alias;
 };
 
 /**
@@ -113,7 +114,7 @@ public:
   /**
    * @brief Assemble a behavior resource identified by a string.
    *
-   * @p identity must be formatted like `<category_name>/<package_name>::<resource_name>`.
+   * @p identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
    * @param identity Identity string for a specific behavior resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given identity
@@ -124,7 +125,7 @@ public:
   /**
    * @brief Assemble a behavior tree resource identified by a string.
    *
-   * @p identity must be formatted like `<category_name>/<package_name>::<resource_name>`.
+   * @p identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
    * @param identity C-style identity string for a specific behavior resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given identity
@@ -139,8 +140,8 @@ public:
    *
    * This method can be used as an alternative to passing an identity string to the constructor.
    *
-   * @param resource_name Name of the desired resource. Corresponds to the stem of the file or the raw string registered
-   * with `auto_apms_behavior_tree_register_behaviors`.
+   * @param behavior_alias Name of the desired resource. Corresponds to the stem of the file or the raw string
+   * registered with `auto_apms_behavior_tree_register_behaviors`.
    * @param package_name Optional package name provided to narrow down the search. If empty, search in all installed
    * packages.
    * @param category_name Optional category name provided to narrow down the search. If empty, search in all installed
@@ -150,40 +151,46 @@ public:
    * given arguments.
    */
   static BehaviorResourceTemplate find(
-    const std::string & resource_name, const std::string & package_name = "", const std::string & category_name = "");
+    const std::string & behavior_alias, const std::string & package_name = "", const std::string & category_name = "");
 
   /**
    * @brief Get the category of this behavior resource.
    * @return Name of the category this resource belongs to.
    */
-  std::string getCategoryName() const;
+  const std::string & getCategoryName() const;
 
   /**
    * @brief Get the name of the package this resource was registered by.
    * @return Package name.
    */
-  std::string getPackageName() const;
+  const std::string & getPackageName() const;
 
   /**
-   * @brief Get the content of this behavior resource.
-   * @return Content of the resource as a string.
+   * @brief Get the behavior build request associated with this resource.
+   * @return Build request as a string.
    */
-  std::string getResourceContent() const;
+  const std::string & getBuildRequest() const;
 
   /**
    * @brief Get the fully qualified class name of the default build handler associated with this behavior resource.
    * @return Name of the default build handler.
    */
-  std::string getDefaultBuildHandlerName() const;
+  const std::string & getDefaultBuildHandlerName() const;
+
+  /**
+   * @brief Get the node manifest associated with this resource.
+   * @return Node manifest object.
+   */
+  const NodeManifest & getNodeManifest() const;
 
 protected:
   const Identity identity_;
-
-private:
   std::string package_;
   std::string category_;
-  std::string content_;
+  std::string build_request_file_path_;
+  std::string build_request_;
   std::string default_build_handler_;
+  NodeManifest node_manifest_;
 };
 
 /**
@@ -195,25 +202,25 @@ private:
  * workspace.
  *
  * The user may refer to a specific resource using an identity string that may contain the tokens `<category_name>`,
- * `<package_name>`, and `<resource_name>`. Depending on the number of registered resources, it might be
+ * `<package_name>`, and `<behavior_alias>`. Depending on the number of registered resources, it might be
  * convenient to use shorter, less precise signatures. The formatting is described below:
  *
- * - `<category_name>/<package_name>::<resource_name>`
+ * - `<category_name>/<package_name>::<behavior_alias>`
  *
  *   Fully qualified identity string of a specific behavior tree.
  *
- * - `<package_name>::<resource_name>` or `/<package_name>::<resource_name>`
+ * - `<package_name>::<behavior_alias>` or `/<package_name>::<behavior_alias>`
  *
  *   **The category name is always optional**. If omitted, the resource is searched in all categories.
  *
- * - `::<resource_name>` or `<resource_name>`
+ * - `::<behavior_alias>` or `<behavior_alias>`
  *
  *   Just like the category name, the package name is optional as well. If omitted, the resource is searched in all
  *   packages.
  *
- * @note The token <resource_name> is usually the stem of the file given to
+ * @note The token <behavior_alias> is usually the stem of the file given to
  * `auto_apms_behavior_tree_register_behaviors`. However, it is also possible to provide raw strings as arguments
- * (e.g. for referring to another resource). In this case, <resource_name> is determined to be the given string.
+ * (e.g. for referring to another resource). In this case, <behavior_alias> is determined to be the given string.
  *
  * ## Usage
  *
@@ -279,38 +286,56 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
           _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR, p, content, &base_path)) {
       for (const auto & line : auto_apms_util::splitString(content, "\n")) {
         const std::vector<std::string> parts = auto_apms_util::splitString(line, "|", false);
-        if (parts.size() != 3) {
+        if (parts.size() != 5) {
           throw auto_apms_util::exceptions::ResourceError(
             "Invalid behavior tree resource file (Package: '" + p + "'). Invalid line: " + line + ".");
         }
-        package_ = p;
-        category_ = parts[2];
-        default_build_handler_ = parts[1];
-        const std::string found_resource_name =
-          std::filesystem::path(parts[0]).stem().string();  // Simply returns the string if not a file
+
+        // Store behavior category
+        category_ = parts[0];
 
         // Determine if resource is matching
+        std::string alias = parts[1];
         if (identity_.category_name.empty()) {
           // Disregard the category if not provided with the identity
-          if (found_resource_name != identity_.resource_name) {
+          if (alias != identity_.behavior_alias) {
             continue;
           }
-        } else if (category_ != identity_.category_name || found_resource_name != identity_.resource_name) {
+        } else if (category_ != identity_.category_name || alias != identity_.behavior_alias) {
           continue;
         }
 
+        // Found matching resource - Increase counter
         matching_count++;
-        if (const std::string resource_path = base_path + "/" + parts[0];
-            std::filesystem::is_regular_file(resource_path)) {
-          std::ifstream file(resource_path);
+
+        // Now fill the other member variables in case we have a unique match
+
+        // Store package name
+        package_ = p;
+
+        // Store default build handler
+        default_build_handler_ = parts[2];
+
+        // Store build request
+        build_request_file_path_ = base_path + "/" + parts[3];
+        if (std::filesystem::is_regular_file(build_request_file_path_)) {
+          std::ifstream file(build_request_file_path_);
           if (!file) {
             throw auto_apms_util::exceptions::ResourceError(
-              "Failed to open behavior resource file '" + resource_path + "'");
+              "Failed to open behavior resource file '" + build_request_file_path_ + "'");
           }
-          content_ = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+          build_request_ = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         } else {
-          content_ = parts[0];
+          build_request_file_path_ = "";
+          build_request_ = parts[3];
         }
+
+        // Store node manifest paths
+        std::vector<std::string> node_manifest_paths;
+        for (const std::string & path : auto_apms_util::splitString(parts[4], ";")) {
+          node_manifest_paths.push_back(std::filesystem::path(path).is_absolute() ? path : (base_path + "/" + path));
+        }
+        node_manifest_ = NodeManifest::fromFiles(node_manifest_paths);
       }
     }
   }
@@ -339,35 +364,41 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const char * ide
 
 template <class T, typename U>
 inline BehaviorResourceTemplate<T, U> BehaviorResourceTemplate<T, U>::find(
-  const std::string & resource_name, const std::string & package_name, const std::string & category_name)
+  const std::string & behavior_alias, const std::string & package_name, const std::string & category_name)
 {
   return BehaviorResourceTemplate(
     category_name + RESOURCE_IDENTITY_CATEGORY_SEPARATOR + package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR +
-    resource_name);
+    behavior_alias);
 }
 
 template <class T, typename U>
-inline std::string BehaviorResourceTemplate<T, U>::getCategoryName() const
+inline const std::string & BehaviorResourceTemplate<T, U>::getCategoryName() const
 {
   return category_;
 }
 
 template <class T, typename U>
-inline std::string BehaviorResourceTemplate<T, U>::getPackageName() const
+inline const std::string & BehaviorResourceTemplate<T, U>::getPackageName() const
 {
   return package_;
 }
 
 template <class T, typename U>
-inline std::string BehaviorResourceTemplate<T, U>::getResourceContent() const
+inline const std::string & BehaviorResourceTemplate<T, U>::getBuildRequest() const
 {
-  return content_;
+  return build_request_;
 }
 
 template <class T, typename U>
-inline std::string BehaviorResourceTemplate<T, U>::getDefaultBuildHandlerName() const
+inline const std::string & BehaviorResourceTemplate<T, U>::getDefaultBuildHandlerName() const
 {
   return default_build_handler_;
+}
+
+template <class T, typename U>
+inline const NodeManifest & BehaviorResourceTemplate<T, U>::getNodeManifest() const
+{
+  return node_manifest_;
 }
 
 }  // namespace auto_apms_behavior_tree::core

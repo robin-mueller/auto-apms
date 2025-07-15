@@ -35,9 +35,9 @@ int main(int argc, char ** argv)
     if (!print_help) build_request = auto_apms_util::trimWhitespaces(arg);
   }
   if (print_help) {
-    std::cerr << "run_tree: The program accepts: \n\t1.) Optional: Single string specifying the behavior tree "
+    std::cerr << "run_behavior: The program accepts: \n\t1.) Optional: Single string specifying the behavior tree "
                  "build request to be passed to the build handler loaded by the underlying tree executor node.\n";
-    std::cerr << "Usage: run_tree [<build_request>]\n";
+    std::cerr << "Usage: run_behavior [<build_request>]\n";
     return EXIT_FAILURE;
   }
 
@@ -50,7 +50,7 @@ int main(int argc, char ** argv)
   rclcpp::NodeOptions opt;
   TreeExecutorNodeOptions executor_opt(opt);
   executor_opt.setDefaultBuildHandler("auto_apms_behavior_tree::TreeFromResourceBuildHandler");
-  TreeExecutorNode executor("run_tree", executor_opt);
+  TreeExecutorNode executor("run_behavior", executor_opt);
   const rclcpp::Logger logger = executor.getNodePtr()->get_logger();
 
   // Start tree execution

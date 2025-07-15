@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "auto_apms_behavior_tree_core/behavior.hpp"
-#include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
 #include "auto_apms_util/yaml.hpp"
 
 namespace auto_apms_behavior_tree::core
@@ -246,12 +245,6 @@ public:
   std::string getRootTreeName() const;
 
   /**
-   * @brief Get the node manifest associated with this resource.
-   * @return Node manifest object.
-   */
-  NodeManifest getNodeManifest() const;
-
-  /**
    * @brief Get the file stem of the XML file containing the tree document associated with this resource.
    * @return File stem of the associated XML file.
    */
@@ -266,8 +259,6 @@ public:
   TreeResourceIdentity createIdentity(const std::string & tree_name = "") const;
 
 private:
-  std::string tree_file_path_;
-  std::vector<std::string> node_manifest_file_paths_;
   std::string doc_root_tree_name_;
 };
 

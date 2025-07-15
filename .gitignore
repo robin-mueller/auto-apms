@@ -21,6 +21,7 @@ test.xml
 CMakeLists.txt.user
 
 srv/_*.py
+*/__pycache__
 *.pcd
 *.pyc
 qtcreator-*

@@ -91,7 +91,7 @@ def spawn_nodes(context: LaunchContext):
                 [
                     Node(
                         package="auto_apms_behavior_tree",
-                        executable="run_tree",
+                        executable="run_behavior",
                         name=student,
                         arguments=[
                             (

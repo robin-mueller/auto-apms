@@ -14,11 +14,18 @@
 
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
 from auto_apms_behavior_tree.resources import (
-    get_all_behavior_tree_resources,
+    get_all_behavior_resources,
     get_all_behavior_tree_build_handler_plugins,
+    RESOURCE_IDENTITY_RESOURCE_SEPARATOR,
+    RESOURCE_IDENTITY_CATEGORY_SEPARATOR,
 )
 from ..verb import VerbExtension
-from ..api import sync_run_behavior_locally, parse_key_value_args, PrefixFilteredChoicesCompleter
+from ..api import (
+    sync_run_behavior_locally,
+    parse_key_value_args,
+    BehaviorChoicesCompleter,
+    PrefixFilteredChoicesCompleter,
+)
 
 
 class RunVerb(VerbExtension):
@@ -26,15 +33,13 @@ class RunVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the run verb."""
-        tree_id_arg = parser.add_argument(
-            "tree_id",
+        behavior_arg = parser.add_argument(
+            "behavior",
             type=str,
-            help="Tree identifier",
-            metavar="<package>::<file_stem>::<tree_name>",
+            help="Behavior identity",
+            metavar=f"<category_name>{RESOURCE_IDENTITY_CATEGORY_SEPARATOR}<package_name>{RESOURCE_IDENTITY_RESOURCE_SEPARATOR}<resource_name>",
         )
-        tree_resources = get_all_behavior_tree_resources()
-        trees = [str(tree.identity) for tree in tree_resources]
-        tree_id_arg.completer = PrefixFilteredChoicesCompleter(trees)
+        behavior_arg.completer = BehaviorChoicesCompleter()
 
         build_handler_arg = parser.add_argument(
             "--build-handler",
@@ -93,7 +98,7 @@ class RunVerb(VerbExtension):
         blackboard_params = parse_key_value_args(args.blackboard)
 
         return sync_run_behavior_locally(
-            tree_id=args.tree_id,
+            behavior=args.behavior,
             static_params=static_params,
             blackboard_params=blackboard_params,
             logging_level=args.logging,

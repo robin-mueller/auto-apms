@@ -18,6 +18,7 @@ import rclpy
 import signal
 import threading
 
+from argcomplete.completers import ChoicesCompleter
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rclpy.action import ActionClient
@@ -31,18 +32,12 @@ from ros2cli.node import HIDDEN_NODE_PREFIX
 from ros2cli.node.strategy import DirectNode, NodeStrategy
 from ros2param.api import call_get_parameters, call_set_parameters, get_value
 from ros2run.api import run_executable, get_executable_path
-from auto_apms_behavior_tree_core.resources import TreeResource
-
-try:
-    from argcomplete.completers import ChoicesCompleter
-except ImportError:
-    # Fallback if argcomplete is not available
-    class ChoicesCompleter:
-        def __init__(self, choices, *args, **kwargs):
-            self.choices = choices
-
-        def __call__(self, **kwargs):
-            return self.choices
+from auto_apms_behavior_tree_core.resources import (
+    BehaviorResource,
+    NodeManifest,
+    get_all_behavior_resources,
+    RESOURCE_IDENTITY_CATEGORY_SEPARATOR,
+)
 
 
 GENERIC_NODE_NAME = HIDDEN_NODE_PREFIX + "auto_apms_ros2cli"
@@ -52,12 +47,31 @@ class PrefixFilteredChoicesCompleter(ChoicesCompleter):
     """A completer that filters choices based on prefix matching."""
 
     def __init__(self, choices, *args, **kwargs):
-        super(PrefixFilteredChoicesCompleter, self).__init__(choices, *args, **kwargs)
+        super().__init__(choices, *args, **kwargs)
 
     def __call__(self, **kwargs):
         options = super(PrefixFilteredChoicesCompleter, self).__call__(**kwargs)
         prefix = kwargs.get("prefix", "")
         return [option for option in options if option.startswith(prefix)]
+
+
+class BehaviorChoicesCompleter(ChoicesCompleter):
+    """
+    A completer that filters AutoAPMS behavior resources.
+    This completer filters by prefix but it also works if the behavior category is not specified.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(get_all_behavior_resources().keys(), *args, **kwargs)
+
+    def __call__(self, **kwargs):
+        options = super(BehaviorChoicesCompleter, self).__call__(**kwargs)
+        prefix = kwargs.get("prefix", "")
+        return [
+            option
+            for option in options
+            if option.startswith(prefix) or option.split(RESOURCE_IDENTITY_CATEGORY_SEPARATOR, 2)[-1].startswith(prefix)
+        ]
 
 
 def find_start_tree_executor_actions() -> list[tuple[str, str]]:
@@ -152,7 +166,11 @@ def call_set_parameters_for_executor(node: Node, node_name: str, static_params, 
 def call_start_tree_action(
     node: Node,
     action_name: str,
-    tree: TreeResource,
+    build_request: str,
+    build_handler: str = None,
+    root_tree: str = None,
+    node_manifest: NodeManifest = None,
+    clear_blackboard: bool = False,
     timeout_sec=5.0,
 ):
     """
@@ -180,11 +198,15 @@ def call_start_tree_action(
         )
 
     goal_msg = StartTreeExecutor.Goal(check_fields=True)
-    goal_msg.build_request = tree.content
-    goal_msg.build_handler = "auto_apms_behavior_tree::TreeFromStringBuildHandler"
-    goal_msg.root_tree = tree.identity.tree_name
-    goal_msg.node_manifest = yaml.safe_dump(tree.node_manifest)
-    goal_msg.clear_blackboard = False
+    goal_msg.build_request = build_request
+    if build_handler:
+        goal_msg.build_handler = build_handler
+    if root_tree:
+        goal_msg.root_tree = root_tree
+    if node_manifest is None:
+        goal_msg.node_manifest = node_manifest.dump()
+    goal_msg.clear_blackboard = clear_blackboard
+    goal_msg.attach = True
 
     send_goal_future = action_client.send_goal_async(goal_msg, feedback_callback=feedback_callback)
     rclpy.spin_until_future_complete(node, send_goal_future, timeout_sec=timeout_sec)
@@ -269,25 +291,26 @@ def parse_key_value_args(argv):
 
 
 def sync_run_behavior_with_executor(
-    tree_id: str,
     executor_name: str,
+    behavior: BehaviorResource,
     static_params: dict = None,
     blackboard_params: dict = None,
     keep_blackboard: bool = False,
     logging_level: LoggingSeverity = None,
 ):
     """
-    Execute a behavior tree on a remote executor node.
+    Execute a behavior on a remote executor node.
 
     Args:
-        tree_id: Tree identifier in format <package>::<file_stem>::<tree_name>
         executor_name: Name of the behavior tree executor
+        behavior: A valid behavior resource
         static_params: Static parameters to set on the executor
         blackboard_params: Blackboard parameters to set on the executor
         keep_blackboard: Do not clear the blackboard before execution
         logging_level: Logger level to set on the executor
     """
-    tree = TreeResource(tree_id)
+    if not isinstance(behavior, BehaviorResource):
+        raise TypeError(f"Expected BehaviorResource, got {type(behavior).__name__}")
 
     # Find the full action name for the given executor
     try:
@@ -304,7 +327,6 @@ def sync_run_behavior_with_executor(
 
     with DirectNode(None, node_name=GENERIC_NODE_NAME) as node:
         node.get_logger().info(f"Targeting behavior executor '{executor_name}' (Action '{action_name}')")
-        node.get_logger().info(f"Executing Behavior Tree: {tree.identity}")
 
         # Set logger level if requested
         if logging_level is not None:
@@ -325,29 +347,31 @@ def sync_run_behavior_with_executor(
         call_start_tree_action(
             node,
             action_name,
-            tree,
+            build_request=behavior.build_request,
+            build_handler=behavior.default_build_handler,
+            # TODO: Rename root_tree to entrypoint in interfaces (and docs) and add it to behavior resource marker files
+            node_manifest=behavior.node_manifest,
+            clear_blackboard=False,
             timeout_sec=max(tick_rate * 2.5, 5.0),
         )
 
 
 def sync_run_behavior_locally(
-    tree_id: str,
+    build_request: str,
     static_params: dict = None,
     blackboard_params: dict = None,
     logging_level: LoggingSeverity = None,
 ):
     """
-    Execute a behavior tree locally using the run_tree executable.
+    Execute a behavior locally using the run_behavior executable.
 
     Args:
-        tree_id: Tree identifier in format <package>::<file_stem>::<tree_name>
+        build_request: Behavior build request passed to the executor
         static_params: Static parameters to set on the executor
         blackboard_params: Blackboard parameters to set on the executor
         logging_level: Logger level to set on the executor
     """
-    tree = TreeResource(tree_id)
-
-    # Check if package is available first
+    # Check if required package is available first
     try:
         ament_index_python.get_package_share_directory("auto_apms_behavior_tree")
     except Exception as e:
@@ -355,13 +379,13 @@ def sync_run_behavior_locally(
             "Package 'auto_apms_behavior_tree' not found. Make sure it is installed and the workspace has been sourced"
         ) from e
 
-    run_tree_argv = [str(tree.identity)]
+    run_tree_argv = [build_request]
 
     # Add ros args
     run_tree_argv.append("--ros-args")
     if logging_level:
         run_tree_argv.append("--log-level")
-        run_tree_argv.append(f"run_tree:={logging_level.name}")
+        run_tree_argv.append(f"run_behavior:={logging_level.name}")
 
     if static_params or blackboard_params:
         for k, v in (static_params or {}).items():
@@ -374,7 +398,7 @@ def sync_run_behavior_locally(
     run_executable(
         path=get_executable_path(
             package_name="auto_apms_behavior_tree",
-            executable_name="run_tree",
+            executable_name="run_behavior",
         ),
         argv=run_tree_argv,
     )

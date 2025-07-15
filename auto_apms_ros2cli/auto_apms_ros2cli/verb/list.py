@@ -22,11 +22,16 @@ class ListVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the list verb."""
-        pass  # No additional arguments needed for list
+        parser.add_argument(
+            "-c",
+            "--categories",
+            nargs="*",
+            help="List all behavior resources in the specified categories. If no category is given, all resources are listed.",
+        )
 
     def main(self, *, args):
         """Main function for the list verb."""
-        behaviors = get_all_behavior_resources()
+        behaviors = get_all_behavior_resources(args.categories)
         print("Total:", len(behaviors))
 
         # Group behaviors by category

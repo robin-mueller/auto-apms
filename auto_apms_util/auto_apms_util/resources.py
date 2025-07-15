@@ -53,9 +53,6 @@ def get_packages_with_resource_type(resource_type: str, exclude_packages: set[st
     except ament_index_python.PackageNotFoundError:
         packages = set()
 
-    if not packages:
-        raise ResourceError(f"Cannot find resources for type '{resource_type}' in any of the installed packages.")
-
     # Get common elements between packages and exclude_packages
     common = packages.intersection(exclude_packages)
     if common:

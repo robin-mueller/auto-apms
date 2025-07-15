@@ -282,7 +282,7 @@ Otherwise, building downstream packages won't work unless they add this dependen
     endif()
 
     # Store the metadata information for reusing it during auto_apms_behavior_tree_declare_trees()
-    list(APPEND _AUTO_APMS_BEHAVIOR_TREE__NODE_MANIFEST_BUILD_INFO "${metadata_id}@${_generated_node_manifest_abs_path__build}")
+    list(APPEND _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_BUILD_INFO "${metadata_id}@${_generated_node_manifest_abs_path__build}")
     set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__NODE_MANIFEST "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__NODE_MANIFEST}${metadata_id}|${_generated_node_manifest_rel_dir__install}/${_generated_node_manifest_file_name}\n")
 
 endmacro()
