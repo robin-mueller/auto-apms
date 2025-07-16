@@ -121,7 +121,7 @@ macro(auto_apms_behavior_tree_declare_trees)
 
         # Register all trees inside the file as individual behaviors
         foreach(_tree_name ${_tree_file_tree_names})
-            auto_apms_behavior_tree_register_behaviors(
+            auto_apms_behavior_tree_register_behavior(
                 "${_tree_abs_path__source}"
                 BUILD_HANDLER "auto_apms_behavior_tree::TreeFromStringBuildHandler"
                 CATEGORY "tree"

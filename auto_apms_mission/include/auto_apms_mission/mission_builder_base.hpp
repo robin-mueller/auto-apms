@@ -48,8 +48,8 @@ public:
 
 private:
   bool setBuildRequest(
-    const std::string & build_request, const NodeManifest & node_manifest,
-    const std::string & root_tree_name) override final;
+    const std::string & build_request, const std::string & entrypoint,
+    const NodeManifest & node_manifest) override final;
 
   TreeDocument::TreeElement buildTree(TreeDocument & doc, TreeBlackboard & bb) override final;
 

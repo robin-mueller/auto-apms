@@ -31,6 +31,12 @@
 namespace auto_apms_behavior_tree::core
 {
 
+/// Delimiter used to separate individual lines in resource marker files.
+static const std::string RESOURCE_MARKER_FILE_LINE_SEPARATOR = "\n";
+
+/// Delimiter used to separate individual fields in a single line of a resource marker file.
+static const std::string RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEPARATOR = "|";
+
 /// Delimiter used to separate the category name from the rest.
 static const std::string RESOURCE_IDENTITY_CATEGORY_SEPARATOR = "/";
 
@@ -140,8 +146,8 @@ public:
    *
    * This method can be used as an alternative to passing an identity string to the constructor.
    *
-   * @param behavior_alias Name of the desired resource. Corresponds to the stem of the file or the raw string
-   * registered with `auto_apms_behavior_tree_register_behaviors`.
+   * @param behavior_alias Name of the desired resource. Is determined when registering the behavior with
+   * `auto_apms_behavior_tree_register_behavior`.
    * @param package_name Optional package name provided to narrow down the search. If empty, search in all installed
    * packages.
    * @param category_name Optional category name provided to narrow down the search. If empty, search in all installed
@@ -178,6 +184,12 @@ public:
   const std::string & getDefaultBuildHandlerName() const;
 
   /**
+   * @brief Get the entrypoint of this behavior resource.
+   * @return Entry point as a string.
+   */
+  const std::string & getEntrypoint() const;
+
+  /**
    * @brief Get the node manifest associated with this resource.
    * @return Node manifest object.
    */
@@ -190,6 +202,7 @@ protected:
   std::string build_request_file_path_;
   std::string build_request_;
   std::string default_build_handler_;
+  std::string entrypoint_;
   NodeManifest node_manifest_;
 };
 
@@ -197,7 +210,7 @@ protected:
  * @ingroup auto_apms_behavior_tree
  * @brief Class containing behavior resource data
  *
- * Behavior resources are registered by calling the CMake macro `auto_apms_behavior_tree_register_behaviors` in the
+ * Behavior resources are registered by calling the CMake macro `auto_apms_behavior_tree_register_behavior` in the
  * CMakeLists.txt of a package. They can be discovered once the corresponding package has been installed to the ROS 2
  * workspace.
  *
@@ -219,17 +232,17 @@ protected:
  *   packages.
  *
  * @note The token <behavior_alias> is usually the stem of the file given to
- * `auto_apms_behavior_tree_register_behaviors`. However, it is also possible to provide raw strings as arguments
+ * `auto_apms_behavior_tree_register_behavior`. However, it is also possible to provide raw strings as arguments
  * (e.g. for referring to another resource). In this case, <behavior_alias> is determined to be the given string.
  *
  * ## Usage
  *
  * Given the user has specified a behavior using a YAML file, the CMake macro
- * `auto_apms_behavior_tree_register_behaviors` must be called in the CMakeLists.txt of the parent package (for example
+ * `auto_apms_behavior_tree_register_behavior` must be called in the CMakeLists.txt of the parent package (for example
  * `my_package`) like this:
  *
  * ```cmake
- * auto_apms_behavior_tree_register_behaviors(
+ * auto_apms_behavior_tree_register_behavior(
  *     "config/my_behavior.yaml"
  * )
  * ```
@@ -284,9 +297,10 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
     std::string base_path;
     if (ament_index_cpp::get_resource(
           _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR, p, content, &base_path)) {
-      for (const auto & line : auto_apms_util::splitString(content, "\n")) {
-        const std::vector<std::string> parts = auto_apms_util::splitString(line, "|", false);
-        if (parts.size() != 5) {
+      for (const auto & line : auto_apms_util::splitString(content, RESOURCE_MARKER_FILE_LINE_SEPARATOR)) {
+        const std::vector<std::string> parts =
+          auto_apms_util::splitString(line, RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEPARATOR, false);
+        if (parts.size() != 6) {
           throw auto_apms_util::exceptions::ResourceError(
             "Invalid behavior tree resource file (Package: '" + p + "'). Invalid line: " + line + ".");
         }
@@ -330,9 +344,12 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
           build_request_ = parts[3];
         }
 
+        // Store entrypoint
+        entrypoint_ = parts[4];
+
         // Store node manifest paths
         std::vector<std::string> node_manifest_paths;
-        for (const std::string & path : auto_apms_util::splitString(parts[4], ";")) {
+        for (const std::string & path : auto_apms_util::splitString(parts[5], ";")) {
           node_manifest_paths.push_back(std::filesystem::path(path).is_absolute() ? path : (base_path + "/" + path));
         }
         node_manifest_ = NodeManifest::fromFiles(node_manifest_paths);
@@ -393,6 +410,12 @@ template <class T, typename U>
 inline const std::string & BehaviorResourceTemplate<T, U>::getDefaultBuildHandlerName() const
 {
   return default_build_handler_;
+}
+
+template <class T, typename U>
+inline const std::string & BehaviorResourceTemplate<T, U>::getEntrypoint() const
+{
+  return entrypoint_;
 }
 
 template <class T, typename U>

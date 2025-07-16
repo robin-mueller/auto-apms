@@ -62,8 +62,8 @@ namespace auto_apms_behavior_tree
  *   using TreeBuildHandler::TreeBuildHandler;
  *
  *   bool setBuildRequest(const std::string & build_request,
- *                        const NodeManifest & node_manifest,
- *                        const std::string & root_tree_name) override final
+ *                        const std::string & entrypoint,
+ *                        const NodeManifest & node_manifest) override final
  *   {
  *     // Do something when a build request arrives. If this isn't overridden,
  *     // all requests are accepted regardless of the arguments given above.
@@ -183,7 +183,7 @@ public:
   /**
    * @brief Specify the behavior tree build request encoded in a string.
    *
-   * Additionally, you may provide an associated node manifest and a specific tree name for setting the root tree. When
+   * Additionally, you may provide an associated node manifest and a specific entrypoint. When
    * using TreeExecutorNode, all arguments are populated using the respective parameters of the incoming
    * `StartTreeExecutor` action goal. It's up to the specific implementation, if and how they are interpreted.
    *
@@ -192,13 +192,14 @@ public:
    * The user must stick to this design pattern and implement this function accordingly.
    *
    * By default, this callback always returns `true`.
+   *
    * @param build_request Request that specifies how to build the behavior tree encoded in a string.
+   * @param entrypoint Single point of entry for behavior execution.
    * @param node_manifest Behavior tree node manifest that specifies which nodes to use and how to load them.
-   * @param root_tree_name Name of the requested root tree.
    * @return `true` if the build handler accepts the request, `false` if it is rejected.
    */
   virtual bool setBuildRequest(
-    const std::string & build_request, const NodeManifest & node_manifest, const std::string & root_tree_name);
+    const std::string & build_request, const std::string & entrypoint, const NodeManifest & node_manifest);
 
   /**
    * @brief Build the behavior tree specified before.

@@ -249,8 +249,8 @@ protected:
    * The created callback makes all defined scripting enums available for the behavior tree and invokes the currently
    * configured build handler to build it. It returns a corresponding instance of `BT::Tree` that may be ticked to
    * execute the tree.
-   * @param build_handler_request Request that specifies how to build the behavior tree encoded in a string.
-   * @param root_tree_name Name of the requested root tree.
+   * @param build_request Request that specifies how to build the behavior tree encoded in a string.
+   * @param entrypoint Single point of entry for behavior execution.
    * @param node_manifest Behavior tree node manifest that specifies which nodes to use and how to load them.
    * @param node_overrides Behavior tree node manifest that specifies which nodes to override once the tree has been
    * built. This may be used to swap specific node plugins that have been loaded by the build handler.
@@ -258,8 +258,8 @@ protected:
    * @throw auto_apms_behavior_tree::exceptions::TreeBuildError if the build handler rejects the request.
    */
   TreeConstructor makeTreeConstructor(
-    const std::string & build_handler_request, const std::string & root_tree_name,
-    const core::NodeManifest & node_manifest = {}, const core::NodeManifest & node_overrides = {});
+    const std::string & build_request, const std::string & entrypoint, const core::NodeManifest & node_manifest = {},
+    const core::NodeManifest & node_overrides = {});
 
   /**
    * @brief Reset the global blackboard and clear all entries. This also unsets the corresponding parameters.

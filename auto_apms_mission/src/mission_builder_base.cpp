@@ -33,7 +33,7 @@ MissionBuildHandlerBase::MissionBuildHandlerBase(
 }
 
 bool MissionBuildHandlerBase::setBuildRequest(
-  const std::string & build_request, const NodeManifest & /*node_manifest*/, const std::string & root_tree_name)
+  const std::string & build_request, const std::string & entrypoint, const NodeManifest & /*node_manifest*/)
 {
   try {
     mission_config_ = MissionConfiguration::fromResourceIdentity(build_request);
@@ -47,8 +47,8 @@ bool MissionBuildHandlerBase::setBuildRequest(
     RCLCPP_WARN(logger_, "Invalid YAML format of mission configuration '%s': %s", build_request.c_str(), e.what());
     return false;
   }
-  if (!root_tree_name.empty()) {
-    RCLCPP_WARN(logger_, "Argument root_tree_name is not empty. Custom root tree names are not allowed.");
+  if (!entrypoint.empty()) {
+    RCLCPP_WARN(logger_, "Argument entrypoint is not empty. Custom entrypoints are not allowed.");
     return false;
   }
 

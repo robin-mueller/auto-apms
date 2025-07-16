@@ -168,7 +168,7 @@ def call_start_tree_action(
     action_name: str,
     build_request: str,
     build_handler: str = None,
-    root_tree: str = None,
+    entrypoint: str = None,
     node_manifest: NodeManifest = None,
     clear_blackboard: bool = False,
     timeout_sec=5.0,
@@ -201,8 +201,8 @@ def call_start_tree_action(
     goal_msg.build_request = build_request
     if build_handler:
         goal_msg.build_handler = build_handler
-    if root_tree:
-        goal_msg.root_tree = root_tree
+    if entrypoint:
+        goal_msg.entrypoint = entrypoint
     if node_manifest is None:
         goal_msg.node_manifest = node_manifest.dump()
     goal_msg.clear_blackboard = clear_blackboard
@@ -349,7 +349,7 @@ def sync_run_behavior_with_executor(
             action_name,
             build_request=behavior.build_request,
             build_handler=behavior.default_build_handler,
-            # TODO: Rename root_tree to entrypoint in interfaces (and docs) and add it to behavior resource marker files
+            entrypoint=behavior.entrypoint,
             node_manifest=behavior.node_manifest,
             clear_blackboard=False,
             timeout_sec=max(tick_rate * 2.5, 5.0),

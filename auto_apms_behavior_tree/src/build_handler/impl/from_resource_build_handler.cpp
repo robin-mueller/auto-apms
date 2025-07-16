@@ -35,8 +35,8 @@ public:
   }
 
   bool setBuildRequest(
-    const std::string & build_request, const NodeManifest & /*node_manifest*/,
-    const std::string & root_tree_name) override final
+    const std::string & build_request, const std::string & entrypoint,
+    const NodeManifest & /*node_manifest*/) override final
   {
     TreeResource::Identity resource_identity(build_request);
     TreeResource resource(resource_identity);
@@ -50,15 +50,15 @@ public:
     }
 
     // Try to determine root tree name
-    std::string name = root_tree_name;
-    if (root_tree_name.empty()) {
+    std::string name = entrypoint;
+    if (entrypoint.empty()) {
       if (resource.hasRootTreeName()) {
         name = resource.getRootTreeName();
       } else {
         RCLCPP_WARN(
           logger_,
           "Cannot determine root tree from tree resource identity '%s': You must either provide an identity that "
-          "includes a tree name or specify the root_tree_name argument with a non empty string.",
+          "includes a tree name or specify the entrypoint argument with a non empty string.",
           resource_identity.str().c_str());
         return false;
       }

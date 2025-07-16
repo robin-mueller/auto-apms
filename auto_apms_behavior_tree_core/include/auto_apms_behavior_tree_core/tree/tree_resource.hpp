@@ -70,7 +70,7 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
  * CMakeLists.txt of a package. They can be discovered once the corresponding package has been installed to the ROS 2
  * workspace.
  *
- * @note `auto_apms_behavior_tree_declare_trees` replaces `auto_apms_behavior_tree_register_behaviors` when registering
+ * @note `auto_apms_behavior_tree_declare_trees` replaces `auto_apms_behavior_tree_register_behavior` when registering
  * behavior trees and the user should only invoke the former. Registering the corresponding behavior resource
  * information is handled fully automatically for tree resources.
  *

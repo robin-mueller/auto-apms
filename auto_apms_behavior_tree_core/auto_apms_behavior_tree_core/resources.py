@@ -394,6 +394,7 @@ class BehaviorResource:
         self._build_request = ""
         self._build_request_file_path = ""
         self._default_build_handler = ""
+        self._entrypoint = ""
         self._node_manifest = NodeManifest()
 
         # Find the resource in the ament index - search across all packages if needed
@@ -410,7 +411,7 @@ class BehaviorResource:
             # Parse content to find the specific resource
             for line in content.splitlines():
                 parts = line.split("|")
-                if len(parts) != 5:
+                if len(parts) != 6:
                     raise ResourceError(f"Invalid behavior resource file (Package: '{package}'). Invalid line: {line}.")
 
                 # Store behavior category
@@ -443,9 +444,12 @@ class BehaviorResource:
                     self._build_request_file_path = ""
                     self._build_request = parts[3]
 
+                # Store entrypoint
+                self._entrypoint = parts[4]
+
                 # Store node manifest
                 node_manifest_paths = []
-                for path in parts[4].split(";"):
+                for path in parts[5].split(";"):
                     if os.path.isabs(path):
                         node_manifest_paths.append(path)
                     else:
@@ -498,6 +502,10 @@ class BehaviorResource:
     @property
     def default_build_handler(self) -> str:
         return self._default_build_handler
+
+    @property
+    def entrypoint(self) -> str:
+        return self._entrypoint
 
     @property
     def node_manifest(self) -> NodeManifest:
