@@ -31,18 +31,6 @@
 namespace auto_apms_behavior_tree::core
 {
 
-/// Delimiter used to separate individual lines in resource marker files.
-static const std::string RESOURCE_MARKER_FILE_LINE_SEPARATOR = "\n";
-
-/// Delimiter used to separate individual fields in a single line of a resource marker file.
-static const std::string RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEPARATOR = "|";
-
-/// Delimiter used to separate the category name from the rest.
-static const std::string RESOURCE_IDENTITY_CATEGORY_SEPARATOR = "/";
-
-/// Delimiter used to separate the package name and resource name.
-static const std::string RESOURCE_IDENTITY_RESOURCE_SEPARATOR = "::";
-
 /**
  * @brief Struct that encapsulates the identity string for a registered behavior.
  */
@@ -100,6 +88,18 @@ struct BehaviorResourceIdentity
 };
 
 /**
+ * @ingroup auto_apms_behavior_tree
+ * @brief Get all registered behavior resource identities.
+ * @param include_categories Optional set of categories to include in the results. If empty, all categories are
+ * included.
+ * @param exclude_packages Optional set of package names to exclude from the search. If empty, all packages are
+ * included.
+ * @return Set of `BehaviorResourceIdentity` objects representing all registered behavior resources.
+ */
+std::set<BehaviorResourceIdentity> getBehaviorResourceIdentities(
+  const std::set<std::string> & include_categories = {}, const std::set<std::string> & exclude_packages = {});
+
+/**
  * @brief Helper temlpate class for creating behavior resource abstractions.
  * @tparam T Resource identity type.
  */
@@ -111,33 +111,35 @@ public:
 
   /**
    * @brief Assemble a behavior resource using a BehaviorResourceIdentity.
-   * @param identity Behavior resource identity object.
+   * @param search_identity Behavior resource identity object used for searching the corresponding resource.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
    * identity.
    */
-  BehaviorResourceTemplate(const Identity & identity);
+  BehaviorResourceTemplate(const Identity & search_identity);
 
   /**
    * @brief Assemble a behavior resource identified by a string.
    *
-   * @p identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
-   * @param identity Identity string for a specific behavior resource.
+   * @p search_identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
+   *
+   * @param search_identity Behavior resource identity string used for searching the corresponding resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given identity
    string.
    */
-  BehaviorResourceTemplate(const std::string & identity);
+  BehaviorResourceTemplate(const std::string & search_identity);
 
   /**
    * @brief Assemble a behavior tree resource identified by a string.
    *
-   * @p identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
-   * @param identity C-style identity string for a specific behavior resource.
+   * @p search_identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
+   *
+   * @param search_identity C-style behavior resource identity string used for searching the corresponding resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given identity
    string.
    */
-  BehaviorResourceTemplate(const char * identity);
+  BehaviorResourceTemplate(const char * search_identity);
 
   virtual ~BehaviorResourceTemplate() = default;
 
@@ -160,16 +162,10 @@ public:
     const std::string & behavior_alias, const std::string & package_name = "", const std::string & category_name = "");
 
   /**
-   * @brief Get the category of this behavior resource.
-   * @return Name of the category this resource belongs to.
+   * @brief Get the unique identity for this resource.
+   * @return Identity object.
    */
-  const std::string & getCategoryName() const;
-
-  /**
-   * @brief Get the name of the package this resource was registered by.
-   * @return Package name.
-   */
-  const std::string & getPackageName() const;
+  const Identity & getIdentity() const;
 
   /**
    * @brief Get the behavior build request associated with this resource.
@@ -196,9 +192,7 @@ public:
   const NodeManifest & getNodeManifest() const;
 
 protected:
-  const Identity identity_;
-  std::string package_;
-  std::string category_;
+  Identity unique_identity_;
   std::string build_request_file_path_;
   std::string build_request_;
   std::string default_build_handler_;
@@ -276,16 +270,16 @@ class BehaviorResource : public BehaviorResourceTemplate<BehaviorResourceIdentit
 // #####################################################################################################################
 
 template <class T, typename U>
-inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity & identity) : identity_(identity)
+inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity & search_identity)
 {
-  if (identity_.empty()) {
+  if (search_identity.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
       "Cannot create behavior resource with empty identity.");
   }
 
   std::set<std::string> search_packages;
-  if (!identity_.package_name.empty()) {
-    search_packages.insert(identity_.package_name);
+  if (!search_identity.package_name.empty()) {
+    search_packages.insert(search_identity.package_name);
   } else {
     search_packages =
       auto_apms_util::getPackagesWithResourceType(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR);
@@ -297,35 +291,41 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
     std::string base_path;
     if (ament_index_cpp::get_resource(
           _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR, p, content, &base_path)) {
-      for (const auto & line : auto_apms_util::splitString(content, RESOURCE_MARKER_FILE_LINE_SEPARATOR)) {
-        const std::vector<std::string> parts =
-          auto_apms_util::splitString(line, RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEPARATOR, false);
+      for (const auto & line :
+           auto_apms_util::splitString(content, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP)) {
+        const std::vector<std::string> parts = auto_apms_util::splitString(
+          line, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP, false);
         if (parts.size() != 6) {
           throw auto_apms_util::exceptions::ResourceError(
             "Invalid behavior tree resource file (Package: '" + p + "'). Invalid line: " + line + ".");
         }
 
-        // Store behavior category
-        category_ = parts[0];
-
         // Determine if resource is matching
-        std::string alias = parts[1];
-        if (identity_.category_name.empty()) {
+        std::string found_category = parts[0];
+        std::string found_alias = parts[1];
+        if (search_identity.category_name.empty()) {
           // Disregard the category if not provided with the identity
-          if (alias != identity_.behavior_alias) {
+          if (found_alias != search_identity.behavior_alias) {
             continue;
           }
-        } else if (category_ != identity_.category_name || alias != identity_.behavior_alias) {
+        } else if (found_category != search_identity.category_name || found_alias != search_identity.behavior_alias) {
           continue;
         }
 
         // Found matching resource - Increase counter
         matching_count++;
 
-        // Now fill the other member variables in case we have a unique match
+        // Now fill the other member variables in case the resource matches (if match is not unique, error is thrown
+        // later and the object is discarded)
+
+        // Store behavior category
+        unique_identity_.category_name = found_category;
+
+        // Store behavior alias
+        unique_identity_.behavior_alias = found_alias;
 
         // Store package name
-        package_ = p;
+        unique_identity_.package_name = p;
 
         // Store default build handler
         default_build_handler_ = parts[2];
@@ -359,11 +359,11 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
 
   if (matching_count == 0) {
     throw auto_apms_util::exceptions::ResourceError(
-      "No behavior resource with identity '" + identity_.str() + "' was registered.");
+      "No behavior resource with identity '" + search_identity.str() + "' was registered.");
   }
   if (matching_count > 1) {
     throw auto_apms_util::exceptions::ResourceError(
-      "Behavior resource identity '" + identity_.str() + "' is ambiguous. You must be more precise.");
+      "Behavior resource identity '" + search_identity.str() + "' is ambiguous. You must be more precise.");
   }
 }
 
@@ -384,20 +384,14 @@ inline BehaviorResourceTemplate<T, U> BehaviorResourceTemplate<T, U>::find(
   const std::string & behavior_alias, const std::string & package_name, const std::string & category_name)
 {
   return BehaviorResourceTemplate(
-    category_name + RESOURCE_IDENTITY_CATEGORY_SEPARATOR + package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR +
-    behavior_alias);
+    category_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP + package_name +
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + behavior_alias);
 }
 
 template <class T, typename U>
-inline const std::string & BehaviorResourceTemplate<T, U>::getCategoryName() const
+inline const T & BehaviorResourceTemplate<T, U>::getIdentity() const
 {
-  return category_;
-}
-
-template <class T, typename U>
-inline const std::string & BehaviorResourceTemplate<T, U>::getPackageName() const
-{
-  return package_;
+  return unique_identity_;
 }
 
 template <class T, typename U>
@@ -433,13 +427,13 @@ template <>
 struct convert<auto_apms_behavior_tree::core::BehaviorResourceIdentity>
 {
   using Identity = auto_apms_behavior_tree::core::BehaviorResourceIdentity;
-  static Node encode(const Identity & rhs)
+  inline static Node encode(const Identity & rhs)
   {
     Node node;
     node = rhs.str();
     return node;
   }
-  static bool decode(const Node & node, Identity & rhs)
+  inline static bool decode(const Node & node, Identity & rhs)
   {
     if (!node.IsScalar()) return false;
     rhs = Identity(node.Scalar());

@@ -160,31 +160,31 @@ class TreeResource : public BehaviorResourceTemplate<TreeResourceIdentity>
 public:
   /**
    * @brief Assemble a behavior tree resource using a TreeResourceIdentity.
-   * @param identity Tree resource identity object.
+   * @param search_identity Tree resource identity object used for searching the corresponding resource.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given
    * identity.
    */
-  TreeResource(const TreeResourceIdentity & identity);
+  TreeResource(const TreeResourceIdentity & search_identity);
 
   /**
    * @brief Assemble a behavior tree resource identified by a string.
    *
-   * @p identity must be formatted like `<package_name>::<tree_file_stem>::<tree_name>`.
-   * @param identity Identity string for a specific behavior tree resource.
+   * @p search_identity must be formatted like `<package_name>::<tree_file_stem>::<tree_name>`.
+   * @param search_identity Tree resource identity string used for searching the corresponding resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given identity string.
    */
-  TreeResource(const std::string & identity);
+  TreeResource(const std::string & search_identity);
 
   /**
    * @brief Assemble a behavior tree resource identified by a string.
    *
-   * @p identity must be formatted like `<package_name>::<tree_file_stem>::<tree_name>`.
-   * @param identity C-style identity string for a specific behavior tree resource.
+   * @p search_identity must be formatted like `<package_name>::<tree_file_stem>::<tree_name>`.
+   * @param search_identity C-style tree resource identity string used for searching the corresponding resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    * @throws auto_apms_util::exceptions::ResourceError if the resource cannot be found using the given identity string.
    */
-  TreeResource(const char * identity);
+  TreeResource(const char * search_identity);
 
   /**
    * @brief Find an installed behavior tree resource using a specific behavior tree name.
@@ -245,18 +245,12 @@ public:
   std::string getRootTreeName() const;
 
   /**
-   * @brief Get the file stem of the XML file containing the tree document associated with this resource.
-   * @return File stem of the associated XML file.
-   */
-  std::string getFileStem() const;
-
-  /**
-   * @brief Create a valid tree resource identity string representing this resource.
-   * @param tree_name Name of one of the trees inside this resource's tree document the returned identity string should
-   * refer to. If empty, do not refer to a specific behavior tree.
+   * @brief Create a valid identity string for a specific behavior tree of this resource.
+   * @param tree_name Name of one of the trees inside this resource's tree document. If empty, do not refer to a
+   * specific behavior tree (identity won't be fully qualified).
    * @return Tree resource identity string.
    */
-  TreeResourceIdentity createIdentity(const std::string & tree_name = "") const;
+  TreeResourceIdentity createIdentityForTree(const std::string & tree_name = "") const;
 
 private:
   std::string doc_root_tree_name_;

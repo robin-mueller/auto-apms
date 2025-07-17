@@ -16,21 +16,21 @@ import ament_index_python
 import os
 import yaml
 
-from pathlib import Path
 from auto_apms_util.resources import *
 
-RESOURCE_TYPE_NAME__BEHAVIOR = "auto_apms_behavior_tree_core__behavior"
-RESOURCE_TYPE_NAME__NODE_MANIFEST = "auto_apms_behavior_tree_core__node_manifest"
+
+_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP = "\\n"
+_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP = "|"
+_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP = "/"
+_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP = "::"
+
+_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR = "auto_apms_behavior_tree_core__behavior"
+_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST = "auto_apms_behavior_tree_core__node_manifest"
+
+_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY = "default"
+_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE = "tree"
 
 BASE_CLASS_TYPE__BEHAVIOR_TREE_NODE = "auto_apms_behavior_tree::core::NodeRegistrationInterface"
-
-# Delimiters used in resource identities
-RESOURCE_IDENTITY_CATEGORY_SEPARATOR = "/"
-RESOURCE_IDENTITY_RESOURCE_SEPARATOR = "::"
-
-# Default behavior categories
-DEFAULT_BEHAVIOR_CATEGORY = "default"
-DEFAULT_BEHAVIOR_CATEGORY_TREE = "tree"
 
 
 class ResourceIdentityFormatError(Exception):
@@ -43,6 +43,66 @@ class ResourceError(Exception):
 
 class NodeManifestError(Exception):
     pass
+
+
+class NodeManifestResourceIdentity:
+    """
+    Base class that encapsulates the identity string for a registered behavior tree node manifest.
+
+    This is the Python equivalent of auto_apms_behavior_tree::core::NodeManifestResourceIdentity.
+    """
+
+    def __init__(self, identity: str = None):
+        """
+        Initialize a node manifest resource identity from an identity string.
+
+        Identity must be formatted like `<package_name>::<metadata_id>`. `package_name` is optional.
+
+        Args:
+            identity: Identity string for a specific node manifest resource, or None for manual creation.
+        """
+        self.package_name = ""
+        self.metadata_id = ""
+
+        if identity is None:
+            return
+
+        # Parse package and resource name
+        if _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP in identity:
+            separator_pos = identity.find(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP)
+            self.package_name = identity[:separator_pos]
+            self.metadata_id = identity[
+                separator_pos + len(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP) :
+            ]
+        else:
+            # If only a single token is given, assume it's metadata_id
+            self.package_name = ""
+            self.metadata_id = identity
+
+        if not self.metadata_id:
+            raise ResourceIdentityFormatError(
+                f"Node manifest resource identity string '{identity}' is invalid. Metadata ID must not be empty."
+            )
+
+    def __str__(self) -> str:
+        """Create the corresponding identity string."""
+        return self.package_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + self.metadata_id
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}("{str(self)}")'
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other: "NodeManifestResourceIdentity") -> bool:
+        return str(self) == str(other)
+
+    def __lt__(self, other: "NodeManifestResourceIdentity") -> bool:
+        return str(self) < str(other)
+
+    def empty(self) -> bool:
+        """Determine whether this behavior resource identity object is considered empty."""
+        return not self.package_name and not self.metadata_id
 
 
 class NodeManifest:
@@ -241,14 +301,14 @@ class NodeManifest:
         return manifest
 
     @staticmethod
-    def from_resource_identity(identity: str) -> "NodeManifest":
+    def from_resource(search_identity: NodeManifestResourceIdentity | str) -> "NodeManifest":
         """
         Create a node manifest from an installed resource.
 
         The resource identity must be specified in the format `<package_name>::<metadata_id>` or simply `<metadata_id>`.
 
         Args:
-            identity: Identity of the node manifest resource.
+            search_identity: Node manifest resource identity used for searching the corresponding resource.
 
         Returns:
             Node manifest created from the corresponding resource.
@@ -257,44 +317,36 @@ class NodeManifest:
             ResourceIdentityFormatError: If identity has wrong format.
             ResourceError: If resource cannot be determined using identity.
         """
-        tokens = identity.split(RESOURCE_IDENTITY_RESOURCE_SEPARATOR)
-        package_name = ""
-        file_stem = ""
-
-        if len(tokens) == 1:
-            file_stem = tokens[0]
-        elif len(tokens) == 2:
-            package_name = tokens[0]
-            file_stem = tokens[1]
-        else:
-            raise ResourceIdentityFormatError(
-                f"Node manifest resource identity string '{identity}' has wrong format. "
-                f"Must be '<package_name>{RESOURCE_IDENTITY_RESOURCE_SEPARATOR}<metadata_id>'."
-            )
+        if isinstance(search_identity, str):
+            search_identity = NodeManifestResourceIdentity(search_identity)
 
         search_packages: set[str] = set()
-        if package_name:
-            search_packages.add(package_name)
+        if search_identity.package_name:
+            search_packages.add(search_identity.package_name)
         else:
-            search_packages = set(ament_index_python.get_resources(RESOURCE_TYPE_NAME__NODE_MANIFEST))
+            search_packages = set(
+                ament_index_python.get_resources(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST)
+            )
 
         matching_file_paths: list[str] = []
         for package in search_packages:
-            content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__NODE_MANIFEST, package)
+            content, base_path = ament_index_python.get_resource(
+                _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST, package
+            )
             lines = content.splitlines()
             for line in lines:
-                parts = line.split("|")
+                parts = line.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP)
                 if len(parts) != 2:
                     raise ResourceError(
                         f"Invalid node manifest resource file (Package: '{package}'). Invalid line: {line}."
                     )
-                if parts[0] == file_stem:
+                if parts[0] == search_identity.metadata_id:
                     matching_file_paths.append(os.path.join(base_path, parts[1]))
 
         if not matching_file_paths:
-            raise ResourceError(f"No node manifest resource was found using identity '{identity}'.")
+            raise ResourceError(f"No node manifest resource was found using identity '{search_identity}'.")
         if len(matching_file_paths) > 1:
-            raise ResourceError(f"There are multiple node manifest resources with metadata ID '{file_stem}'.")
+            raise ResourceError(f"There are multiple node manifest resources with metadata ID '{search_identity}'.")
 
         return NodeManifest.from_files([matching_file_paths[0]])
 
@@ -325,16 +377,20 @@ class BehaviorResourceIdentity:
 
         # Parse category and resource parts
         behavior_alias_part = identity
-        if RESOURCE_IDENTITY_CATEGORY_SEPARATOR in identity:
-            category_pos = identity.find(RESOURCE_IDENTITY_CATEGORY_SEPARATOR)
+        if _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP in identity:
+            category_pos = identity.find(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP)
             self.category_name = identity[:category_pos]
-            behavior_alias_part = identity[category_pos + len(RESOURCE_IDENTITY_CATEGORY_SEPARATOR) :]
+            behavior_alias_part = identity[
+                category_pos + len(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP) :
+            ]
 
-        # Parse package and resource name
-        if RESOURCE_IDENTITY_RESOURCE_SEPARATOR in behavior_alias_part:
-            separator_pos = behavior_alias_part.find(RESOURCE_IDENTITY_RESOURCE_SEPARATOR)
+        # Parse package and alias
+        if _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP in behavior_alias_part:
+            separator_pos = behavior_alias_part.find(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP)
             self.package_name = behavior_alias_part[:separator_pos]
-            self.behavior_alias = behavior_alias_part[separator_pos + len(RESOURCE_IDENTITY_RESOURCE_SEPARATOR) :]
+            self.behavior_alias = behavior_alias_part[
+                separator_pos + len(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP) :
+            ]
         else:
             # If only a single token is given, assume it's behavior_alias
             self.package_name = ""
@@ -349,9 +405,12 @@ class BehaviorResourceIdentity:
         """Create the corresponding identity string."""
         result = ""
         if self.category_name:
-            result += self.category_name + RESOURCE_IDENTITY_CATEGORY_SEPARATOR
-        result += self.package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + self.behavior_alias
+            result += self.category_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP
+        result += self.package_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + self.behavior_alias
         return result
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}("{str(self)}")'
 
     def __hash__(self):
         return hash(str(self))
@@ -374,23 +433,20 @@ class BehaviorResource:
     This is the Python equivalent of auto_apms_behavior_tree::core::BehaviorResource.
     """
 
-    def __init__(self, identity: BehaviorResourceIdentity | str):
+    def __init__(self, search_identity: BehaviorResourceIdentity | str):
         """
         Initialize a behavior resource using an identity.
 
         Args:
-            identity: BehaviorResourceIdentity object or identity string.
+            search_identity: Behavior resource identity object used for searching the corresponding resource.
         """
-        if isinstance(identity, str):
-            self._identity = BehaviorResourceIdentity(identity)
-        elif isinstance(identity, BehaviorResourceIdentity):
-            self._identity = identity
-        else:
+        if isinstance(search_identity, str):
+            search_identity = BehaviorResourceIdentity(search_identity)
+        elif not isinstance(search_identity, BehaviorResourceIdentity):
             raise TypeError("Identity must be a BehaviorResourceIdentity object or a string.")
 
         # Load resource data from ament index
-        self._package = ""
-        self._category = ""
+        self._unique_identity = BehaviorResourceIdentity()
         self._build_request = ""
         self._build_request_file_path = ""
         self._default_build_handler = ""
@@ -399,38 +455,47 @@ class BehaviorResource:
 
         # Find the resource in the ament index - search across all packages if needed
         search_packages: set[str] = set()
-        if self._identity.package_name:
-            search_packages.add(self._identity.package_name)
+        if search_identity.package_name:
+            search_packages.add(search_identity.package_name)
         else:
-            search_packages = get_packages_with_resource_type(RESOURCE_TYPE_NAME__BEHAVIOR)
+            search_packages = get_packages_with_resource_type(
+                _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR
+            )
 
         matching_count = 0
         for package in search_packages:
-            content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__BEHAVIOR, package)
+            content, base_path = ament_index_python.get_resource(
+                _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR, package
+            )
 
             # Parse content to find the specific resource
             for line in content.splitlines():
-                parts = line.split("|")
+                parts = line.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP)
                 if len(parts) != 6:
                     raise ResourceError(f"Invalid behavior resource file (Package: '{package}'). Invalid line: {line}.")
 
-                # Store behavior category
-                self._category = parts[0]
-
-                # Determine if resource is matching
-                alias = parts[1]
-                if not self._identity.category_name:
+                found_category = parts[0]
+                found_alias = parts[1]
+                if not search_identity.category_name:
                     # Disregard the category if not provided with the identity
-                    if alias != self._identity.behavior_alias:
+                    if found_alias != search_identity.behavior_alias:
                         continue
-                elif self._identity.category_name != self._category or alias != self._identity.behavior_alias:
+                elif found_category != search_identity.category_name or found_alias != search_identity.behavior_alias:
                     continue
 
                 # Found matching resource - Increase counter
                 matching_count += 1
 
+                # Now fill the other member variables in case the resource matches (if match is not unique, error is thrown later and the object is discarded)
+
+                # Store behavior category
+                self._unique_identity.category_name = found_category
+
+                # Store behavior alias
+                self._unique_identity.behavior_alias = found_alias
+
                 # Store package name
-                self._package = package
+                self._unique_identity.package_name = package
 
                 # Store default build handler
                 self._default_build_handler = parts[2]
@@ -457,10 +522,10 @@ class BehaviorResource:
                 self._node_manifest = NodeManifest.from_files(node_manifest_paths)
 
         if matching_count == 0:
-            raise ResourceError(f"No behavior resource with identity '{self._identity}' was registered.")
+            raise ResourceError(f"No behavior resource with identity '{search_identity}' was registered.")
         if matching_count > 1:
             raise ResourceError(
-                f"Behavior resource identity '{self._identity}' is ambiguous. You must be more precise."
+                f"Behavior resource identity '{search_identity}' is ambiguous. You must be more precise."
             )
 
     @staticmethod
@@ -481,34 +546,45 @@ class BehaviorResource:
         """
         return BehaviorResource(
             category_name
-            + RESOURCE_IDENTITY_CATEGORY_SEPARATOR
+            + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP
             + package_name
-            + RESOURCE_IDENTITY_RESOURCE_SEPARATOR
+            + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP
             + behavior_alias
         )
 
     @property
-    def category_name(self) -> str:
-        return self._category
-
-    @property
-    def package_name(self) -> str:
-        return self._package
+    def identity(self) -> BehaviorResourceIdentity:
+        """
+        Get the unique identity for this resource.
+        """
+        return self._unique_identity
 
     @property
     def build_request(self) -> str:
+        """
+        Get the behavior build request of this resource.
+        """
         return self._build_request
 
     @property
     def default_build_handler(self) -> str:
+        """
+        Get the default behavior build handler of this resource.
+        """
         return self._default_build_handler
 
     @property
     def entrypoint(self) -> str:
+        """
+        Get the behavior entry point for this resource.
+        """
         return self._entrypoint
 
     @property
     def node_manifest(self) -> NodeManifest:
+        """
+        Get the behavior tree node manifest of this resource.
+        """
         return self._node_manifest
 
 
@@ -539,11 +615,11 @@ class TreeResourceIdentity(BehaviorResourceIdentity):
         super().__init__(identity)
 
         # If no category is explicitly specified, use a special default for behavior trees
-        if not self.category_name or self.category_name == DEFAULT_BEHAVIOR_CATEGORY:
-            self.category_name = DEFAULT_BEHAVIOR_CATEGORY_TREE
+        if not self.category_name or self.category_name == _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY:
+            self.category_name = _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE
 
         # Parse the resource_name part to extract file_stem and tree_name
-        tokens = self.behavior_alias.split(RESOURCE_IDENTITY_RESOURCE_SEPARATOR)
+        tokens = self.behavior_alias.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP)
 
         # If only a single token is given, assume it's file_stem
         if len(tokens) == 1:
@@ -552,7 +628,7 @@ class TreeResourceIdentity(BehaviorResourceIdentity):
         if len(tokens) != 2:
             raise ResourceIdentityFormatError(
                 f"Tree resource identity string '{identity}' is invalid. "
-                f"Resource name must contain 2 tokens (separated by {RESOURCE_IDENTITY_RESOURCE_SEPARATOR})."
+                f"Resource name must contain 2 tokens (separated by {_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP})."
             )
 
         self.file_stem = tokens[0]
@@ -575,12 +651,12 @@ class TreeResource(BehaviorResource):
     def __init__(self, identity: TreeResourceIdentity | str):
         """Initialize a tree resource from an identity object or string."""
         if isinstance(identity, str):
-            self._identity = TreeResourceIdentity(identity)
-        else:
-            self._identity = identity
+            identity = TreeResourceIdentity(identity)
+        elif not isinstance(identity, TreeResourceIdentity):
+            raise TypeError("Identity must be a TreeResourceIdentity object or a string.")
 
         # Initialize the base class
-        super().__init__(self._identity)
+        super().__init__(identity)
 
     @staticmethod
     def find_by_tree_name(tree_name: str, package_name: str = "") -> "TreeResource":
@@ -595,7 +671,10 @@ class TreeResource(BehaviorResource):
             TreeResource: The matching behavior tree resource.
         """
         return TreeResource(
-            package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + tree_name
+            package_name
+            + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP
+            + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP
+            + tree_name
         )
 
     @staticmethod
@@ -611,63 +690,82 @@ class TreeResource(BehaviorResource):
             TreeResource: The matching behavior tree resource.
         """
         return TreeResource(
-            package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + file_stem + RESOURCE_IDENTITY_RESOURCE_SEPARATOR
+            package_name
+            + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP
+            + file_stem
+            + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP
         )
 
-    @property
-    def file_stem(self) -> str:
-        """
-        Get the file stem of the behavior tree resource.
-        """
-        return Path(self._build_request_file_path).stem
 
-
-# TODO: Refactor so the resource parsing is only done in one function and not also in the resource constructor
-def get_all_behavior_resources(
-    categories: list[str] = None, exclude_packages: set[str] = None
-) -> dict[BehaviorResourceIdentity, BehaviorResource]:
+def get_node_manifest_resource_identities(exclude_packages: set[str] = None) -> set[NodeManifestResourceIdentity]:
     """
-    Retrieves all available/installed behavior resources.
+    Retrieves all available/installed behavior tree node manifest resource identities.
 
-    This function scans all packages that have registered behavior resources,
-    parses their resource files, and constructs a list of `BehaviorResource` objects
-    representing each available behavior.
+    This function scans all packages that have registered node manifest resources,
+    parses their resource files, and constructs a list of `NodeManifestResourceIdentity` objects
+    representing each available node manifest resource.
 
     Args:
-        categories: Optional categories to filter behavior resources by. If omitted, all categories are included.
-        exclude_packages: Packages to exclude when searching for resources.
+        exclude_packages: Packages to exclude when searching for resources. If empty, all packages are included.
 
     Returns:
-        A dictionary of behavior resources mapped with their identities.
-
-    Raises:
-        ValueError: If a resource file contains an invalid line.
+        List of node manifest resource identities.
     """
-    behaviors: dict[BehaviorResourceIdentity, BehaviorResource] = {}
-    for package in get_packages_with_resource_type(RESOURCE_TYPE_NAME__BEHAVIOR, exclude_packages):
-        content, _ = ament_index_python.get_resource(RESOURCE_TYPE_NAME__BEHAVIOR, package)
+    identities = set()
+    for package in get_packages_with_resource_type(
+        _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST, exclude_packages
+    ):
+        content, _ = ament_index_python.get_resource(
+            _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST, package
+        )
         for line in content.splitlines():
-            parts = line.split("|")
-            if len(parts) != 5:
-                raise ValueError(f"Invalid behavior resource file (Package: '{package}'). Invalid line: {line}.")
-
-            found_category = parts[0]
-            if categories and found_category not in categories:
-                continue
-            behavior_alias = parts[1]
-            identity = BehaviorResourceIdentity(
-                found_category
-                + RESOURCE_IDENTITY_CATEGORY_SEPARATOR
-                + package
-                + RESOURCE_IDENTITY_RESOURCE_SEPARATOR
-                + behavior_alias
-            )
-            behaviors[identity] = BehaviorResource(identity)
-
-    return dict(sorted(behaviors.items()))
+            parts = line.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP)
+            if len(parts) > 0:
+                i = NodeManifestResourceIdentity()
+                i.package_name = package
+                i.metadata_id = parts[1]
+                identities.add(i)
+    return sorted(identities)
 
 
-def get_all_tree_node_plugins(exclude_packages: set[str] = None) -> list[str]:
+def get_behavior_resource_identities(
+    include_categories: set[str] = None, exclude_packages: set[str] = None
+) -> set[BehaviorResourceIdentity]:
+    """
+    Retrieves all available/installed behavior resource identities.
+
+    This function scans all packages that have registered behavior resources,
+    parses their resource files, and constructs a list of `BehaviorResourceIdentity` objects
+    representing each available behavior resource.
+
+    Args:
+        include_categories: Optional set of categories to include in the results. If empty, all categories are included.
+        exclude_packages: Packages to exclude when searching for resources. If empty, all packages are included.
+
+    Returns:
+        List of behavior resource identities.
+    """
+    identities = set()
+    for package in get_packages_with_resource_type(
+        _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR, exclude_packages
+    ):
+        content, _ = ament_index_python.get_resource(
+            _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR, package
+        )
+        for line in content.splitlines():
+            parts = line.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP)
+            if len(parts) > 1:
+                i = BehaviorResourceIdentity()
+                i.category_name = parts[0]
+                i.package_name = package
+                i.behavior_alias = parts[1]
+                if include_categories and i.category_name not in include_categories:
+                    continue
+                identities.add(i)
+    return sorted(identities)
+
+
+def get_behavior_tree_node_plugins(exclude_packages: set[str] = None) -> list[str]:
     """
     Get all behavior tree node plugin names.
 
@@ -678,39 +776,9 @@ def get_all_tree_node_plugins(exclude_packages: set[str] = None) -> list[str]:
         exclude_packages: Packages to exclude when searching for plugins.
 
     Returns:
-        list[str]: List of all behavior tree node plugin names.
+        List of all behavior tree node plugin names.
 
     Raises:
         ResourceError: If failed to find or parse plugin manifest files.
     """
     return get_plugin_names_with_base_type(BASE_CLASS_TYPE__BEHAVIOR_TREE_NODE, exclude_packages)
-
-
-def get_all_tree_node_manifest_resources(exclude_packages: set[str] = None) -> dict[str, NodeManifest]:
-    """
-    Get all available node manifest resources.
-
-    Args:
-        exclude_packages: Packages to exclude when searching for manifests.
-
-    Returns:
-        Dictionary of all node manifest resources with their identities as keys.
-
-    Raises:
-        ResourceError: If failed to find or parse manifest files.
-    """
-    manifests: dict[str, NodeManifest] = {}
-    for package in get_packages_with_resource_type(RESOURCE_TYPE_NAME__NODE_MANIFEST, exclude_packages):
-        content, _ = ament_index_python.get_resource(RESOURCE_TYPE_NAME__NODE_MANIFEST, package)
-        for line in content.splitlines():
-            # Parse resource line format: metadata_id|manifest_path
-            parts = line.split("|")
-            if len(parts) != 2:
-                raise ResourceError(
-                    f"Invalid node manifest resource file (Package: '{package}'). Invalid line: {line}."
-                )
-            metadata_id = parts[0]
-            identity = package + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + metadata_id
-            manifests[identity] = NodeManifest.from_resource_identity(identity)
-
-    return manifests

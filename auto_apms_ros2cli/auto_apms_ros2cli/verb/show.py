@@ -12,26 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_apms_behavior_tree_core.resources import TreeResource, get_all_behavior_tree_resources
 from ..verb import VerbExtension
-from ..api import PrefixFilteredChoicesCompleter
+from ..api import _add_behavior_resource_argument_to_parser
 
 
 class ShowVerb(VerbExtension):
-    """Show the content of a behavior tree resource."""
+    """Show the content of a behavior resource."""
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the show verb."""
-        tree_id_arg = parser.add_argument(
-            "tree_id",
-            type=str,
-            help="Tree identifier in format: <package>::<file_stem>::<tree_name>",
-        )
-        trees = [str(tree.identity) for tree in get_all_behavior_tree_resources()]
-        tree_id_arg.completer = PrefixFilteredChoicesCompleter(trees)
+        _add_behavior_resource_argument_to_parser(parser)
 
     def main(self, *, args):
         """Main function for the show verb."""
-        tree = TreeResource(args.tree_id)
-        print(tree.content)
+        print(args.behavior.build_request)
         return 0

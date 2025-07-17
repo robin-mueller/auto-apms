@@ -13,12 +13,10 @@
 # limitations under the License.
 
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
-from auto_apms_behavior_tree.resources import (
-    get_all_behavior_tree_resources,
-    get_all_behavior_tree_build_handler_plugins,
-)
+from auto_apms_behavior_tree.resources import get_behavior_build_handler_plugins
 from ..verb import VerbExtension
 from ..api import (
+    _add_behavior_resource_argument_to_parser,
     find_start_tree_executor_actions,
     sync_run_behavior_with_executor,
     parse_key_value_args,
@@ -34,31 +32,20 @@ class SendVerb(VerbExtension):
         # Discover available StartTreeExecutor actions for autocompletion
         executor_actions = find_start_tree_executor_actions()
         executor_names = [executor for _, executor in executor_actions]
-
         executor_arg = parser.add_argument(
             "executor_name",
             type=str,
             help="Name of the behavior tree executor to send the tree to",
         )
         executor_arg.completer = PrefixFilteredChoicesCompleter(executor_names)
-
-        tree_id_arg = parser.add_argument(
-            "tree_id",
-            type=str,
-            help="Tree identifier",
-            metavar="<package>::<file_stem>::<tree_name>",
-        )
-        tree_resources = get_all_behavior_tree_resources()
-        trees = [str(tree.identity) for tree in tree_resources]
-        tree_id_arg.completer = PrefixFilteredChoicesCompleter(trees)
-
+        _add_behavior_resource_argument_to_parser(parser)
         build_handler_arg = parser.add_argument(
             "--build-handler",
             type=str,
             help="Build handler plugin class",
             metavar="<namespace>::<class_name>",
         )
-        build_handler_plugins = get_all_behavior_tree_build_handler_plugins()
+        build_handler_plugins = get_behavior_build_handler_plugins()
         build_handler_arg.completer = PrefixFilteredChoicesCompleter(build_handler_plugins)
         parser.add_argument(
             "--blackboard",
@@ -111,12 +98,12 @@ class SendVerb(VerbExtension):
         if args.state_change_logger is not None:
             static_params["state_change_logger"] = args.state_change_logger
 
-        # Parse blackboard key-value pairs from args.blackboard
+        # Parse blackboard key-value pairs
         blackboard_params = parse_key_value_args(args.blackboard)
 
         return sync_run_behavior_with_executor(
-            tree_id=args.tree_id,
             executor_name=args.executor_name,
+            behavior=args.behavior,
             static_params=static_params,
             blackboard_params=blackboard_params,
             keep_blackboard=args.keep_blackboard,

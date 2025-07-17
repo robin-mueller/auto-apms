@@ -18,7 +18,7 @@ from auto_apms_behavior_tree_core.resources import *
 BASE_CLASS_TYPE__BEHAVIOR_TREE_BUILD_HANDLER = "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface"
 
 
-def get_all_behavior_tree_build_handler_plugins(exclude_packages: set[str] = None) -> list[str]:
+def get_behavior_build_handler_plugins(exclude_packages: set[str] = None) -> list[str]:
     """
     Get all behavior tree build handler plugin names.
 

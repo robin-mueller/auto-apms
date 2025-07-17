@@ -23,24 +23,70 @@
 
 namespace auto_apms_behavior_tree::core
 {
-class NodeManifest;
-}
 
-/// @cond INTERNAL
-namespace YAML
+/**
+ * @brief Struct that encapsulates the identity string for a registered behavior tree node manifest.
+ */
+struct NodeManifestResourceIdentity
 {
-template <>
-struct convert<auto_apms_behavior_tree::core::NodeManifest>
-{
-  using Manifest = auto_apms_behavior_tree::core::NodeManifest;
-  static Node encode(const Manifest & rhs);
-  static bool decode(const Node & node, Manifest & lhs);
+  /**
+   * @brief Constructor of a node manifest resource identity object.
+   *
+   * @p identity must be formatted like `<package_name>::<metadata_id>`.
+   * @param identity Identity string for a specific node manifest.
+   * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
+   */
+  NodeManifestResourceIdentity(const std::string & identity);
+
+  /**
+   * @brief Constructor of a behavior resource identity object.
+   *
+   * @p identity must be formatted like `<package_name>::<metadata_id>`.
+   * @param identity C-style identity string for a specific node manifest resource.
+   * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
+   */
+  NodeManifestResourceIdentity(const char * identity);
+
+  /**
+   * @brief Constructor of an empty node manifest resource identity object.
+   *
+   * The user must manually populate the member fields.
+   */
+  NodeManifestResourceIdentity() = default;
+
+  virtual ~NodeManifestResourceIdentity() = default;
+
+  bool operator==(const NodeManifestResourceIdentity & other) const;
+
+  bool operator<(const NodeManifestResourceIdentity & other) const;
+
+  /**
+   * @brief Create the corresponding identity string.
+   * @return Identity string for a node manifest resource.
+   */
+  std::string str() const;
+
+  /**
+   * @brief Determine whether this node manifest resource identity object is considered empty.
+   * @return `true` if none of the member fields are set, `false` otherwise.
+   */
+  bool empty() const;
+
+  /// Name of the package that registers the behavior resource.
+  std::string package_name;
+  /// Metadata ID determined when regitering the corresponding node manifest resource.
+  std::string metadata_id;
 };
-}  // namespace YAML
-/// @endcond
 
-namespace auto_apms_behavior_tree::core
-{
+/**
+ * @ingroup auto_apms_behavior_tree
+ * @brief Get all registered behavior tree node manifest resource identities.
+ * @param exclude_packages Optional set of package names to exclude from the search. If empty, all packages are
+ * included.
+ * @return Set of `NodeManifestResourceIdentity` objects representing all registered node manifest resources.
+ */
+std::set<NodeManifestResourceIdentity> getNodeManifestResourceIdentities(
+  const std::set<std::string> & exclude_packages = {});
 
 /**
  * @ingroup auto_apms_behavior_tree
@@ -127,14 +173,12 @@ public:
 
   /**
    * @brief Create a node manifest from an installed resource.
-   *
-   * The resource identity must be specified in the format `<package_name>::<metadata_id>` or simply `<metadata_id>`.
-   * @param identity Identity of the node manifest resource.
+   * @param search_identity Node manifest resource identity used for searching the corresponding resource.
    * @return Node manifest created from the corresponding resource.
    * @throw auto_apms_util::exceptions::ResourceIdentityFormatError if @p identity has wrong format.
    * @throw auto_apms_util::exceptions::ResourceError if resource cannot be determined using @p identity.
    */
-  static NodeManifest fromResourceIdentity(const std::string & identity);
+  static NodeManifest fromResource(const NodeManifestResourceIdentity & search_identity);
 
   /**
    * @brief Write the node manifest to a file.
@@ -226,29 +270,51 @@ private:
 /// @cond INTERNAL
 namespace YAML
 {
-inline Node convert<auto_apms_behavior_tree::core::NodeManifest>::encode(const Manifest & rhs)
+template <>
+struct convert<auto_apms_behavior_tree::core::NodeManifestResourceIdentity>
 {
-  Node node(NodeType::Map);
-  for (const auto & [name, params] : rhs.map()) node[name] = params;
-  return node;
-}
-inline bool convert<auto_apms_behavior_tree::core::NodeManifest>::decode(const Node & node, Manifest & rhs)
-{
-  if (!node.IsMap())
-    throw auto_apms_util::exceptions::YAMLFormatError(
-      "YAML::Node for auto_apms_behavior_tree::core::NodeManifest must be map but is type " +
-      std::to_string(node.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
-
-  for (auto it = node.begin(); it != node.end(); ++it) {
-    const auto & name = it->first.as<std::string>();
-    try {
-      rhs.add(name, it->second.as<Manifest::RegistrationOptions>());
-    } catch (const std::exception & e) {
-      throw auto_apms_util::exceptions::YAMLFormatError(
-        "Node registration parameters for node '" + name + "' are invalid: " + e.what());
-    }
+  using Identity = auto_apms_behavior_tree::core::NodeManifestResourceIdentity;
+  static Node encode(const Identity & rhs)
+  {
+    Node node;
+    node = rhs.str();
+    return node;
   }
-  return true;
-}
+  static bool decode(const Node & node, Identity & rhs)
+  {
+    if (!node.IsScalar()) return false;
+    rhs = Identity(node.Scalar());
+    return true;
+  }
+};
+template <>
+struct convert<auto_apms_behavior_tree::core::NodeManifest>
+{
+  using Manifest = auto_apms_behavior_tree::core::NodeManifest;
+  inline static Node encode(const Manifest & rhs)
+  {
+    Node node(NodeType::Map);
+    for (const auto & [name, params] : rhs.map()) node[name] = params;
+    return node;
+  }
+  inline static bool decode(const Node & node, Manifest & rhs)
+  {
+    if (!node.IsMap())
+      throw auto_apms_util::exceptions::YAMLFormatError(
+        "YAML::Node for auto_apms_behavior_tree::core::NodeManifest must be map but is type " +
+        std::to_string(node.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+
+    for (auto it = node.begin(); it != node.end(); ++it) {
+      const auto & name = it->first.as<std::string>();
+      try {
+        rhs.add(name, it->second.as<Manifest::RegistrationOptions>());
+      } catch (const std::exception & e) {
+        throw auto_apms_util::exceptions::YAMLFormatError(
+          "Node registration parameters for node '" + name + "' are invalid: " + e.what());
+      }
+    }
+    return true;
+  }
+};
 }  // namespace YAML
 /// @endcond

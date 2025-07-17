@@ -36,15 +36,15 @@ TreeResourceIdentity::TreeResourceIdentity(const std::string & identity) : Behav
   }
 
   std::vector<std::string> tokens =
-    auto_apms_util::splitString(behavior_alias, RESOURCE_IDENTITY_RESOURCE_SEPARATOR, false);
+    auto_apms_util::splitString(behavior_alias, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP, false);
   // If only a single token is given, assume it's file_stem
   if (tokens.size() == 1) {
     tokens.push_back("");
   }
   if (tokens.size() != 2) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
-      "Tree resource identity string '" + identity +
-      "' is invalid. Resource name must contain 2 tokens (separated by " + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + ").");
+      "Tree resource identity string '" + identity + "' is invalid. Behavior alias must be <tree_file_stem>" +
+      _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + "<tree_name>.");
   }
   file_stem = tokens[0];
   tree_name = tokens[1];
@@ -65,16 +65,16 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : BehaviorReso
     doc.mergeFile(build_request_file_path_, true);
   } catch (const std::exception & e) {
     throw auto_apms_util::exceptions::ResourceError(
-      "Failed to create TreeResource with identity '" + identity_.str() + "' because tree file " +
+      "Failed to create TreeResource with identity '" + unique_identity_.str() + "' because tree file " +
       build_request_file_path_ + " cannot be parsed: " + e.what());
   }
 
   // Verify that the tree <tree_name> specified by the identity string is actually present
-  if (!identity_.tree_name.empty()) {
-    if (!auto_apms_util::contains(doc.getAllTreeNames(), identity_.tree_name)) {
+  if (!unique_identity_.tree_name.empty()) {
+    if (!auto_apms_util::contains(doc.getAllTreeNames(), unique_identity_.tree_name)) {
       throw auto_apms_util::exceptions::ResourceError(
-        "Cannot create TreeResource with identity '" + identity_.str() + "' because '" + identity_.tree_name +
-        "' does not exist in tree file " + build_request_file_path_ + ".");
+        "Cannot create TreeResource with identity '" + unique_identity_.str() + "' because '" +
+        unique_identity_.tree_name + "' does not exist in tree file " + build_request_file_path_ + ".");
     }
   }
 
@@ -91,38 +91,41 @@ TreeResource::TreeResource(const char * identity) : TreeResource(std::string(ide
 TreeResource TreeResource::findByTreeName(const std::string & tree_name, const std::string & package_name)
 {
   return TreeResource(
-    package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + tree_name);
+    package_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP +
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + tree_name);
 }
 
 TreeResource TreeResource::findByFileStem(const std::string & file_name, const std::string & package_name)
 {
   return TreeResource(
-    package_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR + file_name + RESOURCE_IDENTITY_RESOURCE_SEPARATOR);
+    package_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + file_name +
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP);
 }
 
-bool TreeResource::hasRootTreeName() const { return !identity_.tree_name.empty() || !doc_root_tree_name_.empty(); }
+bool TreeResource::hasRootTreeName() const
+{
+  return !unique_identity_.tree_name.empty() || !doc_root_tree_name_.empty();
+}
 
 std::string TreeResource::getRootTreeName() const
 {
-  if (!identity_.tree_name.empty()) return identity_.tree_name;
+  if (!unique_identity_.tree_name.empty()) return unique_identity_.tree_name;
 
   // If <tree_name> wasn't provided, look for root tree attribute in XML file
   if (!doc_root_tree_name_.empty()) return doc_root_tree_name_;
 
   // Root tree cannot be determined
   throw auto_apms_util::exceptions::ResourceError(
-    "Cannot get root tree name of tree resource '" + identity_.str() + "'. Since there is no XML attribute named '" +
-    TreeDocument::ROOT_TREE_ATTRIBUTE_NAME +
+    "Cannot get root tree name of tree resource '" + unique_identity_.str() +
+    "'. Since there is no XML attribute named '" + TreeDocument::ROOT_TREE_ATTRIBUTE_NAME +
     "' and the resource identity doesn't specify <tree_name>, the root tree is unkown.");
 }
 
-std::string TreeResource::getFileStem() const { return std::filesystem::path(build_request_file_path_).stem(); }
-
-TreeResourceIdentity TreeResource::createIdentity(const std::string & tree_name) const
+TreeResourceIdentity TreeResource::createIdentityForTree(const std::string & tree_name) const
 {
   TreeResourceIdentity i;
-  i.package_name = getPackageName();
-  i.file_stem = getFileStem();
+  i.package_name = unique_identity_.package_name;
+  i.file_stem = unique_identity_.file_stem;
   i.tree_name = tree_name;
   return i;
 }

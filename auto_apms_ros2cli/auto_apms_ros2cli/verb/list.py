@@ -13,8 +13,12 @@
 # limitations under the License.
 
 from collections import defaultdict
-from auto_apms_behavior_tree_core.resources import get_all_behavior_resources, RESOURCE_IDENTITY_CATEGORY_SEPARATOR
+from auto_apms_behavior_tree_core.resources import (
+    get_behavior_resource_identities,
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP,
+)
 from ..verb import VerbExtension
+from ..api import PrefixFilteredChoicesCompleter
 
 
 class ListVerb(VerbExtension):
@@ -22,29 +26,32 @@ class ListVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the list verb."""
-        parser.add_argument(
+        categories_arg = parser.add_argument(
             "-c",
             "--categories",
             nargs="*",
             help="List all behavior resources in the specified categories. If no category is given, all resources are listed.",
         )
+        categories_arg.completer = PrefixFilteredChoicesCompleter(
+            {i.category_name for i in get_behavior_resource_identities()}
+        )
 
     def main(self, *, args):
         """Main function for the list verb."""
-        behaviors = get_all_behavior_resources(args.categories)
-        print("Total:", len(behaviors))
+        identities = get_behavior_resource_identities(args.categories)
+        print("Total:", len(identities))
 
         # Group behaviors by category
-        categorized_resources = defaultdict(list)
-        for identity, resource in behaviors.items():
-            categorized_resources[resource.category_name].append(
-                str(identity).split(RESOURCE_IDENTITY_CATEGORY_SEPARATOR, 2)[-1]
+        categorized_behaviors = defaultdict(list)
+        for i in identities:
+            categorized_behaviors[i.category_name].append(
+                str(i).split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP, maxsplit=1)[-1]
             )
 
         # Print grouped behaviors
-        for category, items in categorized_resources.items():
-            print(f"{category}{RESOURCE_IDENTITY_CATEGORY_SEPARATOR}")
-            for identity in items:
-                print(f"    {identity}")
+        for category, items in categorized_behaviors.items():
+            print(f"{category}{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP}")
+            for cat_i in items:
+                print(f"    {cat_i}")
 
         return 0

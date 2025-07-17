@@ -8,7 +8,7 @@
   <license>Apache-2.0</license>
 
   <depend>ros2cli</depend>
-  <depend>auto_apms_behavior_tree_core</depend>
+  <depend>auto_apms_behavior_tree</depend>
   <depend>auto_apms_interfaces</depend>
   <depend>rclpy</depend>
   <depend>ament_index_python</depend>

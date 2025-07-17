@@ -29,15 +29,31 @@ int main(int argc, char ** argv)
 {
   bool print_help = false;
   std::string build_request = "";
+  std::string entrypoint = "";
+  core::NodeManifest node_manifest;
   if (argc > 1) {
     const std::string arg(argv[1]);
     print_help = "-h" == arg || "--help" == arg;
     if (!print_help) build_request = auto_apms_util::trimWhitespaces(arg);
+  } else {
+    print_help = true;
+  }
+  if (argc > 2) {
+    const std::string arg(argv[2]);
+    print_help = "-h" == arg || "--help" == arg;
+    if (!print_help) entrypoint = auto_apms_util::trimWhitespaces(arg);
+  }
+  if (argc > 3) {
+    const std::string arg(argv[3]);
+    print_help = "-h" == arg || "--help" == arg;
+    if (!print_help) node_manifest = core::NodeManifest::decode(auto_apms_util::trimWhitespaces(arg));
   }
   if (print_help) {
-    std::cerr << "run_behavior: The program accepts: \n\t1.) Optional: Single string specifying the behavior tree "
-                 "build request to be passed to the build handler loaded by the underlying tree executor node.\n";
-    std::cerr << "Usage: run_behavior [<build_request>]\n";
+    std::cerr << "run_behavior: The program accepts: \n\t1.) String specifying the behavior tree "
+                 "build request to be passed to the build handler loaded by the underlying tree executor node.\n\t2.) "
+                 "Optional string specifying the single point of entry for behavior execution.\n\t3.) Optional encoded "
+                 "node manifest specifying the behavior tree nodes required for behavior execution.\n";
+    std::cerr << "Usage: run_behavior <build_request> [<entrypoint>] [<node_manifest>]\n";
     return EXIT_FAILURE;
   }
 
@@ -49,12 +65,12 @@ int main(int argc, char ** argv)
   // Create executor node
   rclcpp::NodeOptions opt;
   TreeExecutorNodeOptions executor_opt(opt);
-  executor_opt.setDefaultBuildHandler("auto_apms_behavior_tree::TreeFromResourceBuildHandler");
   TreeExecutorNode executor("run_behavior", executor_opt);
   const rclcpp::Logger logger = executor.getNodePtr()->get_logger();
 
   // Start tree execution
-  std::shared_future<TreeExecutorBase::ExecutionResult> future = executor.startExecution(build_request);
+  std::shared_future<TreeExecutorBase::ExecutionResult> future =
+    executor.startExecution(build_request, entrypoint, node_manifest);
   RCLCPP_INFO(logger, "Executing tree '%s'.", executor.getTreeName().c_str());
 
   const std::chrono::duration<double> termination_timeout(3);

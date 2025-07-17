@@ -20,7 +20,6 @@
 #define INPUT_KEY_TREE_BUILD_HANDLER "build_handler"
 #define INPUT_KEY_ENTRYPOINT "entrypoint"
 #define INPUT_KEY_NODE_MANIFEST "node_manifest"
-#define INPUT_KEY_NODE_OVERRIDES "node_overrides"
 #define INPUT_KEY_ATTACH "attach"
 #define INPUT_KEY_CLEAR_BB "clear_blackboard"
 
@@ -41,10 +40,6 @@ public:
       BT::InputPort<bool>(
         INPUT_KEY_CLEAR_BB, true,
         "Boolean flag wether to clear the existing blackboard entries before the execution starts or not."),
-      BT::InputPort<std::string>(
-        INPUT_KEY_NODE_OVERRIDES, "",
-        "YAML/JSON formatted string encoding the name and the registration options for any tree nodes supposed to "
-        "override previously loaded ones."),
       BT::InputPort<std::string>(
         INPUT_KEY_NODE_MANIFEST, "",
         "YAML/JSON formatted string encoding the name and the registration options for the tree nodes supposed to be "
@@ -91,12 +86,6 @@ public:
     }
     if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_NODE_MANIFEST)) {
       goal.node_manifest = expected.value();
-    } else {
-      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
-      return false;
-    }
-    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_NODE_OVERRIDES)) {
-      goal.node_overrides = expected.value();
     } else {
       RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
       return false;

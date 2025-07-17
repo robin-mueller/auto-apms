@@ -26,7 +26,6 @@ setup(
             "show = auto_apms_ros2cli.verb.show:ShowVerb",
             "run = auto_apms_ros2cli.verb.run:RunVerb",
             "send = auto_apms_ros2cli.verb.send:SendVerb",
-            "create = auto_apms_ros2cli.verb.create:CreateVerb",
         ],
     },
 )

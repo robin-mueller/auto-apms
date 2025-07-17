@@ -14,8 +14,7 @@
 
 """AutoAPMS behavior management command for ros2cli."""
 
-from ros2cli.command import add_subparsers_on_demand
-from ros2cli.command import CommandExtension
+from ros2cli.command import CommandExtension, add_subparsers_on_demand
 
 
 class BehaviorCommand(CommandExtension):

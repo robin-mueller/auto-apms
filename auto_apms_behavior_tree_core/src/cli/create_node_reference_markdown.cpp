@@ -59,7 +59,7 @@ int main(int argc, char ** argv)
       if (package_name == "include_native") continue;
 
       // Throw if there a registration name exists multiple times
-      node_manifest.merge(core::NodeManifest::fromResourceIdentity(auto_apms_util::trimWhitespaces(argv[i])), false);
+      node_manifest.merge(core::NodeManifest::fromResource(auto_apms_util::trimWhitespaces(argv[i])), false);
     }
     const bool include_native = auto_apms_util::contains(input_packages, std::string("include_native"));
     const std::string native_package_name = "auto_apms_behavior_tree (BehaviorTree.CPP)";

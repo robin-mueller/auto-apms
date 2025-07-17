@@ -126,6 +126,7 @@ macro(auto_apms_behavior_tree_declare_trees)
                 BUILD_HANDLER "auto_apms_behavior_tree::TreeFromStringBuildHandler"
                 CATEGORY "tree"
                 ALIAS "${_tree_file_stem}::${_tree_name}"
+                ENTRYPOINT "${_tree_name}"
                 NODE_MANIFEST ${ARGS_NODE_MANIFEST}
             )
         endforeach()

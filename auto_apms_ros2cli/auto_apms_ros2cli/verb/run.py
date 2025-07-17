@@ -14,16 +14,18 @@
 
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
 from auto_apms_behavior_tree.resources import (
-    get_all_behavior_resources,
-    get_all_behavior_tree_build_handler_plugins,
-    RESOURCE_IDENTITY_RESOURCE_SEPARATOR,
-    RESOURCE_IDENTITY_CATEGORY_SEPARATOR,
+    get_behavior_build_handler_plugins,
+)
+from auto_apms_behavior_tree_core.resources import (
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP,
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP,
+    BehaviorResource,
 )
 from ..verb import VerbExtension
 from ..api import (
+    _add_behavior_resource_argument_to_parser,
     sync_run_behavior_locally,
     parse_key_value_args,
-    BehaviorChoicesCompleter,
     PrefixFilteredChoicesCompleter,
 )
 
@@ -33,21 +35,14 @@ class RunVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the run verb."""
-        behavior_arg = parser.add_argument(
-            "behavior",
-            type=str,
-            help="Behavior identity",
-            metavar=f"<category_name>{RESOURCE_IDENTITY_CATEGORY_SEPARATOR}<package_name>{RESOURCE_IDENTITY_RESOURCE_SEPARATOR}<resource_name>",
-        )
-        behavior_arg.completer = BehaviorChoicesCompleter()
-
+        _add_behavior_resource_argument_to_parser(parser)
         build_handler_arg = parser.add_argument(
             "--build-handler",
             type=str,
-            help="Build handler plugin class",
+            help="Behavior build handler plugin class",
             metavar="<namespace>::<class_name>",
         )
-        build_handler_plugins = get_all_behavior_tree_build_handler_plugins()
+        build_handler_plugins = get_behavior_build_handler_plugins()
         build_handler_arg.completer = PrefixFilteredChoicesCompleter(build_handler_plugins)
         parser.add_argument(
             "--blackboard",

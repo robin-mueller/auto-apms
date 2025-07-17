@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ament_index_python
 import yaml
 import rclpy
 import signal
 import threading
 
-from argcomplete.completers import ChoicesCompleter
+from collections import defaultdict
+from argparse import ArgumentParser
+from argcomplete.completers import BaseCompleter, ChoicesCompleter
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rclpy.action import ActionClient
@@ -35,8 +36,9 @@ from ros2run.api import run_executable, get_executable_path
 from auto_apms_behavior_tree_core.resources import (
     BehaviorResource,
     NodeManifest,
-    get_all_behavior_resources,
-    RESOURCE_IDENTITY_CATEGORY_SEPARATOR,
+    get_behavior_resource_identities,
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP,
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP,
 )
 
 
@@ -49,29 +51,65 @@ class PrefixFilteredChoicesCompleter(ChoicesCompleter):
     def __init__(self, choices, *args, **kwargs):
         super().__init__(choices, *args, **kwargs)
 
-    def __call__(self, **kwargs):
-        options = super(PrefixFilteredChoicesCompleter, self).__call__(**kwargs)
-        prefix = kwargs.get("prefix", "")
-        return [option for option in options if option.startswith(prefix)]
+    def __call__(self, prefix, **kwargs):
+        return [c for c in self.choices if c.startswith(prefix)]
 
 
-class BehaviorChoicesCompleter(ChoicesCompleter):
+class BehaviorResourceChoicesCompleter(BaseCompleter):
     """
     A completer that filters AutoAPMS behavior resources.
-    This completer filters by prefix but it also works if the behavior category is not specified.
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(get_all_behavior_resources().keys(), *args, **kwargs)
-
-    def __call__(self, **kwargs):
-        options = super(BehaviorChoicesCompleter, self).__call__(**kwargs)
-        prefix = kwargs.get("prefix", "")
-        return [
-            option
-            for option in options
-            if option.startswith(prefix) or option.split(RESOURCE_IDENTITY_CATEGORY_SEPARATOR, 2)[-1].startswith(prefix)
+        super().__init__(*args, **kwargs)
+        self.identity_strings_fully_qualified = [str(i) for i in get_behavior_resource_identities()]
+        self.identity_strings_without_category = [
+            i.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP, maxsplit=1)[-1]
+            for i in self.identity_strings_fully_qualified
         ]
+        self.identity_strings_only_behavior_alias = [
+            i.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP, maxsplit=1)[-1]
+            for i in self.identity_strings_fully_qualified
+        ]
+
+        # Filter ambiguous values (values that would refer to the same identity with the version without category)
+        value_counts = defaultdict(int)
+        for v in self.identity_strings_without_category:
+            value_counts[v] += 1
+        self.identity_strings_without_category = [
+            i for i in self.identity_strings_without_category if value_counts[v] == 1
+        ]
+
+    def __call__(self, prefix, **kwargs):
+        choices = self.identity_strings_fully_qualified
+        if not prefix:
+            return choices
+
+        # Allow users to specify an identity without the category part
+        choices_without_category = [c for c in self.identity_strings_without_category if c.startswith(prefix)]
+        if any(choices_without_category):
+            return choices_without_category
+        return choices
+
+
+def _add_behavior_resource_argument_to_parser(parser: ArgumentParser):
+    """
+    Add a behavior resource argument to the parser.
+
+    Args:
+        parser: The argument parser to add the argument to.
+        cli_name: The name of the CLI command.
+    """
+    behavior_arg = parser.add_argument(
+        "behavior",
+        type=BehaviorResource,
+        help="Behavior resource identity string",
+        metavar=f"<category_name>{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP}"
+        f"<package_name>{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP}"
+        f"<behavior_alias>",
+    )
+    behavior_arg.completer = BehaviorResourceChoicesCompleter()
+    return behavior_arg
 
 
 def find_start_tree_executor_actions() -> list[tuple[str, str]]:
@@ -203,7 +241,7 @@ def call_start_tree_action(
         goal_msg.build_handler = build_handler
     if entrypoint:
         goal_msg.entrypoint = entrypoint
-    if node_manifest is None:
+    if node_manifest:
         goal_msg.node_manifest = node_manifest.dump()
     goal_msg.clear_blackboard = clear_blackboard
     goal_msg.attach = True
@@ -348,7 +386,7 @@ def sync_run_behavior_with_executor(
             node,
             action_name,
             build_request=behavior.build_request,
-            build_handler=behavior.default_build_handler,
+            build_handler=static_params.get("build_handler", behavior.default_build_handler),
             entrypoint=behavior.entrypoint,
             node_manifest=behavior.node_manifest,
             clear_blackboard=False,
@@ -357,7 +395,7 @@ def sync_run_behavior_with_executor(
 
 
 def sync_run_behavior_locally(
-    build_request: str,
+    behavior: BehaviorResource,
     static_params: dict = None,
     blackboard_params: dict = None,
     logging_level: LoggingSeverity = None,
@@ -366,39 +404,41 @@ def sync_run_behavior_locally(
     Execute a behavior locally using the run_behavior executable.
 
     Args:
-        build_request: Behavior build request passed to the executor
+        behavior: A valid behavior resource
         static_params: Static parameters to set on the executor
         blackboard_params: Blackboard parameters to set on the executor
         logging_level: Logger level to set on the executor
     """
     # Check if required package is available first
-    try:
-        ament_index_python.get_package_share_directory("auto_apms_behavior_tree")
-    except Exception as e:
-        raise RuntimeError(
-            "Package 'auto_apms_behavior_tree' not found. Make sure it is installed and the workspace has been sourced"
-        ) from e
+    required_package = "auto_apms_behavior_tree"
+    required_command = "run_behavior"
 
-    run_tree_argv = [build_request]
+    run_tree_argv = [behavior.build_request, behavior.entrypoint, behavior.node_manifest.dump()]
 
     # Add ros args
     run_tree_argv.append("--ros-args")
+
+    def add_ros_argument(arg_name: str, arg_tuple: tuple[str, str]):
+        run_tree_argv.append(f"--{arg_name}")
+        run_tree_argv.append(f"{arg_tuple[0]}:={arg_tuple[1]}")
+
+    # Set default build handler (user should populate static params to overwrite)
+    add_ros_argument("param", ("build_handler", behavior.default_build_handler))
+
     if logging_level:
-        run_tree_argv.append("--log-level")
-        run_tree_argv.append(f"run_behavior:={logging_level.name}")
+        add_ros_argument("param", (required_command, logging_level.name))
 
     if static_params or blackboard_params:
-        for k, v in (static_params or {}).items():
-            run_tree_argv.append("-p")
-            run_tree_argv.append(f"{k}:={v}")
+        for tup in (static_params or {}).items():
+            add_ros_argument("param", tup)
         for k, v in (blackboard_params or {}).items():
-            run_tree_argv.append("-p")
-            run_tree_argv.append(f"bb.{k}:={v}")
+            add_ros_argument("param", (f"bb.{k}", v))
 
+    print(f"Running behavior '{behavior.identity}' locally")
     run_executable(
         path=get_executable_path(
-            package_name="auto_apms_behavior_tree",
-            executable_name="run_behavior",
+            package_name=required_package,
+            executable_name=required_command,
         ),
         argv=run_tree_argv,
     )

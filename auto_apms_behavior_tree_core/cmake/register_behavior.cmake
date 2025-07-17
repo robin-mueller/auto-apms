@@ -118,9 +118,8 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
         )
     endif()
     list(APPEND _all_behaviors "${ARGS_CATEGORY}${_behavior_alias}")
-    list(LENGTH _all_behaviors _behavior_num)
 
-    set(_metadata_id "behavior${_behavior_num}")
+    set(_metadata_id "${_behavior_alias}_${ARGS_CATEGORY}")
 
     # Determine the build request
     if(EXISTS "${_behavior_file_abs_path__source}")
@@ -188,7 +187,7 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
         # # # # # # # # #
         #
         # Change the input variables for the auto_apms_behavior_tree_generate_node_metadata macro called later
-        # so that we use all existing metadata
+        # so that we reuse all existing metadata
         #
         set(_generate_metadata_inputs ${ARGS_NODE_MANIFEST})
         set(_matching_existing_metadata_count 0)
