@@ -1180,7 +1180,7 @@ public:
    * precedence over this token.
    *
    * @sa TreeResourceIdentity for more information about how to refer to a specific resource.
-   * @param resource Behavior tree resource that specifies the tree to be copied.
+   * @param resource Behavior tree resource to use.
    * @param tree_name Name of the tree to be copied. It must exist inside the given file.
    * @return Tree element representing the new behavior tree.
    * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p tree_name is empty but the root tree cannot be
@@ -1193,7 +1193,7 @@ public:
   TreeElement newTreeFromResource(const TreeResource & resource, const std::string & tree_name = "");
 
   /**
-   * @brief Determine if this document specifies a behavior tree with a particular name.
+   * @brief Determine if this document contains a behavior tree with a particular name.
    * @param tree_name Name of the tree.
    * @return `true` if a tree named @p tree_name exists in this document, `false` otherwise.
    */

@@ -52,7 +52,7 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
   /**
    * @brief Constructor of an empty behavior tree resource identity object.
    *
-   * The user must manually populate the member fields according to the behavior tree this object should identify.
+   * The user must manually populate the member fields.
    */
   TreeResourceIdentity() = default;
 

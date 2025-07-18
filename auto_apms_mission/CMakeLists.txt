@@ -10,7 +10,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(auto_apms_util REQUIRED)
 find_package(auto_apms_behavior_tree REQUIRED)
 
-set(_AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG "auto_apms_mission__config")
+set(_AUTO_APMS_MISSION__DEFAULT_BEHAVIOR_CATEGORY__MISSION "mission")
 
 set(_AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME "orchestrator")
 set(_AUTO_APMS_MISSION__MISSION_EXECUTOR_NAME "mission")
@@ -22,7 +22,7 @@ set(_AUTO_APMS_MISSION__EVENT_HANDLER_EXECUTOR_NAME "event_handler")
 #
 
 add_library(auto_apms_mission SHARED
-    "src/mission_configuration.cpp"
+    "src/mission_config.cpp"
     "src/mission_builder_base.cpp"
 )
 target_include_directories(auto_apms_mission PUBLIC
@@ -30,7 +30,7 @@ target_include_directories(auto_apms_mission PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_compile_definitions(auto_apms_mission PRIVATE
-    _AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG="${_AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG}"
+    _AUTO_APMS_MISSION__DEFAULT_BEHAVIOR_CATEGORY__MISSION="${_AUTO_APMS_MISSION__DEFAULT_BEHAVIOR_CATEGORY__MISSION}"
     _AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME="${_AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME}"
     _AUTO_APMS_MISSION__MISSION_EXECUTOR_NAME="${_AUTO_APMS_MISSION__MISSION_EXECUTOR_NAME}"
     _AUTO_APMS_MISSION__EVENT_MONITOR_EXECUTOR_NAME="${_AUTO_APMS_MISSION__EVENT_MONITOR_EXECUTOR_NAME}"
@@ -71,14 +71,17 @@ rclcpp_components_register_node(mission_executors
 # IMPORTANT: Executor and builder plugins MUST NOT be included by the same shared library, or the executors
 # won't be able to load the builders using auto_apms_behavior_tree::TreeBuildHandlerLoader (factory methods
 # cannot be discovered by class_loader::MultiLibraryClassLoader)!
-add_library(mission_builder SHARED
-    "src/mission_builder.cpp"
+add_library(mission_builders SHARED
+    "src/build_handler/mission_from_resource.cpp"
+    "src/build_handler/mission_from_string.cpp"
+    "src/build_handler/multi_node_mission.cpp"
 )
-target_link_libraries(mission_builder
+target_link_libraries(mission_builders
     auto_apms_mission
 )
-auto_apms_behavior_tree_declare_build_handlers(mission_builder
-    "auto_apms_mission::SingleNodeMissionBuildHandler"
+auto_apms_behavior_tree_declare_build_handlers(mission_builders
+    "auto_apms_mission::MissionFromResourceBuildHandler"
+    "auto_apms_mission::MissionFromStringBuildHandler"
     "auto_apms_mission::MultiNodeMissionBuildHandler"
 )
 
@@ -86,6 +89,7 @@ auto_apms_behavior_tree_declare_trees(
     "config/orchestrator_base.xml"
     NODE_MANIFEST
     "auto_apms_behavior_tree::behavior_tree_nodes"
+    MARK_AS_INTERNAL
 )
 
 #
@@ -111,7 +115,7 @@ ament_export_dependencies(
 install(
     TARGETS
     mission_executors
-    mission_builder
+    mission_builders
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin

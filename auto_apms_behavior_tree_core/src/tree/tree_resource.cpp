@@ -28,26 +28,21 @@
 namespace auto_apms_behavior_tree::core
 {
 
-TreeResourceIdentity::TreeResourceIdentity(const std::string & identity) : BehaviorResourceIdentity(identity)
+TreeResourceIdentity::TreeResourceIdentity(const std::string & identity)
+: BehaviorResourceIdentity(identity, _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE)
 {
-  // If no category is explicitly specified, use a special default for behavior trees
-  if (category_name.empty() || category_name == _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY) {
-    category_name = _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE;
+  std::vector<std::string> tokens =
+    auto_apms_util::splitString(behavior_alias, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP, true);
+
+  // If only a single token is given, assume it's file_stem
+  if (tokens.size() > 1) {
+    file_stem = tokens[0];
+    tree_name = tokens[1];
+  } else if (tokens.size() > 0) {
+    file_stem = tokens[0];
+    tree_name = "";
   }
 
-  std::vector<std::string> tokens =
-    auto_apms_util::splitString(behavior_alias, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP, false);
-  // If only a single token is given, assume it's file_stem
-  if (tokens.size() == 1) {
-    tokens.push_back("");
-  }
-  if (tokens.size() != 2) {
-    throw auto_apms_util::exceptions::ResourceIdentityFormatError(
-      "Tree resource identity string '" + identity + "' is invalid. Behavior alias must be <tree_file_stem>" +
-      _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + "<tree_name>.");
-  }
-  file_stem = tokens[0];
-  tree_name = tokens[1];
   if (file_stem.empty() && tree_name.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
       "Behavior tree resource identity string '" + identity +
@@ -57,8 +52,22 @@ TreeResourceIdentity::TreeResourceIdentity(const std::string & identity) : Behav
 
 TreeResourceIdentity::TreeResourceIdentity(const char * identity) : TreeResourceIdentity(std::string(identity)) {}
 
-TreeResource::TreeResource(const TreeResourceIdentity & identity) : BehaviorResourceTemplate(identity)
+TreeResource::TreeResource(const TreeResourceIdentity & search_identity) : BehaviorResourceTemplate(search_identity)
 {
+  // Fill the tree specific fields for the unique identity
+  const std::vector<std::string> & tokens = auto_apms_util::splitString(
+    unique_identity_.behavior_alias, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP, false);
+
+  if (tokens.size() != 2) {
+    throw auto_apms_util::exceptions::ResourceIdentityFormatError(
+      "Unique tree resource identity string '" + unique_identity_.str() +
+      "' is invalid. Behavior alias must be <tree_file_stem>" +
+      _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + "<tree_name>.");
+  }
+
+  unique_identity_.file_stem = tokens[0];
+  unique_identity_.tree_name = tokens[1];
+
   // Verify that the file is ok
   TreeDocument doc;
   try {
@@ -84,9 +93,9 @@ TreeResource::TreeResource(const TreeResourceIdentity & identity) : BehaviorReso
   }
 }
 
-TreeResource::TreeResource(const std::string & identity) : TreeResource(TreeResourceIdentity(identity)) {}
+TreeResource::TreeResource(const std::string & search_identity) : TreeResource(TreeResourceIdentity(search_identity)) {}
 
-TreeResource::TreeResource(const char * identity) : TreeResource(std::string(identity)) {}
+TreeResource::TreeResource(const char * search_identity) : TreeResource(std::string(search_identity)) {}
 
 TreeResource TreeResource::findByTreeName(const std::string & tree_name, const std::string & package_name)
 {

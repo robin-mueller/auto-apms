@@ -30,12 +30,14 @@ using namespace auto_apms_behavior_tree;
 
 int main(int argc, char ** argv)
 {
+  const std::vector<std::string> args_vector = rclcpp::remove_ros_arguments(argc, argv);
+
   bool print_help = false;
-  if (argc > 1) {
-    const std::string arg(argv[1]);
+  if (args_vector.size() > 1) {
+    const std::string & arg = args_vector[1];
     print_help = "-h" == arg || "--help" == arg;
   }
-  if (print_help || argc < 2) {
+  if (print_help || args_vector.size() < 2) {
     std::cerr << "run_tree_node: The program accepts: \n\t1.) YAML representation of "
                  "NodeRegistrationOptions encoded in a string.\n\t2.) Optional: YAML map of specific node port values "
                  "encoded in a string.\n";

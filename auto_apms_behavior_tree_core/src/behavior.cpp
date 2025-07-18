@@ -17,6 +17,14 @@
 namespace auto_apms_behavior_tree::core
 {
 
+bool isInternalBehaviorCategory(const std::string & category_name)
+{
+  const char * suffix = _AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX;
+  size_t suffix_len = std::strlen(suffix);
+  return category_name.size() >= suffix_len &&
+         category_name.compare(category_name.size() - suffix_len, suffix_len, suffix) == 0;
+}
+
 BehaviorResourceIdentity::BehaviorResourceIdentity(const std::string & identity)
 {
   std::string resource_part;
@@ -31,7 +39,7 @@ BehaviorResourceIdentity::BehaviorResourceIdentity(const std::string & identity)
   }
   if (resource_part.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
-      "Behavior resource identity string '" + identity + "' is invalid: Package and resource name must not be empty.");
+      "Behavior resource identity string '" + identity + "' is invalid: You must specify more than just the category.");
   }
   if (std::size_t pos = resource_part.find(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP);
       pos == std::string::npos) {
@@ -45,7 +53,17 @@ BehaviorResourceIdentity::BehaviorResourceIdentity(const std::string & identity)
   }
   if (package_name.empty() && behavior_alias.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
-      "Behavior resource identity string '" + identity + "' is invalid. Package and resource name must not be empty.");
+      "Behavior resource identity string '" + identity +
+      "' is invalid. Package name and behavior alias must not be empty.");
+  }
+}
+
+BehaviorResourceIdentity::BehaviorResourceIdentity(const std::string & identity, const std::string & default_category)
+: BehaviorResourceIdentity(identity)
+{
+  // If no category is explicitly specified, use the given default one
+  if (category_name.empty() || category_name == _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY) {
+    category_name = default_category;
   }
 }
 
@@ -71,7 +89,8 @@ std::string BehaviorResourceIdentity::str() const
 bool BehaviorResourceIdentity::empty() const { return package_name.empty() && behavior_alias.empty(); }
 
 std::set<BehaviorResourceIdentity> getBehaviorResourceIdentities(
-  const std::set<std::string> & include_categories, const std::set<std::string> & exclude_packages)
+  const std::set<std::string> & include_categories, bool include_internal,
+  const std::set<std::string> & exclude_packages)
 {
   std::set<BehaviorResourceIdentity> identities;
   for (const auto & p : auto_apms_util::getPackagesWithResourceType(
@@ -89,8 +108,13 @@ std::set<BehaviorResourceIdentity> getBehaviorResourceIdentities(
           i.category_name = parts[0];
           i.package_name = p;
           i.behavior_alias = parts[1];
-          if (!include_categories.empty() && include_categories.find(i.category_name) == include_categories.end())
-            continue;  // Skip identities not in the specified include categories
+          if (include_categories.empty()) {
+            if (!include_internal && isInternalBehaviorCategory(i.category_name))
+              continue;  // Skip identities in the internal category if not requested otherwise
+          } else {
+            if (include_categories.find(i.category_name) == include_categories.end())
+              continue;  // Skip identities not in the specified include categories
+          }
           identities.insert(i);
         }
       }

@@ -15,7 +15,7 @@
 #pragma once
 
 #include "auto_apms_behavior_tree/build_handler.hpp"
-#include "auto_apms_mission/mission_configuration.hpp"
+#include "auto_apms_mission/mission_config.hpp"
 
 /**
  * @defgroup auto_apms_mission Mission Design
@@ -44,7 +44,7 @@ public:
   static const std::string EVENT_MONITOR_EXECUTOR_NAME;
   static const std::string EVENT_HANDLER_EXECUTOR_NAME;
 
-  MissionBuildHandlerBase(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr);
+  using TreeBuildHandler::TreeBuildHandler;
 
 private:
   bool setBuildRequest(
@@ -55,11 +55,11 @@ private:
 
 protected:
   /* Virtual methods */
+  virtual MissionConfig createMissionConfig(const std::string & build_request) = 0;
 
   virtual void buildBringUp(TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees);
 
-  virtual void buildMission(
-    TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees) = 0;
+  virtual void buildMission(TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees);
 
   virtual void buildEventMonitor(
     TreeDocument::TreeElement & sub_tree,
@@ -79,7 +79,7 @@ protected:
   virtual void configureOrchestratorRootBlackboard(TreeBlackboard & bb);
 
 private:
-  MissionConfiguration mission_config_;
+  MissionConfig mission_config_;
 };
 
 }  // namespace auto_apms_mission

@@ -35,10 +35,15 @@ class ListVerb(VerbExtension):
         categories_arg.completer = PrefixFilteredChoicesCompleter(
             {i.category_name for i in get_behavior_resource_identities()}
         )
+        parser.add_argument(
+            "--include-internal",
+            action="store_true",
+            help="Flag whether to include behaviors marked as internal.",
+        )
 
     def main(self, *, args):
         """Main function for the list verb."""
-        identities = get_behavior_resource_identities(args.categories)
+        identities = get_behavior_resource_identities(args.categories, args.include_internal)
         print("Total:", len(identities))
 
         # Group behaviors by category

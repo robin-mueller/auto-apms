@@ -252,8 +252,8 @@ auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
 #
 
 add_library(standard_build_handlers SHARED
-    "src/build_handler/impl/from_string_build_handler.cpp"
-    "src/build_handler/impl/from_resource_build_handler.cpp"
+    "src/build_handler/impl/tree_from_string.cpp"
+    "src/build_handler/impl/tree_from_resource.cpp"
 )
 target_link_libraries(standard_build_handlers auto_apms_behavior_tree)
 

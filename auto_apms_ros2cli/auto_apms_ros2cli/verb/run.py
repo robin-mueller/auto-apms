@@ -39,7 +39,7 @@ class RunVerb(VerbExtension):
         build_handler_arg = parser.add_argument(
             "--build-handler",
             type=str,
-            help="Behavior build handler plugin class",
+            help="Override the default behavior build handler associated with the behavior resource",
             metavar="<namespace>::<class_name>",
         )
         build_handler_plugins = get_behavior_build_handler_plugins()

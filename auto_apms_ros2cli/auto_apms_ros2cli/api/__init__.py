@@ -98,7 +98,6 @@ def _add_behavior_resource_argument_to_parser(parser: ArgumentParser):
 
     Args:
         parser: The argument parser to add the argument to.
-        cli_name: The name of the CLI command.
     """
     behavior_arg = parser.add_argument(
         "behavior",
@@ -426,7 +425,7 @@ def sync_run_behavior_locally(
     add_ros_argument("param", ("build_handler", behavior.default_build_handler))
 
     if logging_level:
-        add_ros_argument("param", (required_command, logging_level.name))
+        add_ros_argument("log-level", (required_command, logging_level.name))
 
     if static_params or blackboard_params:
         for tup in (static_params or {}).items():

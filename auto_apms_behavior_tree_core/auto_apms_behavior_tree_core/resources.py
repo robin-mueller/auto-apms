@@ -27,6 +27,7 @@ _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP = "::"
 _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR = "auto_apms_behavior_tree_core__behavior"
 _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST = "auto_apms_behavior_tree_core__node_manifest"
 
+_AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX = "__internal"
 _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY = "default"
 _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE = "tree"
 
@@ -67,7 +68,7 @@ class NodeManifestResourceIdentity:
         if identity is None:
             return
 
-        # Parse package and resource name
+        # Parse package and resource alias
         if _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP in identity:
             separator_pos = identity.find(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP)
             self.package_name = identity[:separator_pos]
@@ -358,7 +359,7 @@ class BehaviorResourceIdentity:
     This is the Python equivalent of auto_apms_behavior_tree::core::BehaviorResourceIdentity.
     """
 
-    def __init__(self, identity: str = None):
+    def __init__(self, identity: str = None, default_category: str = None):
         """
         Initialize a behavior resource identity from an identity string.
 
@@ -375,7 +376,7 @@ class BehaviorResourceIdentity:
         if identity is None:
             return
 
-        # Parse category and resource parts
+        # Parse and separate category
         behavior_alias_part = identity
         if _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP in identity:
             category_pos = identity.find(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP)
@@ -383,6 +384,13 @@ class BehaviorResourceIdentity:
             behavior_alias_part = identity[
                 category_pos + len(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP) :
             ]
+
+        # If no category is explicitly specified, use the given default one
+        if default_category:
+            if (not self.category_name) or (
+                self.category_name == _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY
+            ):
+                self.category_name = default_category
 
         # Parse package and alias
         if _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP in behavior_alias_part:
@@ -398,7 +406,7 @@ class BehaviorResourceIdentity:
 
         if not self.package_name and not self.behavior_alias:
             raise ResourceIdentityFormatError(
-                f"Behavior resource identity string '{identity}' is invalid. Package and resource name must not be empty."
+                f"Behavior resource identity string '{identity}' is invalid. Package and behavior alias must not be empty."
             )
 
     def __str__(self) -> str:
@@ -515,6 +523,8 @@ class BehaviorResource:
                 # Store node manifest
                 node_manifest_paths = []
                 for path in parts[5].split(";"):
+                    if not path:
+                        continue
                     if os.path.isabs(path):
                         node_manifest_paths.append(path)
                     else:
@@ -612,27 +622,18 @@ class TreeResourceIdentity(BehaviorResourceIdentity):
             return
 
         # First, let the parent class parse the basic structure
-        super().__init__(identity)
+        super().__init__(identity, _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE)
 
-        # If no category is explicitly specified, use a special default for behavior trees
-        if not self.category_name or self.category_name == _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY:
-            self.category_name = _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE
-
-        # Parse the resource_name part to extract file_stem and tree_name
+        # Parse the behavior alias part to extract file_stem and tree_name
         tokens = self.behavior_alias.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP)
 
         # If only a single token is given, assume it's file_stem
-        if len(tokens) == 1:
-            tokens.append("")
-
-        if len(tokens) != 2:
-            raise ResourceIdentityFormatError(
-                f"Tree resource identity string '{identity}' is invalid. "
-                f"Resource name must contain 2 tokens (separated by {_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP})."
-            )
-
-        self.file_stem = tokens[0]
-        self.tree_name = tokens[1]
+        if len(tokens) > 1:
+            self.file_stem = tokens[0]
+            self.tree_name = tokens[1]
+        elif len(tokens) > 0:
+            self.file_stem = tokens[0]
+            self.tree_name = ""
 
         if not self.file_stem and not self.tree_name:
             raise ResourceIdentityFormatError(
@@ -657,6 +658,17 @@ class TreeResource(BehaviorResource):
 
         # Initialize the base class
         super().__init__(identity)
+
+        # Fill the tree specific fields for the unique identity
+        tokens = self._unique_identity.behavior_alias.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP)
+        if len(tokens) != 2:
+            raise ResourceIdentityFormatError(
+                f"Unique tree resource identity string '{self._unique_identity}' is invalid. "
+                f"Behavior alias must be <tree_file_stem>{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP}<tree_name>."
+            )
+
+        self._unique_identity.file_stem = tokens[0]
+        self._unique_identity.tree_name = tokens[1]
 
     @staticmethod
     def find_by_tree_name(tree_name: str, package_name: str = "") -> "TreeResource":
@@ -729,7 +741,7 @@ def get_node_manifest_resource_identities(exclude_packages: set[str] = None) -> 
 
 
 def get_behavior_resource_identities(
-    include_categories: set[str] = None, exclude_packages: set[str] = None
+    include_categories: set[str] = None, include_internal=False, exclude_packages: set[str] = None
 ) -> set[BehaviorResourceIdentity]:
     """
     Retrieves all available/installed behavior resource identities.
@@ -740,6 +752,7 @@ def get_behavior_resource_identities(
 
     Args:
         include_categories: Optional set of categories to include in the results. If empty, all categories are included.
+        include_internal: Flag whether to include behaviors marked as internal.
         exclude_packages: Packages to exclude when searching for resources. If empty, all packages are included.
 
     Returns:
@@ -759,7 +772,12 @@ def get_behavior_resource_identities(
                 i.category_name = parts[0]
                 i.package_name = package
                 i.behavior_alias = parts[1]
-                if include_categories and i.category_name not in include_categories:
+                if include_categories:
+                    if i.category_name not in include_categories:
+                        continue
+                elif not include_internal and i.category_name.endswith(
+                    _AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX
+                ):
                     continue
                 identities.add(i)
     return sorted(identities)

@@ -23,24 +23,6 @@
 
 namespace auto_apms_behavior_tree::core
 {
-struct NodeRegistrationOptions;
-}
-
-/// @cond INTERNAL
-namespace YAML
-{
-template <>
-struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
-{
-  using Options = auto_apms_behavior_tree::core::NodeRegistrationOptions;
-  static Node encode(const Options & rhs);
-  static bool decode(const Node & node, Options & lhs);
-};
-}  // namespace YAML
-/// @endcond
-
-namespace auto_apms_behavior_tree::core
-{
 
 /**
  * @brief Parameters for loading and registering a behavior tree node class from a shared library using
@@ -118,69 +100,75 @@ struct NodeRegistrationOptions
 /// @cond INTERNAL
 namespace YAML
 {
-inline Node convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::encode(const Options & rhs)
+template <>
+struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
 {
-  Node node(NodeType::Map);
-  node[Options::PARAM_NAME_CLASS] = rhs.class_name;
-  node[Options::PARAM_NAME_PORT] = rhs.port;
-  node[Options::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
-  node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
-  node[Options::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
-  node[Options::PARAM_NAME_LOGGER_LEVEL] = rhs.logger_level;
-  node[Options::PARAM_NAME_EXTRA] = rhs.extra;
-  return node;
-}
-inline bool convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>::decode(const Node & node, Options & rhs)
-{
-  if (!node.IsMap())
-    throw auto_apms_util::exceptions::YAMLFormatError(
-      "YAML::Node for auto_apms_behavior_tree::core::NodeRegistrationOptions must be map but is type " +
-      std::to_string(node.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
-
-  for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
-    const std::string key = it->first.as<std::string>();
-    const Node val = it->second;
-
-    // Any valid yaml is allowed as extra options
-    if (key == Options::PARAM_NAME_EXTRA) {
-      rhs.extra = val;
-      continue;
-    }
-
-    // The following options may only be scalar
-    if (!val.IsScalar())
-      throw auto_apms_util::exceptions::YAMLFormatError(
-        "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
-        " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
-    if (key == Options::PARAM_NAME_CLASS) {
-      rhs.class_name = val.as<std::string>();
-      continue;
-    }
-    if (key == Options::PARAM_NAME_PORT) {
-      rhs.port = val.as<std::string>();
-      continue;
-    }
-    if (key == Options::PARAM_NAME_WAIT_TIMEOUT) {
-      rhs.wait_timeout = std::chrono::duration<double>(val.as<double>());
-      continue;
-    }
-    if (key == Options::PARAM_NAME_REQUEST_TIMEOUT) {
-      rhs.request_timeout = std::chrono::duration<double>(val.as<double>());
-      continue;
-    }
-    if (key == Options::PARAM_NAME_ALLOW_UNREACHABLE) {
-      rhs.allow_unreachable = val.as<bool>();
-      continue;
-    }
-    if (key == Options::PARAM_NAME_LOGGER_LEVEL) {
-      rhs.logger_level = val.as<std::string>();
-      continue;
-    }
-
-    // Unkown parameter
-    throw auto_apms_util::exceptions::YAMLFormatError("Unkown parameter name '" + key + "'.");
+  using Options = auto_apms_behavior_tree::core::NodeRegistrationOptions;
+  inline static Node encode(const Options & rhs)
+  {
+    Node node(NodeType::Map);
+    node[Options::PARAM_NAME_CLASS] = rhs.class_name;
+    node[Options::PARAM_NAME_PORT] = rhs.port;
+    node[Options::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
+    node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
+    node[Options::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
+    node[Options::PARAM_NAME_LOGGER_LEVEL] = rhs.logger_level;
+    node[Options::PARAM_NAME_EXTRA] = rhs.extra;
+    return node;
   }
-  return true;
-}
+  inline static bool decode(const Node & node, Options & rhs)
+  {
+    if (!node.IsMap())
+      throw auto_apms_util::exceptions::YAMLFormatError(
+        "YAML::Node for auto_apms_behavior_tree::core::NodeRegistrationOptions must be map but is type " +
+        std::to_string(node.Type()) + " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+
+    for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
+      const std::string key = it->first.as<std::string>();
+      const Node val = it->second;
+
+      // Any valid yaml is allowed as extra options
+      if (key == Options::PARAM_NAME_EXTRA) {
+        rhs.extra = val;
+        continue;
+      }
+
+      // The following options may only be scalar
+      if (!val.IsScalar())
+        throw auto_apms_util::exceptions::YAMLFormatError(
+          "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
+          " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+      if (key == Options::PARAM_NAME_CLASS) {
+        rhs.class_name = val.as<std::string>();
+        continue;
+      }
+      if (key == Options::PARAM_NAME_PORT) {
+        rhs.port = val.as<std::string>();
+        continue;
+      }
+      if (key == Options::PARAM_NAME_WAIT_TIMEOUT) {
+        rhs.wait_timeout = std::chrono::duration<double>(val.as<double>());
+        continue;
+      }
+      if (key == Options::PARAM_NAME_REQUEST_TIMEOUT) {
+        rhs.request_timeout = std::chrono::duration<double>(val.as<double>());
+        continue;
+      }
+      if (key == Options::PARAM_NAME_ALLOW_UNREACHABLE) {
+        rhs.allow_unreachable = val.as<bool>();
+        continue;
+      }
+      if (key == Options::PARAM_NAME_LOGGER_LEVEL) {
+        rhs.logger_level = val.as<std::string>();
+        continue;
+      }
+
+      // Unkown parameter
+      throw auto_apms_util::exceptions::YAMLFormatError("Unkown parameter name '" + key + "'.");
+    }
+    return true;
+  }
+};
+
 }  // namespace YAML
 /// @endcond

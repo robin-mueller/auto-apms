@@ -23,7 +23,7 @@ public:
   explicit OrchestratorExecutor(rclcpp::NodeOptions options)
   : TreeExecutorNode(
       _AUTO_APMS_MISSION__ORCHESTRATOR_EXECUTOR_NAME,
-      Options(options).setDefaultBuildHandler("auto_apms_mission::SingleNodeMissionBuildHandler"))
+      Options(options).setDefaultBuildHandler("auto_apms_mission::MissionFromResourceBuildHandler"))
   {
   }
 };

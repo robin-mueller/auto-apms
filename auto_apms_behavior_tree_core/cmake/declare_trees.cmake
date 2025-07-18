@@ -25,13 +25,16 @@
 #   If specified, behavior tree nodes associated with this manifest can be
 #   loaded automatically and are available for every tree under ARGN.
 # :type NODE_MANIFEST: list of strings
+# :param MARK_AS_INTERNAL: If this option is set, the trees are assigned a special category which indicates that the
+#    behavior is intended for internal use only.
+# :type MARK_AS_INTERNAL: string
 #
 # @public
 #
 macro(auto_apms_behavior_tree_declare_trees)
 
     # Parse arguments
-    set(options "")
+    set(options MARK_AS_INTERNAL)
     set(oneValueArgs "")
     set(multiValueArgs NODE_MANIFEST)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -121,14 +124,18 @@ macro(auto_apms_behavior_tree_declare_trees)
 
         # Register all trees inside the file as individual behaviors
         foreach(_tree_name ${_tree_file_tree_names})
-            auto_apms_behavior_tree_register_behavior(
+            set(_register_args
                 "${_tree_abs_path__source}"
                 BUILD_HANDLER "auto_apms_behavior_tree::TreeFromStringBuildHandler"
-                CATEGORY "tree"
+                CATEGORY "${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE}"
                 ALIAS "${_tree_file_stem}::${_tree_name}"
                 ENTRYPOINT "${_tree_name}"
                 NODE_MANIFEST ${ARGS_NODE_MANIFEST}
             )
+            if(ARGS_MARK_AS_INTERNAL)
+                list(APPEND _register_args MARK_AS_INTERNAL)
+            endif()
+            auto_apms_behavior_tree_register_behavior(${_register_args})
         endforeach()
     endforeach()
 

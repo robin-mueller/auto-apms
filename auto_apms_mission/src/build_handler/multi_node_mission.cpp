@@ -18,28 +18,20 @@
 namespace auto_apms_mission
 {
 
-class SingleNodeMissionBuildHandler : public MissionBuildHandlerBase
-{
-public:
-  using MissionBuildHandlerBase::MissionBuildHandlerBase;
-
-private:
-  void buildMission(
-    TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees) override final
-  {
-    sub_tree.removeChildren();
-    for (const TreeResource::Identity & r : trees) {
-      sub_tree.insertTreeFromResource(r);
-    }
-  }
-};
-
 class MultiNodeMissionBuildHandler : public MissionBuildHandlerBase
 {
 public:
-  using MissionBuildHandlerBase::MissionBuildHandlerBase;
+  MultiNodeMissionBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
+  : MissionBuildHandlerBase("multi_node_mission", ros_node_ptr, tree_node_loader_ptr)
+  {
+  }
 
 private:
+  MissionConfig createMissionConfig(const std::string & build_request) override final
+  {
+    return MissionConfig::fromResource(build_request);
+  }
+
   void buildMission(
     TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees) override final
   {
@@ -154,5 +146,4 @@ private:
 
 }  // namespace auto_apms_mission
 
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::SingleNodeMissionBuildHandler)
 AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::MultiNodeMissionBuildHandler)

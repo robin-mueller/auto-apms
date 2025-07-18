@@ -47,13 +47,16 @@
 #   If specified, behavior tree nodes associated with this manifest can be
 #   loaded automatically and are available for every behavior registered with this macro call.
 # :type NODE_MANIFEST: list of strings
+# :param MARK_AS_INTERNAL: If this option is set, the behavior is assigned a special category which indicates that the
+#    behavior is intended for internal use only.
+# :type MARK_AS_INTERNAL: string
 #
 # @public
 #
 macro(auto_apms_behavior_tree_register_behavior build_request)
 
     # Parse arguments
-    set(options "")
+    set(options MARK_AS_INTERNAL)
     set(oneValueArgs BUILD_HANDLER CATEGORY ALIAS ENTRYPOINT)
     set(multiValueArgs NODE_MANIFEST)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -64,34 +67,40 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
             "auto_apms_behavior_tree_register_behavior(): The BUILD_HANDLER keyword is required. You must specify the fully qualified class name of the default behavior tree build handler used to create the behavior from the given definitions"
         )
     endif()
-    if(NOT DEFINED ARGS_CATEGORY)
-        # Default
-        set(ARGS_CATEGORY "${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY}")
+
+    set(_category "${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY}")
+    if(DEFINED ARGS_CATEGORY)
+        set(_category "${ARGS_CATEGORY}")
     endif()
-    if(NOT DEFINED ARGS_ENTRYPOINT)
-        # Default
-        set(ARGS_ENTRYPOINT "")
+    if(ARGS_MARK_AS_INTERNAL)
+        # If the behavior is marked as internal, append the internal category suffix
+        set(_category "${_category}${_AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX}")
+    endif()
+
+    set(_entrypoint "")
+    if(DEFINED ARGS_ENTRYPOINT)
+        set(_entrypoint "${ARGS_ENTRYPOINT}")
     endif()
 
     # Check if category is valid
-    string(REGEX MATCH "[^A-Za-z0-9_-]" _has_illegal "${ARGS_CATEGORY}")
+    string(REGEX MATCH "[^A-Za-z0-9_-]" _has_illegal "${_category}")
     if(_has_illegal)
         message(
             FATAL_ERROR
-            "auto_apms_behavior_tree_register_behavior(): Category '${ARGS_CATEGORY}' contains illegal characters. Only alphanumeric, '_' and '-' are allowed."
+            "auto_apms_behavior_tree_register_behavior(): Category '${_category}' contains illegal characters. Only alphanumeric, '_' and '-' are allowed."
         )
     endif()
 
     # Check if entrypoint is valid
-    string(REGEX MATCH "[^A-Za-z0-9_-]" _has_illegal "${ARGS_ENTRYPOINT}")
+    string(REGEX MATCH "[^A-Za-z0-9_-]" _has_illegal "${_entrypoint}")
     if(_has_illegal)
         message(
             FATAL_ERROR
-            "auto_apms_behavior_tree_register_behavior(): Entrypoint '${ARGS_ENTRYPOINT}' contains illegal characters. Only alphanumeric, '_' and '-' are allowed."
+            "auto_apms_behavior_tree_register_behavior(): Entrypoint '${_entrypoint}' contains illegal characters. Only alphanumeric, '_' and '-' are allowed."
         )
     endif()
 
-    set(_behavior_file_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_DIR_RELATIVE__BEHAVIOR}")
+    set(_behavior_file_rel_dir__install "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_DIR_RELATIVE__BEHAVIOR}/${_category}")
 
     get_filename_component(_behavior_file_abs_path__source "${build_request}" REALPATH)
     get_filename_component(_behavior_alias "${build_request}" NAME_WE) # Simply returns the string itself if it is not a file path
@@ -111,15 +120,15 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
     endif()
 
     # Verify no duplicate behaviors
-    if("${ARGS_CATEGORY}${_behavior_alias}" IN_LIST _all_behaviors)
+    if("${_category}${_behavior_alias}" IN_LIST _all_behaviors)
         message(
             FATAL_ERROR
-            "auto_apms_behavior_tree_register_behavior(): '${build_request}' is aliased with '${_behavior_alias}', but this alias was already used to register a behavior in category '${ARGS_CATEGORY}'. An alias must be unique per category and package. Use the ALIAS keyword to specify a unique alias for behaviors."
+            "auto_apms_behavior_tree_register_behavior(): '${build_request}' is aliased with '${_behavior_alias}', but this alias was already used to register a behavior in category '${_category}'. An alias must be unique per category and package. Use the ALIAS keyword to specify a unique alias for behaviors."
         )
     endif()
-    list(APPEND _all_behaviors "${ARGS_CATEGORY}${_behavior_alias}")
+    list(APPEND _all_behaviors "${_category}${_behavior_alias}")
 
-    set(_metadata_id "${_behavior_alias}_${ARGS_CATEGORY}")
+    set(_metadata_id "${_behavior_alias}_${_category}")
 
     # Determine the build request
     if(EXISTS "${_behavior_file_abs_path__source}")
@@ -264,6 +273,6 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
     endif()
 
     # Populate resource file variable
-    set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__BEHAVIOR "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__BEHAVIOR}${ARGS_CATEGORY}|${_behavior_alias}|${ARGS_BUILD_HANDLER}|${_build_request_field}|${ARGS_ENTRYPOINT}|${_node_manifest_rel_paths__install}\n")
+    set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__BEHAVIOR "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__BEHAVIOR}${_category}|${_behavior_alias}|${ARGS_BUILD_HANDLER}|${_build_request_field}|${_entrypoint}|${_node_manifest_rel_paths__install}\n")
 
 endmacro()

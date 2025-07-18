@@ -125,7 +125,7 @@ def spawn_nodes(context: LaunchContext):
                             "orchestrator_params": json.dumps(
                                 {"tick_rate": TICK_RATE_SEC, "bb.student": student, "bb.house": house}
                             ),
-                            "use_multiple_nodes": "false",
+                            "multi_node": "false",
                         }.items(),
                     )
                     for student, house in name_house_tuples

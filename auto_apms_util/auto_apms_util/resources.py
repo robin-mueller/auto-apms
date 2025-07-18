@@ -23,7 +23,7 @@ class ResourceError(Exception):
     pass
 
 
-RESOURCE_TYPE_NAME__PLUGINLIB_PLUGINS = "auto_apms_util__pluginlib__plugins"
+_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB = "auto_apms_util__pluginlib__plugins"
 
 
 def get_packages_with_resource_type(resource_type: str, exclude_packages: set[str] = None) -> set[str]:
@@ -85,7 +85,7 @@ def get_packages_with_plugin_resources(exclude_packages: set[str] = None) -> set
     Raises:
         ResourceError: If no AutoAPMS plugin resources were found in any of the installed packages.
     """
-    return get_packages_with_resource_type(RESOURCE_TYPE_NAME__PLUGINLIB_PLUGINS, exclude_packages)
+    return get_packages_with_resource_type(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB, exclude_packages)
 
 
 def get_plugin_xml_path(package: str) -> str:
@@ -106,17 +106,17 @@ def get_plugin_xml_path(package: str) -> str:
         ResourceError: If an ament_index resource marker file is invalid.
     """
     try:
-        content, base_path = ament_index_python.get_resource(RESOURCE_TYPE_NAME__PLUGINLIB_PLUGINS, package)
+        content, base_path = ament_index_python.get_resource(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB, package)
     except ament_index_python.PackageNotFoundError:
         raise ResourceError(
             f"Cannot find a plugin.xml file in package '{package}' "
-            f"(Plugin resource type is: '{RESOURCE_TYPE_NAME__PLUGINLIB_PLUGINS}')."
+            f"(Plugin resource type is: '{_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB}')."
         )
 
     paths = content.strip().split("\n")
     if len(paths) != 1:
         raise ResourceError(
-            f"Invalid '{RESOURCE_TYPE_NAME__PLUGINLIB_PLUGINS}' resource marker file installed by package '{package}'. "
+            f"Invalid '{_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB}' resource marker file installed by package '{package}'. "
             f"Must contain a single line with a relative path to the plugins.xml manifest file "
             f"with respect to the package's install prefix."
         )
@@ -142,7 +142,7 @@ def collect_plugin_xml_paths(exclude_packages: set[str] = None) -> list[str]:
         ResourceError: If an ament_index resource marker file is invalid.
     """
     xml_paths = []
-    packages = get_packages_with_resource_type(RESOURCE_TYPE_NAME__PLUGINLIB_PLUGINS, exclude_packages)
+    packages = get_packages_with_resource_type(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB, exclude_packages)
     for package in packages:
         xml_paths.append(get_plugin_xml_path(package))
     return xml_paths

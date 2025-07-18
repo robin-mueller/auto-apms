@@ -27,33 +27,34 @@ using namespace auto_apms_behavior_tree;
 
 int main(int argc, char ** argv)
 {
+  const std::vector<std::string> args_vector = rclcpp::remove_ros_arguments(argc, argv);
+
   bool print_help = false;
   std::string build_request = "";
   std::string entrypoint = "";
   core::NodeManifest node_manifest;
-  if (argc > 1) {
-    const std::string arg(argv[1]);
+  if (args_vector.size() > 1) {
+    const std::string & arg = args_vector[1];
     print_help = "-h" == arg || "--help" == arg;
     if (!print_help) build_request = auto_apms_util::trimWhitespaces(arg);
-  } else {
-    print_help = true;
   }
-  if (argc > 2) {
-    const std::string arg(argv[2]);
+  if (args_vector.size() > 2) {
+    const std::string & arg = args_vector[2];
     print_help = "-h" == arg || "--help" == arg;
     if (!print_help) entrypoint = auto_apms_util::trimWhitespaces(arg);
   }
-  if (argc > 3) {
-    const std::string arg(argv[3]);
+  if (args_vector.size() > 3) {
+    const std::string & arg = args_vector[3];
     print_help = "-h" == arg || "--help" == arg;
     if (!print_help) node_manifest = core::NodeManifest::decode(auto_apms_util::trimWhitespaces(arg));
   }
   if (print_help) {
     std::cerr << "run_behavior: The program accepts: \n\t1.) String specifying the behavior tree "
-                 "build request to be passed to the build handler loaded by the underlying tree executor node.\n\t2.) "
-                 "Optional string specifying the single point of entry for behavior execution.\n\t3.) Optional encoded "
-                 "node manifest specifying the behavior tree nodes required for behavior execution.\n";
-    std::cerr << "Usage: run_behavior <build_request> [<entrypoint>] [<node_manifest>]\n";
+                 "build request to be passed to the build handler loaded by the underlying tree executor node. If "
+                 "empty, build handler must be able to handle that.\n\t2.) Optional string specifying the single point "
+                 "of entry for behavior execution.\n\t3.) Optional encoded node manifest specifying the behavior tree "
+                 "nodes required for behavior execution.\n";
+    std::cerr << "Usage: run_behavior [<build_request>] [<entrypoint>] [<node_manifest>]\n";
     return EXIT_FAILURE;
   }
 

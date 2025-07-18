@@ -49,6 +49,16 @@ struct BehaviorResourceIdentity
    * @brief Constructor of a behavior resource identity object.
    *
    * @p identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
+   * @param identity Identity string for a specific behavior resource.
+   * @param default_category Name of the default category assigned if none is provided with the identity string.
+   * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
+   */
+  BehaviorResourceIdentity(const std::string & identity, const std::string & default_category);
+
+  /**
+   * @brief Constructor of a behavior resource identity object.
+   *
+   * @p identity must be formatted like `<category_name>/<package_name>::<behavior_alias>`.
    * @param identity C-style identity string for a specific behavior resource.
    * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if the identity string has wrong format.
    */
@@ -57,7 +67,7 @@ struct BehaviorResourceIdentity
   /**
    * @brief Constructor of an empty behavior resource identity object.
    *
-   * The user must manually populate the member fields according to the behavior this object should identify.
+   * The user must manually populate the member fields.
    */
   BehaviorResourceIdentity() = default;
 
@@ -92,12 +102,14 @@ struct BehaviorResourceIdentity
  * @brief Get all registered behavior resource identities.
  * @param include_categories Optional set of categories to include in the results. If empty, all categories are
  * included.
+ * @param include_internal Optional flag whether to include behaviors marked as internal.
  * @param exclude_packages Optional set of package names to exclude from the search. If empty, all packages are
  * included.
  * @return Set of `BehaviorResourceIdentity` objects representing all registered behavior resources.
  */
 std::set<BehaviorResourceIdentity> getBehaviorResourceIdentities(
-  const std::set<std::string> & include_categories = {}, const std::set<std::string> & exclude_packages = {});
+  const std::set<std::string> & include_categories = {}, bool include_internal = false,
+  const std::set<std::string> & exclude_packages = {});
 
 /**
  * @brief Helper temlpate class for creating behavior resource abstractions.
@@ -263,6 +275,8 @@ protected:
  */
 class BehaviorResource : public BehaviorResourceTemplate<BehaviorResourceIdentity>
 {
+public:
+  using BehaviorResourceTemplate::BehaviorResourceTemplate;
 };
 
 // #####################################################################################################################
@@ -349,7 +363,7 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
 
         // Store node manifest paths
         std::vector<std::string> node_manifest_paths;
-        for (const std::string & path : auto_apms_util::splitString(parts[5], ";")) {
+        for (const std::string & path : auto_apms_util::splitString(parts[5], ";", true)) {
           node_manifest_paths.push_back(std::filesystem::path(path).is_absolute() ? path : (base_path + "/" + path));
         }
         node_manifest_ = NodeManifest::fromFiles(node_manifest_paths);
