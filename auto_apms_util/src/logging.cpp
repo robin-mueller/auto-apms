@@ -22,19 +22,6 @@
 namespace auto_apms_util
 {
 
-void exposeToGlobalDebugLogging(const rclcpp::Logger & logger)
-{
-  (void)logger;
-#ifdef _AUTO_APMS_DEBUG_LOGGING
-  auto ret = rcutils_logging_set_logger_level(logger.get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
-  if (ret != RCUTILS_RET_OK) {
-    const std::string msg = rcutils_get_error_string().str;
-    rcutils_reset_error();
-    throw exceptions::SetLoggingSeverityError("Failed to expose the logger to global DEBUG logging: " + msg);
-  }
-#endif
-}
-
 void setLoggingSeverity(const rclcpp::Logger & logger, const std::string & severity_string)
 {
   int severity;

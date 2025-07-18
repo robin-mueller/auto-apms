@@ -607,7 +607,6 @@ TreeDocument::TreeDocument(const std::string & format_version, NodeRegistrationL
   factory_(),
   logger_(rclcpp::get_logger(LOGGER_NAME))
 {
-  auto_apms_util::exposeToGlobalDebugLogging(logger_);
   reset();
 }
 

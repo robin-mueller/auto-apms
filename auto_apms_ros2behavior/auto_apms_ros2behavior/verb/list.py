@@ -15,6 +15,7 @@
 from collections import defaultdict
 from auto_apms_behavior_tree_core.resources import (
     get_behavior_resource_identities,
+    get_behavior_categories,
     _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP,
 )
 from ..verb import VerbExtension
@@ -32,9 +33,7 @@ class ListVerb(VerbExtension):
             nargs="*",
             help="List all behavior resources in the specified categories. If no category is given, all resources are listed.",
         )
-        categories_arg.completer = PrefixFilteredChoicesCompleter(
-            {i.category_name for i in get_behavior_resource_identities()}
-        )
+        categories_arg.completer = PrefixFilteredChoicesCompleter(get_behavior_categories())
         parser.add_argument(
             "--include-internal",
             action="store_true",
@@ -44,7 +43,6 @@ class ListVerb(VerbExtension):
     def main(self, *, args):
         """Main function for the list verb."""
         identities = get_behavior_resource_identities(args.categories, args.include_internal)
-        print("Total:", len(identities))
 
         # Group behaviors by category
         categorized_behaviors = defaultdict(list)
@@ -57,6 +55,6 @@ class ListVerb(VerbExtension):
         for category, items in categorized_behaviors.items():
             print(f"{category}{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP}")
             for cat_i in items:
-                print(f"    {cat_i}")
+                print(f"  - {cat_i}")
 
         return 0

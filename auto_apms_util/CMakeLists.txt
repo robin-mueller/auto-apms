@@ -16,11 +16,6 @@ find_package(pluginlib REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
-option(AUTO_APMS_UTIL_DEBUG_LOGGING "Enable debug logging severity" OFF)
-if(AUTO_APMS_UTIL_DEBUG_LOGGING)
-    add_compile_definitions(_AUTO_APMS_DEBUG_LOGGING)
-endif()
-
 # ActionWrapper parameter names
 set(_AUTO_APMS_UTIL__ACTION_PARAM_LOOP_RATE "loop_rate")
 set(_AUTO_APMS_UTIL__ACTION_PARAM_FEEDBACK_RATE "feedback_rate")

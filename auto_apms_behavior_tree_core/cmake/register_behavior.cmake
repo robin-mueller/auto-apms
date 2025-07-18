@@ -128,7 +128,7 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
     endif()
     list(APPEND _all_behaviors "${_category}${_behavior_alias}")
 
-    set(_metadata_id "${_behavior_alias}_${_category}")
+    set(_metadata_id "${_category}__${_behavior_alias}")
 
     # Determine the build request
     if(EXISTS "${_behavior_file_abs_path__source}")
@@ -136,7 +136,7 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
 
         # Track the behavior file so CMake knows it's an input dependency
         # Make sure to give the file a unique name
-        set(_file_name__unique "${_metadata_id}_${_file_name}")
+        set(_file_name__unique "${_metadata_id}__${_file_name}")
         configure_file(
             "${_behavior_file_abs_path__source}"
             "${_AUTO_APMS_BEHAVIOR_TREE_CORE__BUILD_DIR_ABSOLUTE}/${_file_name__unique}"

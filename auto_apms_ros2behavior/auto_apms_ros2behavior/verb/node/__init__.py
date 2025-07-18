@@ -12,26 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""AutoAPMS behavior management command for ros2cli."""
+from ros2cli.command import add_subparsers_on_demand
+from ...verb import VerbExtension
 
-from ros2cli.command import CommandExtension, add_subparsers_on_demand
 
-
-class BehaviorCommand(CommandExtension):
-    """Inspect and deploy behaviors created with AutoAPMS."""
+class NodeVerb(VerbExtension):
+    """Subcommand for everything related to behavior tree nodes."""
 
     def add_arguments(self, parser, cli_name):
         self._subparser = parser
-        # add arguments and sub-commands of verbs
-        add_subparsers_on_demand(parser, cli_name, "_verb", "auto_apms_ros2cli.verb", required=False)
+        add_subparsers_on_demand(parser, cli_name, "_verb_node", "auto_apms_ros2behavior.verb.node", required=False)
 
-    def main(self, *, parser, args):
-        if not hasattr(args, "_verb"):
+    def main(self, *, args):
+        if not hasattr(args, "_verb_node"):
             # in case no verb was passed
             self._subparser.print_help()
             return 0
 
-        extension = getattr(args, "_verb")
+        extension = getattr(args, "_verb_node")
 
         # call the verb's main method
         return extension.main(args=args)

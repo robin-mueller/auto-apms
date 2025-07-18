@@ -38,10 +38,10 @@ int main(int argc, char ** argv)
     print_help = "-h" == arg || "--help" == arg;
   }
   if (print_help || args_vector.size() < 2) {
-    std::cerr << "run_tree_node: The program accepts: \n\t1.) YAML representation of "
-                 "NodeRegistrationOptions encoded in a string.\n\t2.) Optional: YAML map of specific node port values "
+    std::cerr << "run_tree_node: The program accepts: \n\t1.) YAML representation of NodeRegistrationOptions encoded "
+                 "in a string.\n\t2.) Optional: YAML map of specific node port values "
                  "encoded in a string.\n";
-    std::cerr << "Usage: run_tree_node <registration_params> [<port_values>]\n";
+    std::cerr << "Usage: run_tree_node <registration_options> [<port_values>]\n";
     return EXIT_FAILURE;
   }
 
@@ -49,21 +49,20 @@ int main(int argc, char ** argv)
   // been successfully canceled
   rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::SigTerm);
   signal(SIGINT, [](int /*sig*/) { termination_requested = 1; });
-  rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("run_tree_node_cpp");
-  auto_apms_util::exposeToGlobalDebugLogging(node_ptr->get_logger());
+  rclcpp::Node::SharedPtr node_ptr = std::make_shared<rclcpp::Node>("run_tree_node");
 
-  core::NodeRegistrationOptions registration_params;
+  core::NodeRegistrationOptions registration_options;
   try {
-    registration_params = core::NodeRegistrationOptions::decode(auto_apms_util::trimWhitespaces(argv[1]));
+    registration_options = core::NodeRegistrationOptions::decode(auto_apms_util::trimWhitespaces(args_vector[1]));
   } catch (std::exception & e) {
-    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument registration_params: %s", e.what());
+    RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument registration_options: %s", e.what());
     return EXIT_FAILURE;
   }
 
   core::TreeDocument::NodeElement::PortValues port_values;
-  if (argc > 2) {
+  if (args_vector.size() > 2) {
     try {
-      port_values = YAML::Load(auto_apms_util::trimWhitespaces(argv[2])).as<std::map<std::string, std::string>>();
+      port_values = YAML::Load(auto_apms_util::trimWhitespaces(args_vector[2])).as<std::map<std::string, std::string>>();
     } catch (std::exception & e) {
       RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument port_values: %s", e.what());
       return EXIT_FAILURE;
@@ -74,9 +73,9 @@ int main(int argc, char ** argv)
   core::TreeBuilder builder(
     node_ptr, executor.getTreeNodeWaitablesCallbackGroupPtr(), executor.getTreeNodeWaitablesExecutorPtr());
   try {
-    builder.newTree("RunTreeNodeCPP")
+    builder.newTree(std::string("Tree_") + node_ptr->get_name())
       .makeRoot()
-      .insertNode(registration_params.class_name, registration_params)
+      .insertNode(node_ptr->get_name(), registration_options)
       .setPorts(port_values);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(node_ptr->get_logger(), "ERROR inserting tree node: %s", e.what());

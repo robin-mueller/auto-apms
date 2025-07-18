@@ -58,7 +58,6 @@ int main(int argc, char ** argv)
     }
 
     const rclcpp::Logger logger = rclcpp::get_logger("create_node_model__" + output_file.stem().string());
-    auto_apms_util::exposeToGlobalDebugLogging(logger);
 
     BT::BehaviorTreeFactory factory;
     const auto manifest = core::NodeManifest::fromFile(manifest_file.string());

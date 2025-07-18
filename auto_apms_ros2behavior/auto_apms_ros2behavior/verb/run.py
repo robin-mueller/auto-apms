@@ -16,11 +16,6 @@ from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
 from auto_apms_behavior_tree.resources import (
     get_behavior_build_handler_plugins,
 )
-from auto_apms_behavior_tree_core.resources import (
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP,
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP,
-    BehaviorResource,
-)
 from ..verb import VerbExtension
 from ..api import (
     _add_behavior_resource_argument_to_parser,

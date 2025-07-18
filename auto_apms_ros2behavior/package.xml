@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>auto_apms_ros2cli</name>
+  <name>auto_apms_ros2behavior</name>
   <version>0.0.0</version>
-  <description>AutoAPMS related extensions for the ROS 2 CLI</description>
+  <description>Behavior related extensions for the ROS 2 CLI</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
   <license>Apache-2.0</license>
 

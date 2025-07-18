@@ -123,6 +123,8 @@ class NodeManifest:
         """
         self._node_dict: dict[str, dict] = {}
         if node_dict:
+            if not isinstance(node_dict, dict):
+                raise TypeError("node_dict must be a dictionary")
             self._node_dict = node_dict.copy()
 
     @property
@@ -735,7 +737,7 @@ def get_node_manifest_resource_identities(exclude_packages: set[str] = None) -> 
             if len(parts) > 0:
                 i = NodeManifestResourceIdentity()
                 i.package_name = package
-                i.metadata_id = parts[1]
+                i.metadata_id = parts[0]
                 identities.add(i)
     return sorted(identities)
 
@@ -783,7 +785,12 @@ def get_behavior_resource_identities(
     return sorted(identities)
 
 
-def get_behavior_tree_node_plugins(exclude_packages: set[str] = None) -> list[str]:
+def get_behavior_categories():
+    """Get all behavior categories that are registered in the system."""
+    return {i.category_name for i in get_behavior_resource_identities()}
+
+
+def get_behavior_tree_node_plugins(exclude_packages: set[str] = None, *, per_package=False):
     """
     Get all behavior tree node plugin names.
 
@@ -792,6 +799,7 @@ def get_behavior_tree_node_plugins(exclude_packages: set[str] = None) -> list[st
 
     Args:
         exclude_packages: Packages to exclude when searching for plugins.
+        per_package: If True, returns a dictionary with package names as keys and lists of plugin names as values.
 
     Returns:
         List of all behavior tree node plugin names.
@@ -799,4 +807,6 @@ def get_behavior_tree_node_plugins(exclude_packages: set[str] = None) -> list[st
     Raises:
         ResourceError: If failed to find or parse plugin manifest files.
     """
-    return get_plugin_names_with_base_type(BASE_CLASS_TYPE__BEHAVIOR_TREE_NODE, exclude_packages)
+    return get_plugin_names_with_base_type(
+        BASE_CLASS_TYPE__BEHAVIOR_TREE_NODE, exclude_packages, per_package=per_package
+    )
