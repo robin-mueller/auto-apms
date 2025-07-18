@@ -1,0 +1,275 @@
+
+Full C++ API
+------------
+
+Namespaces
+**********
+
+
+.. toctree::
+   :maxdepth: 1
+
+   namespace_auto_apms_util.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   namespace_auto_apms_util__exceptions.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   namespace_pluginlib.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   namespace_std.rst
+
+Classes and Structs
+*******************
+
+
+.. toctree::
+   :maxdepth: 1
+
+   structauto__apms__util_1_1exceptions_1_1ResourceError.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   structauto__apms__util_1_1exceptions_1_1ResourceIdentityFormatError.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   structauto__apms__util_1_1exceptions_1_1SetLoggingSeverityError.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   structauto__apms__util_1_1exceptions_1_1YAMLFormatError.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   classauto__apms__util_1_1ActionClientWrapper.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   classauto__apms__util_1_1ActionContext.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   classauto__apms__util_1_1ActionWrapper.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   classauto__apms__util_1_1exceptions_1_1ExceptionBase.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   classauto__apms__util_1_1PluginClassLoader.rst
+
+Enums
+*****
+
+
+.. toctree::
+   :maxdepth: 1
+
+   enum_group__auto__apms__util_1ga8def3da5db948bd2e7727bc6bb2032cb.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   enum_group__auto__apms__util_1ga8bba9377700101e4a63f550e436d1ee1.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   enum_group__auto__apms__util_1gab22cae65426e01d6cb8c961c726d840f.rst
+
+Functions
+*********
+
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga8aef66ef74d7e817b3dba660a2ab3bbe.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga26d1cc4c19097b3deb2cc7c98b25748c.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga8b5c7b5382f9835da0e937d08a3ae66b.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga8979d95201a925f6524f9413e74b74f8.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga1e57be4a3189f25e8c145aa93550c07d.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1gabbaa3e1d45d5733e8348af54b61841fa.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga1aa65bc57e6001b9a6254280bade88ef.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga5895aab44d575c01e18de138c9ad0992.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga52a132b3de3720d7421ce7f49f7b766d.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga0fa1ba55c5e0a44a705403ee5c1fb8cf.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1gae1b8af60a949b81dce119c4f260bc773.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga7989c884b003bb1510022b4a1df41bd4.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga9e82bc25ea431ee055ef4728ae2d3e9c.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga5c77f49068aaa8b8a7f9f4c039359f99.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1gaff05f09c20fe90c8c2c605da52e20a22.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga3e7540f3fcaffba2d61838d39e5f5713.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   function_group__auto__apms__util_1ga297493100cc10a04f7568ec38b26b924.rst
+
+Variables
+*********
+
+
+.. toctree::
+   :maxdepth: 1
+
+   variable_namespaceauto__apms__util_1aa06d6a9f36fd1838de68932d7704a64c.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   variable_namespaceauto__apms__util_1ab9f11563ac03b87f54a71977995805d8.rst
+
+Defines
+*******
+
+
+.. toctree::
+   :maxdepth: 1
+
+   define_group__auto__apms__util_1ga1a7a1c5c9de6370beebb4b36f87c7179.rst
+
+Directories
+***********
+
+
+.. toctree::
+   :maxdepth: 1
+
+   dir_include.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   dir_include_auto_apms_util.rst
+
+Files
+*****
+
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_action_client_wrapper.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_action_context.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_action_wrapper.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_container.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_exceptions.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_filesystem.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_logging.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_resource.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_string.hpp.rst
+
+.. toctree::
+   :maxdepth: 1
+
+   file_include_auto_apms_util_yaml.hpp.rst

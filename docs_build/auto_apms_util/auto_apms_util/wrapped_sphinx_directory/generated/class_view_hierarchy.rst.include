@@ -1,0 +1,18 @@
+
+Class Hierarchy
+---------------
+
+
+.. raw:: html
+
+   <ul class="treeView" id="class-treeView">
+     <li>
+       <ul class="collapsibleList">
+         <li>Namespace <a href="namespace_auto_apms_util.html#namespace-auto-apms-util">auto_apms_util</a><ul><li>Namespace <a href="namespace_auto_apms_util__exceptions.html#namespace-auto-apms-util-exceptions">auto_apms_util::exceptions</a><ul><li>Struct <a href="structauto__apms__util_1_1exceptions_1_1ResourceError.html#exhale-struct-structauto-apms-util-1-1exceptions-1-1ResourceError">ResourceError</a></li><li>Struct <a href="structauto__apms__util_1_1exceptions_1_1ResourceIdentityFormatError.html#exhale-struct-structauto-apms-util-1-1exceptions-1-1ResourceIdentityFormatError">ResourceIdentityFormatError</a></li><li>Struct <a href="structauto__apms__util_1_1exceptions_1_1SetLoggingSeverityError.html#exhale-struct-structauto-apms-util-1-1exceptions-1-1SetLoggingSeverityError">SetLoggingSeverityError</a></li><li>Struct <a href="structauto__apms__util_1_1exceptions_1_1YAMLFormatError.html#exhale-struct-structauto-apms-util-1-1exceptions-1-1YAMLFormatError">YAMLFormatError</a></li><li class="lastChild">Class <a href="classauto__apms__util_1_1exceptions_1_1ExceptionBase.html#exhale-class-classauto-apms-util-1-1exceptions-1-1ExceptionBase">ExceptionBase</a></li></ul></li><li>Template Class <a href="classauto__apms__util_1_1ActionClientWrapper.html#exhale-class-classauto-apms-util-1-1ActionClientWrapper">ActionClientWrapper</a></li><li>Template Class <a href="classauto__apms__util_1_1ActionContext.html#exhale-class-classauto-apms-util-1-1ActionContext">ActionContext</a></li><li>Template Class <a href="classauto__apms__util_1_1ActionWrapper.html#exhale-class-classauto-apms-util-1-1ActionWrapper">ActionWrapper</a></li><li>Template Class <a href="classauto__apms__util_1_1PluginClassLoader.html#exhale-class-classauto-apms-util-1-1PluginClassLoader">PluginClassLoader</a></li><li>Enum <a href="enum_group__auto__apms__util_1ga8def3da5db948bd2e7727bc6bb2032cb.html#exhale-enum-group-auto-apms-util-1ga8def3da5db948bd2e7727bc6bb2032cb">ActionGoalStatus</a></li><li>Enum <a href="enum_group__auto__apms__util_1ga8bba9377700101e4a63f550e436d1ee1.html#exhale-enum-group-auto-apms-util-1ga8bba9377700101e4a63f550e436d1ee1">ActionStatus</a></li><li class="lastChild">Enum <a href="enum_group__auto__apms__util_1gab22cae65426e01d6cb8c961c726d840f.html#exhale-enum-group-auto-apms-util-1gab22cae65426e01d6cb8c961c726d840f">TextColor</a></li></ul></li>
+       </ul>
+     </li><!-- only tree view element -->
+   </ul><!-- /treeView class-treeView -->
+
+.. end raw html for treeView
+
+
