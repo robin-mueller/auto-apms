@@ -1,0 +1,97 @@
+name: Deploy rosdoc2 docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - jazzy
+  pull_request:
+    branches:
+      - "*"
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install ROS 2 Humble
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt-get install -y \
+            graphviz \
+            doxygen \
+            python3-pip \
+            python3-setuptools \
+            python3-wheel
+      
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install \
+            rosdoc2 \
+            sphinx \
+            breathe \
+            sphinx-rtd-theme \
+            myst-parser
+      
+      - name: Install ROS 2 dependencies
+        run: |
+          source /opt/ros/humble/setup.bash
+          rosdep update
+          rosdep install --from-paths . --ignore-src -r -y
+      
+      - name: Build packages
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --packages-up-to auto_apms_examples
+      
+      - name: Generate documentation with rosdoc2
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+          rosdoc2 build --package-paths auto_apms_util auto_apms_behavior_tree_core auto_apms_behavior_tree auto_apms_mission auto_apms_px4 auto_apms_simulation auto_apms_examples auto_apms_interfaces --output-directory docs
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,15 @@
+%YAML 1.2
+---
+# Workspace-level rosdoc2 configuration for AutoAPMS
+
+settings:
+  - builder: "doxygen"
+  - builder: "sphinx"
+
+doxygen_settings:
+  generate_tagfile: true
+
+sphinx_settings:
+  config_file: "conf.py"
+  source_dir: "src"
+  builder: "html"

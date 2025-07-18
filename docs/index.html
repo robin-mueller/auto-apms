@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoAPMS Documentation</title>
+    <link rel="stylesheet" href="doc/doxygen-awesome.css">
+    <link rel="icon" type="image/png" href="doc/favicon-96x96.png">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .package-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            transition: transform 0.2s ease;
+        }
+        .package-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .package-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .package-card p {
+            margin: 0 0 15px 0;
+            color: #666;
+        }
+        .package-card a {
+            color: #0066cc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .package-card a:hover {
+            text-decoration: underline;
+        }
+        .info-section {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .info-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-section ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .info-section li {
+            margin-bottom: 5px;
+        }
+        .info-section a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .info-section a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="doc/favicon-96x96.png" alt="AutoAPMS Logo" class="logo">
+            <h1>AutoAPMS Documentation</h1>
+            <p>Automated Action Planning and Management System for ROS 2</p>
+        </div>
+        
+        <div class="package-grid">
+            <div class="package-card">
+                <h3>auto_apms_util</h3>
+                <p>Core utilities and helper functions for AutoAPMS</p>
+                <a href="auto_apms_util/index.html">View Documentation →</a>
+            </div>
+            
+            <div class="package-card">
+                <h3>auto_apms_behavior_tree_core</h3>
+                <p>Core behavior tree functionality and base classes</p>
+                <a href="auto_apms_behavior_tree_core/index.html">View Documentation →</a>
+            </div>
+            
+            <div class="package-card">
+                <h3>auto_apms_behavior_tree</h3>
+                <p>Extended behavior tree features and implementations</p>
+                <a href="auto_apms_behavior_tree/index.html">View Documentation →</a>
+            </div>
+            
+            <div class="package-card">
+                <h3>auto_apms_mission</h3>
+                <p>Mission management and orchestration functionality</p>
+                <a href="auto_apms_mission/index.html">View Documentation →</a>
+            </div>
+            
+            <div class="package-card">
+                <h3>auto_apms_px4</h3>
+                <p>PX4 integration components and utilities</p>
+                <a href="auto_apms_px4/index.html">View Documentation →</a>
+            </div>
+            
+            <div class="package-card">
+                <h3>auto_apms_simulation</h3>
+                <p>Simulation components and testing utilities</p>
+                <a href="auto_apms_simulation/index.html">View Documentation →</a>
+            </div>
+            
+            <div class="package-card">
+                <h3>auto_apms_examples</h3>
+                <p>Example implementations and usage demonstrations</p>
+                <a href="auto_apms_examples/index.html">View Documentation →</a>
+            </div>
+            
+            <div class="package-card">
+                <h3>auto_apms_interfaces</h3>
+                <p>ROS 2 message and service definitions</p>
+                <a href="auto_apms_interfaces/index.html">View Documentation →</a>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2>Project Information</h2>
+            <ul>
+                <li><strong>Website:</strong> <a href="https://robin-mueller.github.io/auto-apms-guide/">https://robin-mueller.github.io/auto-apms-guide/</a></li>
+                <li><strong>Repository:</strong> <a href="https://github.com/robin-mueller/auto-apms">https://github.com/robin-mueller/auto-apms</a></li>
+                <li><strong>License:</strong> Apache License 2.0</li>
+                <li><strong>Maintainer:</strong> Robin Müller</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

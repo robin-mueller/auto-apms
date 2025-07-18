@@ -13,6 +13,22 @@ test.xml
 *.dox
 *.wikidoc
 
+# Ignore rosdoc2 generated documentation (keep only index.html and doc assets)
+docs/auto_apms_*/
+docs/html/
+docs/xml/
+docs/latex/
+docs/man/
+docs/rtf/
+docs/docbook/
+docs/sqlite3/
+docs/perlmod/
+docs/searchdata.xml
+docs/*.tag
+docs/*.map
+docs/*.md5
+docs/*.tmp
+
 # eclipse stuff
 .project
 .cproject

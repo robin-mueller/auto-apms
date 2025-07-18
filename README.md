@@ -95,10 +95,17 @@ https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
 
 Make sure to visit the [User Guide](https://robin-mueller.github.io/auto-apms-guide/introduction/about) for tutorials and best practices when writing software using AutoAPMS.
 
-We also offer an extensive [API Documentation](https://robin-mueller.github.io/auto-apms/) which is created using Doxygen >= 1.10. To generate the documentation run the following from the repository's root:
+We also offer an extensive [API Documentation](https://robin-mueller.github.io/auto-apms/) which is created using rosdoc2 for ROS 2 style documentation. To generate the documentation run the following from the repository's root:
 
 ```bash
-doxygen doc/Doxyfile
+# Install rosdoc2 if not already installed
+pip install rosdoc2
+
+# Generate documentation for all packages
+rosdoc2 build --package-path . --output-path docs --config-path rosdoc2.yaml
+
+# Alternatively, generate documentation for individual packages
+rosdoc2 build --package-path auto_apms_util --output-path docs/auto_apms_util --config-path auto_apms_util/rosdoc2.yaml
 ```
 
 # 🌟 Credits
