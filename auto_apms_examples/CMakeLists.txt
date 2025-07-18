@@ -78,6 +78,7 @@ auto_apms_behavior_tree_declare_trees(
 )
 
 auto_apms_behavior_tree_declare_trees(
+    "config/behavior_tree/demo.xml"
     "config/behavior_tree/pyrobosim/hogwarts.xml"
     "config/behavior_tree/pyrobosim/hogwarts_contingency.xml"
     NODE_MANIFEST

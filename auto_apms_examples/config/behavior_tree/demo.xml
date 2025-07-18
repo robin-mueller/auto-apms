@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+
+  <BehaviorTree ID="HelloWorld">
+    <Sequence>
+      <Logger message="Hello World!"
+              level="INFO"/>
+      <Sleep msec="200"/>
+      <Sequence>
+        <Script code="name:=&apos;not given&apos;"/>
+        <ForceSuccess _post="text := &apos;My name is &apos; + name">
+          <GetParameterString parameter="bb.name"
+                              value="{name}"
+                              node=""/>
+        </ForceSuccess>
+        <Logger message="{text}"
+                level="INFO"/>
+      </Sequence>
+      <Sleep msec="200"/>
+    </Sequence>
+  </BehaviorTree>
+
+</root>
