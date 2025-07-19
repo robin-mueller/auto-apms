@@ -30,7 +30,8 @@ setup(
         ],
         "auto_apms_ros2behavior.verb.node": [
             "plugins = auto_apms_ros2behavior.verb.node.plugins:PluginsVerb",
-            "manifests = auto_apms_ros2behavior.verb.node.manifests:ManifestsVerb",
+            "manifest = auto_apms_ros2behavior.verb.node.manifest:ManifestVerb",
+            "model = auto_apms_ros2behavior.verb.node.model:ModelVerb",
             "call = auto_apms_ros2behavior.verb.node.call:CallVerb",
         ]
     },

@@ -23,20 +23,18 @@ class CallVerb(VerbExtension):
     """List all available behavior resources."""
 
     def add_arguments(self, parser, cli_name):
-        manifest_arg_name = "manifest"
         manifest_arg = parser.add_argument(
-            manifest_arg_name,
+            "manifest",
             type=NodeManifest.from_resource,
-            help="The identity of the node manifest to use for registering node_name.",
+            help="Identity string of the node manifest to use for registering node_name.",
         )
         manifest_arg.completer = PrefixFilteredChoicesCompleter(get_node_manifest_resource_identities())
-        node_name_arg_name = "node_name"
         node_name_arg = parser.add_argument(
-            node_name_arg_name,
+            "node_name",
             type=str,
-            help="The registration name of the node to call.",
+            help="Registration name of the node to call.",
         )
-        node_name_arg.completer = NodeManifestFilteredRegistrationNameCompleter(manifest_arg_name)
+        node_name_arg.completer = NodeManifestFilteredRegistrationNameCompleter("manifest")
         parser.add_argument(
             "port_values",
             nargs="*",

@@ -17,6 +17,7 @@
 #include <map>
 #include <vector>
 
+#include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_options.hpp"
 #include "auto_apms_util/exceptions.hpp"
 #include "auto_apms_util/yaml.hpp"
@@ -259,6 +260,68 @@ public:
 
 private:
   Map map_;
+};
+
+/**
+ * @brief Class containing behavior tree node manifest resource data.
+ */
+class NodeManifestResource
+{
+public:
+  using Identity = NodeManifestResourceIdentity;
+
+  /**
+   * @brief Constructor of a node manifest resource object.
+   * @param search_identity Node manifest resource identity used for searching the corresponding resource.
+   * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if @p search_identity has wrong format.
+   * @throws auto_apms_util::exceptions::ResourceError if resource cannot be determined using @p search_identity.
+   * @throws auto_apms_behavior_tree::exceptions::NodeManifestError if the resource is not a valid node manifest.
+   */
+  NodeManifestResource(const Identity & search_identity);
+
+  /**
+   * @brief Constructor of a node manifest resource object.
+   * @param search_identity Node manifest resource identity string used for searching the corresponding resource.
+   * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if @p search_identity has wrong format.
+   * @throws auto_apms_util::exceptions::ResourceError if resource cannot be determined using @p search_identity.
+   * @throws auto_apms_behavior_tree::exceptions::NodeManifestError if the resource is not a valid node manifest.
+   */
+  NodeManifestResource(const std::string & search_identity);
+
+  /**
+   * @brief Constructor of a node manifest resource object.
+   * @param search_identity C-style Nnode manifest resource identity string used for searching the corresponding
+   * resource.
+   * @throws auto_apms_util::exceptions::ResourceIdentityFormatError if @p search_identity has wrong format.
+   * @throws auto_apms_util::exceptions::ResourceError if resource cannot be determined using @p search_identity.
+   * @throws auto_apms_behavior_tree::exceptions::NodeManifestError if the resource is not a valid node manifest.
+   */
+  NodeManifestResource(const char * search_identity);
+
+  /**
+   * @brief Get the unique identity for this resource.
+   * @return Identity object.
+   */
+  const Identity & getIdentity() const;
+
+  /**
+   * @brief Get the node manifest object associated with this resource.
+   * @return Node manifest object.
+   */
+  const NodeManifest & getNodeManifest() const;
+
+  /**
+   * @brief Get the node model object associated with this resource.
+   * @return Node model object.
+   */
+  const NodeModelMap & getNodeModel() const;
+
+private:
+  Identity unique_identity_;
+  std::string node_manifest_file_path_;
+  NodeManifest node_manifest_;
+  std::string node_model_file_path_;
+  NodeModelMap node_model_;
 };
 
 }  // namespace auto_apms_behavior_tree::core

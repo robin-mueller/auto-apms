@@ -36,6 +36,7 @@ from ros2run.api import run_executable, get_executable_path
 from auto_apms_behavior_tree_core.resources import (
     BehaviorResource,
     NodeManifest,
+    NodeManifestResourceIdentity,
     get_behavior_resource_identities,
     _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP,
     _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP,
@@ -99,7 +100,11 @@ class NodeManifestFilteredRegistrationNameCompleter(BaseCompleter):
         
     def __call__(self, prefix, parsed_args, **kwargs):
         node_manifest = getattr(parsed_args, self._manifest_arg_name, None)
-        if not node_manifest or not isinstance(node_manifest, NodeManifest):
+        if not node_manifest:
+            return []
+        if isinstance(node_manifest, (str, NodeManifestResourceIdentity)):
+            node_manifest = NodeManifest.from_resource(node_manifest)
+        if not isinstance(node_manifest, NodeManifest):
             return []
         return (name for name in node_manifest.get_node_names() if name.startswith(prefix))
 

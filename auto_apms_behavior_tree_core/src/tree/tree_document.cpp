@@ -989,7 +989,7 @@ TreeDocument & TreeDocument::addNodeModel(bool include_native)
   return *this;
 }
 
-TreeDocument::NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc)
+NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc)
 {
   const tinyxml2::XMLElement * root = doc.RootElement();
   if (!root) {
@@ -1061,7 +1061,7 @@ TreeDocument::NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & do
   return model_map;
 }
 
-TreeDocument::NodeModelMap TreeDocument::getNodeModel(bool include_native) const
+NodeModelMap TreeDocument::getNodeModel(bool include_native) const
 {
   tinyxml2::XMLDocument model_doc;
   if (

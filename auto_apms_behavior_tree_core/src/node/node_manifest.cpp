@@ -17,6 +17,7 @@
 #include <fstream>
 
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
+#include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 #include "auto_apms_util/resource.hpp"
 #include "auto_apms_util/string.hpp"
 
@@ -109,45 +110,7 @@ NodeManifest NodeManifest::fromFiles(const std::vector<std::string> & paths)
 
 NodeManifest NodeManifest::fromResource(const NodeManifestResourceIdentity & search_identity)
 {
-  std::set<std::string> search_packages;
-  if (!search_identity.package_name.empty()) {
-    search_packages.insert(search_identity.package_name);
-  } else {
-    search_packages =
-      auto_apms_util::getPackagesWithResourceType(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST);
-  }
-
-  std::vector<std::string> matching_file_paths;
-  for (const auto & p : search_packages) {
-    std::string content;
-    std::string base_path;
-    if (ament_index_cpp::get_resource(
-          _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST, p, content, &base_path)) {
-      std::vector<std::string> lines =
-        auto_apms_util::splitString(content, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP);
-      for (const std::string & line : lines) {
-        std::vector<std::string> parts = auto_apms_util::splitString(
-          line, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP, false);
-        if (parts.size() != 2) {
-          throw auto_apms_util::exceptions::ResourceError(
-            "Invalid node manifest resource file (Package: '" + p + "'). Invalid line: " + line + ".");
-        }
-        if (parts[0] == search_identity.metadata_id) {
-          matching_file_paths.push_back(base_path + "/" + parts[1]);
-        }
-      }
-    }
-  }
-
-  if (matching_file_paths.empty()) {
-    throw auto_apms_util::exceptions::ResourceError(
-      "No node manifest resource was found using identity '" + search_identity.str() + "'.");
-  }
-  if (matching_file_paths.size() > 1) {
-    throw auto_apms_util::exceptions::ResourceError(
-      "There are multiple node manifest resources with metadata ID '" + search_identity.str() + "'.");
-  }
-  return fromFile(matching_file_paths[0]);
+  return NodeManifestResource(search_identity).getNodeManifest();
 }
 
 void NodeManifest::toFile(const std::string & file_path) const
@@ -232,5 +195,80 @@ size_t NodeManifest::size() const { return map_.size(); }
 bool NodeManifest::empty() const { return map_.empty(); }
 
 const NodeManifest::Map & NodeManifest::map() const { return map_; }
+
+NodeManifestResource::NodeManifestResource(const Identity & search_identity)
+{
+  std::set<std::string> search_packages;
+  if (!search_identity.package_name.empty()) {
+    search_packages.insert(search_identity.package_name);
+  } else {
+    search_packages =
+      auto_apms_util::getPackagesWithResourceType(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST);
+  }
+
+  size_t matching_count = 0;
+  for (const auto & p : search_packages) {
+    std::string content;
+    std::string base_path;
+    if (ament_index_cpp::get_resource(
+          _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST, p, content, &base_path)) {
+      std::vector<std::string> lines =
+        auto_apms_util::splitString(content, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP);
+      for (const std::string & line : lines) {
+        std::vector<std::string> parts = auto_apms_util::splitString(
+          line, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP, false);
+        if (parts.size() != 3) {
+          throw auto_apms_util::exceptions::ResourceError(
+            "Invalid node manifest resource file (Package: '" + p + "'). Invalid line: " + line + ".");
+        }
+
+        // Determine if resource is matching
+        std::string found_metadata_id = parts[0];
+        if (found_metadata_id != search_identity.metadata_id) continue;
+
+        // Now fill the other member variables in case the resource matches (if match is not unique, error is thrown
+        // later and the object is discarded)
+
+        unique_identity_.package_name = p;
+        unique_identity_.metadata_id = found_metadata_id;
+        node_manifest_file_path_ = base_path + "/" + parts[1];
+        node_model_file_path_ = base_path + "/" + parts[2];
+        node_manifest_ = NodeManifest::fromFile(node_manifest_file_path_);
+
+        tinyxml2::XMLDocument model_doc;
+        if (model_doc.LoadFile(node_model_file_path_.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+          throw exceptions::TreeDocumentError(
+            "Error parsing the node model associated with node manifest " + unique_identity_.str());
+        }
+        node_model_ = TreeDocument::getNodeModel(model_doc);
+      }
+    }
+  }
+
+  if (matching_count == 0) {
+    throw auto_apms_util::exceptions::ResourceError(
+      "No node manifest resource was found using identity '" + search_identity.str() + "'.");
+  }
+  if (matching_count > 1) {
+    throw auto_apms_util::exceptions::ResourceError(
+      "There are multiple node manifest resources with metadata ID '" + search_identity.str() + "'.");
+  }
+}
+
+NodeManifestResource::NodeManifestResource(const std::string & search_identity)
+: NodeManifestResource(NodeManifestResourceIdentity(search_identity))
+{
+}
+
+NodeManifestResource::NodeManifestResource(const char * search_identity)
+: NodeManifestResource(std::string(search_identity))
+{
+}
+
+const NodeManifestResource::Identity & NodeManifestResource::getIdentity() const { return unique_identity_; }
+
+const NodeManifest & NodeManifestResource::getNodeManifest() const { return node_manifest_; }
+
+const NodeModelMap & NodeManifestResource::getNodeModel() const { return node_model_; }
 
 }  // namespace auto_apms_behavior_tree::core

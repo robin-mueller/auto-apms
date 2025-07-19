@@ -17,6 +17,7 @@ import os
 import yaml
 
 from auto_apms_util.resources import *
+from .tree.node_model import NodeModel
 
 
 _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP = "\\n"
@@ -101,6 +102,7 @@ class NodeManifestResourceIdentity:
     def __lt__(self, other: "NodeManifestResourceIdentity") -> bool:
         return str(self) < str(other)
 
+    @property
     def empty(self) -> bool:
         """Determine whether this behavior resource identity object is considered empty."""
         return not self.package_name and not self.metadata_id
@@ -150,7 +152,7 @@ class NodeManifest:
             KeyError: If the node name is not found in the manifest.
         """
         if node_name not in self._node_dict:
-            raise KeyError(f"Node '{node_name}' not found in manifest '{self._identity}'")
+            raise KeyError(f"Node '{node_name}' not found in manifest")
         return self._node_dict[node_name].copy()
 
     def has_node(self, node_name: str) -> bool:
@@ -220,10 +222,12 @@ class NodeManifest:
             self._node_dict[node_name] = options
         return self
 
+    @property
     def size(self) -> int:
         """Get the number of behavior tree nodes this manifest holds registration options for."""
         return len(self._node_dict)
 
+    @property
     def empty(self) -> bool:
         """Determine whether any node registration options have been added to the manifest."""
         return len(self._node_dict) == 0
@@ -316,12 +320,37 @@ class NodeManifest:
         Returns:
             Node manifest created from the corresponding resource.
 
-        Raises:
-            ResourceIdentityFormatError: If identity has wrong format.
-            ResourceError: If resource cannot be determined using identity.
+
         """
         if isinstance(search_identity, str):
             search_identity = NodeManifestResourceIdentity(search_identity)
+        return NodeManifestResource(search_identity).node_manifest
+
+
+class NodeManifestResource:
+    """
+    Class containing behavior tree node manifest resource data.
+
+    This is the Python equivalent of auto_apms_behavior_tree::core::NodeManifestResource.
+    """
+
+    def __init__(self, search_identity: NodeManifestResourceIdentity | str):
+        """
+        Initialize a node manifest resource using an identity.
+
+        Args:
+            search_identity: Node manifest resource identity object used for searching the corresponding resource.
+        """
+        if isinstance(search_identity, str):
+            search_identity = NodeManifestResourceIdentity(search_identity)
+        elif not isinstance(search_identity, NodeManifestResourceIdentity):
+            raise TypeError("Identity must be a NodeManifestResourceIdentity object or a string.")
+
+        # Load resource data from ament index
+        self._unique_identity = NodeManifestResourceIdentity()
+        self._node_manifest_file_path = ""
+        self._node_manifest = NodeManifest()
+        self._node_model_file_path = ""
 
         search_packages: set[str] = set()
         if search_identity.package_name:
@@ -331,7 +360,7 @@ class NodeManifest:
                 ament_index_python.get_resources(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST)
             )
 
-        matching_file_paths: list[str] = []
+        matching_count = 0
         for package in search_packages:
             content, base_path = ament_index_python.get_resource(
                 _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST, package
@@ -339,19 +368,71 @@ class NodeManifest:
             lines = content.splitlines()
             for line in lines:
                 parts = line.split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP)
-                if len(parts) != 2:
+                if len(parts) != 3:
                     raise ResourceError(
                         f"Invalid node manifest resource file (Package: '{package}'). Invalid line: {line}."
                     )
-                if parts[0] == search_identity.metadata_id:
-                    matching_file_paths.append(os.path.join(base_path, parts[1]))
 
-        if not matching_file_paths:
+                found_metadata_id = parts[0]
+                if found_metadata_id != search_identity.metadata_id:
+                    continue
+
+                # Found matching resource - Increase counter
+                matching_count += 1
+
+                # Now fill the other member variables in case the resource matches (if match is not unique, error is thrown later and the object is discarded)
+
+                self._unique_identity.package_name = package
+                self._unique_identity.metadata_id = found_metadata_id
+                self._node_manifest_file_path = os.path.join(base_path, parts[1])
+                self._node_manifest = NodeManifest.from_file(self._node_manifest_file_path)
+                self._node_model_file_path = os.path.join(base_path, parts[2])
+                self._node_model = NodeModel(self._node_model_file_path)
+
+        if matching_count == 0:
             raise ResourceError(f"No node manifest resource was found using identity '{search_identity}'.")
-        if len(matching_file_paths) > 1:
+        if matching_count > 1:
             raise ResourceError(f"There are multiple node manifest resources with metadata ID '{search_identity}'.")
 
-        return NodeManifest.from_files([matching_file_paths[0]])
+    @staticmethod
+    def find(metadata_id: str, package_name: str = "") -> "NodeManifestResource":
+        """
+        Find a node manifest resource by metadata ID.
+
+        Args:
+            metadata_id: Metadata ID of the resource to find.
+            package_name: Optional package name to narrow search.
+
+        Returns:
+            NodeManifestResource instance for the found resource.
+
+        Raises:
+            ResourceError: If resource cannot be found.
+        """
+        return NodeManifestResource(
+            package_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + metadata_id
+        )
+
+    @property
+    def identity(self) -> "NodeManifestResource":
+        """
+        Get the unique identity for this resource.
+        """
+        return self._unique_identity
+
+    @property
+    def node_manifest(self) -> NodeManifest:
+        """
+        Get the behavior tree node manifest object for this resource.
+        """
+        return self._node_manifest
+    
+    @property
+    def node_model(self) -> NodeModel:
+        """
+        Get the behavior tree node model associated with this resource.
+        """
+        return self._node_model
 
 
 class BehaviorResourceIdentity:
@@ -431,6 +512,7 @@ class BehaviorResourceIdentity:
     def __lt__(self, other: "BehaviorResourceIdentity") -> bool:
         return str(self) < str(other)
 
+    @property
     def empty(self) -> bool:
         """Determine whether this behavior resource identity object is considered empty."""
         return not self.package_name and not self.behavior_alias
