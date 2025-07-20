@@ -17,7 +17,6 @@ from collections import defaultdict
 from auto_apms_behavior_tree_core.tree.node_model import NodePortDirection
 from auto_apms_behavior_tree_core.resources import (
     NodeManifestResource,
-    NodeManifestResourceIdentity,
     get_node_manifest_resource_identities,
 )
 from ...verb import VerbExtension
@@ -28,48 +27,45 @@ class ModelVerb(VerbExtension):
     """Inspect behavior tree node models."""
 
     def add_arguments(self, parser, cli_name):
-        identity_arg = parser.add_argument(
-            "identity",
-            type=NodeManifestResourceIdentity,
+        manifest_arg = parser.add_argument(
+            "manifest",
+            type=NodeManifestResource,
             help="Identity string of a node manifest",
         )
-        identity_arg.completer = PrefixFilteredChoicesCompleter(get_node_manifest_resource_identities())
+        manifest_arg.completer = PrefixFilteredChoicesCompleter(get_node_manifest_resource_identities())
         node_name_arg = parser.add_argument(
             "node_name",
             type=str,
             help="Registration name for one of the nodes from identity",
             nargs="?",
         )
-        node_name_arg.completer = NodeManifestFilteredRegistrationNameCompleter("identity")
+        node_name_arg.completer = NodeManifestFilteredRegistrationNameCompleter("manifest")
 
     def main(self, *, args):
-        # Get the node model from the identity
-        resource = NodeManifestResource(args.identity)
-
         # If specific node name is provided, show details for that node only
         if args.node_name:
-            if args.node_name in resource.node_model:
+            if args.node_name in args.manifest.node_model:
                 self._print_node_details(
-                    resource.node_model.get_node_type(args.node_name).name,
+                    args.manifest.node_model[args.node_name].type.name,
                     args.node_name,
-                    resource.node_manifest.get_node_registration_options(args.node_name)["class_name"],
-                    resource.node_model[args.node_name],
+                    args.manifest.node_manifest.get_node_registration_options(args.node_name)["class_name"],
+                    args.manifest.node_model[args.node_name].port_infos,
                 )
             else:
-                print(f"Node '{args.node_name}' not found in model associated with manifest '{args.identity}'")
+                print(f"Node '{args.node_name}' not found in model associated with manifest '{args.manifest.identity}'")
                 return 1
         else:
             # Print overview of all nodes in the model and their type
             grouped = defaultdict(list)
-            for entry, _ in resource.node_model.items():
-                grouped[entry.node_type].append(entry.name)
+            for name, node in args.manifest.node_model.items():
+                grouped[node.type].append(name)
 
             for type_name, node_names in dict(sorted(grouped.items(), key=lambda item: item[0].name)).items():
                 print(f"{type_name.name} ({len(node_names)})")
                 for node_name in sorted(node_names):
                     # Print each node name with its type
                     print(
-                        f"  - {node_name} ({resource.node_manifest.get_node_registration_options(node_name)["class_name"]})"
+                        f"  - {node_name} ({args.manifest.node_manifest.get_node_registration_options(node_name)["class_name"]})"
                     )
 
         return 0

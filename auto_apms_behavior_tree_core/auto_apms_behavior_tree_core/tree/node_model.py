@@ -56,12 +56,12 @@ class NodePortInfo(NamedTuple):
     port_direction: NodePortDirection
 
 
-class NodeModelEntry(NamedTuple):
-    name: str
-    node_type: NodeType
+class NodeModel(NamedTuple):
+    type: NodeType
+    port_infos: list[NodePortInfo]
 
 
-class NodeModel(dict[NodeModelEntry, NodePortInfo]):
+class NodeModelMap(dict[str, NodeModel]):
     """
     Represents a behavior tree node model as a custom dictionary mapping the
     registration names to the respective NodePortInfo objects.
@@ -70,27 +70,6 @@ class NodeModel(dict[NodeModelEntry, NodePortInfo]):
     def __init__(self, xml_path: str):
         super().__init__()
         self._parse_model_file(xml_path)
-        
-    def __contains__(self, key):
-        return key in [entry.name for entry in self.keys()]
-    
-    def __getitem__(self, key):
-        if isinstance(key, str):
-            for entry in self.keys():
-                if entry.name == key:
-                    return super().__getitem__(entry)
-            raise KeyError(f"No entry with name '{key}' found")
-        return super().__getitem__(key)
-    
-    def get_node_type(self, node_name: str) -> NodeType:
-        """
-        Get the type of a node by its registration name.
-        Returns NodeType.UNDEFINED if not found.
-        """
-        for entry in self.keys():
-            if entry.name == node_name:
-                return entry.node_type
-        return NodeType.UNDEFINED
 
     def _parse_model_file(self, xml_path: str) -> None:
         """Parse the XML model file and populate the dictionary."""
@@ -105,18 +84,15 @@ class NodeModel(dict[NodeModelEntry, NodePortInfo]):
 
             # Parse each node type (Action, Condition, Control, Decorator, SubTree)
             for node_element in tree_nodes_model:
-                entry = NodeModelEntry(
-                    name=node_element.get("ID", ""), node_type=NodeType.from_string(node_element.tag)
-                )
-
                 # Parse all ports for this node
-                ports = []
+                port_infos = []
                 for port_element in node_element:
                     port_info = self._parse_port(port_element)
                     if port_info:
-                        ports.append(port_info)
-
-                self[entry] = ports
+                        port_infos.append(port_info)
+                key = node_element.get("ID", "")
+                if key:
+                    self[key] = NodeModel(type=NodeType.from_string(node_element.tag), port_infos=port_infos)
 
         except ET.ParseError as e:
             raise ValueError(f"Failed to parse XML file: {e}")

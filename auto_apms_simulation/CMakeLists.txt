@@ -9,7 +9,8 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(rosidl_cmake REQUIRED)
-find_package(auto_apms_behavior_tree_core REQUIRED)
+find_package(auto_apms_behavior_tree REQUIRED)
+find_package(auto_apms_mission REQUIRED)
 
 set(_AUTO_APMS_SIMULATION__NODE_NAME "pyrobosim")
 set(_AUTO_APMS_SIMULATION__SERVICE_NAME__SET_LOCATION_STATE "set_location_state")
@@ -99,6 +100,22 @@ auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
 )
 
 #
+# ------------ Example Resources --------------
+#
+
+auto_apms_behavior_tree_declare_trees(
+    "behavior/hogwarts.xml"
+    "behavior/hogwarts_contingency.xml"
+    NODE_MANIFEST
+    # We combine previously installed node manifests
+    "auto_apms_behavior_tree::behavior_tree_nodes"
+    "${PROJECT_NAME}::behavior_tree_nodes"
+)
+auto_apms_mission_register_missions(
+    "behavior/pyrobosim_hogwarts_mission.yaml"
+)
+
+#
 # ------------ Packaging --------------
 #
 
@@ -126,6 +143,11 @@ install(
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
+)
+
+install(
+    DIRECTORY "launch"
+    DESTINATION "share/${PROJECT_NAME}"
 )
 
 install(PROGRAMS

@@ -249,7 +249,7 @@ protected:
  *
  * ```cmake
  * auto_apms_behavior_tree_register_behavior(
- *     "config/my_behavior.yaml"
+ *     "behavior/my_behavior.yaml"
  * )
  * ```
  *

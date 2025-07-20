@@ -111,13 +111,13 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
  *
  * ## Usage
  *
- * Given the user has specified a behavior tree named `MyBehaviorTree` inside the XML file `config/my_tree_file.xml`,
+ * Given the user has specified a behavior tree named `MyBehaviorTree` inside the XML file `behavior/my_tree_file.xml`,
  * the CMake macro `auto_apms_behavior_tree_declare_trees` must be called in the CMakeLists.txt of the parent package
  * (for example `my_package`) like this:
  *
  * ```cmake
  * auto_apms_behavior_tree_declare_trees(
- *     "config/my_tree_file.xml"
+ *     "behavior/my_tree_file.xml"
  * )
  * ```
  *

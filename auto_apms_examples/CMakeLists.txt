@@ -42,7 +42,7 @@ ament_target_dependencies(example_build_handlers
 auto_apms_behavior_tree_declare_nodes(example_nodes
     "auto_apms_examples::SimpleSkillClient"
     NODE_MANIFEST
-    "config/behavior_tree/simple_skill_node_manifest.yaml"
+    "behavior/simple_skill_node_manifest.yaml"
     NODE_MODEL_HEADER_TARGET example_build_handlers
 )
 
@@ -72,46 +72,25 @@ endmacro()
 #
 
 auto_apms_behavior_tree_declare_trees(
-    "config/behavior_tree/simple_skill_tree.xml"
+    "behavior/simple_skill_tree.xml"
     NODE_MANIFEST
     "${PROJECT_NAME}::example_nodes"
 )
 
 auto_apms_behavior_tree_declare_trees(
-    "config/behavior_tree/demo.xml"
-    "config/behavior_tree/pyrobosim/hogwarts.xml"
-    "config/behavior_tree/pyrobosim/hogwarts_contingency.xml"
+    "behavior/demo.xml"
     NODE_MANIFEST
-    # We combine previously installed node manifests
     "auto_apms_behavior_tree::behavior_tree_nodes"
-    "auto_apms_simulation::behavior_tree_nodes"
-)
-auto_apms_mission_register_missions(
-    "config/mission/pyrobosim_hogwarts_mission.yaml"
 )
 
 if(auto_apms_px4_FOUND)
     add_and_install_example_executable("src/px4_takeoff_land.cpp" auto_apms_util auto_apms_interfaces)
 
     auto_apms_behavior_tree_declare_trees(
-        "config/behavior_tree/px4/relative_goto/px4_relative_goto.xml"
+        "behavior/px4/px4_relative_goto.xml"
         NODE_MANIFEST
         "auto_apms_behavior_tree::behavior_tree_nodes"
         "auto_apms_px4::behavior_tree_nodes"
-    )
-    auto_apms_behavior_tree_declare_trees(
-        "config/behavior_tree/px4/contingency_mission/bringup.xml"
-        "config/behavior_tree/px4/contingency_mission/mission.xml"
-        "config/behavior_tree/px4/contingency_mission/shutdown.xml"
-        "config/behavior_tree/px4/contingency_mission/contingency/contingency_land.xml"
-        "config/behavior_tree/px4/contingency_mission/contingency/contingency_hold.xml"
-        "config/behavior_tree/px4/contingency_mission/emergency/emergency_rtl.xml"
-        NODE_MANIFEST
-        "auto_apms_behavior_tree::behavior_tree_nodes"
-        "auto_apms_px4::behavior_tree_nodes"
-    )
-    auto_apms_mission_register_missions(
-        "config/mission/px4_contingency_mission.yaml"
     )
 endif()
 

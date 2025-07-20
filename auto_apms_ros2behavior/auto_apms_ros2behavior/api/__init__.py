@@ -36,11 +36,13 @@ from ros2run.api import run_executable, get_executable_path
 from auto_apms_behavior_tree_core.resources import (
     BehaviorResource,
     NodeManifest,
+    NodeManifestResource,
     NodeManifestResourceIdentity,
     get_behavior_resource_identities,
     _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP,
     _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP,
 )
+from auto_apms_behavior_tree_core.tree.node_model import NodePortInfo
 
 
 GENERIC_NODE_NAME = HIDDEN_NODE_PREFIX + "auto_apms_ros2behavior"
@@ -91,22 +93,53 @@ class BehaviorResourceChoicesCompleter(BaseCompleter):
         if any(choices_without_category):
             return choices_without_category
         return choices
-    
-    
+
+
 class NodeManifestFilteredRegistrationNameCompleter(BaseCompleter):
-    def __init__(self, manifest_arg_name: str, *args, **kwargs):
+    def __init__(self, manifest_arg_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._manifest_arg_name = manifest_arg_name
-        
+
     def __call__(self, prefix, parsed_args, **kwargs):
         node_manifest = getattr(parsed_args, self._manifest_arg_name, None)
         if not node_manifest:
-            return []
+            return ()
         if isinstance(node_manifest, (str, NodeManifestResourceIdentity)):
             node_manifest = NodeManifest.from_resource(node_manifest)
+        if isinstance(node_manifest, NodeManifestResource):
+            node_manifest = node_manifest.node_manifest
         if not isinstance(node_manifest, NodeManifest):
-            return []
+            return ()
         return (name for name in node_manifest.get_node_names() if name.startswith(prefix))
+
+
+class NodePortValuesCompleter(BaseCompleter):
+    def __init__(self, manifest_arg_name, node_name_arg_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._manifest_arg_name = manifest_arg_name
+        self._node_name_arg_name = node_name_arg_name
+
+    def __call__(self, prefix, parsed_args, **kwargs):
+        node_manifest_resource = getattr(parsed_args, self._manifest_arg_name, None)
+        node_name = getattr(parsed_args, self._node_name_arg_name, None)
+        if not node_manifest_resource:
+            return ()
+        if not node_name:
+            return ()
+        if isinstance(node_manifest_resource, (str, NodeManifestResourceIdentity)):
+            node_manifest_resource = NodeManifestResource(node_manifest_resource)
+        if not isinstance(node_manifest_resource, NodeManifestResource):
+            return ()
+        model = node_manifest_resource.node_model[node_name]
+        return (self._get_suggestion(info) for info in model.port_infos if info.port_name.startswith(prefix))
+
+    @staticmethod
+    def _get_suggestion(port_info: NodePortInfo):
+        return (
+            f"{port_info.port_name}:={port_info.port_default}"
+            if port_info.port_has_default
+            else f"{port_info.port_name}:="
+        )
 
 
 def _add_behavior_resource_argument_to_parser(parser: ArgumentParser):
@@ -457,7 +490,8 @@ def sync_run_behavior_locally(
         ),
         argv=argv,
     )
-    
+
+
 def sync_run_tree_node_locally(
     node_name: str,
     registration_options: dict,
@@ -475,11 +509,11 @@ def sync_run_tree_node_locally(
     """
     required_package = "auto_apms_behavior_tree"
     required_command = "run_tree_node"
-    
+
     argv = [yaml.dump(registration_options)]
     if port_values:
         argv.append(yaml.dump(port_values))
-    
+
     # Add ros args
     argv.append("--ros-args")
 

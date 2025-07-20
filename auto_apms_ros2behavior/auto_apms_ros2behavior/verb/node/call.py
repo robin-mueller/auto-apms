@@ -14,9 +14,15 @@
 
 
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
-from auto_apms_behavior_tree_core.resources import NodeManifest, get_node_manifest_resource_identities
+from auto_apms_behavior_tree_core.resources import NodeManifestResource, get_node_manifest_resource_identities
 from ...verb import VerbExtension
-from ...api import PrefixFilteredChoicesCompleter, NodeManifestFilteredRegistrationNameCompleter, sync_run_tree_node_locally, parse_key_value_args
+from ...api import (
+    PrefixFilteredChoicesCompleter,
+    NodeManifestFilteredRegistrationNameCompleter,
+    NodePortValuesCompleter,
+    sync_run_tree_node_locally,
+    parse_key_value_args,
+)
 
 
 class CallVerb(VerbExtension):
@@ -25,7 +31,7 @@ class CallVerb(VerbExtension):
     def add_arguments(self, parser, cli_name):
         manifest_arg = parser.add_argument(
             "manifest",
-            type=NodeManifest.from_resource,
+            type=NodeManifestResource,
             help="Identity string of the node manifest to use for registering node_name.",
         )
         manifest_arg.completer = PrefixFilteredChoicesCompleter(get_node_manifest_resource_identities())
@@ -35,13 +41,14 @@ class CallVerb(VerbExtension):
             help="Registration name of the node to call.",
         )
         node_name_arg.completer = NodeManifestFilteredRegistrationNameCompleter("manifest")
-        parser.add_argument(
+        port_values_arg = parser.add_argument(
             "port_values",
             nargs="*",
-            metavar="port_name:=value",
+            metavar="port:=value",
             help="Port values to pass to the node",
             default=[],
         )
+        port_values_arg.completer = NodePortValuesCompleter("manifest", "node_name")
         logging_level_names = [enum.name.lower() for enum in LoggingSeverity]
         logging_arg = parser.add_argument(
             "--logging",
@@ -55,7 +62,7 @@ class CallVerb(VerbExtension):
     def main(self, *, args):
         return sync_run_tree_node_locally(
             node_name=args.node_name,
-            registration_options=args.manifest.get_node_registration_options(args.node_name),
+            registration_options=args.manifest.node_manifest.get_node_registration_options(args.node_name),
             port_values=parse_key_value_args(args.port_values),
             logging_level=args.logging,
         )

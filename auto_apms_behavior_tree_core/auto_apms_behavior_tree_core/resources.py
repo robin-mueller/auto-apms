@@ -17,7 +17,7 @@ import os
 import yaml
 
 from auto_apms_util.resources import *
-from .tree.node_model import NodeModel
+from .tree.node_model import NodeModelMap
 
 
 _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP = "\\n"
@@ -387,7 +387,7 @@ class NodeManifestResource:
                 self._node_manifest_file_path = os.path.join(base_path, parts[1])
                 self._node_manifest = NodeManifest.from_file(self._node_manifest_file_path)
                 self._node_model_file_path = os.path.join(base_path, parts[2])
-                self._node_model = NodeModel(self._node_model_file_path)
+                self._node_model = NodeModelMap(self._node_model_file_path)
 
         if matching_count == 0:
             raise ResourceError(f"No node manifest resource was found using identity '{search_identity}'.")
@@ -426,9 +426,9 @@ class NodeManifestResource:
         Get the behavior tree node manifest object for this resource.
         """
         return self._node_manifest
-    
+
     @property
-    def node_model(self) -> NodeModel:
+    def node_model(self) -> NodeModelMap:
         """
         Get the behavior tree node model associated with this resource.
         """

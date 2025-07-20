@@ -11,7 +11,8 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
 
-  <depend>auto_apms_behavior_tree_core</depend>
+  <depend>auto_apms_behavior_tree</depend>
+  <depend>auto_apms_mission</depend>
   <depend>rosidl_cmake</depend>
   <depend>rclpy</depend>
 
