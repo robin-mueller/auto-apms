@@ -14,6 +14,8 @@
 
 # 🤖 Streamlining Behaviors in ROS 2
 
+![auto-apms-gif](https://github.com/user-attachments/assets/0039aa09-9448-4102-9eb3-38138a805728)
+
 [AutoAPMS](https://robin-mueller.github.io/auto-apms-guide/) is a **heavily extensible** development framework for **behavior-based applications**. It integrates [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) with ROS 2, implements a **powerful execution engine** and offers convenient CLI tooling for deploying behaviors with ease.
 
 The intention of this project is to make it significantly more user-friendly and less error prone to develop autonomous robotics with behavior trees. Most of the packages are written in C++, but the core functionality can also be leveraged by a Python API.
