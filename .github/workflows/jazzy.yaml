@@ -29,14 +29,12 @@ jobs:
             auto_apms_util
             auto_apms_behavior_tree_core
             auto_apms_behavior_tree
-            auto_apms_px4
             auto_apms_mission
             auto_apms_simulation
             auto_apms_examples
             auto_apms_ros2behavior
           import-token: ${{ secrets.GITHUB_TOKEN }}
           target-ros2-distro: jazzy
-          vcs-repo-file-url: ${GITHUB_WORKSPACE}/dependencies.repos
           no-symlink-install: true
           colcon-defaults: |
             {
@@ -58,7 +56,7 @@ jobs:
         shell: bash
         run: |
           source ${{ steps.ros-build.outputs.ros-workspace-directory-name }}/install/setup.bash
-          ros2 run auto_apms_behavior_tree_core create_node_reference_markdown create_node_reference_markdown_output.md include_native auto_apms_behavior_tree::behavior_tree_nodes auto_apms_simulation::behavior_tree_nodes auto_apms_px4::behavior_tree_nodes
+          ros2 run auto_apms_behavior_tree_core create_node_reference_markdown create_node_reference_markdown_output.md include_native auto_apms_behavior_tree::behavior_tree_nodes auto_apms_simulation::behavior_tree_nodes
 
       - name: Checkout Documentation Repo
         if: github.event_name == 'push'

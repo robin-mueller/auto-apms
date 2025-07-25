@@ -1,7 +1,0 @@
-# Request
-float64 altitude_amsl_m
-float64 heading_rad 0  # From north in NED frame
----
-# Result
----
-# Feedback

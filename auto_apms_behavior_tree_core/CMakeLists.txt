@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(auto_apms_behavior_tree_core)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -46,55 +46,55 @@ set(_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_EXTRA "extra")
 # ------------ Library --------------
 #
 
-add_library(auto_apms_behavior_tree_core SHARED
-    "src/node/node_registration_options.cpp"
-    "src/node/node_model_type.cpp"
-    "src/node/node_manifest.cpp"
-    "src/node/ros_node_context.cpp"
-    "src/node/node_registration_loader.cpp"
-    "src/tree/script.cpp"
-    "src/tree/tree_resource.cpp"
-    "src/tree/tree_document.cpp"
-    "src/behavior.cpp"
-    "src/builder.cpp"
-    "src/convert.cpp"
+add_library(${PROJECT_NAME} SHARED
+  "src/node/node_registration_options.cpp"
+  "src/node/node_model_type.cpp"
+  "src/node/node_manifest.cpp"
+  "src/node/ros_node_context.cpp"
+  "src/node/node_registration_loader.cpp"
+  "src/tree/script.cpp"
+  "src/tree/tree_resource.cpp"
+  "src/tree/tree_document.cpp"
+  "src/behavior.cpp"
+  "src/builder.cpp"
+  "src/convert.cpp"
 )
-target_include_directories(auto_apms_behavior_tree_core PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
-target_compile_definitions(auto_apms_behavior_tree_core PRIVATE
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX="${_AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY="${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE="${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_CLASS="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_CLASS}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_LOGGER_LEVEL="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_LOGGER_LEVEL}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_EXTRA="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_EXTRA}"
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__NODE_MANIFEST}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX="${_AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY="${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE="${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_CLASS="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_CLASS}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_PORT}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_WAIT_TIMEOUT}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_REQUEST_TIMEOUT}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_ALLOW_UNREACHABLE}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_LOGGER_LEVEL="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_LOGGER_LEVEL}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_EXTRA="${_AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_MANIFEST_PARAM_EXTRA}"
 )
-target_compile_definitions(auto_apms_behavior_tree_core PUBLIC
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP}"
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR}"
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_LINE_SEP}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_MARKER_FILE_FIELD_PER_LINE_SEP}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP}"
+  _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR="${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__BEHAVIOR}"
 )
-ament_target_dependencies(auto_apms_behavior_tree_core
-    rclcpp
-    rclcpp_action
-    action_msgs
-    TinyXML2
-    Eigen3
-    behaviortree_cpp
-    auto_apms_util
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  ${action_msgs_TARGETS}
+  ${TinyXML2_TARGETS}
+  Eigen3::Eigen
+  behaviortree_cpp::behaviortree_cpp
+  auto_apms_util::auto_apms_util
 )
 
 # Install the version header to the autogenerated headers dir also used by rosidl generators
-ament_generate_version_header(auto_apms_behavior_tree_core HEADER_PATH "${PROJECT_NAME}/version.hpp")
+ament_generate_version_header(${PROJECT_NAME} HEADER_PATH "${PROJECT_NAME}/version.hpp")
 
 #
 # ------------ Utility Executables --------------
@@ -102,19 +102,19 @@ ament_generate_version_header(auto_apms_behavior_tree_core HEADER_PATH "${PROJEC
 
 # Merge multiple node manifest files to a single one and collect the shared library paths for the required nodes
 add_executable(create_node_manifest "src/cli/create_node_manifest.cpp")
-target_link_libraries(create_node_manifest auto_apms_behavior_tree_core)
+target_link_libraries(create_node_manifest ${PROJECT_NAME})
 
 # Generate the node model according to a node manifest
 add_executable(create_node_model "src/cli/create_node_model.cpp")
-target_link_libraries(create_node_model auto_apms_behavior_tree_core)
+target_link_libraries(create_node_model ${PROJECT_NAME})
 
 # Generate a C++ header containing classes for all registered nodes intended to be used with the TreeBuilder API
 add_executable(create_node_model_header "src/cli/create_node_model_header.cpp")
-target_link_libraries(create_node_model_header auto_apms_behavior_tree_core)
+target_link_libraries(create_node_model_header ${PROJECT_NAME})
 
 # Generate the behavior tree node documentation for all nodes available in this workspace
 add_executable(create_node_reference_markdown "src/cli/create_node_reference_markdown.cpp")
-target_link_libraries(create_node_reference_markdown auto_apms_behavior_tree_core)
+target_link_libraries(create_node_reference_markdown ${PROJECT_NAME})
 
 #
 # ------------ Packaging --------------
@@ -125,48 +125,48 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Export libraries
 install(
-    TARGETS
-    auto_apms_behavior_tree_core
-    EXPORT export_${PROJECT_NAME}
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
+  TARGETS
+  ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
-    rclcpp
-    rclcpp_action
-    action_msgs
-    tinyxml2_vendor # Must be exported instead of TinyXML2 target
-    eigen3_cmake_module
-    Eigen3
-    behaviortree_cpp
-    auto_apms_util
+  rclcpp
+  rclcpp_action
+  action_msgs
+  tinyxml2_vendor # Must be exported instead of TinyXML2 target
+  eigen3_cmake_module
+  Eigen3
+  behaviortree_cpp
+  auto_apms_util
 )
 
 install(
-    TARGETS
-    create_node_manifest
-    create_node_model
-    create_node_model_header
-    create_node_reference_markdown
-    DESTINATION "lib/${PROJECT_NAME}"
+  TARGETS
+  create_node_manifest
+  create_node_model
+  create_node_model_header
+  create_node_reference_markdown
+  DESTINATION "lib/${PROJECT_NAME}"
 )
 
 install(
-    PROGRAMS
-    "${PROJECT_NAME}/util/find_tree_names.py"
-    DESTINATION "lib/${PROJECT_NAME}"
+  PROGRAMS
+  "${PROJECT_NAME}/util/find_tree_names.py"
+  DESTINATION "lib/${PROJECT_NAME}"
 )
 
 install(
-    DIRECTORY "include/${PROJECT_NAME}"
-    DESTINATION "include"
+  DIRECTORY "include/${PROJECT_NAME}"
+  DESTINATION "include"
 )
 
 install(
-    DIRECTORY "cmake"
-    DESTINATION "share/${PROJECT_NAME}"
+  DIRECTORY "cmake"
+  DESTINATION "share/${PROJECT_NAME}"
 )
 
 ament_package(CONFIG_EXTRAS "auto_apms_behavior_tree_core-extras.cmake.in")

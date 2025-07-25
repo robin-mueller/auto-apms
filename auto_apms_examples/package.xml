@@ -17,8 +17,6 @@
     <depend>auto_apms_mission</depend>
     <depend>auto_apms_ros2behavior</depend>
 
-    <!-- auto_apms_px4 must be installed manually if the examples should be generated -->
-
     <export>
         <build_type>ament_cmake</build_type>
     </export>

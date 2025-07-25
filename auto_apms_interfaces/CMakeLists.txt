@@ -7,14 +7,13 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(geometry_msgs REQUIRED)
 
 set(TEST_SOURCES
-    "action/TestActionWrapper.action"
+  "action/TestActionWrapper.action"
 )
 
 set(EXAMPLE_SOURCES
-    "action/ExampleSimpleSkill.action"
+  "action/ExampleSimpleSkill.action"
 )
 
 set(MESSAGE_SOURCES
@@ -22,20 +21,12 @@ set(MESSAGE_SOURCES
 set(SERVICE_SOURCES
 )
 set(ACTION_SOURCES
-    "action/ArmDisarm.action"
-    "action/EnableHold.action"
-    "action/GoTo.action"
-    "action/Land.action"
-    "action/RTL.action"
-    "action/Takeoff.action"
-    "action/Mission.action"
-    "action/StartTreeExecutor.action"
-    "action/CommandTreeExecutor.action"
+  "action/StartTreeExecutor.action"
+  "action/CommandTreeExecutor.action"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-    ${TEST_SOURCES} ${EXAMPLE_SOURCES} ${ACTION_SOURCES} ${SERVICE_SOURCES} ${MESSAGE_SOURCES}
-    DEPENDENCIES geometry_msgs
+  ${TEST_SOURCES} ${EXAMPLE_SOURCES} ${ACTION_SOURCES} ${SERVICE_SOURCES} ${MESSAGE_SOURCES}
 )
 
 ament_export_dependencies(rosidl_default_runtime)

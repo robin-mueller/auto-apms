@@ -103,24 +103,24 @@ namespace auto_apms_behavior_tree
  *
  * # Create a shared library
  * add_library(my_build_handler_library_target SHARED
- *     "src/my_build_handler.cpp"  # Add the source file
+ *   "src/my_build_handler.cpp"  # Add the source file
  * )
- * ament_target_dependencies(my_build_handler_library_target
- *     auto_apms_behavior_tree  # The library must link against auto_apms_behavior_tree
+ * target_link_libraries(my_build_handler_library_target PUBLIC
+ *   auto_apms_behavior_tree::auto_apms_behavior_tree  # Link against the auto_apms_behavior_tree library
  * )
  *
  * # Add the plugin to this package's ament_index resources
  * auto_apms_behavior_tree_declare_build_handlers(my_build_handler_library_target
- *     "my_namespace::MyCustomBuildHandler"
+ *   "my_namespace::MyCustomBuildHandler"
  * )
  *
  * # Install the shared library to the standard directory
  * install(
- *     TARGETS
- *     my_build_handler_library_target
- *     LIBRARY DESTINATION lib
- *     ARCHIVE DESTINATION lib
- *     RUNTIME DESTINATION bin
+ *   TARGETS
+ *   my_build_handler_library_target
+ *   LIBRARY DESTINATION lib
+ *   ARCHIVE DESTINATION lib
+ *   RUNTIME DESTINATION bin
  * )
  *
  * ament_package()

@@ -1,40 +1,44 @@
 {
-    "editor.rulers": [
-        120
-    ],
-    "files.associations": {
-        "*yaml.in": "yaml",
-        "*cmake.in": "cmake"
-    },
-    "cSpell.words": [
-        "amsl",
-        "APMS",
-        "BRINGUP",
-        "BTCPP",
-        "Eigen",
-        "groot",
-        "gtest",
-        "pyrobosim",
-        "rclcpp",
-        "rclpy",
-        "rcpputils",
-        "RCUTILS",
-        "reimplementation",
-        "STREQUAL",
-        "tinyxml",
-        "waitables",
-        "wptr"
-    ],
-    "[cpp]": {
-        "editor.defaultFormatter": "ms-vscode.cpptools",
-        "editor.detectIndentation": false,
-        "editor.tabSize": 2
-    },
-    "C_Cpp.clang_format_fallbackStyle": "none",
-    "C_Cpp.clang_format_style": "file:${workspaceFolder}/.clang-format",
-    "C_Cpp.doxygen.generatedStyle": "/**",
-    "cSpell.enabled": true,
-    "cSpell.enabledFileTypes": {
-        "cpp": true
-    },
+  "editor.rulers": [
+    120
+  ],
+  "files.associations": {
+    "*yaml.in": "yaml",
+    "*cmake.in": "cmake"
+  },
+  "cSpell.words": [
+    "amsl",
+    "APMS",
+    "BRINGUP",
+    "BTCPP",
+    "Eigen",
+    "groot",
+    "gtest",
+    "pyrobosim",
+    "rclcpp",
+    "rclpy",
+    "rcpputils",
+    "RCUTILS",
+    "reimplementation",
+    "STREQUAL",
+    "tinyxml",
+    "waitables",
+    "wptr"
+  ],
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.tabSize": 4,
+  },
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "C_Cpp.clang_format_fallbackStyle": "none",
+  "C_Cpp.clang_format_style": "file:${workspaceFolder}/.clang-format",
+  "C_Cpp.doxygen.generatedStyle": "/**",
+  "cSpell.enabled": true,
+  "cSpell.enabledFileTypes": {
+    "cpp": true
+  },
 }

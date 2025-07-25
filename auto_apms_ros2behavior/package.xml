@@ -6,6 +6,7 @@
   <description>Behavior related extensions for the ROS 2 CLI</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
   <license>Apache-2.0</license>
+  <url>https://robin-mueller.github.io/auto-apms-guide/</url>
 
   <depend>ros2cli</depend>
   <depend>auto_apms_behavior_tree</depend>

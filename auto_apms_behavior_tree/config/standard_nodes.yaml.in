@@ -1,109 +1,109 @@
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_LOGGER}:
-  class_name: auto_apms_behavior_tree::Logger
+  class_name: ${PROJECT_NAME}::Logger
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION}:
-  class_name: auto_apms_behavior_tree::ThrowException
+  class_name: ${PROJECT_NAME}::ThrowException
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::StartExecutor
+  class_name: ${PROJECT_NAME}::StartExecutor
   port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_TERMINATE_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::TerminateExecutor
+  class_name: ${PROJECT_NAME}::TerminateExecutor
   port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HALT_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::HaltExecutor
+  class_name: ${PROJECT_NAME}::HaltExecutor
   port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_PAUSE_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::PauseExecutor
+  class_name: ${PROJECT_NAME}::PauseExecutor
   port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_RESUME_EXECUTOR}:
-  class_name: auto_apms_behavior_tree::ResumeExecutor
+  class_name: ${PROJECT_NAME}::ResumeExecutor
   port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER}:
-  class_name: auto_apms_behavior_tree::SetParameter
+  class_name: ${PROJECT_NAME}::SetParameter
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL}:
-  class_name: auto_apms_behavior_tree::SetParameterBool
+  class_name: ${PROJECT_NAME}::SetParameterBool
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT}:
-  class_name: auto_apms_behavior_tree::SetParameterInt
+  class_name: ${PROJECT_NAME}::SetParameterInt
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE}:
-  class_name: auto_apms_behavior_tree::SetParameterDouble
+  class_name: ${PROJECT_NAME}::SetParameterDouble
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING}:
-  class_name: auto_apms_behavior_tree::SetParameterString
+  class_name: ${PROJECT_NAME}::SetParameterString
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BYTE_VEC}:
-  class_name: auto_apms_behavior_tree::SetParameterByteVec
+  class_name: ${PROJECT_NAME}::SetParameterByteVec
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL_VEC}:
-  class_name: auto_apms_behavior_tree::SetParameterBoolVec
+  class_name: ${PROJECT_NAME}::SetParameterBoolVec
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT_VEC}:
-  class_name: auto_apms_behavior_tree::SetParameterIntVec
+  class_name: ${PROJECT_NAME}::SetParameterIntVec
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE_VEC}:
-  class_name: auto_apms_behavior_tree::SetParameterDoubleVec
+  class_name: ${PROJECT_NAME}::SetParameterDoubleVec
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING_VEC}:
-  class_name: auto_apms_behavior_tree::SetParameterStringVec
+  class_name: ${PROJECT_NAME}::SetParameterStringVec
   port: (input:node)/set_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER}:
-  class_name: auto_apms_behavior_tree::GetParameter
+  class_name: ${PROJECT_NAME}::GetParameter
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL}:
-  class_name: auto_apms_behavior_tree::GetParameterBool
+  class_name: ${PROJECT_NAME}::GetParameterBool
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT}:
-  class_name: auto_apms_behavior_tree::GetParameterInt
+  class_name: ${PROJECT_NAME}::GetParameterInt
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE}:
-  class_name: auto_apms_behavior_tree::GetParameterDouble
+  class_name: ${PROJECT_NAME}::GetParameterDouble
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING}:
-  class_name: auto_apms_behavior_tree::GetParameterString
+  class_name: ${PROJECT_NAME}::GetParameterString
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BYTE_VEC}:
-  class_name: auto_apms_behavior_tree::GetParameterByteVec
+  class_name: ${PROJECT_NAME}::GetParameterByteVec
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL_VEC}:
-  class_name: auto_apms_behavior_tree::GetParameterBoolVec
+  class_name: ${PROJECT_NAME}::GetParameterBoolVec
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC}:
-  class_name: auto_apms_behavior_tree::GetParameterIntVec
+  class_name: ${PROJECT_NAME}::GetParameterIntVec
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC}:
-  class_name: auto_apms_behavior_tree::GetParameterDoubleVec
+  class_name: ${PROJECT_NAME}::GetParameterDoubleVec
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC}:
-  class_name: auto_apms_behavior_tree::GetParameterStringVec
+  class_name: ${PROJECT_NAME}::GetParameterStringVec
   port: (input:node)/get_parameters
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HAS_PARAMETER}:
-  class_name: auto_apms_behavior_tree::HasParameter
+  class_name: ${PROJECT_NAME}::HasParameter
   port: (input:node)/list_parameters
