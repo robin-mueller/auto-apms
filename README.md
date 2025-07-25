@@ -9,87 +9,105 @@
 <a href="https://robin-mueller.github.io/auto-apms-guide/">![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)</a>
 <a href="https://doi.org/10.5281/zenodo.14790307">![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)</a>
 <a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
-<a href="https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml">![jazzy](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml/badge.svg)</a>
-<a href="https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml">![humble](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml/badge.svg)</a>
 
 </div>
 
-# 💡 Motivation and Features
+# 🤖 Streamlining Behaviors in ROS 2
 
-AutoAPMS is a ROS 2 software development framework offering an end-to-end solution for enabling autonomous robotic operation. It can be applied in any field of robotics as long as the corresponding systems are running ROS 2. Other popular middlewares like [PX4](https://px4.io/) are also supported (they must offer a possibility for bridging internal messages to ROS 2 topics).
+![auto-apms-gif](https://github.com/user-attachments/assets/0039aa09-9448-4102-9eb3-38138a805728)
 
-Developers of real-time systems benefit from:
+[AutoAPMS](https://robin-mueller.github.io/auto-apms-guide/) is a **heavily extensible** development framework for **behavior-based applications**. It integrates [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) with ROS 2, implements a **powerful execution engine** and offers convenient CLI tooling for deploying behaviors with ease.
 
-- Convenient resource management integrating deeply with CMake
-- Modular, plugin-based approach for implementing robotic skills/tasks
-- User-friendly behavior design adopting the behavior tree paradigm
-- Flexible, highly configurable behavior executor
-- Powerful C++ behavior tree builder API
-- Straightforward contingency and emergency management concept
-- Standardized interfaces and command line tools for running and orchestrating the operation
+The intention of this project is to make it significantly more user-friendly and less error prone to develop autonomous robotics with behavior trees. Most of the packages are written in C++, but the core functionality can also be leveraged by a Python API.
 
-These features offer the developer a **streamlined approach for designing intelligent robotic applications**. Altogether, they frame a unified toolset for implementing behavior-based systems and make it significantly more user-friendly and less error prone to deploy autonomous operations.
-
-For more information and an extensive how-to guide, feel encouraged to visit the 👉 [**AutoAPMS Website**](https://robin-mueller.github.io/auto-apms-guide/) 👈.
-
-# 🚀 Setup and Demonstration
-
-AutoAPMS is **designed for Linux**. The following ROS 2 versions are supported:
+The following ROS 2 versions are supported (Linux only):
 
 | ROS 2 Version | OS | Status |
 | :-------------: | :-----------: | :-----------: |
 | [Humble Hawksbill](https://docs.ros.org/en/humble/index.html) | [Ubuntu 22.04 (Jammy Jellyfish)](https://releases.ubuntu.com/jammy/) | [![ROS 2 Humble Test](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml) |
 | [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) | [Ubuntu 24.04 (Noble Numbat)](https://releases.ubuntu.com/noble/) | [![ROS 2 Jazzy Test](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml) |
 
-The following installation guide helps you getting started with AutoAPMS by building the source code yourself. Finally, you may test your installation by running an example.
+## Highlights
 
-Firstly, you have to create a [ROS 2 workspace](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html) and clone this repository.
+There are plenty of ROS 2 packages which provide an implementation for behavior trees. AutoAPMS adopts the most popular one when it comes to C++ and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them in a ROS 2 workspace. Here are some of the most prominent features offered by this repository:
 
-```bash
-mkdir ros2_ws && cd ros2_ws
-(mkdir src && cd src && git clone https://github.com/robin-mueller/auto-apms.git)
-```
+- Utilizes `ament_cmake` and `ament_index` for efficient behavior resource management
 
-Afterwards, install all required dependencies. We assume that you already installed ROS 2 on your system.
+- Inherently extensible due to plugin-based design
 
-```bash
-rosdep init  # Skip this if rosdep has already been initialized
-rosdep update
-rosdep install --from-paths src --ignore-src -y
+- Flexible and highly configurable behavior execution engine
 
-# Python packages for simulation (not all are available with rosdep)
-python3 -m pip install -r src/auto-apms/auto_apms_simulation/requirements.txt
-```
+- Powerful C++ behavior tree builder API (a supplement to BehaviorTree.CPP)
 
-Then, build and install all of the source packages up to `auto_apms_examples`.
+- Easy integration of custom behavior tree node implementations
 
-```bash
-colcon build --packages-up-to auto_apms_examples --symlink-install
-```
+- Support for custom behavior definitions and tree builder algorithms
 
-Congratulations, you've already successfully installed all necessary resources. You may now launch a lightweight simulation that applies the concepts offered by AutoAPMS. This should give you an idea of what's possible with this framework.
+- `ros2cli` extensions for orchestrating the system from the command line
 
-The basic robot behavior can be observed by executing
+# 🚀 Getting Started
 
-```bash
-source install/setup.bash
-ros2 launch auto_apms_examples pyrobosim_hogwarts_launch.py
-# Press Ctrl+C to quit
-```
+The following installation guide helps you getting started with AutoAPMS.
 
-The actions of each robot you've seen are executed using behavior trees. This functionality is provided by the `auto_apms_behavior_tree` package. However, each robot is acting independently and they are not aware of their environment. Yet.
+1. Create a [ROS 2 workspace](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html) and clone this repository
 
-Now, we want to make the robots more intelligent and allow them to dynamically adjust their behavior when they encounter other robots inside one of the hallways. This is realized by implementing fallback mechanisms introduced by the `auto_apms_mission` package. To achieve that, you simply have to specify the following launch argument.
+    ```bash
+    mkdir ros2_ws && cd ros2_ws
+    (mkdir src && cd src && git clone https://github.com/robin-mueller/auto-apms.git)
+    ```
 
-```bash
-source install/setup.bash
-ros2 launch auto_apms_examples pyrobosim_hogwarts_launch.py mission:=true
-# Press Ctrl+C to quit
-```
+1. Install all required dependencies. We assume that you already installed ROS 2 on your system
 
-The robots dynamically decide to retreat and wait until the hallway they are about to cross is not occupied anymore. They basically monitor if a certain event occurs and initialize a corresponding sequence of action if applicable. With this, we effectively introduced automatically orchestrated reactive behaviors.
+    ```bash
+    rosdep init  # Skip this if rosdep has already been initialized
+    rosdep update
+    rosdep install --from-paths src --ignore-src -y
+    ```
 
-https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
+1. Build and install all packages required for `auto_apms_examples`
+
+    ```bash
+    colcon build --packages-up-to auto_apms_examples --symlink-install
+    ```
+
+1. Run your first behavior using `ros2 behavior`. This is an extension of the ROS 2 CLI introduced by the `auto_apms_ros2behavior` package
+
+    ```bash
+    source install/setup.bash
+    ros2 behavior run auto_apms_examples::demo::HelloWorld --blackboard name:=Turtle
+    ```
+
+Finally, you may as well run a cool **visual demonstration** of what's possible with this framework.
+
+1. Install dependencies and build package `auto_apms_simulation`
+
+    ```bash
+    # Python packages for simulation (not all are available with rosdep)
+    python3 -m pip install -r src/auto-apms/auto_apms_simulation/requirements.txt
+    colcon build --packages-up-to auto_apms_simulation --symlink-install
+    ```
+
+1. Run the less intelligent behavior first
+
+    ```bash
+    source install/setup.bash
+    ros2 launch auto_apms_simulation pyrobosim_hogwarts_launch.py
+    # Press Ctrl+C to quit
+    ```
+
+    The actions of each robot you've seen are executed using behavior trees. This functionality is provided by the `auto_apms_behavior_tree` package. However, each robot is acting independently and they are not aware of their environment. Yet.
+
+1. Now, we want to make the robots more intelligent and allow them to dynamically adjust their behavior when they encounter other robots inside one of the hallways. This is realized by implementing fallback mechanisms introduced by the `auto_apms_mission` package. To achieve that, add a launch argument
+
+    ```bash
+    source install/setup.bash
+    ros2 launch auto_apms_simulation pyrobosim_hogwarts_launch.py mission:=true
+    # Press Ctrl+C to quit
+    ```
+
+    The robots dynamically decide to retreat and wait until the hallway they are about to cross is not occupied anymore. They basically monitor if a certain event occurs and initialize a corresponding sequence of action if applicable. With this, we effectively introduced automatically orchestrated reactive behaviors.
+
+    https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
 
 # 🎓 Documentation
 

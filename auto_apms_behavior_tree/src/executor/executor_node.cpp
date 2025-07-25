@@ -238,7 +238,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
       auto_apms_util::join(relevant_args, ", ").c_str());
 
     // Start tree execution with the build handler request being the first relevant argument
-    startExecution(makeTreeConstructor(relevant_args[0], ""), initial_params.tick_rate, initial_params.groot2_port);
+    startExecution(makeTreeConstructor(relevant_args[0]), initial_params.tick_rate, initial_params.groot2_port);
   }
 }
 
@@ -247,13 +247,18 @@ TreeExecutorNode::TreeExecutorNode(rclcpp::NodeOptions options)
 {
 }
 
-void TreeExecutorNode::setUpBuilder(core::TreeBuilder & /*builder*/, const core::NodeManifest & /*node_manifest*/) {}
+void TreeExecutorNode::preconfigureBuilder(
+  core::TreeBuilder & /*builder*/, const std::string & /*build_request*/, const std::string & /*entrypoint*/,
+  const core::NodeManifest & /*node_manifest*/)
+{
+}
 
 std::shared_future<TreeExecutorNode::ExecutionResult> TreeExecutorNode::startExecution(
-  const std::string & tree_build_request)
+  const std::string & build_request, const std::string & entrypoint, const core::NodeManifest & node_manifest)
 {
   const ExecutorParameters params = executor_param_listener_.get_params();
-  return startExecution(makeTreeConstructor(tree_build_request, ""), params.tick_rate, params.groot2_port);
+  return startExecution(
+    makeTreeConstructor(build_request, entrypoint, node_manifest), params.tick_rate, params.groot2_port);
 }
 
 std::map<std::string, rclcpp::ParameterValue> TreeExecutorNode::getParameterValuesWithPrefix(const std::string & prefix)
@@ -377,44 +382,40 @@ void TreeExecutorNode::loadBuildHandler(const std::string & name)
 }
 
 TreeConstructor TreeExecutorNode::makeTreeConstructor(
-  const std::string & build_handler_request, const std::string & root_tree_name,
-  const core::NodeManifest & node_manifest, const core::NodeManifest & node_overrides)
+  const std::string & build_request, const std::string & entrypoint, const core::NodeManifest & node_manifest)
 {
   // Request the tree identity
-  if (
-    build_handler_ptr_ && !build_handler_ptr_->setBuildRequest(build_handler_request, node_manifest, root_tree_name)) {
+  if (build_handler_ptr_ && !build_handler_ptr_->setBuildRequest(build_request, entrypoint, node_manifest)) {
     throw exceptions::TreeBuildError(
-      "Build request '" + build_handler_request + "' was denied by '" +
-      executor_param_listener_.get_params().build_handler + "' (setBuildRequest() returned false).");
+      "Build request '" + build_request + "' was denied by '" + executor_param_listener_.get_params().build_handler +
+      "' (setBuildRequest() returned false).");
   }
 
   // By passing the the local variables to the callback's captures by value they live on and can be used for creating
   // the tree later. Otherwise a segmentation fault might occur since memory allocated for the arguments might be
   // released at the time the method returns.
-  return [this, root_tree_name, node_manifest, node_overrides](TreeBlackboardSharedPtr bb_ptr) {
+  return [this, build_request, entrypoint, node_manifest](TreeBlackboardSharedPtr bb_ptr) {
     // Currently, BehaviorTree.CPP requires the memory allocated by the factory to persist even after the tree has
     // been created, so we make the builder a unique pointer that is only reset when a new tree is to be created. See
     // https://github.com/BehaviorTree/BehaviorTree.CPP/issues/890
     builder_ptr_.reset(new TreeBuilder(
       node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_));
 
-    // Allow executor to set up the builder independently from the build handler
-    setUpBuilder(*builder_ptr_, node_manifest);
+    // Allow executor to configure the builder independently from the build handler prior to building the tree
+    preconfigureBuilder(*builder_ptr_, build_request, entrypoint, node_manifest);
 
     // Make scripting enums available to tree instance
     for (const auto & [enum_key, val] : scripting_enums_) builder_ptr_->setScriptingEnum(enum_key, val);
 
     // If a build handler is specified, let it configure the builder and determine which tree is to be instantiated
-    std::string instantiate_name = root_tree_name;
+    std::string instantiate_name = "";
     if (build_handler_ptr_) {
       instantiate_name = build_handler_ptr_->buildTree(*builder_ptr_, *bb_ptr).getName();
     }
 
-    // Allow for overriding selected node instances
-    builder_ptr_->registerNodes(node_overrides, true);
-
     // Finally, instantiate the tree
-    return builder_ptr_->instantiate(instantiate_name, bb_ptr);
+    return instantiate_name.empty() ? builder_ptr_->instantiate(bb_ptr)
+                                    : builder_ptr_->instantiate(instantiate_name, bb_ptr);
   };
 }
 
@@ -597,19 +598,8 @@ rclcpp_action::GoalResponse TreeExecutorNode::handle_start_goal_(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  core::NodeManifest node_overrides;
   try {
-    node_overrides = core::NodeManifest::decode(goal_ptr->node_overrides);
-  } catch (const std::exception & e) {
-    RCLCPP_WARN(
-      logger_, "Goal %s was REJECTED: Parsing the node override manifest failed: %s",
-      rclcpp_action::to_string(uuid).c_str(), e.what());
-    return rclcpp_action::GoalResponse::REJECT;
-  }
-
-  try {
-    tree_constructor_ =
-      makeTreeConstructor(goal_ptr->build_request, goal_ptr->root_tree, node_manifest, node_overrides);
+    tree_constructor_ = makeTreeConstructor(goal_ptr->build_request, goal_ptr->entrypoint, node_manifest);
   } catch (const std::exception & e) {
     RCLCPP_WARN(logger_, "Goal %s was REJECTED: %s", rclcpp_action::to_string(uuid).c_str(), e.what());
     return rclcpp_action::GoalResponse::REJECT;

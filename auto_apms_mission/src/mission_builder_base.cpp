@@ -26,17 +26,18 @@ const std::string MissionBuildHandlerBase::EVENT_MONITOR_EXECUTOR_NAME =
 const std::string MissionBuildHandlerBase::EVENT_HANDLER_EXECUTOR_NAME =
   _AUTO_APMS_MISSION__EVENT_HANDLER_EXECUTOR_NAME;
 
-MissionBuildHandlerBase::MissionBuildHandlerBase(
-  rclcpp::Node::SharedPtr ros_node_ptr, NodeLoader::SharedPtr tree_node_loader_ptr)
-: TreeBuildHandler("mission_builder", ros_node_ptr, tree_node_loader_ptr)
-{
-}
-
 bool MissionBuildHandlerBase::setBuildRequest(
-  const std::string & build_request, const NodeManifest & /*node_manifest*/, const std::string & root_tree_name)
+  const std::string & build_request, const std::string & entrypoint, const NodeManifest & node_manifest)
 {
+  if (!entrypoint.empty()) {
+    RCLCPP_WARN(logger_, "Argument entrypoint is not empty. Custom entrypoints are not supported and will be ignored.");
+  }
+  if (!node_manifest.empty()) {
+    RCLCPP_WARN(
+      logger_, "Argument node_manifest is not empty. Custom node manifests are not supported and will be ignored.");
+  }
   try {
-    mission_config_ = MissionConfiguration::fromResourceIdentity(build_request);
+    mission_config_ = createMissionConfig(build_request);
   } catch (const auto_apms_util::exceptions::ResourceIdentityFormatError & e) {
     RCLCPP_WARN(logger_, "%s", e.what());
     return false;
@@ -47,12 +48,8 @@ bool MissionBuildHandlerBase::setBuildRequest(
     RCLCPP_WARN(logger_, "Invalid YAML format of mission configuration '%s': %s", build_request.c_str(), e.what());
     return false;
   }
-  if (!root_tree_name.empty()) {
-    RCLCPP_WARN(logger_, "Argument root_tree_name is not empty. Custom root tree names are not allowed.");
-    return false;
-  }
 
-  // Parse all tree resource identities and replace all empty tree names with the corresponding root tree name
+  // Validate all tree resource identities and replace all empty tree names with the corresponding root tree name
   auto add_tree_name_to_identity = [this](TreeResource::Identity & identity) {
     if (identity.tree_name.empty()) {
       TreeResource r(identity);
@@ -87,7 +84,7 @@ MissionBuildHandlerBase::TreeDocument::TreeElement MissionBuildHandlerBase::buil
   // Load orchestrator tree
   RCLCPP_DEBUG(logger_, "Loading orchestrator tree.");
   TreeDocument::TreeElement root_tree =
-    doc.newTreeFromResource("auto_apms_mission::orchestrator_base::MissionOrchestrator").makeRoot();
+    doc.newTreeFromResource("tree__internal/auto_apms_mission::orchestrator_base::MissionOrchestrator").makeRoot();
 
   RCLCPP_DEBUG(logger_, "Configuring orchestrator root blackboard.");
   configureOrchestratorRootBlackboard(bb);
@@ -185,6 +182,17 @@ void MissionBuildHandlerBase::buildBringUp(
 {
   sub_tree.removeChildren();
   for (const TreeResource::Identity & r : trees) {
+    RCLCPP_DEBUG(logger_, "Adding bringup tree '%s'.", r.str().c_str());
+    sub_tree.insertTreeFromResource(r);
+  }
+}
+
+void MissionBuildHandlerBase::buildMission(
+  TreeDocument::TreeElement & sub_tree, const std::vector<TreeResource::Identity> & trees)
+{
+  sub_tree.removeChildren();
+  for (const TreeResource::Identity & r : trees) {
+    RCLCPP_DEBUG(logger_, "Adding mission tree '%s'.", r.str().c_str());
     sub_tree.insertTreeFromResource(r);
   }
 }
@@ -208,6 +216,10 @@ void MissionBuildHandlerBase::buildEventMonitor(
   TreeDocument monitor_doc;
   for (const TreeResource::Identity & monitor_id : sorted_monitor_ids) {
     if (!monitor_doc.hasTreeName(monitor_id.str())) {
+      RCLCPP_DEBUG(logger_, "Adding event monitor tree '%s'.", monitor_id.str().c_str());
+      RCLCPP_DEBUG(
+        logger_, "Identity has file stem '%s' and tree name '%s'.", monitor_id.file_stem.c_str(),
+        monitor_id.tree_name.c_str());
       monitor_doc.newTreeFromResource(monitor_id).setName(monitor_id.str());
     }
   }
@@ -231,6 +243,7 @@ void MissionBuildHandlerBase::buildContingencyHandling(
   TreeDocument handler_doc;
   for (const auto & [_, handler_id] : contingencies) {
     if (!handler_doc.hasTreeName(handler_id.str())) {
+      RCLCPP_DEBUG(logger_, "Adding contingency handler tree '%s'.", handler_id.str().c_str());
       handler_doc.newTreeFromResource(handler_id).setName(handler_id.str());
     }
   }
@@ -273,6 +286,7 @@ void MissionBuildHandlerBase::buildEmergencyHandling(
   TreeDocument handler_doc;
   for (const auto & [_, handler_id] : emergencies) {
     if (!handler_doc.hasTreeName(handler_id.str())) {
+      RCLCPP_DEBUG(logger_, "Adding emergency handler tree '%s'.", handler_id.str().c_str());
       handler_doc.newTreeFromResource(handler_id).setName(handler_id.str());
     }
   }
@@ -299,6 +313,7 @@ void MissionBuildHandlerBase::buildShutDown(
 {
   sub_tree.removeChildren();
   for (const TreeResource::Identity & r : trees) {
+    RCLCPP_DEBUG(logger_, "Adding shutdown tree '%s'.", r.str().c_str());
     sub_tree.insertTreeFromResource(r);
   }
 }

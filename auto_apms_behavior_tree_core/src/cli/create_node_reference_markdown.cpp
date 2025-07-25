@@ -59,7 +59,7 @@ int main(int argc, char ** argv)
       if (package_name == "include_native") continue;
 
       // Throw if there a registration name exists multiple times
-      node_manifest.merge(core::NodeManifest::fromResourceIdentity(auto_apms_util::trimWhitespaces(argv[i])), false);
+      node_manifest.merge(core::NodeManifest::fromResource(auto_apms_util::trimWhitespaces(argv[i])), false);
     }
     const bool include_native = auto_apms_util::contains(input_packages, std::string("include_native"));
     const std::string native_package_name = "auto_apms_behavior_tree (BehaviorTree.CPP)";
@@ -72,7 +72,7 @@ int main(int argc, char ** argv)
     core::TreeDocument doc(core::TreeDocument::BTCPP_FORMAT_DEFAULT_VERSION, node_loader_ptr);
     doc.registerNodes(node_manifest);
     std::map<std::string, std::string> package_for_class = node_loader_ptr->getClassPackageMap();
-    const core::TreeDocument::NodeModelMap model_map = doc.getNodeModel(include_native);
+    const NodeModelMap model_map = doc.getNodeModel(include_native);
     core::NodeRegistrationOptions native_node_options;
     native_node_options.class_name = "❌";
 
@@ -127,10 +127,10 @@ int main(int argc, char ** argv)
           content << "\n*This node doesn't have any ports.*\n";
           continue;
         }
-        std::vector<core::TreeDocument::NodePortInfo> inputs;
-        std::vector<core::TreeDocument::NodePortInfo> outputs;
-        std::vector<core::TreeDocument::NodePortInfo> inouts;
-        for (const core::TreeDocument::NodePortInfo & port_info : model.port_infos) {
+        std::vector<NodePortInfo> inputs;
+        std::vector<NodePortInfo> outputs;
+        std::vector<NodePortInfo> inouts;
+        for (const NodePortInfo & port_info : model.port_infos) {
           switch (port_info.port_direction) {
             case BT::PortDirection::INPUT:
               inputs.push_back(port_info);
@@ -150,7 +150,7 @@ int main(int argc, char ** argv)
 | Input Name | Type | Default Value | Description |
 | :--- | :---: | :---: | :--- |
 )";
-          for (const core::TreeDocument::NodePortInfo & port_info : inputs) {
+          for (const NodePortInfo & port_info : inputs) {
             content << "| **" << port_info.port_name << "** | `" << port_info.port_type << "` | " << (port_info.port_has_default ? port_info.port_default : "❌") << " | " << port_info.port_description << " |\n";
           }
         }
@@ -161,7 +161,7 @@ int main(int argc, char ** argv)
 | Output Name | Type | Default Value | Description |
 | :--- | :---: | :---: | :--- |
 )";
-          for (const core::TreeDocument::NodePortInfo & port_info : outputs) {
+          for (const NodePortInfo & port_info : outputs) {
             content << "| **" << port_info.port_name << "** | `" << port_info.port_type << "` | " << (port_info.port_has_default ? port_info.port_default : "❌") << " | " << port_info.port_description << " |\n";
           }
         }
@@ -172,7 +172,7 @@ int main(int argc, char ** argv)
 | Port Name | Type | Default Value | Description |
 | :--- | :---: | :---: | :--- |
 )";
-          for (const core::TreeDocument::NodePortInfo & port_info : inouts) {
+          for (const NodePortInfo & port_info : inouts) {
             content << "| **" << port_info.port_name << "** | `" << port_info.port_type << "` | " << (port_info.port_has_default ? port_info.port_default : "❌") << " | " << port_info.port_description << " |\n";
           }
         }

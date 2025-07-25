@@ -1,0 +1,5 @@
+MISSION:
+  - auto_apms_simulation::hogwarts::EntryPoint
+
+CONTINGENCY:
+  auto_apms_simulation::hogwarts_contingency::IsHallwayOccupied: auto_apms_simulation::hogwarts_contingency::Retreat

@@ -18,9 +18,8 @@
 #define INPUT_KEY_EXECUTOR_NAME "executor"
 #define INPUT_KEY_TREE_BUILD_REQUEST "build_request"
 #define INPUT_KEY_TREE_BUILD_HANDLER "build_handler"
-#define INPUT_KEY_ROOT_TREE_NAME "root_tree"
+#define INPUT_KEY_ENTRYPOINT "entrypoint"
 #define INPUT_KEY_NODE_MANIFEST "node_manifest"
-#define INPUT_KEY_NODE_OVERRIDES "node_overrides"
 #define INPUT_KEY_ATTACH "attach"
 #define INPUT_KEY_CLEAR_BB "clear_blackboard"
 
@@ -42,16 +41,12 @@ public:
         INPUT_KEY_CLEAR_BB, true,
         "Boolean flag wether to clear the existing blackboard entries before the execution starts or not."),
       BT::InputPort<std::string>(
-        INPUT_KEY_NODE_OVERRIDES, "",
-        "YAML/JSON formatted string encoding the name and the registration options for any tree nodes supposed to "
-        "override previously loaded ones."),
-      BT::InputPort<std::string>(
         INPUT_KEY_NODE_MANIFEST, "",
         "YAML/JSON formatted string encoding the name and the registration options for the tree nodes supposed to be "
         "loaded before building the tree."),
       BT::InputPort<std::string>(
-        INPUT_KEY_ROOT_TREE_NAME, "",
-        "Name of the root tree. If empty, let the build handler determine the root tree."),
+        INPUT_KEY_ENTRYPOINT, "",
+        "Entrypoint for the behavior. If empty, let the build handler determine the entrypoint."),
       BT::InputPort<std::string>(
         INPUT_KEY_TREE_BUILD_HANDLER, "",
         "Fully qualified class name of the build handler that is supposed to take care of the request. If empty, use "
@@ -83,20 +78,14 @@ public:
       RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
       return false;
     }
-    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_ROOT_TREE_NAME)) {
-      goal.root_tree = expected.value();
+    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_ENTRYPOINT)) {
+      goal.entrypoint = expected.value();
     } else {
       RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
       return false;
     }
     if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_NODE_MANIFEST)) {
       goal.node_manifest = expected.value();
-    } else {
-      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
-      return false;
-    }
-    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_NODE_OVERRIDES)) {
-      goal.node_overrides = expected.value();
     } else {
       RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
       return false;

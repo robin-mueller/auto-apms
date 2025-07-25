@@ -297,7 +297,7 @@ TreeDocument::NodeElement TreeDocument::NodeElement::insertTreeFromResource(
   const TreeResource & resource, const std::string & tree_name, const NodeElement * before_this)
 {
   TreeDocument insert_doc(doc_ptr_->format_version_, doc_ptr_->tree_node_loader_ptr_);
-  insert_doc.mergeFile(resource.tree_file_path_);
+  insert_doc.mergeFile(resource.build_request_file_path_);
 
   // We register all associated node plugins beforehand, so that the user doesn't have to do that manually. This means,
   // that also potentially unused nodes are available and registered with the factory. This seems unnecessary, but it's
@@ -607,7 +607,6 @@ TreeDocument::TreeDocument(const std::string & format_version, NodeRegistrationL
   factory_(),
   logger_(rclcpp::get_logger(LOGGER_NAME))
 {
-  auto_apms_util::exposeToGlobalDebugLogging(logger_);
   reset();
 }
 
@@ -729,7 +728,7 @@ TreeDocument & TreeDocument::mergeFile(const std::string & path, bool adopt_root
 TreeDocument & TreeDocument::mergeResource(const TreeResource & resource, bool adopt_root_tree)
 {
   registerNodes(resource.getNodeManifest(), false);
-  return mergeFile(resource.tree_file_path_, adopt_root_tree);
+  return mergeFile(resource.build_request_file_path_, adopt_root_tree);
 }
 
 TreeDocument & TreeDocument::mergeTree(const TreeElement & tree, bool make_root_tree)
@@ -802,7 +801,7 @@ TreeDocument::TreeElement TreeDocument::newTreeFromResource(
   const TreeResource & resource, const std::string & tree_name)
 {
   TreeDocument new_doc(format_version_, tree_node_loader_ptr_);
-  new_doc.mergeFile(resource.tree_file_path_);
+  new_doc.mergeFile(resource.build_request_file_path_);
   if (resource.hasRootTreeName()) new_doc.setRootTreeName(resource.getRootTreeName());
   registerNodes(resource.getNodeManifest(), false);
   return newTreeFromDocument(new_doc, tree_name);
@@ -990,7 +989,7 @@ TreeDocument & TreeDocument::addNodeModel(bool include_native)
   return *this;
 }
 
-TreeDocument::NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc)
+NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc)
 {
   const tinyxml2::XMLElement * root = doc.RootElement();
   if (!root) {
@@ -1062,7 +1061,7 @@ TreeDocument::NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & do
   return model_map;
 }
 
-TreeDocument::NodeModelMap TreeDocument::getNodeModel(bool include_native) const
+NodeModelMap TreeDocument::getNodeModel(bool include_native) const
 {
   tinyxml2::XMLDocument model_doc;
   if (

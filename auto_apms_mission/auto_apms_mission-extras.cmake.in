@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(_AUTO_APMS_MISSION__RESOURCE_DIR_RELATIVE__MISSION_CONFIG "${_AUTO_APMS_UTIL__AUTO_APMS_SHARED_RESOURCES_DIR_RELATIVE}/@PROJECT_NAME@")
-set(_AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG "@_AUTO_APMS_MISSION__RESOURCE_TYPE_NAME__MISSION_CONFIG@")
+set(_AUTO_APMS_MISSION__DEFAULT_BEHAVIOR_CATEGORY__MISSION "@_AUTO_APMS_MISSION__DEFAULT_BEHAVIOR_CATEGORY__MISSION@")
 
 include("${@PROJECT_NAME@_DIR}/register_missions.cmake")
-
-find_package(ament_cmake_core QUIET REQUIRED)
-ament_register_extension("ament_package" "@PROJECT_NAME@" "register_resource_hook.cmake")

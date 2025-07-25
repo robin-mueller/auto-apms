@@ -71,10 +71,10 @@
             ]
         },
         {
-            "name": "(gdb) Launch run_tree",
+            "name": "(gdb) Launch run_behavior",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree/lib/auto_apms_behavior_tree/run_tree",
+            "program": "${workspaceFolder:px4-ros2-env}/install/auto_apms_behavior_tree/lib/auto_apms_behavior_tree/run_behavior",
             "args": [
                 "${input:treeResourceIdentity}"
             ],

@@ -28,15 +28,15 @@ def spawn_orchestrator_node(context: LaunchContext):
     return [
         Node(
             package="auto_apms_behavior_tree",
-            executable="run_tree",
+            executable="run_behavior",
             name=context.launch_configurations["orchestrator_name"],
             parameters=[
                 {
                     "build_handler": PythonExpression(
                         [
-                            "'auto_apms_mission::SingleNodeMissionBuildHandler' if bool('",
-                            context.launch_configurations["use_multiple_nodes"],
-                            "') else 'auto_apms_mission::MultiNodeMissionBuildHandler'",
+                            "'auto_apms_mission::MultiNodeMissionBuildHandler' if '",
+                            context.launch_configurations["multi_node"],
+                            "'.lower() == 'true' else 'auto_apms_mission::MissionFromResourceBuildHandler'",
                         ]
                     ),
                     "allow_other_build_handlers": False,
@@ -65,8 +65,8 @@ def generate_launch_description():
         default_value="{}",
         description="JSON encoded dictionary that is used as parameter overrides for the orchestrator node.",
     )
-    use_multiple_nodes_arg = DeclareLaunchArgument(
-        "use_multiple_nodes",
+    multi_node_arg = DeclareLaunchArgument(
+        "multi_node",
         default_value="false",
         description="Delegate mission execution as well as event monitoring and handling to individual nodes.",
     )
@@ -76,7 +76,7 @@ def generate_launch_description():
             config_launch_arg,
             orchestrator_name_arg,
             orchestrator_params_arg,
-            use_multiple_nodes_arg,
+            multi_node_arg,
             ComposableNodeContainer(
                 name="mission_container",
                 namespace="",
@@ -119,7 +119,7 @@ def generate_launch_description():
                 ],
                 output="screen",
                 emulate_tty=True,
-                condition=IfCondition(LaunchConfiguration("use_multiple_nodes")),
+                condition=IfCondition(LaunchConfiguration("multi_node")),
             ),
             OpaqueFunction(function=spawn_orchestrator_node),
         ]

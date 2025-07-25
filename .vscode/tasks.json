@@ -47,7 +47,7 @@
             "label": "Run behavior tree",
             "detail": "Run an installed behavior tree",
             "type": "shell",
-            "command": "ros2 run auto_apms_behavior_tree run_tree ${input:treeResourceIdentity}",
+            "command": "ros2 run auto_apms_behavior_tree run_behavior ${input:treeResourceIdentity}",
             "problemMatcher": "$gcc"
         },
     ],

@@ -96,7 +96,7 @@ private:
  * A behavior tree can be executed via command line:
  *
  * ```sh
- * ros2 run auto_apms_behavior_tree run_tree <tree_build_request>
+ * ros2 run auto_apms_behavior_tree run_behavior <build_request>
  * ```
  *
  * Alternatively, an executor can also be included as part of a ROS 2 components container. The following executor
@@ -153,11 +153,15 @@ public:
    * created using @p make_tree. This requires to register a timer with the associated ROS 2 node. Consequently, the
    * behavior tree is executed asynchronously. The user is provided a shared future object that allows to check whether
    * the execution finished. Once this future completes, the execution result can be evaluated.
-   * @param tree_build_request Behavior tree build request forwarded to the currently loaded build handler.
+   * @param build_request Behavior build request for creating the behavior.
+   * @param entrypoint Single point of entry for behavior execution.
+   * @param node_manifest Behavior tree node manifest to be loaded for behavior execution.
    * @return Shared future that completes once executing the tree is finished or an error occurs. In that case, it is
    * assigned an execution result code.
    */
-  std::shared_future<ExecutionResult> startExecution(const std::string & tree_build_request);
+  std::shared_future<ExecutionResult> startExecution(
+    const std::string & build_request, const std::string & entrypoint = "",
+    const core::NodeManifest & node_manifest = {});
 
 private:
   /* Virtual methods */
@@ -166,14 +170,22 @@ private:
    * @brief Callback invoked every time before any behavior trees are built.
    *
    * This is invoked first thing inside the tree constructor callback returned by TreeExecutorNode::makeTreeConstructor
-   * just after the tree builder object has been instantiated. Therefore, this allows the user to define an executor
-   * specific initial configuration of the builder object, before the underlying tree document is passed to the
-   * currently configured build handler and the tree is instantiated.
+   * just after the tree builder object has been instantiated. Therefore, the builder object is "empty" when passed to
+   * this method.
+   *
+   * There are two common use cases where this method is useful:
+   *
+   * - The user wants to define an executor-specific initial configuration of the builder object, before it is
+   * passed to the currently configured build handler.
+   * - The user wants to bypass the build handler concept and directly create the behavior tree using this method.
    * @param builder Tree builder to be configured. This is used for creating the behavior tree later.
-   * @param node_manifest Behavior tree node manifest that specifies which nodes to use and how to load them. It is
-   * provided by the `StartTreeExecutor` goal request sent to this executor.
+   * @param build_request Behavior build request for creating the behavior.
+   * @param entrypoint Single point of entry for behavior execution.
+   * @param node_manifest Behavior tree node manifest to be loaded for behavior execution.
    */
-  virtual void setUpBuilder(TreeBuilder & builder, const core::NodeManifest & node_manifest);
+  virtual void preconfigureBuilder(
+    TreeBuilder & builder, const std::string & build_request, const std::string & entrypoint,
+    const core::NodeManifest & node_manifest);
 
 protected:
   /* Utility methods */
@@ -249,17 +261,15 @@ protected:
    * The created callback makes all defined scripting enums available for the behavior tree and invokes the currently
    * configured build handler to build it. It returns a corresponding instance of `BT::Tree` that may be ticked to
    * execute the tree.
-   * @param build_handler_request Request that specifies how to build the behavior tree encoded in a string.
-   * @param root_tree_name Name of the requested root tree.
+   * @param build_request Request that specifies how to build the behavior tree encoded in a string.
+   * @param entrypoint Single point of entry for behavior execution.
    * @param node_manifest Behavior tree node manifest that specifies which nodes to use and how to load them.
-   * @param node_overrides Behavior tree node manifest that specifies which nodes to override once the tree has been
-   * built. This may be used to swap specific node plugins that have been loaded by the build handler.
    * @return Callback for creating the behavior tree according to the build request.
    * @throw auto_apms_behavior_tree::exceptions::TreeBuildError if the build handler rejects the request.
    */
   TreeConstructor makeTreeConstructor(
-    const std::string & build_handler_request, const std::string & root_tree_name,
-    const core::NodeManifest & node_manifest = {}, const core::NodeManifest & node_overrides = {});
+    const std::string & build_request, const std::string & entrypoint = "",
+    const core::NodeManifest & node_manifest = {});
 
   /**
    * @brief Reset the global blackboard and clear all entries. This also unsets the corresponding parameters.

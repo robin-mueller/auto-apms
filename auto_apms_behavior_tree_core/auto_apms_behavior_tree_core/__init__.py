@@ -11,6 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from auto_apms_behavior_tree_core.tree.tree_resource import *
-from auto_apms_behavior_tree_core.tree.find_tree_names import find_tree_names_in_string, find_tree_names_in_file

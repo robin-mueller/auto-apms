@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "auto_apms_behavior_tree_core/definitions.hpp"
 #include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_loader.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_options.hpp"
@@ -150,39 +151,6 @@ public:
   static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
   static inline const char TREE_NODE_MODEL_ELEMENT_NAME[] = "TreeNodesModel";
   static inline const char NODE_INSTANCE_NAME_ATTRIBUTE_NAME[] = "name";
-
-  /**
-   * @brief Implementation details of a single data port.
-   */
-  struct NodePortInfo
-  {
-    /// Name of the port.
-    std::string port_name;
-    /// String representation of the C++ type given to the port.
-    std::string port_type;
-    /// Default value of the port encoded as string.
-    std::string port_default;
-    /// Flag whether the port implements a default value or not.
-    bool port_has_default;
-    /// Description of the port.
-    std::string port_description;
-    /// Direction of the port.
-    BT::PortDirection port_direction;
-  };
-
-  /**
-   * @brief Data structure encapsulating the information of all ports implemented by a behavior tree node.
-   */
-  struct NodeModel
-  {
-    /// Abstract type of the node.
-    BT::NodeType type;
-    /// Vector of implementation details for each data port.
-    std::vector<NodePortInfo> port_infos;
-  };
-
-  /// Mapping of node registration names and their implementation details.
-  using NodeModelMap = std::map<std::string, NodeModel>;
 
   class TreeElement;
 
@@ -1180,7 +1148,7 @@ public:
    * precedence over this token.
    *
    * @sa TreeResourceIdentity for more information about how to refer to a specific resource.
-   * @param resource Behavior tree resource that specifies the tree to be copied.
+   * @param resource Behavior tree resource to use.
    * @param tree_name Name of the tree to be copied. It must exist inside the given file.
    * @return Tree element representing the new behavior tree.
    * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p tree_name is empty but the root tree cannot be
@@ -1193,7 +1161,7 @@ public:
   TreeElement newTreeFromResource(const TreeResource & resource, const std::string & tree_name = "");
 
   /**
-   * @brief Determine if this document specifies a behavior tree with a particular name.
+   * @brief Determine if this document contains a behavior tree with a particular name.
    * @param tree_name Name of the tree.
    * @return `true` if a tree named @p tree_name exists in this document, `false` otherwise.
    */

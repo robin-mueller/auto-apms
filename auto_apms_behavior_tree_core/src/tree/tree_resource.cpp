@@ -29,124 +29,61 @@ namespace auto_apms_behavior_tree::core
 {
 
 TreeResourceIdentity::TreeResourceIdentity(const std::string & identity)
+: BehaviorResourceIdentity(identity, _AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE)
 {
-  std::vector<std::string> tokens = auto_apms_util::splitString(identity, "::", false);
-  if (tokens.size() == 1) {
-    tokens.insert(tokens.begin(), "");
-    tokens.push_back("");
+  std::vector<std::string> tokens =
+    auto_apms_util::splitString(behavior_alias, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP, true);
+
+  // If only a single token is given, assume it's file_stem
+  if (tokens.size() > 1) {
+    file_stem = tokens[0];
+    tree_name = tokens[1];
+  } else if (tokens.size() > 0) {
+    file_stem = tokens[0];
+    tree_name = "";
   }
-  if (tokens.size() != 3) {
-    throw auto_apms_util::exceptions::ResourceIdentityFormatError(
-      "Identity string '" + identity + "' has wrong format. Number of string tokens separated by '::' must be 3.");
-  }
-  package_name = tokens[0];
-  file_stem = tokens[1];
-  tree_name = tokens[2];
+
   if (file_stem.empty() && tree_name.empty()) {
     throw auto_apms_util::exceptions::ResourceIdentityFormatError(
       "Behavior tree resource identity string '" + identity +
-      "' has wrong format. It's not allowed to omit both <tree_file_stem> and <tree_name>.");
+      "' is invalid. It's not allowed to omit both <tree_file_stem> and <tree_name>.");
   }
 }
 
 TreeResourceIdentity::TreeResourceIdentity(const char * identity) : TreeResourceIdentity(std::string(identity)) {}
 
-bool TreeResourceIdentity::operator==(const TreeResourceIdentity & other) const { return str() == other.str(); }
-
-bool TreeResourceIdentity::operator<(const TreeResourceIdentity & other) const { return str() < other.str(); }
-
-std::string TreeResourceIdentity::str() const { return package_name + "::" + file_stem + "::" + tree_name; }
-
-bool TreeResourceIdentity::empty() const { return package_name.empty() && file_stem.empty() && tree_name.empty(); }
-
-TreeResource::TreeResource(const Identity & identity) : identity_(identity)
+TreeResource::TreeResource(const TreeResourceIdentity & search_identity) : BehaviorResourceTemplate(search_identity)
 {
-  if (identity.empty()) {
-    throw auto_apms_util::exceptions::ResourceIdentityFormatError("Cannot create TreeResource with empty identity.");
+  // Fill the tree specific fields for the unique identity
+  const std::vector<std::string> & tokens = auto_apms_util::splitString(
+    unique_identity_.behavior_alias, _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP, false);
+
+  if (tokens.size() != 2) {
+    throw auto_apms_util::exceptions::ResourceIdentityFormatError(
+      "Unique tree resource identity string '" + unique_identity_.str() +
+      "' is invalid. Behavior alias must be <tree_file_stem>" +
+      _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + "<tree_name>.");
   }
 
-  std::set<std::string> search_packages;
-  if (!identity.package_name.empty()) {
-    search_packages.insert(identity.package_name);
-  } else {
-    search_packages =
-      auto_apms_util::getPackagesWithResourceType(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE);
-  }
-
-  size_t matching_count = 0;
-  std::string matching_package_name;
-  std::string matching_tree_file_path;
-  std::vector<std::string> matching_node_manifest_file_paths;
-  for (const auto & p : search_packages) {
-    std::string content;
-    std::string base_path;
-    if (ament_index_cpp::get_resource(
-          _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_TYPE_NAME__TREE, p, content, &base_path)) {
-      for (const auto & line : auto_apms_util::splitString(content, "\n")) {
-        const std::vector<std::string> parts = auto_apms_util::splitString(line, "|", false);
-        if (parts.size() != 4) {
-          throw auto_apms_util::exceptions::ResourceError(
-            "Invalid behavior tree resource file (Package: '" + p + "'). Invalid line: " + line + ".");
-        }
-        const std::string & found_tree_file_stem = parts[0];
-        const std::vector<std::string> found_tree_names = auto_apms_util::splitString(parts[1], ";");
-
-        // Determine if resource is matching
-        if (identity.tree_name.empty()) {
-          if (found_tree_file_stem != identity.file_stem) {
-            continue;
-          }
-        } else if (identity.file_stem.empty()) {
-          if (!auto_apms_util::contains(found_tree_names, identity.tree_name)) {
-            continue;
-          }
-        } else if (
-          found_tree_file_stem != identity.file_stem ||
-          !auto_apms_util::contains(found_tree_names, identity.tree_name)) {
-          continue;
-        }
-
-        matching_count++;
-        matching_package_name = p;
-        matching_tree_file_path = base_path + "/" + parts[2];
-        for (const std::string & path : auto_apms_util::splitString(parts[3], ";")) {
-          matching_node_manifest_file_paths.push_back(
-            std::filesystem::path(path).is_absolute() ? path : (base_path + "/" + path));
-        }
-      }
-    }
-  }
-
-  if (matching_count == 0) {
-    throw auto_apms_util::exceptions::ResourceError(
-      "No behavior tree file with identity '" + identity.str() + "' was registered.");
-  }
-  if (matching_count > 1) {
-    throw auto_apms_util::exceptions::ResourceError(
-      "Resource identity '" + identity.str() + "' is ambiguous. You must be more precise.");
-  }
-
-  // Set the members since we've found the matching resource
-  package_name_ = matching_package_name;
-  tree_file_path_ = matching_tree_file_path;
-  node_manifest_file_paths_ = matching_node_manifest_file_paths;
+  unique_identity_.file_stem = tokens[0];
+  unique_identity_.tree_name = tokens[1];
 
   // Verify that the file is ok
   TreeDocument doc;
   try {
-    doc.mergeFile(tree_file_path_, true);
+    doc.mergeFile(build_request_file_path_, true);
   } catch (const std::exception & e) {
     throw auto_apms_util::exceptions::ResourceError(
-      "Failed to create TreeResource with identity '" + identity.str() + "' because tree file " + tree_file_path_ +
-      " cannot be parsed: " + e.what());
+      "Failed to create TreeResource with identity '" + unique_identity_.str() + "' because tree file " +
+      build_request_file_path_ + " cannot be parsed: " + e.what());
   }
 
   // Verify that the tree <tree_name> specified by the identity string is actually present
-  if (!identity.tree_name.empty()) {
-    if (!auto_apms_util::contains(doc.getAllTreeNames(), identity.tree_name)) {
+  if (!unique_identity_.tree_name.empty()) {
+    if (!auto_apms_util::contains(doc.getAllTreeNames(), unique_identity_.tree_name)) {
       throw auto_apms_util::exceptions::ResourceError(
-        "Cannot create TreeResource with identity '" + identity.str() + "' because '" + identity.tree_name +
-        "' does not exist in tree file " + tree_file_path_ + ".");
+        "Cannot create TreeResource with identity '" + unique_identity_.str() + "' because '" +
+        unique_identity_.tree_name + "' does not exist in tree file " + build_request_file_path_ + ".");
     }
   }
 
@@ -156,47 +93,48 @@ TreeResource::TreeResource(const Identity & identity) : identity_(identity)
   }
 }
 
-TreeResource::TreeResource(const std::string & identity) : TreeResource(TreeResourceIdentity(identity)) {}
+TreeResource::TreeResource(const std::string & search_identity) : TreeResource(TreeResourceIdentity(search_identity)) {}
 
-TreeResource::TreeResource(const char * identity) : TreeResource(std::string(identity)) {}
+TreeResource::TreeResource(const char * search_identity) : TreeResource(std::string(search_identity)) {}
 
-TreeResource TreeResource::selectByTreeName(const std::string & tree_name, const std::string & package_name)
+TreeResource TreeResource::findByTreeName(const std::string & tree_name, const std::string & package_name)
 {
-  return TreeResource(package_name + "::::" + tree_name);
+  return TreeResource(
+    package_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP +
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + tree_name);
 }
 
-TreeResource TreeResource::selectByFileStem(const std::string & file_name, const std::string & package_name)
+TreeResource TreeResource::findByFileStem(const std::string & file_name, const std::string & package_name)
 {
-  return TreeResource(package_name + "::" + file_name + "::");
+  return TreeResource(
+    package_name + _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP + file_name +
+    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP);
 }
 
-bool TreeResource::hasRootTreeName() const { return !identity_.tree_name.empty() || !doc_root_tree_name_.empty(); }
+bool TreeResource::hasRootTreeName() const
+{
+  return !unique_identity_.tree_name.empty() || !doc_root_tree_name_.empty();
+}
 
 std::string TreeResource::getRootTreeName() const
 {
-  if (!identity_.tree_name.empty()) return identity_.tree_name;
+  if (!unique_identity_.tree_name.empty()) return unique_identity_.tree_name;
 
   // If <tree_name> wasn't provided, look for root tree attribute in XML file
   if (!doc_root_tree_name_.empty()) return doc_root_tree_name_;
 
   // Root tree cannot be determined
   throw auto_apms_util::exceptions::ResourceError(
-    "Cannot get root tree name of tree resource '" + identity_.str() + "'. Since there is no XML attribute named '" +
-    TreeDocument::ROOT_TREE_ATTRIBUTE_NAME +
+    "Cannot get root tree name of tree resource '" + unique_identity_.str() +
+    "'. Since there is no XML attribute named '" + TreeDocument::ROOT_TREE_ATTRIBUTE_NAME +
     "' and the resource identity doesn't specify <tree_name>, the root tree is unkown.");
 }
 
-NodeManifest TreeResource::getNodeManifest() const { return NodeManifest::fromFiles(node_manifest_file_paths_); }
-
-std::string TreeResource::getPackageName() const { return package_name_; }
-
-std::string TreeResource::getFileStem() const { return std::filesystem::path(tree_file_path_).stem(); }
-
-TreeResourceIdentity TreeResource::createIdentity(const std::string & tree_name) const
+TreeResourceIdentity TreeResource::createIdentityForTree(const std::string & tree_name) const
 {
-  Identity i;
-  i.package_name = package_name_;
-  i.file_stem = getFileStem();
+  TreeResourceIdentity i;
+  i.package_name = unique_identity_.package_name;
+  i.file_stem = unique_identity_.file_stem;
   i.tree_name = tree_name;
   return i;
 }

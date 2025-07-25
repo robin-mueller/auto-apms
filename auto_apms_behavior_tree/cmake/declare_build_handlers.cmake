@@ -29,10 +29,10 @@
 # @public
 #
 macro(auto_apms_behavior_tree_declare_build_handlers target)
-    auto_apms_util_register_plugins(
-        ${target}
-        "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface"
-        ${ARGN}
-        FACTORY_TEMPLATE_CLASS "auto_apms_behavior_tree::TreeBuildHandlerFactoryTemplate"
-    )
+  auto_apms_util_register_plugins(
+    ${target}
+    "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface"
+    ${ARGN}
+    FACTORY_TEMPLATE_CLASS "auto_apms_behavior_tree::TreeBuildHandlerFactoryTemplate"
+  )
 endmacro()

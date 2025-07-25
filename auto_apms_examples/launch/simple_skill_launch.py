@@ -28,14 +28,14 @@ def generate_launch_description():
             # Spawn the behavior tree executor for the simple skill tree
             Node(
                 package="auto_apms_behavior_tree",
-                executable="run_tree",
+                executable="run_behavior",
                 arguments=["auto_apms_examples::simple_skill_tree::SimpleSkillDemo"],
                 parameters=[{"bb.msg": "Custom message", "bb.n_times": 10}],
                 condition=IfCondition(EqualsSubstitution(LaunchConfiguration("approach"), "graphical")),
             ),
             Node(
                 package="auto_apms_behavior_tree",
-                executable="run_tree",
+                executable="run_behavior",
                 parameters=[
                     {
                         "build_handler": "auto_apms_examples::SimpleSkillBuildHandler",

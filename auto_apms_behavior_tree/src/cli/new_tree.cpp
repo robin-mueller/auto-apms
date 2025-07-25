@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
   const std::filesystem::path tree_file_path = std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[1]));
   core::NodeManifest node_manifest;
   for (int i = 2; i < argc; ++i) {
-    node_manifest.merge(core::NodeManifest::fromResourceIdentity(auto_apms_util::trimWhitespaces(argv[i])));
+    node_manifest.merge(core::NodeManifest::fromResource(auto_apms_util::trimWhitespaces(argv[i])));
   }
 
   // Make sure path is not empty

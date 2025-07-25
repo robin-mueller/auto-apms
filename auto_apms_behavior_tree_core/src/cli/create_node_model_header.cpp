@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
 
     core::NodeManifest manifest;
     tinyxml2::XMLDocument model_doc;
-    core::TreeDocument::NodeModelMap model_map;
+    NodeModelMap model_map;
 
     const std::set<std::string> native_node_names = BT::BehaviorTreeFactory().builtinNodes();
     if (include_native_nodes) {
@@ -108,9 +108,9 @@ namespace )" << build_package_name << R"(::model
 )";
     // clang-format on
     for (const auto & [node_name, options] : manifest.map()) {
-      core::TreeBuilder::NodeModelMap::const_iterator it = model_map.find(node_name);
+      NodeModelMap::const_iterator it = model_map.find(node_name);
       if (it == model_map.end()) continue;
-      const core::TreeBuilder::NodeModel & model = it->second;
+      const NodeModel & model = it->second;
       const bool is_native_node = native_node_names.find(node_name) != native_node_names.end();
       const bool is_leaf = auto_apms_util::contains(leaf_node_types, model.type);
       const std::string base_class_name = is_leaf ? "LeafNodeModelType" : "NodeModelType";
@@ -128,7 +128,7 @@ static PortInfos ports()
 {
 PortInfos port_infos;
 )";
-      for (const core::TreeBuilder::NodePortInfo & info : model.port_infos) {
+      for (const NodePortInfo & info : model.port_infos) {
         content << "port_infos.insert(BT::CreatePort<"<< info.port_type <<">(BT::convertFromString<BT::PortDirection>(\"" << info.port_direction << "\"), \"" << info.port_name << "\", \"" << info.port_description << "\"));\n";
         if (info.port_has_default && !BT::TreeNode::isBlackboardPointer(info.port_default)) {
           content << "port_infos[\"" << info.port_name << "\"].setDefaultValue(BT::convertFromString<" << info.port_type << ">(\"" << info.port_default << "\"));\n";
@@ -169,7 +169,7 @@ return RegistrationOptions::decode(R"()" << options.encode() << ")\");" << R"(
         content << "AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_NON_LEAF_THISREF_METHODS(" << node_name << ")\n";
       }
       content << "AUTO_APMS_BEHAVIOR_TREE_CORE_DEFINE_LEAF_THISREF_METHODS(" << node_name << ")\n";
-      for (const core::TreeBuilder::NodePortInfo & info : model.port_infos) {
+      for (const NodePortInfo & info : model.port_infos) {
         content << R"(
 /// @brief Setter for port ')" << info.port_name << "' (" << BT::toStr(info.port_direction) << R"().
 ///

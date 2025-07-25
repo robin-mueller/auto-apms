@@ -13,20 +13,20 @@
 # limitations under the License.
 
 if(DEFINED _AUTO_APMS_UTIL__PLUGINS_XML_CONTENT)
-    file(GENERATE
-        OUTPUT "${_AUTO_APMS_UTIL__BUILD_DIR_ABSOLUTE}/${PROJECT_NAME}_plugins.xml"
-        CONTENT "<class_libraries>\n${_AUTO_APMS_UTIL__PLUGINS_XML_CONTENT}</class_libraries>"
-    )
-    install(
-        FILES
-        "${_AUTO_APMS_UTIL__BUILD_DIR_ABSOLUTE}/${PROJECT_NAME}_plugins.xml"
-        DESTINATION
-        "${_AUTO_APMS_UTIL__AUTO_APMS_SHARED_RESOURCES_DIR_RELATIVE}"
-    )
-    ament_index_register_resource(
-        "${_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB}"
-        CONTENT
-        "${_AUTO_APMS_UTIL__AUTO_APMS_SHARED_RESOURCES_DIR_RELATIVE}/${PROJECT_NAME}_plugins.xml"
-    )
+  file(GENERATE
+    OUTPUT "${_AUTO_APMS_UTIL__BUILD_DIR_ABSOLUTE}/${PROJECT_NAME}_plugins.xml"
+    CONTENT "<class_libraries>\n${_AUTO_APMS_UTIL__PLUGINS_XML_CONTENT}</class_libraries>"
+  )
+  install(
+    FILES
+    "${_AUTO_APMS_UTIL__BUILD_DIR_ABSOLUTE}/${PROJECT_NAME}_plugins.xml"
+    DESTINATION
+    "${_AUTO_APMS_UTIL__AUTO_APMS_SHARED_RESOURCES_DIR_RELATIVE}"
+  )
+  ament_index_register_resource(
+    "${_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB}"
+    CONTENT
+    "${_AUTO_APMS_UTIL__AUTO_APMS_SHARED_RESOURCES_DIR_RELATIVE}/${PROJECT_NAME}_plugins.xml"
+  )
 endif()
 
