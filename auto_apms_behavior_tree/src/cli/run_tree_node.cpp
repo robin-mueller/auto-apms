@@ -62,7 +62,8 @@ int main(int argc, char ** argv)
   core::TreeDocument::NodeElement::PortValues port_values;
   if (args_vector.size() > 2) {
     try {
-      port_values = YAML::Load(auto_apms_util::trimWhitespaces(args_vector[2])).as<std::map<std::string, std::string>>();
+      port_values =
+        YAML::Load(auto_apms_util::trimWhitespaces(args_vector[2])).as<std::map<std::string, std::string>>();
     } catch (std::exception & e) {
       RCLCPP_ERROR(node_ptr->get_logger(), "ERROR interpreting argument port_values: %s", e.what());
       return EXIT_FAILURE;
