@@ -24,7 +24,7 @@ The following ROS 2 versions are supported (Linux only):
 
 | ROS 2 Version | OS | Status |
 | :-------------: | :-----------: | :-----------: |
-| [Humble Hawksbill](https://docs.ros.org/en/humble/index.html) | [Ubuntu 22.04 (Jammy Jellyfish)](https://releases.ubuntu.com/jammy/) | [![ROS 2 Humble Test](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/humble.yaml) |
+| [Humble Hawksbill](https://docs.ros.org/en/humble/index.html) | [Ubuntu 22.04 (Jammy Jellyfish)](https://releases.ubuntu.com/jammy/) | Legacy |
 | [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) | [Ubuntu 24.04 (Noble Numbat)](https://releases.ubuntu.com/noble/) | [![ROS 2 Jazzy Test](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml/badge.svg)](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml) |
 
 ## Highlights

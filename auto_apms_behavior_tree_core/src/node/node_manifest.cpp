@@ -226,6 +226,9 @@ NodeManifestResource::NodeManifestResource(const Identity & search_identity)
         std::string found_metadata_id = parts[0];
         if (found_metadata_id != search_identity.metadata_id) continue;
 
+        // Found matching resource - Increase counter
+        matching_count++;
+
         // Now fill the other member variables in case the resource matches (if match is not unique, error is thrown
         // later and the object is discarded)
 

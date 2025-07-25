@@ -58,7 +58,7 @@ int main(int argc, char ** argv)
       input_packages.push_back(package_name);
       if (package_name == "include_native") continue;
 
-      // Throw if there a registration name exists multiple times
+      // Throws if there are registration names which exist multiple times
       node_manifest.merge(core::NodeManifest::fromResource(auto_apms_util::trimWhitespaces(argv[i])), false);
     }
     const bool include_native = auto_apms_util::contains(input_packages, std::string("include_native"));
@@ -119,7 +119,7 @@ int main(int argc, char ** argv)
         content << R"(
 )" << "### " << registration_name << R"(
 
-**Class:** `)" << options.class_name << R"(`
+**Corresponding C++ Model:** `)" << options.class_name << R"(`
 
 **Node Type:** `)" << BT::toStr(model.type) << R"(`
 )";
