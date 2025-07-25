@@ -74,7 +74,7 @@ int main(int argc, char ** argv)
     std::map<std::string, std::string> package_for_class = node_loader_ptr->getClassPackageMap();
     const NodeModelMap model_map = doc.getNodeModel(include_native);
     core::NodeRegistrationOptions native_node_options;
-    native_node_options.class_name = "❌";
+    native_node_options.class_name = "None";
 
     // Verify that package information is available
     const std::set<std::string> native_node_names = BT::BehaviorTreeFactory().builtinNodes();
@@ -118,8 +118,14 @@ int main(int argc, char ** argv)
         // clang-format off
         content << R"(
 )" << "### " << registration_name << R"(
-
-**Corresponding C++ Model:** `)" << options.class_name << R"(`
+)";
+        if (options.class_name != "None") {
+          content << R"(
+**Plugin Class:** `)" << options.class_name << R"(`
+)";
+        }
+        content << R"(
+**C++ Model:** `)" << auto_apms_util::splitString(package_name, " ")[0] << "::" << registration_name << R"(`
 
 **Node Type:** `)" << BT::toStr(model.type) << R"(`
 )";
