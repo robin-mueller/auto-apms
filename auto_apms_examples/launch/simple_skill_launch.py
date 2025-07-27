@@ -17,6 +17,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import EqualsSubstitution, LaunchConfiguration
 from launch.conditions import IfCondition
 from launch_ros.actions import Node
+from auto_apms_behavior_tree.launch import RunBehavior, BehaviorResource
 
 
 def generate_launch_description():
@@ -25,24 +26,15 @@ def generate_launch_description():
             DeclareLaunchArgument("approach", choices=["graphical", "programmatic"]),
             # Spawn the simple skill server
             Node(package="auto_apms_examples", executable="simple_skill_server"),
-            # Spawn the behavior tree executor for the simple skill tree
-            Node(
-                package="auto_apms_behavior_tree",
-                executable="run_behavior",
-                arguments=["auto_apms_examples::simple_skill_tree::SimpleSkillDemo"],
-                parameters=[{"bb.msg": "Custom message", "bb.n_times": 10}],
+            # Spawn the behavior executor for the simple skill tree
+            RunBehavior(
+                build_request=BehaviorResource("auto_apms_examples::simple_skill_tree::SimpleSkillDemo"),
+                blackboard={"msg": "Custom message", "n_times": 10},
                 condition=IfCondition(EqualsSubstitution(LaunchConfiguration("approach"), "graphical")),
             ),
-            Node(
-                package="auto_apms_behavior_tree",
-                executable="run_behavior",
-                parameters=[
-                    {
-                        "build_handler": "auto_apms_examples::SimpleSkillBuildHandler",
-                        "bb.msg": "Custom message",
-                        "bb.n_times": 10,
-                    }
-                ],
+            RunBehavior(
+                build_handler="auto_apms_examples::SimpleSkillBuildHandler",
+                blackboard={"msg": "Custom message", "n_times": 10},
                 condition=IfCondition(EqualsSubstitution(LaunchConfiguration("approach"), "programmatic")),
             ),
         ]

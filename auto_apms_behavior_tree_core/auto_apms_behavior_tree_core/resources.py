@@ -248,7 +248,7 @@ class NodeManifest:
         except Exception as e:
             raise IOError(f"Failed to write manifest to file '{file_path}': {e}")
 
-    def dump(self) -> str:
+    def dump(self):
         """
         Dump the node manifest as a YAML string.
         """
