@@ -68,7 +68,7 @@ jobs:
               },
               "test": {
                 "ctest-args": [
-                  "-R", "auto_apms_\\S*_unit_tests"
+                  "-R", "auto_apms_.*_unit_tests"
                 ]
               }
             }
@@ -84,6 +84,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build_and_test # Only run this job after the build_and_test job has completed successfully.
     if: github.event_name == 'push' # Don't run this job on pull requests, only on pushes.
+    container:
+      image: ubuntu:noble
+      env:
+        PIP_BREAK_SYSTEM_PACKAGES: 1 # Allow pip to install system packages if needed.
     steps:
       - name: Setup ROS environment
         uses: ros-tooling/setup-ros@v0.7
