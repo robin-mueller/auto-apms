@@ -231,11 +231,11 @@ protected:
   const Context context_;
   const rclcpp::Logger logger_;
 
+  void halt() override final;
+
+  BT::NodeStatus tick() override final;
+
 private:
-  void halt() override;
-
-  BT::NodeStatus tick() override;
-
   static std::mutex & getMutex();
 
   // contains the fully-qualified name of the node and the name of the client

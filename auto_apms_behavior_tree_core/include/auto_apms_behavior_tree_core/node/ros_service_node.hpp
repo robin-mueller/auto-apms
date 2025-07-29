@@ -194,16 +194,15 @@ protected:
   const Context context_;
   const rclcpp::Logger logger_;
 
+  BT::NodeStatus tick() override final;
+
+  void halt() override final;
+
 private:
-  BT::NodeStatus tick() override;
-
-  void halt() override;
-
   static std::mutex & getMutex();
 
   static ClientsRegistry & getRegistry();
 
-private:
   bool dynamic_client_instance_ = false;
   std::shared_ptr<ServiceClientInstance> client_instance_;
   typename ServiceClient::SharedFuture future_;

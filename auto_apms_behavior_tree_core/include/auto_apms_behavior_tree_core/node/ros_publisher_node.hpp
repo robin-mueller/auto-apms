@@ -127,9 +127,9 @@ protected:
   const Context context_;
   const rclcpp::Logger logger_;
 
-private:
   BT::NodeStatus tick() override final;
 
+private:
   const rclcpp::QoS qos_;
   std::string topic_name_;
   bool dynamic_client_instance_ = false;

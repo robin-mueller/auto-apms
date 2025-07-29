@@ -117,6 +117,23 @@ add_executable(create_node_reference_markdown "src/cli/create_node_reference_mar
 target_link_libraries(create_node_reference_markdown ${PROJECT_NAME})
 
 #
+# ------------ Testing --------------
+#
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(example_interfaces REQUIRED)
+
+  ament_add_gtest(${PROJECT_NAME}_unit_tests
+    "test/unit/ros_subscriber_node.cpp"
+  )
+  target_link_libraries(${PROJECT_NAME}_unit_tests
+    ${PROJECT_NAME}
+    ${example_interfaces_TARGETS}
+  )
+endif()
+
+#
 # ------------ Packaging --------------
 #
 

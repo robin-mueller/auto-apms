@@ -14,13 +14,13 @@
 
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <memory>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <unordered_map>
 #include <mutex>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/ros_node_context.hpp"
@@ -71,13 +71,14 @@ class RosSubscriberNode : public BT::ConditionNode
       const rclcpp::QoS & qos);
 
     std::shared_ptr<Subscriber> subscriber;
-    std::vector<std::pair<const void*, std::function<void(const std::shared_ptr<MessageT>)>>> callbacks;
+    std::vector<std::pair<const void *, std::function<void(const std::shared_ptr<MessageT>)>>> callbacks;
     std::shared_ptr<MessageT> last_msg;
     std::string name;
-    
-    void addCallback(const void* callback_owner, const std::function<void(const std::shared_ptr<MessageT>)>& callback);
-    void removeCallback(const void* callback_owner);
-    void broadcast(const std::shared_ptr<MessageT>& msg);
+
+    void addCallback(
+      const void * callback_owner, const std::function<void(const std::shared_ptr<MessageT>)> & callback);
+    void removeCallback(const void * callback_owner);
+    void broadcast(const std::shared_ptr<MessageT> & msg);
   };
 
   using SubscribersRegistry = std::unordered_map<std::string, std::weak_ptr<SubscriberInstance>>;
@@ -100,7 +101,7 @@ public:
   explicit RosSubscriberNode(
     const std::string & instance_name, const Config & config, Context context, const rclcpp::QoS & qos = {10});
 
-  virtual ~RosSubscriberNode() 
+  virtual ~RosSubscriberNode()
   {
     if (sub_instance_) {
       sub_instance_->removeCallback(this);
@@ -167,9 +168,9 @@ protected:
   const Context context_;
   const rclcpp::Logger logger_;
 
-private:
   BT::NodeStatus tick() override final;
 
+private:
   static std::mutex & registryMutex();
 
   // contains the fully-qualified name of the node and the name of the topic
@@ -205,24 +206,25 @@ inline RosSubscriberNode<MessageT>::SubscriberInstance::SubscriberInstance(
 }
 
 template <class MessageT>
-inline void RosSubscriberNode<MessageT>::SubscriberInstance::addCallback(const void* callback_owner, const std::function<void(const std::shared_ptr<MessageT>)>& callback)
+inline void RosSubscriberNode<MessageT>::SubscriberInstance::addCallback(
+  const void * callback_owner, const std::function<void(const std::shared_ptr<MessageT>)> & callback)
 {
   callbacks.emplace_back(callback_owner, callback);
 }
 
 template <class MessageT>
-inline void RosSubscriberNode<MessageT>::SubscriberInstance::removeCallback(const void* callback_owner)
+inline void RosSubscriberNode<MessageT>::SubscriberInstance::removeCallback(const void * callback_owner)
 {
   callbacks.erase(
-    std::remove_if(callbacks.begin(), callbacks.end(),
-      [callback_owner](const auto& pair) { return pair.first == callback_owner; }),
+    std::remove_if(
+      callbacks.begin(), callbacks.end(), [callback_owner](const auto & pair) { return pair.first == callback_owner; }),
     callbacks.end());
 }
 
 template <class MessageT>
-inline void RosSubscriberNode<MessageT>::SubscriberInstance::broadcast(const std::shared_ptr<MessageT>& msg)
+inline void RosSubscriberNode<MessageT>::SubscriberInstance::broadcast(const std::shared_ptr<MessageT> & msg)
 {
-  for (auto& callback_pair : callbacks) {
+  for (auto & callback_pair : callbacks) {
     callback_pair.second(msg);
   }
 }

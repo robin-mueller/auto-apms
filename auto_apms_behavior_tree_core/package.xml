@@ -21,6 +21,9 @@
   <depend>behaviortree_cpp</depend>
   <depend>auto_apms_util</depend>
 
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>example_interfaces</test_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
