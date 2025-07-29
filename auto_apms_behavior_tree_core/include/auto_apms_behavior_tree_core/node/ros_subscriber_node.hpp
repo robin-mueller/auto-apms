@@ -14,9 +14,13 @@
 
 #pragma once
 
-#include <boost/signals2.hpp>
+#include <functional>
 #include <memory>
 #include <string>
+#include <vector>
+#include <algorithm>
+#include <unordered_map>
+#include <mutex>
 
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/ros_node_context.hpp"
@@ -67,9 +71,13 @@ class RosSubscriberNode : public BT::ConditionNode
       const rclcpp::QoS & qos);
 
     std::shared_ptr<Subscriber> subscriber;
-    boost::signals2::signal<void(const std::shared_ptr<MessageT>)> broadcaster;
+    std::vector<std::pair<const void*, std::function<void(const std::shared_ptr<MessageT>)>>> callbacks;
     std::shared_ptr<MessageT> last_msg;
     std::string name;
+    
+    void addCallback(const void* callback_owner, const std::function<void(const std::shared_ptr<MessageT>)>& callback);
+    void removeCallback(const void* callback_owner);
+    void broadcast(const std::shared_ptr<MessageT>& msg);
   };
 
   using SubscribersRegistry = std::unordered_map<std::string, std::weak_ptr<SubscriberInstance>>;
@@ -92,7 +100,12 @@ public:
   explicit RosSubscriberNode(
     const std::string & instance_name, const Config & config, Context context, const rclcpp::QoS & qos = {10});
 
-  virtual ~RosSubscriberNode() { signal_connection_.disconnect(); }
+  virtual ~RosSubscriberNode() 
+  {
+    if (sub_instance_) {
+      sub_instance_->removeCallback(this);
+    }
+  }
 
   /**
    * @brief Derived nodes implementing the static method RosSubscriberNode::providedPorts may call this method to also
@@ -167,7 +180,6 @@ private:
   bool dynamic_client_instance_ = false;
   std::shared_ptr<SubscriberInstance> sub_instance_;
   std::shared_ptr<MessageT> last_msg_;
-  boost::signals2::connection signal_connection_;
   std::string subscriber_key_;
 };
 
@@ -186,10 +198,33 @@ inline RosSubscriberNode<MessageT>::SubscriberInstance::SubscriberInstance(
   // The callback will broadcast to all the instances of RosSubscriberNode<MessageT>
   auto callback = [this](const std::shared_ptr<MessageT> msg) {
     this->last_msg = msg;
-    this->broadcaster(msg);
+    this->broadcast(msg);
   };
   subscriber = node->create_subscription<MessageT>(topic_name, qos, callback, option);
   name = topic_name;
+}
+
+template <class MessageT>
+inline void RosSubscriberNode<MessageT>::SubscriberInstance::addCallback(const void* callback_owner, const std::function<void(const std::shared_ptr<MessageT>)>& callback)
+{
+  callbacks.emplace_back(callback_owner, callback);
+}
+
+template <class MessageT>
+inline void RosSubscriberNode<MessageT>::SubscriberInstance::removeCallback(const void* callback_owner)
+{
+  callbacks.erase(
+    std::remove_if(callbacks.begin(), callbacks.end(),
+      [callback_owner](const auto& pair) { return pair.first == callback_owner; }),
+    callbacks.end());
+}
+
+template <class MessageT>
+inline void RosSubscriberNode<MessageT>::SubscriberInstance::broadcast(const std::shared_ptr<MessageT>& msg)
+{
+  for (auto& callback_pair : callbacks) {
+    callback_pair.second(msg);
+  }
 }
 
 template <class MessageT>
@@ -257,8 +292,7 @@ inline bool RosSubscriberNode<MessageT>::createSubscriber(const std::string & to
   }
 
   // add "this" as received of the broadcaster
-  signal_connection_ =
-    sub_instance_->broadcaster.connect([this](const std::shared_ptr<MessageT> msg) { last_msg_ = msg; });
+  sub_instance_->addCallback(this, [this](const std::shared_ptr<MessageT> msg) { last_msg_ = msg; });
 
   return true;
 }

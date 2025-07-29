@@ -288,8 +288,14 @@ target_link_libraries(new_tree ${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
-  # To include the standard_nodes manifest, we use the ID of the node manifest resource
-  # (This will work even though the resource might not have been installed yet)
+  # ament_add_gtest(${PROJECT_NAME}_unit_tests
+  #   "test/unit/standard_nodes.cpp"
+  # )
+  # target_link_libraries(${PROJECT_NAME}_unit_tests
+  #   ${auto_apms_interfaces_TARGETS}
+  #   ${PROJECT_NAME}
+  # )
+
   auto_apms_behavior_tree_declare_trees(
     "test/trees/infinite_w_bb_flags.xml"
     NODE_MANIFEST

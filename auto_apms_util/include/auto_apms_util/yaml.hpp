@@ -15,7 +15,6 @@
 #pragma once
 
 #include <algorithm>
-#include <boost/core/demangle.hpp>
 #include <map>
 #include <string>
 
@@ -30,34 +29,32 @@
  * @brief Macro for defining YAML encode/decode methods for a class.
  * @param ClassType Fully qualified name of the class.
  */
-#define AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(ClassType)                                                  \
-  static ClassType fromFile(const std::string & path)                                                             \
-  {                                                                                                               \
-    if (auto_apms_util::isFileEmpty(path)) return ClassType();                                                    \
-    try {                                                                                                         \
-      return YAML::LoadFile(path).as<ClassType>();                                                                \
-    } catch (const YAML::ParserException & e) {                                                                   \
-      throw auto_apms_util::exceptions::YAMLFormatError(                                                          \
-        "Format error when creating " + boost::core::demangle(typeid(ClassType).name()) +                         \
-        " from file: " + std::string(e.what()));                                                                  \
-    }                                                                                                             \
-  }                                                                                                               \
-  static ClassType decode(const std::string & str)                                                                \
-  {                                                                                                               \
-    const bool empty = std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isspace(c); });      \
-    return empty ? ClassType() : YAML::Load(str).as<ClassType>();                                                 \
-  }                                                                                                               \
-  std::string encode() const                                                                                      \
-  {                                                                                                               \
-    YAML::Node root;                                                                                              \
-    root = *this;                                                                                                 \
-    YAML::Emitter out;                                                                                            \
-    out << root;                                                                                                  \
-    if (!out.good()) {                                                                                            \
-      throw std::runtime_error(                                                                                   \
-        "Error trying to encode " + boost::core::demangle(typeid(ClassType).name()) + ": " + out.GetLastError()); \
-    }                                                                                                             \
-    return out.c_str();                                                                                           \
+#define AUTO_APMS_UTIL_DEFINE_YAML_CONVERSION_METHODS(ClassType)                                             \
+  static ClassType fromFile(const std::string & path)                                                        \
+  {                                                                                                          \
+    if (auto_apms_util::isFileEmpty(path)) return ClassType();                                               \
+    try {                                                                                                    \
+      return YAML::LoadFile(path).as<ClassType>();                                                           \
+    } catch (const YAML::ParserException & e) {                                                              \
+      throw auto_apms_util::exceptions::YAMLFormatError(                                                     \
+        "Format error when loading YAML file " + path + ": " + std::string(e.what()));                       \
+    }                                                                                                        \
+  }                                                                                                          \
+  static ClassType decode(const std::string & str)                                                           \
+  {                                                                                                          \
+    const bool empty = std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isspace(c); }); \
+    return empty ? ClassType() : YAML::Load(str).as<ClassType>();                                            \
+  }                                                                                                          \
+  std::string encode() const                                                                                 \
+  {                                                                                                          \
+    YAML::Node root;                                                                                         \
+    root = *this;                                                                                            \
+    YAML::Emitter out;                                                                                       \
+    out << root;                                                                                             \
+    if (!out.good()) {                                                                                       \
+      throw std::runtime_error("Error trying to encode to YAML: " + out.GetLastError());                     \
+    }                                                                                                        \
+    return out.c_str();                                                                                      \
   }
 
 /// @}

@@ -9,6 +9,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 set(TEST_SOURCES
+  "msg/TestMessage.msg"
   "action/TestActionWrapper.action"
 )
 

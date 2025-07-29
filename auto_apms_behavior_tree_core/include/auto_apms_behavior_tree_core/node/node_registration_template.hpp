@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <boost/core/demangle.hpp>
 #include <stdexcept>
 #include <type_traits>
 
@@ -49,8 +48,8 @@ public:
     if constexpr (requires_ros_node_params) {
       if (!context_ptr) {
         throw std::invalid_argument(
-          boost::core::demangle(typeid(T).name()) +
-          " requires a valid RosNodeContext object to be passed via argument 'context_ptr'.");
+          "registerWithBehaviorTreeFactory requires a valid RosNodeContext object to be passed via argument "
+          "'context_ptr'.");
       }
       factory.registerNodeType<T>(registration_name, *context_ptr);
     } else {
