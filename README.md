@@ -6,32 +6,31 @@
 
 <h3>Automated Action Planning and Management System</h3>
 
-<a href="https://robin-mueller.github.io/auto-apms-guide/">![Docs](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Documentation)</a>
+<a href="https://robin-mueller.github.io/auto-apms-guide/introduction/about">![Docs](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=🎓Documentation)</a>
 <a href="https://doi.org/10.5281/zenodo.14790307">![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)</a>
 <a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
 <a href="https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml">![ROS 2](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml/badge.svg)</a>
 
 </div>
 
-# 🤖 Streamlining Behaviors in ROS 2
+# ✨ Streamlining Behaviors in ROS 2
 
 ![auto-apms-gif](https://github.com/user-attachments/assets/0039aa09-9448-4102-9eb3-38138a805728)
 
-[AutoAPMS](https://robin-mueller.github.io/auto-apms-guide/) is a **heavily extensible** development framework for **behavior-based applications**. It integrates [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) with ROS 2, implements a **powerful execution engine** and offers convenient CLI tooling for deploying behaviors with ease.
+**Start leveraging the advantages of Behavior Trees 🌳 fully integrated with ROS 2 🤖**
 
-The intention of this project is to make it significantly more user-friendly and less error prone to develop autonomous robotics with behavior trees. Most of the packages are written in C++, but the core functionality can also be leveraged by a Python API.
+AutoAPMS is a **heavily extensible** development framework for **behavior-based ROS 2 applications**. It provides a **highly modular integration of behavior trees**, implements a **powerful execution engine** and offers convenient CLI tooling for deploying behaviors with ease.
 
-The following ROS 2 versions are supported (Linux only):
+The intention of this project is to make it significantly more user-friendly and less error prone to develop autonomous robotics with behavior trees. The core packages are written in C++ and a supplementary Python API exposes high-level features for scripting.
 
-| ROS 2 Version | OS |
-| :-------------: | :-----------: |
-| [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) | [Ubuntu 24.04 (Noble Numbat)](https://releases.ubuntu.com/noble/) |
+> [!NOTE]
+> Currently we support **Linux only**! For a list of supported ROS 2 distros see the [GitHub build workflow](.github/workflows/test.yaml).
 
 ## Highlights
 
-There are plenty of ROS 2 packages which provide an implementation for behavior trees. AutoAPMS adopts the most popular one when it comes to C++ and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them in a ROS 2 workspace. Here are some of the most prominent features offered by this repository:
+There are plenty of ROS 2 packages which provide an implementation for behavior trees. AutoAPMS adopts [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP), the most popular one when it comes to C++, and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots. Here are some of the most prominent features offered by this repository:
 
-- Utilizes `ament_cmake` and `ament_index` for efficient behavior resource management
+- Efficient resource management using `ament_cmake` and `ament_index`
 
 - Inherently extensible due to plugin-based design
 
@@ -119,12 +118,11 @@ We also offer an extensive [API Documentation](https://robin-mueller.github.io/a
 doxygen doc/Doxyfile
 ```
 
-# 🌟 Credits
+# 🙏 Acknowledgements
 
-Aside from the core ROS 2 packages, this repository builds upon
+This repository builds on:
 
-- [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) by Davide Faconti.
+- [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) by Davide Faconti
+- [pyrobosim](https://github.com/sea-bass/pyrobosim) by Sebastian Castro
 
-- [pyrobosim](https://github.com/sea-bass/pyrobosim) by Sebastian Castro.
-
-Thanks for all the great work from the maintainers and contributors of the above mentioned projects.
+Special thanks to the maintainers of these projects. It was their contributions to the robotic community that made AutoAPMS possible in the first place! 🚀
