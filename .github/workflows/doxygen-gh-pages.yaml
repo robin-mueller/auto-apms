@@ -3,7 +3,7 @@ name: Deploy Doxygen docs to GitHub Pages
 on:
   push:
     branches:
-      - jazzy
+      - master
   pull_request:
     branches:
       - "*"

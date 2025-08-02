@@ -58,7 +58,7 @@ def main():
     node.start(wait_for_gui=False, auto_spin=False)
 
     def spin():
-        while not world.has_gui:
+        while not world.gui:
             node.get_logger().info("Waiting for GUI...")
             time.sleep(1.0)
         print("WORLD_READY", flush=True)  # Allow other processes to react when world node is ready

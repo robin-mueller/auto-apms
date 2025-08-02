@@ -3,7 +3,7 @@ name: Lint
 on:
   push:
     branches:
-      - jazzy
+      - master
   pull_request:
     branches:
       - "*"
@@ -11,22 +11,20 @@ on:
 jobs:
   run-pre-commit:
     name: Run Pre-Commit
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install ROS linter packages
-        run: |
-          sudo apt-get install software-properties-common &&
-          sudo add-apt-repository universe &&
-          sudo apt update && sudo apt install curl -y
-          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-          sudo apt-get update && sudo apt-get install ros-jazzy-ros-base
-        shell: bash
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Install ament_copyright
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install --break-system-packages git+https://github.com/ament/ament_lint.git#subdirectory=ament_copyright
+
       - name: Run Pre-Commit
         uses: pre-commit/action@v3.0.1

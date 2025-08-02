@@ -15,7 +15,8 @@
 import numpy as np
 
 from pyrobosim.core import World, Room, Robot, Hallway, Pose, Location, Object
-from pyrobosim.navigation import ConstantVelocityExecutor, RRTPlanner
+from pyrobosim.navigation import RRTPlanner
+from pyrobosim.navigation.execution import ConstantVelocityExecutor
 
 from ..util import create_square_from_center
 
@@ -60,15 +61,15 @@ class HogwartsWorld(World):
         center1 = (size, center_y)
 
         gryffindor = Room(
-            "gryffindor",
-            create_square_from_center(*center0, size),
+            name="gryffindor",
+            footprint=create_square_from_center(*center0, size),
             color="#ae0001",
             nav_poses=[Pose(*center0, z=0.0, yaw=0.0)],
             wall_width=wall_width,
         )
         slytherin = Room(
-            "slytherin",
-            create_square_from_center(*center1, size),
+            name="slytherin",
+            footprint=create_square_from_center(*center1, size),
             color="#2a623d",
             nav_poses=[Pose(*center1, z=0.0, yaw=np.pi)],
             wall_width=wall_width,
@@ -81,9 +82,9 @@ class HogwartsWorld(World):
         ):
             self.add_hallway(
                 hallway=Hallway(
-                    gryffindor,
-                    slytherin,
-                    f"hallway{i}",
+                    name=f"hallway{i}",
+                    room_start=gryffindor,
+                    room_end=slytherin,
                     width=hallway_width,
                     wall_width=wall_width,
                     conn_method="points",
@@ -97,14 +98,14 @@ class HogwartsWorld(World):
             )
 
         dumbledore = Location(
-            "dumbledore",
+            name="dumbledore",
             parent=gryffindor,
             category="boss",
             pose=Pose(center0[0] - size / 2 + boss_size, center0[1], 0.0),
             color=gryffindor.viz_color,
         )
         voldemort = Location(
-            "voldemort",
+            name="voldemort",
             parent=slytherin,
             category="boss",
             pose=Pose(center1[0] + size / 2 - boss_size, center1[1], 0.0),
@@ -143,7 +144,6 @@ class HogwartsWorld(World):
                         radius=student_radius,
                         height=0,
                         path_planner=RRTPlanner(
-                            world=self,
                             bidirectional=True,
                             rrt_connect=True,
                             rrt_star=True,

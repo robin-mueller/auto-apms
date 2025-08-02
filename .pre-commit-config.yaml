@@ -17,8 +17,8 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
+      - id: check-executables-have-shebangs
       - id: check-added-large-files
-      - id: check-ast
       - id: check-case-conflict
       - id: check-docstring-first
       - id: check-merge-conflict
@@ -60,6 +60,6 @@ repos:
     hooks:
       - id: ament_copyright
         name: ament_copyright
-        entry: bash -c "source /opt/ros/jazzy/setup.bash && exec ament_copyright --add-missing 'Robin Müller' apache2"
+        entry: ament_copyright --add-missing "Robin Müller" apache2
         language: system
         types: [file]

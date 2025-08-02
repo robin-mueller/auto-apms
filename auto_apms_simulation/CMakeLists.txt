@@ -23,7 +23,7 @@ set(_AUTO_APMS_SIMULATION__ACTION_NAME__EXECUTE_TASK_ACTION "execute_action")
 #
 
 include(FetchContent)
-set(PYROBOSIM_VERSION "3.3.0")
+set(PYROBOSIM_VERSION "4.2.0")
 FetchContent_Declare(
   pyrobosim
   GIT_REPOSITORY "https://github.com/sea-bass/pyrobosim.git"

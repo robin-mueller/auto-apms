@@ -74,9 +74,13 @@ public:
     }
 
     msg = context_.getFullyQualifiedTreeNodeName(this, false) + " - " + msg + (msg.back() == '.' ? "" : ".");
+#ifdef RCUTILS_LOG_NAMED  // Not available in jazzy
+    RCUTILS_LOG_NAMED(level, context_.getBaseLogger().get_name(), msg.c_str());
+#else
     RCUTILS_LOG_COND_NAMED(
       level, RCUTILS_LOG_CONDITION_EMPTY, RCUTILS_LOG_CONDITION_EMPTY, context_.getBaseLogger().get_name(),
       msg.c_str());
+#endif
     return BT::NodeStatus::SUCCESS;
   }
 

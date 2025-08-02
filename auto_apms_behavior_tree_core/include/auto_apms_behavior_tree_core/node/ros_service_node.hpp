@@ -220,7 +220,7 @@ template <class ServiceT>
 inline RosServiceNode<ServiceT>::ServiceClientInstance::ServiceClientInstance(
   rclcpp::Node::SharedPtr node, rclcpp::CallbackGroup::SharedPtr group, const std::string & service_name)
 {
-  service_client = node->create_client<ServiceT>(service_name, rmw_qos_profile_services_default, group);
+  service_client = node->create_client<ServiceT>(service_name, rclcpp::ServicesQoS(), group);
   name = service_name;
 }
 

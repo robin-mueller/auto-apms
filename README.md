@@ -6,10 +6,10 @@
 
 <h3>Automated Action Planning and Management System</h3>
 
-<a href="https://robin-mueller.github.io/auto-apms-guide/">![Website](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Website)</a>
+<a href="https://robin-mueller.github.io/auto-apms-guide/">![Docs](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=Documentation)</a>
 <a href="https://doi.org/10.5281/zenodo.14790307">![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)</a>
 <a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
-<a href="https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml">![Tests](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml/badge.svg)</a>
+<a href="https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml">![ROS 2](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml/badge.svg)</a>
 
 </div>
 
