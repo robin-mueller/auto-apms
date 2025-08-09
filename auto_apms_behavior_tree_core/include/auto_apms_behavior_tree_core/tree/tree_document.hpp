@@ -132,7 +132,7 @@ class NodeModelType;
  * automatically by that package.
  *
  * @sa <a
- * href="https://robin-mueller.github.io/auto-apms-guide/usage/tutorials/building-behavior-trees#using-treedocument">
+ * href="https://robin-mueller.github.io/auto-apms-guide/tutorial/building-behavior-trees#using-treedocument">
  * Tutorial: Building Behavior Trees Programmatically</a>
  */
 class TreeDocument : private tinyxml2::XMLDocument

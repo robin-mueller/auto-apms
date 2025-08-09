@@ -19,7 +19,7 @@
  * simple_skill_node.cpp.
  *
  * @sa <a
- * href="https://robin-mueller.github.io/auto-apms-guide/usage/tutorials/creating-a-behavior-from-scratch">
+ * href="https://robin-mueller.github.io/auto-apms-guide/tutorial/creating-a-behavior-from-scratch">
  * Tutorial: Creating a Behavior From Scratch</a>
  */
 

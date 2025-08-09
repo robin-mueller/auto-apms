@@ -147,7 +147,7 @@ public:
  * ```
  *
  * @sa <a
- * href="https://robin-mueller.github.io/auto-apms-guide/usage/concepts/common-resources#behavior-tree-node-models">
+ * href="https://robin-mueller.github.io/auto-apms-guide/concept/common-resources#behavior-tree-node-models">
  * Common Resources: Behavior Tree Node Models</a>
  */
 namespace model

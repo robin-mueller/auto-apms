@@ -132,7 +132,7 @@ namespace auto_apms_behavior_tree
  * this point on are forwarded to this specific build handler implementation.
  *
  * @sa <a
- *href="https://robin-mueller.github.io/auto-apms-guide/usage/tutorials/building-behavior-trees#using-treebuildhandler">
+ *href="https://robin-mueller.github.io/auto-apms-guide/tutorial/building-behavior-trees#using-treebuildhandler">
  * Tutorial: Using Behavior Tree Build Handlers</a>
  */
 class TreeBuildHandler
