@@ -31,6 +31,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: robin-mueller/auto-apms-px4
+          path: auto-apms-px4
       - name: Install Doxygen
         uses: ssciwr/doxygen-install@v1
         with:
