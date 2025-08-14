@@ -25,8 +25,12 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main repo
         uses: actions/checkout@v4
+      - name: Checkout auto-apms-px4 repo
+        uses: actions/checkout@v4
+        with:
+          repository: robin-mueller/auto-apms-px4
       - name: Install Doxygen
         uses: ssciwr/doxygen-install@v1
         with:

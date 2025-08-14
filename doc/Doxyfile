@@ -54,7 +54,7 @@ PROJECT_NUMBER         =
 # for a project that appears at the top of each page and should give viewers a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "Resilient Robot Mission Management"
+PROJECT_BRIEF          = "Streamlining behaviors in ROS 2"
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
@@ -202,9 +202,8 @@ STRIP_FROM_PATH        =
 STRIP_FROM_INC_PATH    = auto_apms_util/include/ \
                          auto_apms_behavior_tree/include/ \
                          auto_apms_behavior_tree_core/include/ \
-                         auto_apms_px4/include/ \
+                         auto-apms-px4/auto_apms_px4/include/ \
                          auto_apms_mission/include/ \
-                         auto_apms_simulation/include/
 
 # If the SHORT_NAMES tag is set to YES, Doxygen will generate much shorter (but
 # less readable) file names. This can be useful if your file system doesn't
@@ -1002,12 +1001,10 @@ INPUT                  = "auto_apms_util/include/auto_apms_util" \
                          "auto_apms_behavior_tree_core/src" \
                          "auto_apms_behavior_tree/include/auto_apms_behavior_tree" \
                          "auto_apms_behavior_tree/src" \
-                         "auto_apms_px4/include/auto_apms_px4" \
-                         "auto_apms_px4/src" \
+                         "auto-apms-px4/auto_apms_px4/include/auto_apms_px4" \
+                         "auto-apms-px4/auto_apms_px4/src" \
                          "auto_apms_mission/include/auto_apms_mission" \
                          "auto_apms_mission/src" \
-                         "auto_apms_simulation/include/auto_apms_simulation" \
-                         "auto_apms_simulation/src" \
                          "auto_apms_examples/src"
 
 
