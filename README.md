@@ -44,6 +44,8 @@ There are plenty of ROS 2 packages which provide an implementation for behavior 
 
 - `ros2cli` extensions for orchestrating the system from the command line
 
+- Abstractions for PX4 Autopilot available with [auto-apms-px4](https://github.com/robin-mueller/auto-apms-px4)
+
 # 🚀 Getting Started
 
 The following installation guide helps you getting started with AutoAPMS.

@@ -3,6 +3,7 @@ log/
 build/
 doc/html/
 test.xml
+auto-apms-px4/
 
 .vscode/*
 !.vscode/settings.json
