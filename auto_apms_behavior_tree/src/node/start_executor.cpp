@@ -148,4 +148,4 @@ public:
 
 }  // namespace auto_apms_behavior_tree
 
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_behavior_tree::StartExecutor)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_behavior_tree::StartExecutor)

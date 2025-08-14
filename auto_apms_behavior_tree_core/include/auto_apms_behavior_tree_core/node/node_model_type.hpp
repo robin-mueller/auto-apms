@@ -128,14 +128,14 @@ public:
  * @brief Models for all available behavior tree nodes.
  *
  * Behavior tree node models are generated under the namespace `my_package_name::model` when specifying the
- * `NODE_MODEL_HEADER_TARGET` argument of the CMake macro `auto_apms_behavior_tree_declare_nodes` in the CMakeLists.txt
+ * `NODE_MODEL_HEADER_TARGET` argument of the CMake macro `auto_apms_behavior_tree_register_nodes` in the CMakeLists.txt
  * of a package with name `my_package_name`.
  *
  * ## Usage
  *
  * In the CMakeLists.txt of the package call the macro as follows:
  * ```cmake
- * auto_apms_behavior_tree_declare_nodes(node_library_target
+ * auto_apms_behavior_tree_register_nodes(node_library_target
  *     ... # Fully qualified class names of the node plugins
  *     NODE_MODEL_HEADER_TARGET model_header_target
  * )

@@ -146,7 +146,7 @@ TreeExecutorNode::TreeExecutorNode(const std::string & name, TreeExecutorNodeOpt
       "Cannot load build handler '" + initial_params.build_handler +
       "' because no corresponding ament_index resource was found. Make sure that you spelled the build handler's "
       "name correctly "
-      "and registered it by calling auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of the "
+      "and registered it by calling auto_apms_behavior_tree_register_build_handlers() in the CMakeLists.txt of the "
       "corresponding package.");
   }
   loadBuildHandler(initial_params.build_handler);
@@ -370,7 +370,7 @@ void TreeExecutorNode::loadBuildHandler(const std::string & name)
     } catch (const pluginlib::CreateClassException & e) {
       throw exceptions::TreeExecutorError(
         "An error occurred when trying to create an instance of tree build handler class '" + name +
-        "'. This might be because you forgot to call the AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER macro "
+        "'. This might be because you forgot to call the AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER macro "
         "in the source file: " +
         e.what());
     } catch (const std::exception & e) {
@@ -509,7 +509,7 @@ rcl_interfaces::msg::SetParametersResult TreeExecutorNode::on_set_parameters_cal
           "Cannot load build handler '" + class_name +
           "' because no corresponding ament_index resource was found. Make sure that you spelled the build handler's "
           "name correctly "
-          "and registered it by calling auto_apms_behavior_tree_declare_build_handlers() in the CMakeLists.txt of "
+          "and registered it by calling auto_apms_behavior_tree_register_build_handlers() in the CMakeLists.txt of "
           "the "
           "corresponding package");
       }

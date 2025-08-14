@@ -25,7 +25,7 @@ namespace auto_apms_behavior_tree::core
 {
 
 /**
- * @brief Struct that encapsulates the identity string for a declared behavior tree.
+ * @brief Struct that encapsulates the identity string for a registered behavior tree.
  *
  * Its only purpose is to create the corresponding instance of TreeResource.
  */
@@ -66,11 +66,11 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
  * @ingroup auto_apms_behavior_tree
  * @brief Class containing behavior tree resource data
  *
- * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_declare_trees` in the
+ * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_register_trees` in the
  * CMakeLists.txt of a package. They can be discovered once the corresponding package has been installed to the ROS 2
  * workspace.
  *
- * @note `auto_apms_behavior_tree_declare_trees` replaces `auto_apms_behavior_tree_register_behavior` when registering
+ * @note `auto_apms_behavior_tree_register_trees` replaces `auto_apms_behavior_tree_register_behavior` when registering
  * behavior trees and the user should only invoke the former. Registering the corresponding behavior resource
  * information is handled fully automatically for tree resources.
  *
@@ -112,11 +112,11 @@ struct TreeResourceIdentity : public BehaviorResourceIdentity
  * ## Usage
  *
  * Given the user has specified a behavior tree named `MyBehaviorTree` inside the XML file `behavior/my_tree_file.xml`,
- * the CMake macro `auto_apms_behavior_tree_declare_trees` must be called in the CMakeLists.txt of the parent package
+ * the CMake macro `auto_apms_behavior_tree_register_trees` must be called in the CMakeLists.txt of the parent package
  * (for example `my_package`) like this:
  *
  * ```cmake
- * auto_apms_behavior_tree_declare_trees(
+ * auto_apms_behavior_tree_register_trees(
  *     "behavior/my_tree_file.xml"
  * )
  * ```

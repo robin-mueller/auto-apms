@@ -24,7 +24,7 @@ namespace auto_apms_behavior_tree::core
 /**
  * @brief Interface used for registering behavior tree node plugins.
  * @sa NodeRegistrationTemplate
- * @sa AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE
+ * @sa AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE
  */
 class NodeRegistrationInterface
 {

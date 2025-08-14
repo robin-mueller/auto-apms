@@ -154,6 +154,6 @@ public:
 
 }  // namespace auto_apms_simulation
 
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_simulation::NavigateToLocation)
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_simulation::PickObject)
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_simulation::PlaceObject)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_simulation::NavigateToLocation)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_simulation::PickObject)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_simulation::PlaceObject)

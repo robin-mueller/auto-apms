@@ -31,14 +31,14 @@ add_library(example_build_handlers SHARED
 )
 target_link_libraries(example_build_handlers auto_apms_behavior_tree::auto_apms_behavior_tree)
 
-auto_apms_behavior_tree_declare_nodes(example_nodes
+auto_apms_behavior_tree_register_nodes(example_nodes
   "auto_apms_examples::SimpleSkillClient"
   NODE_MANIFEST
   "behavior/simple_skill_node_manifest.yaml"
   NODE_MODEL_HEADER_TARGET example_build_handlers
 )
 
-auto_apms_behavior_tree_declare_build_handlers(example_build_handlers
+auto_apms_behavior_tree_register_build_handlers(example_build_handlers
   "auto_apms_examples::SimpleSkillBuildHandler"
 )
 
@@ -55,13 +55,13 @@ rclcpp_components_register_node(example_nodes
 # ------------ Example Resources --------------
 #
 
-auto_apms_behavior_tree_declare_trees(
+auto_apms_behavior_tree_register_trees(
   "behavior/simple_skill_tree.xml"
   NODE_MANIFEST
   "${PROJECT_NAME}::example_nodes"
 )
 
-auto_apms_behavior_tree_declare_trees(
+auto_apms_behavior_tree_register_trees(
   "behavior/demo.xml"
   NODE_MANIFEST
   "auto_apms_behavior_tree::behavior_tree_nodes"

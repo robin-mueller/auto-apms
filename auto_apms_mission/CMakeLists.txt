@@ -78,13 +78,13 @@ add_library(mission_builders SHARED
   "src/build_handler/multi_node_mission.cpp"
 )
 target_link_libraries(mission_builders ${PROJECT_NAME})
-auto_apms_behavior_tree_declare_build_handlers(mission_builders
+auto_apms_behavior_tree_register_build_handlers(mission_builders
   "${PROJECT_NAME}::MissionFromResourceBuildHandler"
   "${PROJECT_NAME}::MissionFromStringBuildHandler"
   "${PROJECT_NAME}::MultiNodeMissionBuildHandler"
 )
 
-auto_apms_behavior_tree_declare_trees(
+auto_apms_behavior_tree_register_trees(
   "config/orchestrator_base.xml"
   NODE_MANIFEST
   "auto_apms_behavior_tree::behavior_tree_nodes"

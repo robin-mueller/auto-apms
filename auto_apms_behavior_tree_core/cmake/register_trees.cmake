@@ -13,7 +13,7 @@
 # limitations under the License.
 
 #
-# Declare behavior trees to the package's resources.
+# Register behavior trees with the package's resources.
 #
 # This macro makes behavior trees available to the ROS 2 workspace by
 # exposing the corresponding XML and node manifest files as ament_index
@@ -31,7 +31,7 @@
 #
 # @public
 #
-macro(auto_apms_behavior_tree_declare_trees)
+macro(auto_apms_behavior_tree_register_trees)
 
   # Parse arguments
   set(options MARK_AS_INTERNAL)
@@ -45,7 +45,7 @@ macro(auto_apms_behavior_tree_declare_trees)
     if(NOT EXISTS "${_tree_abs_path__source}")
       message(
         FATAL_ERROR
-        "auto_apms_behavior_tree_declare_trees(): Behavior tree file ${_arg} does not exist."
+        "auto_apms_behavior_tree_register_trees(): Behavior tree file ${_arg} does not exist."
       )
     endif()
 
@@ -53,7 +53,7 @@ macro(auto_apms_behavior_tree_declare_trees)
     if("${_tree_abs_path__source}" IN_LIST _package_tree_file_abs_paths__source)
       message(
         FATAL_ERROR
-        "auto_apms_behavior_tree_declare_trees(): Behavior tree file ${_arg} has already been registered."
+        "auto_apms_behavior_tree_register_trees(): Behavior tree file ${_arg} has already been registered."
       )
     endif()
     list(APPEND _package_tree_file_abs_paths__source "${_tree_abs_path__source}")
@@ -70,7 +70,7 @@ macro(auto_apms_behavior_tree_declare_trees)
     if(NOT _return_code EQUAL 0)
       message(
         FATAL_ERROR
-        "auto_apms_behavior_tree_declare_trees(): Failed to get a list of all behavior tree names contained in ${_arg}."
+        "auto_apms_behavior_tree_register_trees(): Failed to get a list of all behavior tree names contained in ${_arg}."
       )
     endif()
 
@@ -78,7 +78,7 @@ macro(auto_apms_behavior_tree_declare_trees)
     if("${_tree_file_tree_names}" STREQUAL "")
       message(
         FATAL_ERROR
-        "auto_apms_behavior_tree_declare_trees(): Behavior tree file ${_arg} doesn't specify any valid behavior trees."
+        "auto_apms_behavior_tree_register_trees(): Behavior tree file ${_arg} doesn't specify any valid behavior trees."
       )
     endif()
 
@@ -88,7 +88,7 @@ macro(auto_apms_behavior_tree_declare_trees)
       if("${_name}" IN_LIST _seen_names)
         message(
           FATAL_ERROR
-          "auto_apms_behavior_tree_declare_trees(): Behavior tree with name '${_name}' exists multiple times in file ${_arg}."
+          "auto_apms_behavior_tree_register_trees(): Behavior tree with name '${_name}' exists multiple times in file ${_arg}."
         )
       endif()
       list(APPEND _seen_names "${_name}")
@@ -108,7 +108,7 @@ macro(auto_apms_behavior_tree_declare_trees)
           if(_index2 GREATER -1)
             message(
               FATAL_ERROR
-              "auto_apms_behavior_tree_declare_trees(): Found tree name '${_name}' in behavior tree file ${_arg} which has been registered by a file with the same name before. This would create an ambigious resource identity (${PROJECT_NAME}::${_stem}::${_name})."
+              "auto_apms_behavior_tree_register_trees(): Found tree name '${_name}' in behavior tree file ${_arg} which has been registered by a file with the same name before. This would create an ambigious resource identity (${PROJECT_NAME}::${_stem}::${_name})."
             )
           endif()
         endforeach()

@@ -208,7 +208,7 @@ target_link_libraries(behavior_tree_nodes PUBLIC
 
   executor_params
 )
-auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
+auto_apms_behavior_tree_register_nodes(behavior_tree_nodes
   "${PROJECT_NAME}::Logger"
   "${PROJECT_NAME}::ThrowException"
   "${PROJECT_NAME}::StartExecutor"
@@ -259,8 +259,8 @@ target_link_libraries(standard_build_handlers PUBLIC
 
 # In the original package, we need to manually include this before being able to call the macro.
 # However, it is automatically available for all downstream packages.
-include("cmake/declare_build_handlers.cmake")
-auto_apms_behavior_tree_declare_build_handlers(standard_build_handlers
+include("cmake/register_build_handlers.cmake")
+auto_apms_behavior_tree_register_build_handlers(standard_build_handlers
   "${PROJECT_NAME}::TreeFromStringBuildHandler"
   "${PROJECT_NAME}::TreeFromResourceBuildHandler"
 )
@@ -288,13 +288,13 @@ target_link_libraries(new_tree ${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
-  auto_apms_behavior_tree_declare_trees(
+  auto_apms_behavior_tree_register_trees(
     "test/trees/infinite_w_bb_flags.xml"
     NODE_MANIFEST
     "${PROJECT_NAME}::behavior_tree_nodes"
   )
 
-  auto_apms_behavior_tree_declare_trees(
+  auto_apms_behavior_tree_register_trees(
     "test/trees/builtin_nodes_test.xml"
     NODE_MANIFEST
     "${PROJECT_NAME}::behavior_tree_nodes"

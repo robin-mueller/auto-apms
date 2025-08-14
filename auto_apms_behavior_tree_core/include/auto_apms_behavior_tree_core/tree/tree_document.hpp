@@ -485,25 +485,24 @@ public:
      * @brief Concatenate a tree from one of the installed package's behavior tree resources and add its first child
      * node to the children of this node.
      *
-     * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_declare_trees` in the
+     * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_register_trees` in the
      * CMakeLists.txt of a package. They can be inserted once the corresponding package has been installed to the ROS 2
      * workspace.
      *
      * Additionally, this method automatically extends the internal node manifest with the nodes associated with the
-     * tree resource using the `NODE_MANIFEST` argument of `auto_apms_behavior_tree_declare_trees`.
+     * tree resource using the `NODE_MANIFEST` argument of `auto_apms_behavior_tree_register_trees`.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children
      * of the inserted node are preserved. Therefore, this method effectively concatenates another tree and copies all
      * its nodes to the tree this node belongs to.
      *
      * @sa TreeResourceIdentity for more information about how to refer to a specific resource.
-     * @param resource Tree resource that declares the tree to be inserted.
+     * @param resource Tree resource that contains the tree to be inserted.
      * @param tree_name Name of the tree to be inserted.
      * @param before_this Pointer to an existing child node before which the first child of @p tree will be placed. If
      * `nullptr`, insert at the end.
      * @return Inserted node element representing the first child node of the concatenated tree.
-     * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p tree_name is not declared by the tree
-     * resource.
+     * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p tree_name does not exist in the resource.
      * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p before_this is provided but not a child of
      * this node.
      */
@@ -514,25 +513,25 @@ public:
      * @brief Concatenate the root tree of one of the installed package's behavior tree resources and add its first
      * child node to the children of this node.
      *
-     * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_declare_trees` in the
+     * Behavior tree resources are registered by calling the CMake macro `auto_apms_behavior_tree_register_trees` in the
      * CMakeLists.txt of a package. They can be inserted once the corresponding package has been installed to the ROS 2
      * workspace.
      *
      * Additionally, this method automatically extends the internal node manifest with the nodes associated with the
-     * tree resource using the `NODE_MANIFEST` argument of `auto_apms_behavior_tree_declare_trees`.
+     * tree resource using the `NODE_MANIFEST` argument of `auto_apms_behavior_tree_register_trees`.
      *
      * The tree's first child is inserted as a child of this node. All subsequent children
      * of the inserted node are preserved. Therefore, this method effectively concatenates another tree and copies all
      * its nodes to the tree this node belongs to.
      *
      * @sa TreeResourceIdentity for more information about how to refer to a specific resource.
-     * @param resource Tree resource that declares the tree to be inserted. It must specify a root tree or have a single
+     * @param resource Tree resource that contains the tree to be inserted. It must specify a root tree or have a single
      * tree only.
      * @param before_this Pointer to an existing child node before which the first child of @p tree will be placed. If
      * `nullptr`, insert at the end.
      * @return Inserted node element representing the first child node of the concatenated tree.
      * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if the tree resource doesn't specify which of the
-     * declared trees is the root tree.
+     * registered trees is the root tree.
      * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p before_this is provided but not a child of
      * this node.
      */

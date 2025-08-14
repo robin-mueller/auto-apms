@@ -29,7 +29,7 @@
 # :type target: string
 # :param base_class: Fully qualified name of the plugin base class.
 # :type base_class: string
-# :param ARGN: The unique names of plugin classes being declared with this
+# :param ARGN: The unique names of plugin classes being registered with this
 #   macro call and exported by the shared library target.
 # :type ARGN: list of strings
 # :param FACTORY_TEMPLATE_CLASS: If specified, the plugin classes are configured

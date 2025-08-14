@@ -87,13 +87,13 @@ int main(int argc, char ** argv)
           "Node '" + node_name + " (Class: " + params.class_name +
           ")' cannot be registered, because the required registration class '" + required_class_name +
           "' couldn't be found. Check that the class name is spelled correctly and "
-          "the node is declared by calling auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
+          "the node is registered by calling auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
           "corresponding package. Also make sure that you called the "
-          "AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE macro in the source file.");
+          "AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE macro in the source file.");
       }
 
       RCLCPP_DEBUG(
-        logger, "Declared behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
+        logger, "Registering behavior tree node '%s' (Class: %s) from library %s.", node_name.c_str(),
         params.class_name.c_str(), loader->getLibraryPath().c_str());
 
       try {

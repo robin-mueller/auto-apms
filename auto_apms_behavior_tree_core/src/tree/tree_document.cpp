@@ -902,7 +902,7 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
           "Node '" + node_name + " (" + params.class_name +
           ")' cannot be registered, because the class name is not known to the class loader. "
           "Make sure that it's spelled correctly and registered by calling "
-          "auto_apms_behavior_tree_declare_nodes() in the CMakeLists.txt of the "
+          "auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
           "corresponding package.");
       }
       throw exceptions::TreeDocumentError(
@@ -917,7 +917,7 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
     } catch (const pluginlib::CreateClassException & e) {
       throw pluginlib::CreateClassException(
         "Failed to create an instance of node '" + node_name + " (" + params.class_name +
-        ")'. Remember that the AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE "
+        ")'. Remember that the AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE "
         "macro must be called in the source file for the node class to be discoverable. "
         "Error message: " +
         e.what() + ".");

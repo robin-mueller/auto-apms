@@ -44,6 +44,6 @@ def find_tree_names_in_file(xml_file: str) -> list[str]:
     return find_tree_names_in_string(xml_content)
 
 
-# Used in declare_trees.cmake
+# Used in register_trees.cmake
 if __name__ == "__main__":
     print(*find_tree_names_in_file(sys.argv[1]), sep=";")

@@ -133,7 +133,7 @@ int main(int argc, char ** argv)
         "Node '" + node_name + "' (Class '" + params.class_name +
         "') cannot be found. It's not being built by this package (" + build_package_name +
         ") and is also not provided by any other package. For a node to be discoverable, "
-        "one must register it using auto_apms_behavior_tree_declare_nodes() in the "
+        "one must register it using auto_apms_behavior_tree_register_nodes() in the "
         "CMakeLists.txt of a ROS 2 package.");
     }
 

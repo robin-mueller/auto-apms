@@ -42,7 +42,7 @@ namespace auto_apms_behavior_tree
  * A tree build handler allows TreeExecutorNode to create a behavior tree at runtime when an execution
  * request is received. The user may change the the way how a behavior tree is created by simply switching to the
  * desired build handler implementation. To make those implementations available at runtime, the user must register them
- * using the CMake macro `auto_apms_behavior_tree_declare_build_handlers` in the CMakeLists.txt of the parent package.
+ * using the CMake macro `auto_apms_behavior_tree_register_build_handlers` in the CMakeLists.txt of the parent package.
  *
  * ## Usage
  *
@@ -91,10 +91,10 @@ namespace auto_apms_behavior_tree
  * }  // namespace my_namespace
  *
  * // Make sure the plugin class is discoverable
- * AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(my_namespace::MyCustomBuildHandler)
+ * AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER(my_namespace::MyCustomBuildHandler)
  * ```
  *
- * Given this implementation, the CMake macro `auto_apms_behavior_tree_declare_build_handlers` must be called in the
+ * Given this implementation, the CMake macro `auto_apms_behavior_tree_register_build_handlers` must be called in the
  * CMakeLists.txt of the parent package like this:
  *
  * ```cmake
@@ -110,7 +110,7 @@ namespace auto_apms_behavior_tree
  * )
  *
  * # Add the plugin to this package's ament_index resources
- * auto_apms_behavior_tree_declare_build_handlers(my_build_handler_library_target
+ * auto_apms_behavior_tree_register_build_handlers(my_build_handler_library_target
  *   "my_namespace::MyCustomBuildHandler"
  * )
  *

@@ -684,7 +684,7 @@ class BehaviorResource:
 
 class TreeResourceIdentity(BehaviorResourceIdentity):
     """
-    Struct that encapsulates the identity string for a declared behavior tree.
+    Struct that encapsulates the identity string for a registered behavior tree.
 
     This is the Python equivalent of auto_apms_behavior_tree::core::TreeResourceIdentity.
     """

@@ -39,6 +39,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.launch_context import LaunchContext
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from auto_apms_behavior_tree.launch import RunBehavior
 
 GRYFFINDOR_NAMES = ["potter", "granger", "weasley"]
 SLYTHERIN_NAMES = ["malfoy", "crabbe", "goyle"]
@@ -89,18 +90,18 @@ def spawn_nodes(context: LaunchContext):
         on_stdout=lambda event: [
             GroupAction(
                 [
-                    Node(
-                        package="auto_apms_behavior_tree",
-                        executable="run_behavior",
+                    RunBehavior(
+                        build_request=(
+                            "auto_apms_simulation::hogwarts::GryffindorTree"
+                            if house == "gryffindor"
+                            else "auto_apms_simulation::hogwarts::SlytherinTree"
+                        ),
+                        build_handler="auto_apms_behavior_tree::TreeFromResourceBuildHandler",
+                        blackboard={
+                            "student": student,
+                        },
+                        parameters=[{"tick_rate": TICK_RATE_SEC}],
                         name=student,
-                        arguments=[
-                            (
-                                "auto_apms_simulation::hogwarts::GryffindorTree"
-                                if house == "gryffindor"
-                                else "auto_apms_simulation::hogwarts::SlytherinTree"
-                            )
-                        ],
-                        parameters=[{"tick_rate": TICK_RATE_SEC, "bb.student": student}],
                         output="screen",
                         emulate_tty=True,
                     )

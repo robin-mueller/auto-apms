@@ -71,4 +71,4 @@ public:
 }  // namespace auto_apms_examples
 
 // Make the build handler discoverable for the class loader
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_examples::SimpleSkillBuildHandler)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER(auto_apms_examples::SimpleSkillBuildHandler)

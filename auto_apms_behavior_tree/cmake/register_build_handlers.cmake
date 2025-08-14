@@ -20,15 +20,15 @@
 # pluginlib::ClassLoader).
 #
 # :param target: Shared library target implementing the behavior tree
-#   build handlers declared under ARGN.
+#   build handlers registered under ARGN.
 # :type target: string
-# :param ARGN: The unique names of build handler classes being declared with this
+# :param ARGN: The unique names of build handler classes being registered with this
 #   macro call and exported by the shared library target.
 # :type ARGN: list of strings
 #
 # @public
 #
-macro(auto_apms_behavior_tree_declare_build_handlers target)
+macro(auto_apms_behavior_tree_register_build_handlers target)
   auto_apms_util_register_plugins(
     ${target}
     "auto_apms_behavior_tree::TreeBuildHandlerFactoryInterface"

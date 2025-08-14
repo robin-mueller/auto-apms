@@ -115,4 +115,4 @@ public:
 }  // namespace auto_apms_examples
 
 // Make the node discoverable for the class loader
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_examples::SimpleSkillClient)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_examples::SimpleSkillClient)

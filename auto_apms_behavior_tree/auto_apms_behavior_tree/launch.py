@@ -70,7 +70,7 @@ class RunBehavior(Node):
 
         node_manifest_sub = node_manifest.dump() if isinstance(node_manifest, NodeManifest) else node_manifest
 
-        parameters: SomeParameters = kwargs.get("parameters", [])
+        parameters: SomeParameters = kwargs.pop("parameters", [])
         custom_params: SomeParametersDict = {}
 
         if build_handler:
@@ -88,11 +88,11 @@ class RunBehavior(Node):
         arguments.append(node_manifest_sub if node_manifest_sub is not None else "")
 
         super().__init__(
-            **kwargs,
             package="auto_apms_behavior_tree",
             executable="run_behavior",
             arguments=arguments,
             parameters=list(parameters) + [custom_params],
+            **kwargs,
         )
 
     @classmethod

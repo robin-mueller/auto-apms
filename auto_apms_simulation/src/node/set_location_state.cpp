@@ -70,4 +70,4 @@ public:
 
 }  // namespace auto_apms_simulation
 
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_NODE(auto_apms_simulation::SetLocationState)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_NODE(auto_apms_simulation::SetLocationState)

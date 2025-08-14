@@ -108,7 +108,7 @@ std::vector<std::string> collectPluginXMLPaths(const std::set<std::string> & exc
  * | Token Name | Description |
  * | :---: | :--- |
  * | `<namespace>` | Full C++ namespace that the class `<class_name>` can be found in. It can be flat `foo` or arbitrarily nested `foo::bar` (individual levels must be separated by `::`). |
- * | `<class_name>` | Name you specified when declaring the plugin class using the `class` keyword in C++. If the class takes template arguments, you must provide it using the `MyClass<T>` syntax as you would in the source code. |
+ * | `<class_name>` | Name you specified when registering the plugin class using the `class` keyword in C++. If the class takes template arguments, you must provide it using the `MyClass<T>` syntax as you would in the source code. |
  */
 // clang-format on
 template <typename BaseT>
@@ -195,7 +195,7 @@ inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::makeUnambiguousPluginC
     }
   }
 
-  // Reserved class names are considered as declared
+  // Reserved class names are considered as registered
   for (const auto & [class_name, package] : reserved_names) {
     packages_for_class_name[class_name].push_back(package);
   }

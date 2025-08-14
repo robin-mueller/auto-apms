@@ -40,4 +40,4 @@ public:
 
 }  // namespace auto_apms_mission
 
-AUTO_APMS_BEHAVIOR_TREE_DECLARE_BUILD_HANDLER(auto_apms_mission::MissionFromResourceBuildHandler)
+AUTO_APMS_BEHAVIOR_TREE_REGISTER_BUILD_HANDLER(auto_apms_mission::MissionFromResourceBuildHandler)

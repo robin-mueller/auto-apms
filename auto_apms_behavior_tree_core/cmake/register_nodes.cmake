@@ -22,9 +22,9 @@
 # behavior trees using the TreeDocument API.
 #
 # :param target: Shared library target implementing the behavior tree
-#   nodes declared under ARGN.
+#   nodes registered under ARGN.
 # :type target: string
-# :param ARGN: The unique names of node classes being declared with this
+# :param ARGN: The unique names of node classes being registered with this
 #   macro call and exported by the shared library target.
 # :type ARGN: list of strings
 # :param NODE_MANIFEST: One or more relative paths or existing resource identities of node manifests.
@@ -38,7 +38,7 @@
 #
 # @public
 #
-macro(auto_apms_behavior_tree_declare_nodes target)
+macro(auto_apms_behavior_tree_register_nodes target)
 
   # Parse arguments
   set(options "")

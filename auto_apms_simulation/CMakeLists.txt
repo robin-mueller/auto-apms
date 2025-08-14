@@ -85,7 +85,7 @@ target_link_libraries(behavior_tree_nodes
   "${pyrobosim_msgs_cpp_typesupport_target}"
   auto_apms_behavior_tree_core::auto_apms_behavior_tree_core
 )
-auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
+auto_apms_behavior_tree_register_nodes(behavior_tree_nodes
   "${PROJECT_NAME}::SetLocationState"
   "${PROJECT_NAME}::IsLocationOccupied"
   "${PROJECT_NAME}::RobotSharesCurrentLocation"
@@ -101,7 +101,7 @@ auto_apms_behavior_tree_declare_nodes(behavior_tree_nodes
 # ------------ Example Resources --------------
 #
 
-auto_apms_behavior_tree_declare_trees(
+auto_apms_behavior_tree_register_trees(
   "behavior/hogwarts.xml"
   "behavior/hogwarts_contingency.xml"
   NODE_MANIFEST
