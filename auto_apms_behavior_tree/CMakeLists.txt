@@ -308,6 +308,25 @@ endif()
 # Python tools
 ament_python_install_package(${PROJECT_NAME})
 
+# Generate node model xml for all native nodes
+add_custom_command(
+  OUTPUT "${_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_ABSOLUTE}/node_model_native.xml"
+  COMMAND "${_AUTO_APMS_BEHAVIOR_TREE_CORE__CREATE_NODE_MODEL_FOR_MANIFEST_RESOURCE_CMD}"
+          "${_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_ABSOLUTE}/node_model_native.xml"
+  COMMENT "Generating native nodes model XML"
+  VERBATIM
+)
+add_custom_target(generate_node_model_native ALL
+  DEPENDS "${_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_ABSOLUTE}/node_model_native.xml"
+)
+
+# Install the generated node model xml for all native nodes
+install(
+  FILES "${_AUTO_APMS_UTIL__THIS_PACKAGE_BUILD_DIR_ABSOLUTE}/node_model_native.xml"
+  DESTINATION "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_DIR_RELATIVE__METADATA}"
+)
+
+
 #Export libraries
 install(
   TARGETS

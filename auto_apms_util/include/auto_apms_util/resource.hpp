@@ -40,8 +40,6 @@ namespace auto_apms_util
  * @param resource_type Name of the resource type.
  * @param exclude_packages Packages to exclude when searching for resources.
  * @return List of all packages that register resources of type @p resource_type excluding @p exclude_packages.
- * @throws auto_apms_util::exceptions::ResourceError if no resources of type @p resource_type were found in any of the
- * intalled packages.
  */
 std::set<std::string> getPackagesWithResourceType(
   const std::string & resource_type, const std::set<std::string> & exclude_packages = {});
@@ -54,8 +52,6 @@ std::set<std::string> getPackagesWithResourceType(
  *
  * @param exclude_packages Packages to exclude when searching for resources.
  * @return List of all packages that register AutoAPMS plugins excluding @p exclude_packages.
- * @throws auto_apms_util::exceptions::ResourceError if no AutoAPMS plugin resources were found in any of the installed
- * packages.
  */
 std::set<std::string> getPackagesWithPluginResources(const std::set<std::string> & exclude_packages = {});
 
@@ -185,8 +181,7 @@ inline PluginClassLoader<BaseT> PluginClassLoader<BaseT>::makeUnambiguousPluginC
   const std::map<std::string, std::string> & reserved_names)
 {
   std::map<std::string, std::vector<std::string>> packages_for_class_name;
-  const std::set<std::string> packages =
-    getPackagesWithResourceType(_AUTO_APMS_UTIL__RESOURCE_TYPE_NAME__PLUGINLIB, exclude_packages);
+  const std::set<std::string> packages = getPackagesWithPluginResources(exclude_packages);
   for (const auto & package : packages) {
     auto single_package_loader =
       pluginlib::ClassLoader<BaseT>(base_package, base_class, "", {getPluginXMLPath(package)});

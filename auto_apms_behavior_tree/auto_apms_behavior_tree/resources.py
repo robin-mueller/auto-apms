@@ -35,3 +35,19 @@ def get_behavior_build_handler_plugins(exclude_packages: set[str] = None) -> lis
         ResourceError: If failed to find or parse plugin manifest files.
     """
     return get_plugin_names_with_base_type(BASE_CLASS_TYPE__BEHAVIOR_TREE_BUILD_HANDLER, exclude_packages)
+
+
+def get_native_node_model() -> NodeModelMap:
+    """
+    Get the node model for all behavior tree nodes natively supported by BehaviorTree.CPP.
+    For getting custom node models use the NodeManifestResource.node_model property.
+
+    Returns:
+        Node model for all natively supported behavior tree nodes.
+    """
+    from ament_index_python import get_package_share_directory
+
+    return NodeModelMap(
+        get_package_share_directory("auto_apms_behavior_tree")
+        + "/auto_apms/auto_apms_behavior_tree_core/metadata/node_model_native.xml"
+    )

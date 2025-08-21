@@ -32,19 +32,8 @@ std::set<std::string> getPackagesWithResourceType(
   for (const auto & [package, _] : ament_index_cpp::get_resources(resource_type)) {
     packages.insert(package);
   }
-  if (packages.empty()) {
-    throw exceptions::ResourceError(
-      "Cannot find resources for type '" + resource_type + "' in any of the installed packages.");
-  }
   if (const std::set<std::string> common = getCommonElements(packages, exclude_packages); !common.empty()) {
     for (const std::string & package_to_exclude : common) packages.erase(package_to_exclude);
-    if (packages.empty()) {
-      throw exceptions::ResourceError(
-        "Resources for type '" + resource_type +
-        "' are only available in excluded but not in any other of the installed packages (Excluded packages containing "
-        "resources: [ " +
-        auto_apms_util::join(std::vector<std::string>(common.begin(), common.end()), ", ") + " ]).");
-    }
   }
   return packages;
 }

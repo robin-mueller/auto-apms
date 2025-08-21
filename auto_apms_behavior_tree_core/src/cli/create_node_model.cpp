@@ -30,26 +30,24 @@ int main(int argc, char ** argv)
   if (argc < 4) {
     std::cerr << "create_node_model: Missing inputs! The program requires: \n\t1.) The path to the node plugin "
                  "manifest.\n\t2. The exhaustive list of libraries to be loaded by ClassLoader (Separated by "
-                 "';').\n\t3.) The xml file to "
-                 "store the model.\n";
+                 "';').\n\t3.) The xml file to store the model.\n";
     std::cerr << "Usage: create_node_model <manifest_file> <library_paths> <output_file>.\n";
     return EXIT_FAILURE;
   }
 
   try {
-    const std::filesystem::path manifest_file = std::filesystem::absolute(argv[1]);
+    const std::filesystem::path manifest_file = std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[1]));
     const std::vector<std::string> library_paths = auto_apms_util::splitString(argv[2], ";");
     const std::filesystem::path output_file = std::filesystem::absolute(auto_apms_util::trimWhitespaces(argv[3]));
 
-    // Ensure that arguments are not empty
-    if (manifest_file.empty()) {
-      throw std::runtime_error("Argument manifest_file must not be empty.");
+    if (!std::filesystem::exists(manifest_file)) {
+      throw std::runtime_error("File manifest_file must exist.");
     }
     if (library_paths.empty()) {
       throw std::runtime_error("Argument library_paths must not be empty.");
     }
-    if (output_file.empty()) {
-      throw std::runtime_error("Argument output_file must not be empty.");
+    if (!output_file.has_filename()) {
+      throw std::runtime_error("Output file path must include a filename.");
     }
 
     // Ensure correct extensions

@@ -981,11 +981,12 @@ TreeDocument & TreeDocument::addNodeModel(bool include_native)
   const tinyxml2::XMLElement * model_child =
     model_doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
 
-  // Clone the memory of the node model element to the builder document
+  // Clone the memory of the node model element to the document
   tinyxml2::XMLNode * copied_child = model_child->DeepClone(this);
 
-  // Append the copied child to the root of the builder document
+  // Append the copied child to the root of the document
   RootElement()->InsertEndChild(copied_child);
+
   return *this;
 }
 

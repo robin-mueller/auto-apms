@@ -108,6 +108,10 @@ target_link_libraries(create_node_manifest ${PROJECT_NAME})
 add_executable(create_node_model "src/cli/create_node_model.cpp")
 target_link_libraries(create_node_model ${PROJECT_NAME})
 
+# Generate the node model according to a node manifest resource identity or native nodes
+add_executable(create_node_model_for_manifest_resource "src/cli/create_node_model_for_manifest_resource.cpp")
+target_link_libraries(create_node_model_for_manifest_resource ${PROJECT_NAME})
+
 # Generate a C++ header containing classes for all registered nodes intended to be used with the TreeBuilder API
 add_executable(create_node_model_header "src/cli/create_node_model_header.cpp")
 target_link_libraries(create_node_model_header ${PROJECT_NAME})
@@ -165,6 +169,7 @@ install(
   TARGETS
   create_node_manifest
   create_node_model
+  create_node_model_for_manifest_resource
   create_node_model_header
   create_node_reference_markdown
   DESTINATION "lib/${PROJECT_NAME}"
