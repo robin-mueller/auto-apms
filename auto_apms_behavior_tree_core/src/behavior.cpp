@@ -27,6 +27,10 @@ bool isInternalBehaviorCategory(const std::string & category_name)
 
 BehaviorResourceIdentity::BehaviorResourceIdentity(const std::string & identity)
 {
+  if (identity.empty()) {
+    throw auto_apms_util::exceptions::ResourceIdentityFormatError(
+      "Behavior resource identity string must not be empty.");
+  }
   std::string resource_part;
   if (std::size_t pos = identity.find(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP);
       pos == std::string::npos) {

@@ -30,7 +30,8 @@ class RunVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the run verb."""
-        _add_behavior_resource_argument_to_parser(parser)
+        behavior_arg = _add_behavior_resource_argument_to_parser(parser)
+        behavior_arg.nargs = "?"  # Make the behavior argument optional
         build_handler_arg = parser.add_argument(
             "--build-handler",
             type=str,

@@ -444,7 +444,7 @@ def sync_run_behavior_with_executor(
 
 
 def sync_run_behavior_locally(
-    behavior: BehaviorResource,
+    behavior: BehaviorResource | None,
     static_params: dict = None,
     blackboard_params: dict = None,
     logging_level: LoggingSeverity = None,
@@ -453,7 +453,8 @@ def sync_run_behavior_locally(
     Execute a behavior locally using the run_behavior executable.
 
     Args:
-        behavior: A valid behavior resource
+        behavior: A valid behavior resource or None for letting the build handler
+            decide how to build the tree without a specific build request
         static_params: Static parameters to set on the executor
         blackboard_params: Blackboard parameters to set on the executor
         logging_level: Logger level to set on the executor
@@ -461,7 +462,7 @@ def sync_run_behavior_locally(
     required_package = "auto_apms_behavior_tree"
     required_command = "run_behavior"
 
-    argv = [behavior.build_request, behavior.entrypoint, behavior.node_manifest.dump()]
+    argv = [behavior.build_request, behavior.entrypoint, behavior.node_manifest.dump()] if behavior else []
 
     # Add ros args
     argv.append("--ros-args")
@@ -471,7 +472,8 @@ def sync_run_behavior_locally(
         argv.append(f"{arg_tuple[0]}:={arg_tuple[1]}")
 
     # Set default build handler (user should populate static params to overwrite)
-    add_ros_argument("param", ("build_handler", behavior.default_build_handler))
+    if behavior:
+        add_ros_argument("param", ("build_handler", behavior.default_build_handler))
 
     if logging_level:
         add_ros_argument("log-level", (required_command, logging_level.name))
@@ -482,7 +484,7 @@ def sync_run_behavior_locally(
         for k, v in (blackboard_params or {}).items():
             add_ros_argument("param", (f"bb.{k}", v))
 
-    print(f"--- Running behavior '{behavior.identity}'")
+    print(f"--- Running behavior '{behavior.identity}'" if behavior else "--- Running behavior (no identity provided)")
     run_executable(
         path=get_executable_path(
             package_name=required_package,
