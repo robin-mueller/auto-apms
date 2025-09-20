@@ -80,12 +80,18 @@ std::string RosNodeContext::getFullyQualifiedTreeNodeName(const BT::TreeNode * n
   return with_class_name ? (instance_name + " (" + registration_options_.class_name + ")") : instance_name;
 }
 
-BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::TreeNode * node) const
+BT::Expected<std::string> RosNodeContext::getTopicName(const BT::TreeNode * node) const
 {
-  std::string res = registration_options_.connection;
+  std::string res = registration_options_.topic;
+  if (res.empty()) {
+    return nonstd::make_unexpected(
+      getFullyQualifiedTreeNodeName(node) +
+      " - Cannot get the name of the node's associated ROS 2 topic: Registration option '" +
+      NodeRegistrationOptions::PARAM_NAME_ROS2TOPIC + "' is empty.");
+  }
   BT::PortsRemapping input_ports = node->config().input_ports;
 
-  // Parameter registration_options_.port may contain substrings, that that are to be replaced with values retrieved
+  // Parameter registration_options_.topic may contain substrings, that that are to be replaced with values retrieved
   // from a specific node input port. Must be something like (input:my_port) where 'my_port' is the key/name of the
   // BT::InputPort to use. Anything before or after the expression is kept and used as a prefix respectively suffix.
   const std::regex pattern(R"(\(input:([^)\s]+)\))");
@@ -106,7 +112,7 @@ BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::Tre
       if (input_ports.at(input_port_key).empty()) {
         return nonstd::make_unexpected(
           getFullyQualifiedTreeNodeName(node) +
-          " - Cannot get the name of the node's ROS 2 communication port: Input port '" + input_port_key +
+          " - Cannot get the name of the node's associated ROS 2 topic: Input port '" + input_port_key +
           "' required by substring '" + match.str() + "' must not be empty.");
       }
 
@@ -124,7 +130,7 @@ BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::Tre
     } else {
       return nonstd::make_unexpected(
         getFullyQualifiedTreeNodeName(node) +
-        " - Cannot get the name of the node's ROS 2 communication port: Node input port '" + input_port_key +
+        " - Cannot get the name of the node's associated ROS 2 topic: Input port '" + input_port_key +
         "' required by substring '" + match.str() + "' doesn't exist.");
     }
   }

@@ -20,7 +20,6 @@
 #include "rcl_interfaces/srv/list_parameters.hpp"
 
 #define INPUT_KEY_PARAM_NAME "parameter"
-#define INPUT_KEY_PARAM_VALUE "value"
 #define INPUT_KEY_NODE_NAME "node"
 
 namespace auto_apms_behavior_tree
@@ -32,12 +31,14 @@ public:
   HasParameter(const std::string & instance_name, const Config & config, const Context & context)
   : RosServiceNode(instance_name, config, context)
   {
+    // If input port is empty or not provided, refer to this ROS 2 node as the target
+    std::string node_name = context_.getFullyQualifiedRosNodeName();
     if (
-      config.input_ports.find(INPUT_KEY_NODE_NAME) == config.input_ports.end() ||
-      config.input_ports.at(INPUT_KEY_NODE_NAME).empty()) {
-      // Refer to this ROS 2 node as the target if respective input port is empty
-      createClient(context_.getFullyQualifiedRosNodeName() + "/list_parameters");
+      config.input_ports.find(INPUT_KEY_NODE_NAME) != config.input_ports.end() &&
+      !config.input_ports.at(INPUT_KEY_NODE_NAME).empty()) {
+      node_name = config.input_ports.at(INPUT_KEY_NODE_NAME);
     }
+    createClient(node_name + "/list_parameters");
   }
 
   static BT::PortsList providedPorts()

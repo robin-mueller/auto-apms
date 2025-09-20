@@ -67,17 +67,17 @@ inline const char * toStr(const ActionNodeErrorCode & err)
  *
  * By default, the name of the action will be determined as follows:
  *
- * 1. If a value is passed using the input port named `connection`, use that.
+ * 1. If a value is passed using the input port named `topic`, use that.
  *
- * 2. Otherwise, use the value from NodeRegistrationOptions::connection passed on construction as part of
+ * 2. Otherwise, use the value from NodeRegistrationOptions::topic passed on construction as part of
  * RosNodeContext.
  *
  * It is possible to customize which port is used to determine the action name and also extend the input's value
  * with a prefix or suffix. This is achieved by including the special pattern `(input:<port_name>)` in
- * NodeRegistrationOptions::connection and replacing `<port_name>` with the desired input port name.
+ * NodeRegistrationOptions::topic and replacing `<port_name>` with the desired input port name.
  *
  * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a client
- * for the action "foo/bar" by defining NodeRegistrationOptions::connection as `(input:my_port)/bar` and providing the
+ * for the action "foo/bar" by defining NodeRegistrationOptions::topic as `(input:my_port)/bar` and providing the
  * string "foo" to the port with name `my_port`.
  *
  * Additionally, the following characteristics depend on NodeRegistrationOptions:
@@ -142,7 +142,7 @@ public:
    */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
-    BT::PortsList basic = {BT::InputPort<std::string>("connection", "Name of the ROS 2 action.")};
+    BT::PortsList basic = {BT::InputPort<std::string>("topic", "Name of the ROS 2 action.")};
     basic.insert(addition.begin(), addition.end());
     return basic;
   }
@@ -274,7 +274,7 @@ inline RosActionNode<ActionT>::RosActionNode(const std::string & instance_name, 
   context_(context),
   logger_(context.getChildLogger(auto_apms_util::toSnakeCase(instance_name)))
 {
-  if (const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this)) {
+  if (const BT::Expected<std::string> expected_name = context_.getTopicName(this)) {
     createClient(expected_name.value());
   } else {
     // We assume that determining the action name requires a blackboard pointer, which cannot be evaluated at
@@ -488,7 +488,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
   // Try again to create the client on first tick if this was not possible during construction or if client should be
   // created from a blackboard entry on the start of every iteration
   if (status() == BT::NodeStatus::IDLE && dynamic_client_instance_) {
-    const BT::Expected<std::string> expected_name = context_.getCommunicationPortName(this);
+    const BT::Expected<std::string> expected_name = context_.getTopicName(this);
     if (expected_name) {
       createClient(expected_name.value());
     } else {
@@ -496,7 +496,7 @@ inline BT::NodeStatus RosActionNode<T>::tick()
         context_.getFullyQualifiedTreeNodeName(this) +
         " - Cannot create the action client because the action name couldn't be resolved using "
         "the expression specified by the node's registration parameters (" +
-        NodeRegistrationOptions::PARAM_NAME_CONNECTION + ": " + context_.registration_options_.connection +
+        NodeRegistrationOptions::PARAM_NAME_ROS2TOPIC + ": " + context_.registration_options_.topic +
         "). Error message: " + expected_name.error());
     }
   }

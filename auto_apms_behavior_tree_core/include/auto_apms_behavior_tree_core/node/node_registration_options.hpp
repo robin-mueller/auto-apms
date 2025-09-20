@@ -31,7 +31,7 @@ namespace auto_apms_behavior_tree::core
 struct NodeRegistrationOptions
 {
   static const std::string PARAM_NAME_CLASS;
-  static const std::string PARAM_NAME_CONNECTION;
+  static const std::string PARAM_NAME_ROS2TOPIC;
   static const std::string PARAM_NAME_DESCRIPTION;
   static const std::string PARAM_NAME_DEFAULTS;
   static const std::string PARAM_NAME_WAIT_TIMEOUT;
@@ -73,7 +73,7 @@ struct NodeRegistrationOptions
    *
    * By default, we look for the communication port name using the node's input port named `port`.
    */
-  std::string connection = "(input:connection)";
+  std::string topic = "(input:topic)";
   /**
    * Provides the possibility to define custom default values for the ports implemented by `class_name`. This will
    * override the "hard-coded" value and allows for configuring a behavior tree node without touching its source file.
@@ -117,7 +117,7 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
     Node node(NodeType::Map);
     node[Options::PARAM_NAME_CLASS] = rhs.class_name;
     node[Options::PARAM_NAME_DESCRIPTION] = rhs.description;
-    node[Options::PARAM_NAME_CONNECTION] = rhs.connection;
+    node[Options::PARAM_NAME_ROS2TOPIC] = rhs.topic;
     node[Options::PARAM_NAME_DEFAULTS] = rhs.port_defaults;
     node[Options::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
     node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
@@ -167,8 +167,8 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
         rhs.description = val.as<std::string>();
         continue;
       }
-      if (key == Options::PARAM_NAME_CONNECTION) {
-        rhs.connection = val.as<std::string>();
+      if (key == Options::PARAM_NAME_ROS2TOPIC) {
+        rhs.topic = val.as<std::string>();
         continue;
       }
       if (key == Options::PARAM_NAME_WAIT_TIMEOUT) {
