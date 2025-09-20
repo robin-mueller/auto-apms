@@ -935,7 +935,9 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
           tree_node_waitables_executor_wptr_.lock(), params);
         plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
       } else {
-        plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name);
+        // Create a dummy object of RosNodeContext to allow for parsing the registration params nevertheless
+        RosNodeContext ros_node_context(nullptr, nullptr, nullptr, params);
+        plugin_instance->registerWithBehaviorTreeFactory(factory_, node_name, &ros_node_context);
       }
     } catch (const std::exception & e) {
       throw exceptions::NodeRegistrationError(

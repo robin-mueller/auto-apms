@@ -82,7 +82,7 @@ std::string RosNodeContext::getFullyQualifiedTreeNodeName(const BT::TreeNode * n
 
 BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::TreeNode * node) const
 {
-  std::string res = registration_options_.port;
+  std::string res = registration_options_.connection;
   BT::PortsRemapping input_ports = node->config().input_ports;
 
   // Parameter registration_options_.port may contain substrings, that that are to be replaced with values retrieved
@@ -111,8 +111,8 @@ BT::Expected<std::string> RosNodeContext::getCommunicationPortName(const BT::Tre
       }
 
       // We try to get the value from the node input port. If the value is a string pointing at a blackboard entry, this
-      // does not work during construction time. In that case we return the unexpected value to indicate we must try
-      // again.
+      // may not work during construction time. In case the expected value contains an error, we forward it to indicate
+      // we weren't successful.
       const BT::Expected<std::string> expected = node->getInput<std::string>(input_port_key);
       if (expected) {
         // Replace the respective substring with the value returned from getInput()

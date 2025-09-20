@@ -116,6 +116,7 @@ namespace )" << build_package_name << R"(::model
       const std::string base_class_name = is_leaf ? "LeafNodeModelType" : "NodeModelType";
       // clang-format off
       content << R"(
+/// @brief )" << options.description << R"(
 class )" << node_name << R"( : public auto_apms_behavior_tree::core::)" << base_class_name << R"(
 {
 friend class auto_apms_behavior_tree::core::TreeDocument::NodeElement;

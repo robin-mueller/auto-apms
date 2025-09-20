@@ -125,27 +125,9 @@ std::set<NodeManifestResourceIdentity> getNodeManifestResourceIdentities(
  * )
  * ```
  *
- * The YAML format for a node manifest file is defined as follows:
+ * The YAML format for a node manifest file is defined
+ * [here](https://robin-mueller.github.io/auto-apms-guide/concept/common-resources#behavior-tree-node-manifests)
  *
- * ```yaml
- * FooNode:  # Registration name of behavior tree node used to look up the following parameters.
- *   class_name: my_package::MyCustomNodeClass  # Required name of the C++ class (with namespaces)
- *   port: optional_prefix/(input:port)/optional_suffix  # Or you may specify a constant port name
- *   wait_timeout: 3  # Float number
- *   request_timeout: 2  # Float number
- *   allow_unreachable: false  # Boolean value
- *   logger_level: INFO  # One of DEBUG, INFO, WARN, ERROR, FATAL, UNSET (no case sensitive)
- *
- * BarNode:
- *   # ...
- *
- * # There may be as many registration names as you want
- * ...
- * ```
- *
- * Only `class_name` is required, the other registration options may be omitted to indicate that the default value
- * should be used. It's also possible to use a single implementation (C++ class) for multiple nodes, as long as their
- * registration names are not the same.
  */
 class NodeManifest
 {
@@ -373,7 +355,7 @@ struct convert<auto_apms_behavior_tree::core::NodeManifest>
         rhs.add(name, it->second.as<Manifest::RegistrationOptions>());
       } catch (const std::exception & e) {
         throw auto_apms_util::exceptions::YAMLFormatError(
-          "Node registration parameters for node '" + name + "' are invalid: " + e.what());
+          "Node registration options for node '" + name + "' are invalid: " + e.what());
       }
     }
     return true;

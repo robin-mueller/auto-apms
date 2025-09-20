@@ -31,7 +31,9 @@ namespace auto_apms_behavior_tree::core
 struct NodeRegistrationOptions
 {
   static const std::string PARAM_NAME_CLASS;
-  static const std::string PARAM_NAME_PORT;
+  static const std::string PARAM_NAME_CONNECTION;
+  static const std::string PARAM_NAME_DESCRIPTION;
+  static const std::string PARAM_NAME_DEFAULTS;
   static const std::string PARAM_NAME_WAIT_TIMEOUT;
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
   static const std::string PARAM_NAME_ALLOW_UNREACHABLE;
@@ -47,8 +49,10 @@ struct NodeRegistrationOptions
 
   /// Fully qualified name of the behavior tree node plugin class.
   std::string class_name;
+  /// Short description of the behavior tree node's purpose and use-case.
+  std::string description = "No description provided.";
   /**
-   * @brief Default port name of the corresponding ROS 2 communication interface.
+   * @brief Name of the ROS 2 communication interface to connect with.
    *
    * This has different meaning based on the context:
    *
@@ -60,9 +64,8 @@ struct NodeRegistrationOptions
    *
    * - RosSubscriberNode: Name of the topic to subscribe to
    *
-   * It is possible to customize which port is used to determine the action/service/topic name and also extend the
-   * input's value with a prefix or suffix. This is achieved by using the special pattern `(input:<port_name>)` in
-   * and replacing `<port_name>` with the desired input port name.
+   * It is possible to use a port's value to define this parameter at runtime by using the special pattern
+   * `(input:<port_name>)` and replacing `<port_name>` with the desired input port name.
    *
    * **Example**: Given the user implements an input port `BT::InputPort<std::string>("my_port")`, one may create a
    * client for the action "foo/bar" by defining NodeRegistrationOptions::port as `(input:my_port)/bar` and providing
@@ -70,7 +73,12 @@ struct NodeRegistrationOptions
    *
    * By default, we look for the communication port name using the node's input port named `port`.
    */
-  std::string port = "(input:port)";
+  std::string connection = "(input:connection)";
+  /**
+   * Provides the possibility to define custom default values for the ports implemented by `class_name`. This will
+   * override the "hard-coded" value and allows for configuring a behavior tree node without touching its source file.
+   */
+  std::map<std::string, std::string> port_defaults = {};
   /// Period [s] (measured from tree construction) after the server is considered unreachable.
   std::chrono::duration<double> wait_timeout = std::chrono::duration<double>(3);
   /// Period [s] (measured from sending a goal request) after the node aborts waiting for a server response.
@@ -108,7 +116,9 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
   {
     Node node(NodeType::Map);
     node[Options::PARAM_NAME_CLASS] = rhs.class_name;
-    node[Options::PARAM_NAME_PORT] = rhs.port;
+    node[Options::PARAM_NAME_DESCRIPTION] = rhs.description;
+    node[Options::PARAM_NAME_CONNECTION] = rhs.connection;
+    node[Options::PARAM_NAME_DEFAULTS] = rhs.port_defaults;
     node[Options::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
     node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
     node[Options::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
@@ -127,23 +137,38 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
       const std::string key = it->first.as<std::string>();
       const Node val = it->second;
 
-      // Any valid yaml is allowed as extra options
       if (key == Options::PARAM_NAME_EXTRA) {
+        // Any valid yaml is allowed as extra options
         rhs.extra = val;
         continue;
       }
 
+      if (key == Options::PARAM_NAME_DEFAULTS) {
+        if (!val.IsMap()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be a map but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
+        rhs.port_defaults = val.as<std::map<std::string, std::string>>();
+        continue;
+      }
+
       // The following options may only be scalar
-      if (!val.IsScalar())
+      if (!val.IsScalar()) {
         throw auto_apms_util::exceptions::YAMLFormatError(
           "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
           " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+      }
       if (key == Options::PARAM_NAME_CLASS) {
         rhs.class_name = val.as<std::string>();
         continue;
       }
-      if (key == Options::PARAM_NAME_PORT) {
-        rhs.port = val.as<std::string>();
+      if (key == Options::PARAM_NAME_DESCRIPTION) {
+        rhs.description = val.as<std::string>();
+        continue;
+      }
+      if (key == Options::PARAM_NAME_CONNECTION) {
+        rhs.connection = val.as<std::string>();
         continue;
       }
       if (key == Options::PARAM_NAME_WAIT_TIMEOUT) {
