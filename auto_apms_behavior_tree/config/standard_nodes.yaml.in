@@ -1,109 +1,116 @@
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_LOGGER}:
   class_name: ${PROJECT_NAME}::Logger
+  description: "Logs a message to the ROS2 logging system"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_THROW_EXCEPTION}:
   class_name: ${PROJECT_NAME}::ThrowException
+  description: "Throws an exception to interrupt behavior tree execution"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_START_EXECUTOR}:
   class_name: ${PROJECT_NAME}::StartExecutor
-  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}
+  topic: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_START_ACTION_NAME_SUFFIX}
+  description: "Starts an executor by calling its start action"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_TERMINATE_EXECUTOR}:
   class_name: ${PROJECT_NAME}::TerminateExecutor
-  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  topic: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  description: "Terminates an executor by sending a terminate command"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HALT_EXECUTOR}:
   class_name: ${PROJECT_NAME}::HaltExecutor
-  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  topic: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  description: "Halts an executor by sending a halt command"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_PAUSE_EXECUTOR}:
   class_name: ${PROJECT_NAME}::PauseExecutor
-  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  topic: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  description: "Pauses an executor by sending a pause command"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_RESUME_EXECUTOR}:
   class_name: ${PROJECT_NAME}::ResumeExecutor
-  port: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  topic: (input:executor)${_AUTO_APMS_BEHAVIOR_TREE__EXECUTOR_COMMAND_ACTION_NAME_SUFFIX}
+  description: "Resumes a paused executor by sending a resume command"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER}:
   class_name: ${PROJECT_NAME}::SetParameter
-  port: (input:node)/set_parameters
+  description: "Sets a parameter on a ROS2 node. This node can infer the type from a blackboard pointer. For passing a string literal as value, use one of the statically typed versions."
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL}:
   class_name: ${PROJECT_NAME}::SetParameterBool
-  port: (input:node)/set_parameters
+  description: "Sets a boolean parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT}:
   class_name: ${PROJECT_NAME}::SetParameterInt
-  port: (input:node)/set_parameters
+  description: "Sets an integer parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE}:
   class_name: ${PROJECT_NAME}::SetParameterDouble
-  port: (input:node)/set_parameters
+  description: "Sets a double precision floating point parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING}:
   class_name: ${PROJECT_NAME}::SetParameterString
-  port: (input:node)/set_parameters
+  description: "Sets a string parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BYTE_VEC}:
   class_name: ${PROJECT_NAME}::SetParameterByteVec
-  port: (input:node)/set_parameters
+  description: "Sets a byte array parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_BOOL_VEC}:
   class_name: ${PROJECT_NAME}::SetParameterBoolVec
-  port: (input:node)/set_parameters
+  description: "Sets a boolean array parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_INT_VEC}:
   class_name: ${PROJECT_NAME}::SetParameterIntVec
-  port: (input:node)/set_parameters
+  description: "Sets an integer array parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_DOUBLE_VEC}:
   class_name: ${PROJECT_NAME}::SetParameterDoubleVec
-  port: (input:node)/set_parameters
+  description: "Sets a double precision floating point array parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_PARAMETER_STRING_VEC}:
   class_name: ${PROJECT_NAME}::SetParameterStringVec
-  port: (input:node)/set_parameters
+  description: "Sets a string array parameter on a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER}:
   class_name: ${PROJECT_NAME}::GetParameter
-  port: (input:node)/get_parameters
+  description: "Retrieves a parameter value from a ROS2 node. The type of the output will be BT::Any and the user must make sure to cast it to the correct type when using it."
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL}:
   class_name: ${PROJECT_NAME}::GetParameterBool
-  port: (input:node)/get_parameters
+  description: "Retrieves a boolean parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT}:
   class_name: ${PROJECT_NAME}::GetParameterInt
-  port: (input:node)/get_parameters
+  description: "Retrieves an integer parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE}:
   class_name: ${PROJECT_NAME}::GetParameterDouble
-  port: (input:node)/get_parameters
+  description: "Retrieves a double precision floating point parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING}:
   class_name: ${PROJECT_NAME}::GetParameterString
-  port: (input:node)/get_parameters
+  description: "Retrieves a string parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BYTE_VEC}:
   class_name: ${PROJECT_NAME}::GetParameterByteVec
-  port: (input:node)/get_parameters
+  description: "Retrieves a byte array parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_BOOL_VEC}:
   class_name: ${PROJECT_NAME}::GetParameterBoolVec
-  port: (input:node)/get_parameters
+  description: "Retrieves a boolean array parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_INT_VEC}:
   class_name: ${PROJECT_NAME}::GetParameterIntVec
-  port: (input:node)/get_parameters
+  description: "Retrieves an integer array parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_DOUBLE_VEC}:
   class_name: ${PROJECT_NAME}::GetParameterDoubleVec
-  port: (input:node)/get_parameters
+  description: "Retrieves a double precision floating point array parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC}:
   class_name: ${PROJECT_NAME}::GetParameterStringVec
-  port: (input:node)/get_parameters
+  description: "Retrieves a string array parameter value from a ROS2 node"
 
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HAS_PARAMETER}:
   class_name: ${PROJECT_NAME}::HasParameter
-  port: (input:node)/list_parameters
+  description: "Checks if a ROS2 node has a specific parameter defined"

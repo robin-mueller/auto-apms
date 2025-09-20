@@ -68,7 +68,7 @@ protected:
     publisher_ = node_->create_publisher<TestMessageT>("/test_topic", 10);
 
     // Create a simple context for testing
-    options_.port = "/test_topic";
+    options_.topic = "/test_topic";
 
     // Create config
     config_.blackboard = BT::Blackboard::create();

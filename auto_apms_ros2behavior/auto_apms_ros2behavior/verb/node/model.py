@@ -49,6 +49,7 @@ class ModelVerb(VerbExtension):
                     args.manifest.node_model[args.node_name].type.name,
                     args.node_name,
                     args.manifest.node_manifest.get_node_registration_options(args.node_name)["class_name"],
+                    args.manifest.node_manifest.get_node_registration_options(args.node_name)["description"],
                     args.manifest.node_model[args.node_name].port_infos,
                 )
             else:
@@ -70,9 +71,10 @@ class ModelVerb(VerbExtension):
 
         return 0
 
-    def _print_node_details(self, node_type, node_name, node_class, ports):
+    def _print_node_details(self, node_type, node_name, node_class, desc, ports):
         """Print detailed information for a specific node."""
         print(f"{node_type} {node_name} ({node_class})")
+        print(f"Description: {desc if desc.endswith('.') else f"{desc}."}\n")
         if not ports:
             print("No ports defined for this node.")
             return

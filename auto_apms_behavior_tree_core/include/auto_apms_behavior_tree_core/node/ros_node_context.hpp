@@ -37,6 +37,8 @@ class RosNodeContext
   friend class RosSubscriberNode;
   template <typename>
   friend class RosPublisherNode;
+  template <class, typename, bool>
+  friend class NodeRegistrationTemplate;
 
 public:
   /**
@@ -45,7 +47,7 @@ public:
    * @param[in] ros_node ROS 2 node instance used for adding waitables with.
    * @param[in] tree_node_waitables_callback_group Callback group to be used within tree nodes when adding waitables.
    * @param[in] tree_node_waitables_executor Executor used for executing work provided by the node's waitables.
-   * @param[in] options Configuration options for the behavior tree node.
+   * @param[in] options Configuration options for registering the behavior tree node.
    */
   RosNodeContext(
     rclcpp::Node::SharedPtr ros_node, rclcpp::CallbackGroup::SharedPtr tree_node_waitables_callback_group,
@@ -92,7 +94,7 @@ public:
   std::string getFullyQualifiedTreeNodeName(const BT::TreeNode * node, bool with_class_name = true) const;
 
 private:
-  BT::Expected<std::string> getCommunicationPortName(const BT::TreeNode * node) const;
+  BT::Expected<std::string> getTopicName(const BT::TreeNode * node) const;
 
   const std::string ros_node_name_;
   const std::string fully_qualified_ros_node_name_;
@@ -104,7 +106,7 @@ private:
   rclcpp::CallbackGroup::WeakPtr cb_group_;
   /// Executor that may be used to execute work provided by the node's waitables locally.
   rclcpp::executors::SingleThreadedExecutor::WeakPtr executor_;
-  /// Node specific registration parameters.
+  /// Configuration options for registering the behavior tree node.
   const NodeRegistrationOptions registration_options_;
 };
 

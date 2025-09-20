@@ -17,7 +17,9 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_interface.hpp"
+#include "behaviortree_cpp/basic_types.h"
 
 namespace auto_apms_behavior_tree::core
 {
@@ -45,15 +47,33 @@ public:
     BT::BehaviorTreeFactory & factory, const std::string & registration_name,
     const RosNodeContext * const context_ptr = nullptr) const override
   {
+    BT::PortsList ports_list = BT::getProvidedPorts<T>();
+    if (context_ptr) {
+      // Modify the default value of the ports if specified in the node manifest
+      for (const auto & [port_name, new_default] : context_ptr->registration_options_.port_defaults) {
+        if (ports_list.find(port_name) == ports_list.end()) {
+          throw exceptions::NodeRegistrationError(
+            "[registerWithBehaviorTreeFactory] Error registering node '" + registration_name +
+            "': Cannot set default value for port '" + port_name + "' which is not provided by class '" +
+            context_ptr->registration_options_.class_name + "'. The keys under " +
+            NodeRegistrationOptions::PARAM_NAME_DEFAULTS + " must refer to a port implemented by the node.");
+        }
+        // We're passing the new default value as string. Conversion is done when getting the port value during
+        // execution (also allows blackboard pointers)
+        ports_list.at(port_name).setDefaultValue(new_default);
+      }
+    }
+
     if constexpr (requires_ros_node_params) {
       if (!context_ptr) {
         throw std::invalid_argument(
-          "registerWithBehaviorTreeFactory requires a valid RosNodeContext object to be passed via argument "
+          "[registerWithBehaviorTreeFactory] Error registering node '" + registration_name +
+          "': You must pass a valid RosNodeContext object to be passed via argument "
           "'context_ptr'.");
       }
-      factory.registerNodeType<T>(registration_name, *context_ptr);
+      factory.registerNodeType<T>(registration_name, ports_list, *context_ptr);
     } else {
-      factory.registerNodeType<T>(registration_name);
+      factory.registerNodeType<T>(registration_name, ports_list);
     }
   }
 };
