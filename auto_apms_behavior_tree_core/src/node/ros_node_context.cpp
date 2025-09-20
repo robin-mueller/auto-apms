@@ -80,6 +80,8 @@ std::string RosNodeContext::getFullyQualifiedTreeNodeName(const BT::TreeNode * n
   return with_class_name ? (instance_name + " (" + registration_options_.class_name + ")") : instance_name;
 }
 
+YAML::Node RosNodeContext::getExtraOptions() const { return registration_options_.extra; }
+
 BT::Expected<std::string> RosNodeContext::getTopicName(const BT::TreeNode * node) const
 {
   std::string res = registration_options_.topic;

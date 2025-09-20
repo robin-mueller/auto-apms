@@ -93,6 +93,12 @@ public:
    */
   std::string getFullyQualifiedTreeNodeName(const BT::TreeNode * node, bool with_class_name = true) const;
 
+  /**
+   * @brief Get the extra YAML options provided during node registration.
+   * @return YAML node with extra options.
+   */
+  YAML::Node getExtraOptions() const;
+
 private:
   BT::Expected<std::string> getTopicName(const BT::TreeNode * node) const;
 
