@@ -126,6 +126,8 @@ int main(int argc, char ** argv)
 **C++ Model:** `)" << auto_apms_util::splitString(package_name, " ")[0] << "::" << registration_name << R"(`
 
 **Node Type:** `)" << BT::toStr(model.type) << R"(`
+
+**Description:** )" << (options.description.empty() ? "No description available." : options.description) << R"(
 )";
         if (model.port_infos.empty()) {
           content << "\n*This node doesn't have any ports.*\n";
