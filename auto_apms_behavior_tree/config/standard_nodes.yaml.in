@@ -114,3 +114,15 @@ ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_GET_PARAMETER_STRING_VEC}:
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HAS_PARAMETER}:
   class_name: ${PROJECT_NAME}::HasParameter
   description: "Checks if a ROS2 node has a specific parameter defined"
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_BOOL}:
+  class_name: ${PROJECT_NAME}::SetBool
+  description: "Sets a std_srvs/SetBool service with the given boolean value"
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_EMPTY}:
+  class_name: ${PROJECT_NAME}::SetEmpty
+  description: "Calls a std_srvs/Empty service"
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_TRIGGER}:
+  class_name: ${PROJECT_NAME}::SetTrigger
+  description: "Calls a std_srvs/Trigger service"
