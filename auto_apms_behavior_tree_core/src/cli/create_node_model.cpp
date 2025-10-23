@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 
 #include "auto_apms_behavior_tree_core/node/node_manifest.hpp"
 #include "auto_apms_behavior_tree_core/node/node_registration_interface.hpp"
+#include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 #include "auto_apms_util/logging.hpp"
 #include "auto_apms_util/string.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
@@ -108,14 +110,32 @@ int main(int argc, char ** argv)
       }
     }
 
-    // Generate and write node model
-    std::ofstream out_stream(output_file);
-    if (out_stream.is_open()) {
-      out_stream << BT::writeTreeNodesModelXML(factory);
-      out_stream.close();
-    } else {
-      throw std::runtime_error("Error opening node model output file '" + output_file.string() + "'.");
+    // Generate node model XML from the factory
+    const std::string model_xml = BT::writeTreeNodesModelXML(factory);
+
+    // Parse the XML into a document to extract the NodeModelMap later
+    tinyxml2::XMLDocument model_doc;
+    if (model_doc.Parse(model_xml.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+      throw std::runtime_error("Error parsing the generated node model XML: " + std::string(model_doc.ErrorStr()));
     }
+
+    // Extract hidden_ports from the manifest
+    std::map<std::string, std::vector<std::string>> hidden_ports;
+    for (const auto & [node_name, params] : manifest.map()) {
+      if (!params.hidden_ports.empty()) {
+        hidden_ports[node_name] = params.hidden_ports;
+      }
+    }
+
+    // Convert to NodeModelMap with hidden ports applied
+    auto model_map = core::TreeDocument::getNodeModel(model_doc, hidden_ports);
+
+    // Create a TreeDocument and add the filtered node model
+    core::TreeDocument doc;
+    doc.addNodeModel(model_map);
+
+    // Write to file
+    doc.writeToFile(output_file.string());
   } catch (const std::exception & e) {
     std::cerr << "ERROR (create_node_model): " << e.what() << "\n";
     return EXIT_FAILURE;

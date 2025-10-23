@@ -14,6 +14,8 @@
 
 #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 
+#include <algorithm>
+
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/node_model_type.hpp"
@@ -968,35 +970,11 @@ NodeManifest TreeDocument::getRequiredNodeManifest() const
   return m;
 }
 
-// TreeDocument & TreeDocument::addNodeModel(bool include_native)
-// {
-//   tinyxml2::XMLDocument model_doc;
-//   if (
-//     model_doc.Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-//     throw exceptions::TreeDocumentError(
-//       "Error parsing the model of the currently registered nodes: " + std::string(model_doc.ErrorStr()));
-//   }
-
-//   // Verify format of document and discard the return value (We add a model element even if empty)
-//   getNodeModel(model_doc);
-
-//   const tinyxml2::XMLElement * model_child =
-//     model_doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
-
-//   // Clone the memory of the node model element to the document
-//   tinyxml2::XMLNode * copied_child = model_child->DeepClone(this);
-
-//   // Append the copied child to the root of the document
-//   RootElement()->InsertEndChild(copied_child);
-
-//   return *this;
-// }
-
 TreeDocument & TreeDocument::addNodeModel(NodeModelMap model_map)
 {
   // Create or get the TreeNodesModel element
   tinyxml2::XMLElement * model_root = RootElement()->FirstChildElement(TREE_NODE_MODEL_ELEMENT_NAME);
-  
+
   // If no TreeNodesModel element exists, create one
   if (!model_root) {
     model_root = NewElement(TREE_NODE_MODEL_ELEMENT_NAME);
@@ -1012,7 +990,7 @@ TreeDocument & TreeDocument::addNodeModel(NodeModelMap model_map)
     // Add port information
     for (const auto & port_info : model.port_infos) {
       tinyxml2::XMLElement * port_element = nullptr;
-      
+
       // Create the appropriate port element based on direction
       switch (port_info.port_direction) {
         case BT::PortDirection::INPUT:
@@ -1028,15 +1006,15 @@ TreeDocument & TreeDocument::addNodeModel(NodeModelMap model_map)
 
       // Set port attributes
       port_element->SetAttribute("name", port_info.port_name.c_str());
-      
+
       if (!port_info.port_type.empty()) {
         port_element->SetAttribute("type", port_info.port_type.c_str());
       }
-      
+
       if (port_info.port_has_default) {
         port_element->SetAttribute("default", port_info.port_default.c_str());
       }
-      
+
       // Set port description as text content
       if (!port_info.port_description.empty()) {
         port_element->SetText(port_info.port_description.c_str());
@@ -1051,7 +1029,8 @@ TreeDocument & TreeDocument::addNodeModel(NodeModelMap model_map)
   return *this;
 }
 
-NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc)
+NodeModelMap TreeDocument::getNodeModel(
+  tinyxml2::XMLDocument & doc, const std::map<std::string, std::vector<std::string>> & hidden_ports)
 {
   const tinyxml2::XMLElement * root = doc.RootElement();
   if (!root) {
@@ -1121,7 +1100,24 @@ NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc)
     // Port infos may be empty if there are no ports
   }
 
+  // Apply port filtering if hidden_ports is specified
+  if (!hidden_ports.empty()) {
+    for (auto & [node_name, model] : model_map) {
+      auto it = hidden_ports.find(node_name);
+      if (it != hidden_ports.end()) {
+        const std::vector<std::string> & ports_to_hide = it->second;
 
+        // Remove ports that should be hidden
+        model.port_infos.erase(
+          std::remove_if(
+            model.port_infos.begin(), model.port_infos.end(),
+            [&ports_to_hide](const NodePortInfo & port_info) {
+              return std::find(ports_to_hide.begin(), ports_to_hide.end(), port_info.port_name) != ports_to_hide.end();
+            }),
+          model.port_infos.end());
+      }
+    }
+  }
 
   return model_map;
 }
@@ -1134,7 +1130,17 @@ NodeModelMap TreeDocument::getNodeModel(bool include_native) const
     throw exceptions::TreeDocumentError(
       "Error parsing the model of the currently registered nodes: " + std::string(model_doc.ErrorStr()));
   }
-  return getNodeModel(model_doc);
+
+  // Extract hidden_ports from registered_nodes_manifest_
+  std::map<std::string, std::vector<std::string>> hidden_ports;
+  for (const auto & [node_name, params] : registered_nodes_manifest_.map()) {
+    if (!params.hidden_ports.empty()) {
+      hidden_ports[node_name] = params.hidden_ports;
+    }
+  }
+
+  // Get the node model with hidden ports applied
+  return getNodeModel(model_doc, hidden_ports);
 }
 
 BT::Result TreeDocument::verify() const

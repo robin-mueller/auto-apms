@@ -1271,16 +1271,6 @@ public:
   NodeManifest getRequiredNodeManifest() const;
 
   /**
-  //  * @brief Add a behavior tree node model element to the document.
-  //  *
-  //  * This is required when using the Groot2 visual editor.
-  //  * @param include_native Set to `true` if the native *BehaviorTree.CPP* nodes should be included, `false` to only
-  //  * consider registered node plugins.
-  //  * @return Modified tree document.
-  //  */
-  // TreeDocument & addNodeModel(bool include_native = false);
-
-  /**
    * @brief Add a behavior tree node model element to the document by parsing the contents of @p model_map.
    *
    * This is required when using the Groot2 visual editor.
@@ -1292,12 +1282,17 @@ public:
   /**
    * @brief Convert a behavior tree node model document to the corresponding data structure.
    * @param doc XML document containing the node model.
+   * @param hidden_ports Mapping of node names to port names that should be hidden in the model.
    * @return Mapping of node models for all nodes specified by @p doc.
    */
-  static NodeModelMap getNodeModel(tinyxml2::XMLDocument & doc);
+  static NodeModelMap getNodeModel(
+    tinyxml2::XMLDocument & doc, const std::map<std::string, std::vector<std::string>> & hidden_ports = {});
 
   /**
    * @brief Create a behavior tree node model for all nodes registered with this document.
+   *
+   * Hidden ports are automatically extracted from the NodeRegistrationOptions::hidden_ports field of registered nodes.
+   *
    * @param include_native Set to `true` if the native *BehaviorTree.CPP* nodes should be included, `false` to only
    * consider registered node plugins.
    * @return Mapping of node models for all nodes registered with this document.

@@ -67,8 +67,8 @@ int main(int argc, char ** argv)
       doc.registerNodes(core::NodeManifest::fromResource(manifest_resource_identity));
     }
 
-    // Add the node model to the document and write to file
-    doc.addNodeModel(use_native_only);
+    // Get the node model and add it to the document, then write to file
+    doc.addNodeModel(doc.getNodeModel(use_native_only));
     doc.writeToFile(output_file.string());
 
   } catch (const std::exception & e) {
