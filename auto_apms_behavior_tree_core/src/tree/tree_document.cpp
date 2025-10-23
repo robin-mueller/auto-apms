@@ -968,26 +968,85 @@ NodeManifest TreeDocument::getRequiredNodeManifest() const
   return m;
 }
 
-TreeDocument & TreeDocument::addNodeModel(bool include_native)
+// TreeDocument & TreeDocument::addNodeModel(bool include_native)
+// {
+//   tinyxml2::XMLDocument model_doc;
+//   if (
+//     model_doc.Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+//     throw exceptions::TreeDocumentError(
+//       "Error parsing the model of the currently registered nodes: " + std::string(model_doc.ErrorStr()));
+//   }
+
+//   // Verify format of document and discard the return value (We add a model element even if empty)
+//   getNodeModel(model_doc);
+
+//   const tinyxml2::XMLElement * model_child =
+//     model_doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
+
+//   // Clone the memory of the node model element to the document
+//   tinyxml2::XMLNode * copied_child = model_child->DeepClone(this);
+
+//   // Append the copied child to the root of the document
+//   RootElement()->InsertEndChild(copied_child);
+
+//   return *this;
+// }
+
+TreeDocument & TreeDocument::addNodeModel(NodeModelMap model_map)
 {
-  tinyxml2::XMLDocument model_doc;
-  if (
-    model_doc.Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
-    throw exceptions::TreeDocumentError(
-      "Error parsing the model of the currently registered nodes: " + std::string(model_doc.ErrorStr()));
+  // Create or get the TreeNodesModel element
+  tinyxml2::XMLElement * model_root = RootElement()->FirstChildElement(TREE_NODE_MODEL_ELEMENT_NAME);
+  
+  // If no TreeNodesModel element exists, create one
+  if (!model_root) {
+    model_root = NewElement(TREE_NODE_MODEL_ELEMENT_NAME);
+    RootElement()->InsertEndChild(model_root);
   }
 
-  // Verify format of document and discard the return value (We add a model element even if empty)
-  getNodeModel(model_doc);
+  // Iterate through the model_map and create XML elements for each node
+  for (const auto & [node_name, model] : model_map) {
+    // Create the element with the node type as the tag name
+    tinyxml2::XMLElement * node_element = NewElement(BT::toStr(model.type).c_str());
+    node_element->SetAttribute("ID", node_name.c_str());
 
-  const tinyxml2::XMLElement * model_child =
-    model_doc.RootElement()->FirstChildElement(TreeDocument::TREE_NODE_MODEL_ELEMENT_NAME);
+    // Add port information
+    for (const auto & port_info : model.port_infos) {
+      tinyxml2::XMLElement * port_element = nullptr;
+      
+      // Create the appropriate port element based on direction
+      switch (port_info.port_direction) {
+        case BT::PortDirection::INPUT:
+          port_element = NewElement("input_port");
+          break;
+        case BT::PortDirection::OUTPUT:
+          port_element = NewElement("output_port");
+          break;
+        case BT::PortDirection::INOUT:
+          port_element = NewElement("inout_port");
+          break;
+      }
 
-  // Clone the memory of the node model element to the document
-  tinyxml2::XMLNode * copied_child = model_child->DeepClone(this);
+      // Set port attributes
+      port_element->SetAttribute("name", port_info.port_name.c_str());
+      
+      if (!port_info.port_type.empty()) {
+        port_element->SetAttribute("type", port_info.port_type.c_str());
+      }
+      
+      if (port_info.port_has_default) {
+        port_element->SetAttribute("default", port_info.port_default.c_str());
+      }
+      
+      // Set port description as text content
+      if (!port_info.port_description.empty()) {
+        port_element->SetText(port_info.port_description.c_str());
+      }
 
-  // Append the copied child to the root of the document
-  RootElement()->InsertEndChild(copied_child);
+      node_element->InsertEndChild(port_element);
+    }
+
+    model_root->InsertEndChild(node_element);
+  }
 
   return *this;
 }
@@ -1061,6 +1120,9 @@ NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc)
     }
     // Port infos may be empty if there are no ports
   }
+
+
+
   return model_map;
 }
 
