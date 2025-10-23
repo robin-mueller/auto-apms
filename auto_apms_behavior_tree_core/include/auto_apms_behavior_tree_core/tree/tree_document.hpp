@@ -1286,7 +1286,7 @@ public:
    * @return Mapping of node models for all nodes specified by @p doc.
    */
   static NodeModelMap getNodeModel(
-    tinyxml2::XMLDocument & doc, const std::map<std::string, std::vector<std::string>> & hidden_ports = {});
+    tinyxml2::XMLDocument & doc, std::map<std::string, std::vector<std::string>> hidden_ports = {});
 
   /**
    * @brief Create a behavior tree node model for all nodes registered with this document.

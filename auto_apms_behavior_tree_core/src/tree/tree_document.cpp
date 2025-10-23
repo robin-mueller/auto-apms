@@ -1030,7 +1030,7 @@ TreeDocument & TreeDocument::addNodeModel(NodeModelMap model_map)
 }
 
 NodeModelMap TreeDocument::getNodeModel(
-  tinyxml2::XMLDocument & doc, const std::map<std::string, std::vector<std::string>> & hidden_ports)
+  tinyxml2::XMLDocument & doc, std::map<std::string, std::vector<std::string>> hidden_ports)
 {
   const tinyxml2::XMLElement * root = doc.RootElement();
   if (!root) {
