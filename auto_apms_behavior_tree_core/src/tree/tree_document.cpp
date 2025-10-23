@@ -1124,9 +1124,17 @@ NodeModelMap TreeDocument::getNodeModel(
 
 NodeModelMap TreeDocument::getNodeModel(bool include_native) const
 {
+  // Generate XML from the factory
+  std::string model_xml;
+  try {
+    model_xml = BT::writeTreeNodesModelXML(factory_, include_native);
+  } catch (const std::exception & e) {
+    throw exceptions::TreeDocumentError("Error generating node model XML from factory: " + std::string(e.what()));
+  }
+
+  // Parse the XML
   tinyxml2::XMLDocument model_doc;
-  if (
-    model_doc.Parse(BT::writeTreeNodesModelXML(factory_, include_native).c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
+  if (model_doc.Parse(model_xml.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
     throw exceptions::TreeDocumentError(
       "Error parsing the model of the currently registered nodes: " + std::string(model_doc.ErrorStr()));
   }
