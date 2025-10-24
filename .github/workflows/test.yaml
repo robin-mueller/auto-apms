@@ -10,9 +10,10 @@ on:
 
 jobs:
   build_and_test: # Iterates over all supported ROS 2 distributions.
-    name: Build and Test
+    name: Build and Test (${{ matrix.ros_distribution }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         ros_distribution:
           - jazzy
