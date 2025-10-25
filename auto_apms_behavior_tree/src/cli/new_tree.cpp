@@ -76,7 +76,7 @@ int main(int argc, char ** argv)
 
   // Add node model
   if (!node_manifest.empty()) {
-    doc.addNodeModel(false);
+    doc.addNodeModel(doc.getNodeModel(false));
   }
 
   // Write tree

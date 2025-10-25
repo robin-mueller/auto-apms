@@ -9,7 +9,12 @@
 <a href="https://robin-mueller.github.io/auto-apms-guide/introduction/about">![Docs](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=🎓Documentation)</a>
 <a href="https://doi.org/10.5281/zenodo.14790307">![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)</a>
 <a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
-<a href="https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml">![ROS 2](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml/badge.svg)</a>
+
+| ROS 2 | Build & Test |
+|:------------------:|:------:|
+| Jazzy Jalisco | [![Jazzy](https://img.shields.io/github/actions/workflow/status/robin-mueller/auto-apms/test.yaml?branch=master&label=jazzy&job=Build+and+Test+%28jazzy%29)](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml) |
+| Kilted Kaiju | [![Kilted](https://img.shields.io/github/actions/workflow/status/robin-mueller/auto-apms/test.yaml?branch=master&label=kilted&job=Build+and+Test+%28kilted%29)](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml) |
+| Rolling Ridley | [![Rolling](https://img.shields.io/github/actions/workflow/status/robin-mueller/auto-apms/test.yaml?branch=master&label=rolling&job=Build+and+Test+%28rolling%29)](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml) |
 
 </div>
 
@@ -24,7 +29,7 @@ AutoAPMS is a **heavily extensible** development framework for **behavior-based 
 The intention of this project is to make it significantly more user-friendly and less error prone to develop autonomous robotics with behavior trees. The core packages are written in C++ and a supplementary Python API exposes high-level features for scripting.
 
 > [!NOTE]
-> Currently we support **Linux only**! For a list of supported ROS 2 distros see the [GitHub build workflow](.github/workflows/test.yaml).
+> Currently we support **Linux only**!.
 
 ## Highlights
 

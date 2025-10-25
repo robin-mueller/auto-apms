@@ -38,6 +38,7 @@ struct NodeRegistrationOptions
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
   static const std::string PARAM_NAME_ALLOW_UNREACHABLE;
   static const std::string PARAM_NAME_LOGGER_LEVEL;
+  static const std::string PARAM_NAME_HIDDEN_PORTS;
   static const std::string PARAM_NAME_EXTRA;
 
   /**
@@ -88,6 +89,8 @@ struct NodeRegistrationOptions
   bool allow_unreachable = false;
   /// Minimum ROS 2 logging severity level for this particular node. Empty means to inherit the parent logging severity.
   std::string logger_level = "";
+  /// List of port names to hide in the node model for visualization tools like Groot2.
+  std::vector<std::string> hidden_ports = {};
   /// Flexible YAML node which allows providing additional and customized registration options to the behavior tree node
   /// implementation.
   YAML::Node extra;
@@ -123,6 +126,7 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
     node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
     node[Options::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
     node[Options::PARAM_NAME_LOGGER_LEVEL] = rhs.logger_level;
+    node[Options::PARAM_NAME_HIDDEN_PORTS] = rhs.hidden_ports;
     node[Options::PARAM_NAME_EXTRA] = rhs.extra;
     return node;
   }
@@ -150,6 +154,16 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
             " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
         }
         rhs.port_defaults = val.as<std::map<std::string, std::string>>();
+        continue;
+      }
+
+      if (key == Options::PARAM_NAME_HIDDEN_PORTS) {
+        if (!val.IsSequence()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be a sequence but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
+        rhs.hidden_ports = val.as<std::vector<std::string>>();
         continue;
       }
 
