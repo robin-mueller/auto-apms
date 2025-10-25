@@ -1,0 +1,17 @@
+name: Jazzy
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build_and_test:
+    name: Build and Test (jazzy)
+    uses: ./.github/workflows/build-and-test-reusable.yaml
+    with:
+      ros_distribution: jazzy
+      docker_image: ubuntu:noble

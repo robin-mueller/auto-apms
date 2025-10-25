@@ -1,0 +1,56 @@
+name: Build and Test (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      ros_distribution:
+        description: 'ROS 2 distribution to test'
+        required: true
+        type: string
+      docker_image:
+        description: 'Docker image to use'
+        required: true
+        type: string
+
+jobs:
+  build_and_test:
+    name: Build and Test (${{ inputs.ros_distribution }})
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ inputs.docker_image }}
+      env:
+        PIP_BREAK_SYSTEM_PACKAGES: 1 # Allow pip to install system packages if needed.
+    steps:
+      - name: Setup ROS environment
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ inputs.ros_distribution }}
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build and Test
+        id: ros-build
+        uses: ros-tooling/action-ros-ci@v0.4
+        with:
+          import-token: ${{ secrets.GITHUB_TOKEN }}
+          target-ros2-distro: ${{ inputs.ros_distribution }}
+          coverage-result: false
+          colcon-defaults: |
+            {
+              "build": {
+                "cmake-args": [
+                  "-DCMAKE_BUILD_TYPE=Release",
+                  "-DBUILD_TESTING=ON"
+                ]
+              },
+              "test": {
+                "ctest-args": [
+                  "-R", "auto_apms_.*_unit_tests"
+                ]
+              }
+            }
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: colcon-logs-${{ inputs.ros_distribution }}
+          path: ${{ steps.ros-build.outputs.ros-workspace-directory-name }}/log
+        if: always() # upload the logs even when the build fails

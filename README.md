@@ -12,9 +12,9 @@
 
 | ROS 2 | Build & Test |
 |:------------------:|:------:|
-| Jazzy Jalisco | [![Jazzy](https://img.shields.io/github/actions/workflow/status/robin-mueller/auto-apms/test.yaml?branch=master&label=jazzy&job=Build+and+Test+%28jazzy%29)](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml) |
-| Kilted Kaiju | [![Kilted](https://img.shields.io/github/actions/workflow/status/robin-mueller/auto-apms/test.yaml?branch=master&label=kilted&job=Build+and+Test+%28kilted%29)](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml) |
-| Rolling Ridley | [![Rolling](https://img.shields.io/github/actions/workflow/status/robin-mueller/auto-apms/test.yaml?branch=master&label=rolling&job=Build+and+Test+%28rolling%29)](https://github.com/robin-mueller/auto-apms/actions/workflows/test.yaml) |
+| Jazzy Jalisco | [![Jazzy](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml/badge.svg?branch=master)](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml) |
+| Kilted Kaiju | [![Kilted](https://github.com/robin-mueller/auto-apms/actions/workflows/kilted.yaml/badge.svg?branch=master)](https://github.com/robin-mueller/auto-apms/actions/workflows/kilted.yaml) |
+| Rolling Ridley | [![Rolling](https://github.com/robin-mueller/auto-apms/actions/workflows/rolling.yaml/badge.svg?branch=master)](https://github.com/robin-mueller/auto-apms/actions/workflows/rolling.yaml) |
 
 </div>
 
