@@ -10,7 +10,6 @@ on:
 
 jobs:
   build_and_test:
-    name: Build and Test (jazzy)
     uses: ./.github/workflows/build-and-test-reusable.yaml
     with:
       ros_distribution: jazzy
