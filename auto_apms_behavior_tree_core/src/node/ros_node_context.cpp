@@ -222,7 +222,7 @@ BT::PortsRemapping RosNodeContext::copyAliasedPortValuesToOriginalPorts(const BT
       const auto alias_it = registration_options_.port_alias.find(original_key);
       if (alias_it != registration_options_.port_alias.end()) {
         // Port has been aliased, copy value from aliased port to original port
-        const std::string aliased_port_name = parseAliasPortName(alias_it->second);
+        const auto [aliased_port_name, _] = parseAliasPortName(alias_it->second);
         auto aliased_port_it = node_ports.find(aliased_port_name);
         if (aliased_port_it != node_ports.end()) {
           // Aliased port exists, copy its value to the original port
