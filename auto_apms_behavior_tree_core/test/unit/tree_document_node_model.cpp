@@ -332,8 +332,11 @@ TEST_F(TreeDocumentNodeModelTest, RoundTripNodeModelConversion)
   tinyxml2::XMLDocument xml_doc;
   ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
 
+  // Create an empty manifest (no port aliasing or hidden ports)
+  NodeManifest manifest;
+
   NodeModelMap parsed_map;
-  ASSERT_NO_THROW(parsed_map = TreeDocument::getNodeModel(xml_doc));
+  ASSERT_NO_THROW(parsed_map = TreeDocument::getNodeModel(xml_doc, manifest));
 
   // Verify the parsed model matches the original
   ASSERT_EQ(parsed_map.size(), 1);
@@ -394,12 +397,15 @@ TEST_F(TreeDocumentNodeModelTest, GetNodeModelWithHiddenPorts)
   tinyxml2::XMLDocument xml_doc;
   ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
 
-  // Now test getNodeModel with hidden ports specified
-  std::map<std::string, std::vector<std::string>> hidden_ports;
-  hidden_ports["TestNodeWithHiddenPorts"] = {"hidden_port"};
+  // Create a manifest with hidden ports specified
+  NodeManifest manifest;
+  NodeRegistrationOptions options;
+  options.class_name = "TestNodeWithHiddenPortsClass";  // Required for valid options
+  options.hidden_ports.push_back("hidden_port");
+  manifest.add("TestNodeWithHiddenPorts", options);
 
   NodeModelMap filtered_map;
-  ASSERT_NO_THROW(filtered_map = TreeDocument::getNodeModel(xml_doc, hidden_ports));
+  ASSERT_NO_THROW(filtered_map = TreeDocument::getNodeModel(xml_doc, manifest));
 
   // Verify the hidden port was removed
   ASSERT_TRUE(filtered_map.find("TestNodeWithHiddenPorts") != filtered_map.end());
@@ -450,12 +456,16 @@ TEST_F(TreeDocumentNodeModelTest, GetNodeModelWithMultipleHiddenPorts)
   tinyxml2::XMLDocument xml_doc;
   ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
 
-  // Hide multiple ports
-  std::map<std::string, std::vector<std::string>> hidden_ports;
-  hidden_ports["MultiPortNode"] = {"port2", "port4"};
+  // Create a manifest with multiple hidden ports
+  NodeManifest manifest;
+  NodeRegistrationOptions options;
+  options.class_name = "MultiPortNodeClass";  // Required for valid options
+  options.hidden_ports.push_back("port2");
+  options.hidden_ports.push_back("port4");
+  manifest.add("MultiPortNode", options);
 
   NodeModelMap filtered_map;
-  ASSERT_NO_THROW(filtered_map = TreeDocument::getNodeModel(xml_doc, hidden_ports));
+  ASSERT_NO_THROW(filtered_map = TreeDocument::getNodeModel(xml_doc, manifest));
 
   // Verify only 3 ports remain (port1, port3, port5)
   ASSERT_TRUE(filtered_map.find("MultiPortNode") != filtered_map.end());
@@ -500,15 +510,257 @@ TEST_F(TreeDocumentNodeModelTest, GetNodeModelWithEmptyHiddenPorts)
   tinyxml2::XMLDocument xml_doc;
   ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
 
-  // Call getNodeModel with empty hidden_ports map
-  std::map<std::string, std::vector<std::string>> hidden_ports;
+  // Call getNodeModel with empty manifest (no hidden ports)
+  NodeManifest manifest;
 
   NodeModelMap result_map;
-  ASSERT_NO_THROW(result_map = TreeDocument::getNodeModel(xml_doc, hidden_ports));
+  ASSERT_NO_THROW(result_map = TreeDocument::getNodeModel(xml_doc, manifest));
 
   // Verify the port is still there
   ASSERT_TRUE(result_map.find("TestNode") != result_map.end());
   const NodeModel & result_model = result_map["TestNode"];
   ASSERT_EQ(result_model.port_infos.size(), 1);
   EXPECT_EQ(result_model.port_infos[0].port_name, "test_port");
+}
+
+TEST_F(TreeDocumentNodeModelTest, GetNodeModelWithPortAlias)
+{
+  // Test that port_alias causes the original port to be hidden from the node model
+  NodeModelMap model_map;
+  NodeModel action_model;
+  action_model.type = BT::NodeType::ACTION;
+
+  NodePortInfo port;
+  port.port_name = "original_port";
+  port.port_type = "std::string";
+  port.port_direction = BT::PortDirection::INPUT;
+  port.port_has_default = false;
+  port.port_description = "Original port description";
+
+  action_model.port_infos.push_back(port);
+  model_map["TestNodeWithAlias"] = action_model;
+
+  // Add to document and convert to XML
+  doc_->addNodeModel(model_map);
+  std::string xml = doc_->writeToString();
+
+  // Parse the XML back
+  tinyxml2::XMLDocument xml_doc;
+  ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
+
+  // Create a manifest with port alias
+  // Note: Port aliases hide the original port in the node model
+  NodeManifest manifest;
+  NodeRegistrationOptions options;
+  options.class_name = "TestNodeWithAliasClass";
+  options.port_alias["original_port"] = "aliased_port";
+  manifest.add("TestNodeWithAlias", options);
+
+  NodeModelMap result_map;
+  ASSERT_NO_THROW(result_map = TreeDocument::getNodeModel(xml_doc, manifest));
+
+  // Verify the node model was retrieved
+  ASSERT_TRUE(result_map.find("TestNodeWithAlias") != result_map.end());
+  const NodeModel & result_model = result_map["TestNodeWithAlias"];
+
+  // The original port should be hidden when port_alias is specified
+  ASSERT_EQ(result_model.port_infos.size(), 0);
+}
+
+TEST_F(TreeDocumentNodeModelTest, GetNodeModelWithPortAliasAndDescription)
+{
+  // Test that port_alias hides the original port
+  NodeModelMap model_map;
+  NodeModel action_model;
+  action_model.type = BT::NodeType::ACTION;
+
+  NodePortInfo port;
+  port.port_name = "old_name";
+  port.port_type = "int";
+  port.port_direction = BT::PortDirection::OUTPUT;
+  port.port_has_default = false;
+  port.port_description = "Old description";
+
+  action_model.port_infos.push_back(port);
+  model_map["NodeWithAliasAndDesc"] = action_model;
+
+  doc_->addNodeModel(model_map);
+  std::string xml = doc_->writeToString();
+
+  tinyxml2::XMLDocument xml_doc;
+  ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
+
+  // Create manifest with port alias including updated description
+  NodeManifest manifest;
+  NodeRegistrationOptions options;
+  options.class_name = "NodeWithAliasAndDescClass";
+  options.port_alias["old_name"] = "new_name (Updated description for new port)";
+  manifest.add("NodeWithAliasAndDesc", options);
+
+  NodeModelMap result_map;
+  ASSERT_NO_THROW(result_map = TreeDocument::getNodeModel(xml_doc, manifest));
+
+  ASSERT_TRUE(result_map.find("NodeWithAliasAndDesc") != result_map.end());
+  const NodeModel & result_model = result_map["NodeWithAliasAndDesc"];
+
+  // The original port should be hidden
+  ASSERT_EQ(result_model.port_infos.size(), 0);
+}
+
+TEST_F(TreeDocumentNodeModelTest, GetNodeModelWithMultiplePortAliases)
+{
+  // Test that multiple port aliases hide their corresponding original ports
+  NodeModelMap model_map;
+  NodeModel action_model;
+  action_model.type = BT::NodeType::ACTION;
+
+  NodePortInfo port1;
+  port1.port_name = "input1";
+  port1.port_type = "double";
+  port1.port_direction = BT::PortDirection::INPUT;
+  port1.port_has_default = false;
+  port1.port_description = "First input";
+
+  NodePortInfo port2;
+  port2.port_name = "input2";
+  port2.port_type = "double";
+  port2.port_direction = BT::PortDirection::INPUT;
+  port2.port_has_default = false;
+  port2.port_description = "Second input";
+
+  NodePortInfo port3;
+  port3.port_name = "output";
+  port3.port_type = "double";
+  port3.port_direction = BT::PortDirection::OUTPUT;
+  port3.port_has_default = false;
+  port3.port_description = "Result output";
+
+  action_model.port_infos.push_back(port1);
+  action_model.port_infos.push_back(port2);
+  action_model.port_infos.push_back(port3);
+  model_map["MultiAliasNode"] = action_model;
+
+  doc_->addNodeModel(model_map);
+  std::string xml = doc_->writeToString();
+
+  tinyxml2::XMLDocument xml_doc;
+  ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
+
+  // Create manifest with multiple port aliases
+  NodeManifest manifest;
+  NodeRegistrationOptions options;
+  options.class_name = "MultiAliasNodeClass";
+  options.port_alias["input1"] = "x_coordinate";
+  options.port_alias["input2"] = "y_coordinate";
+  options.port_alias["output"] = "distance (Calculated distance)";
+  manifest.add("MultiAliasNode", options);
+
+  NodeModelMap result_map;
+  ASSERT_NO_THROW(result_map = TreeDocument::getNodeModel(xml_doc, manifest));
+
+  ASSERT_TRUE(result_map.find("MultiAliasNode") != result_map.end());
+  const NodeModel & result_model = result_map["MultiAliasNode"];
+
+  // All 3 original ports should be hidden
+  ASSERT_EQ(result_model.port_infos.size(), 0);
+}
+
+TEST_F(TreeDocumentNodeModelTest, GetNodeModelWithPortAliasAndHiddenPorts)
+{
+  // Test combining port aliasing with hidden ports
+  NodeModelMap model_map;
+  NodeModel action_model;
+  action_model.type = BT::NodeType::ACTION;
+
+  NodePortInfo port1;
+  port1.port_name = "visible_port";
+  port1.port_type = "std::string";
+  port1.port_direction = BT::PortDirection::INPUT;
+  port1.port_has_default = false;
+  port1.port_description = "Visible port";
+
+  NodePortInfo port2;
+  port2.port_name = "aliased_port";
+  port2.port_type = "int";
+  port2.port_direction = BT::PortDirection::INPUT;
+  port2.port_has_default = false;
+  port2.port_description = "Port to be aliased";
+
+  NodePortInfo port3;
+  port3.port_name = "hidden_port";
+  port3.port_type = "bool";
+  port3.port_direction = BT::PortDirection::OUTPUT;
+  port3.port_has_default = false;
+  port3.port_description = "Port to be hidden";
+
+  action_model.port_infos.push_back(port1);
+  action_model.port_infos.push_back(port2);
+  action_model.port_infos.push_back(port3);
+  model_map["CombinedNode"] = action_model;
+
+  doc_->addNodeModel(model_map);
+  std::string xml = doc_->writeToString();
+
+  tinyxml2::XMLDocument xml_doc;
+  ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
+
+  // Create manifest with both port alias and hidden ports
+  NodeManifest manifest;
+  NodeRegistrationOptions options;
+  options.class_name = "CombinedNodeClass";
+  options.port_alias["aliased_port"] = "new_port_name";
+  options.hidden_ports.push_back("hidden_port");
+  manifest.add("CombinedNode", options);
+
+  NodeModelMap result_map;
+  ASSERT_NO_THROW(result_map = TreeDocument::getNodeModel(xml_doc, manifest));
+
+  ASSERT_TRUE(result_map.find("CombinedNode") != result_map.end());
+  const NodeModel & result_model = result_map["CombinedNode"];
+
+  // Should only have visible_port (aliased_port and hidden_port are both hidden)
+  ASSERT_EQ(result_model.port_infos.size(), 1);
+
+  EXPECT_EQ(result_model.port_infos[0].port_name, "visible_port");
+}
+
+TEST_F(TreeDocumentNodeModelTest, GetNodeModelWithPortAliasPreservesDefaultValue)
+{
+  // Test that specifying a port alias hides the original port
+  NodeModelMap model_map;
+  NodeModel action_model;
+  action_model.type = BT::NodeType::ACTION;
+
+  NodePortInfo port;
+  port.port_name = "timeout";
+  port.port_type = "double";
+  port.port_direction = BT::PortDirection::INPUT;
+  port.port_has_default = true;
+  port.port_default = "10.0";
+  port.port_description = "Timeout value";
+
+  action_model.port_infos.push_back(port);
+  model_map["NodeWithDefault"] = action_model;
+
+  doc_->addNodeModel(model_map);
+  std::string xml = doc_->writeToString();
+
+  tinyxml2::XMLDocument xml_doc;
+  ASSERT_EQ(xml_doc.Parse(xml.c_str()), tinyxml2::XMLError::XML_SUCCESS);
+
+  // Create manifest with port alias
+  NodeManifest manifest;
+  NodeRegistrationOptions options;
+  options.class_name = "NodeWithDefaultClass";
+  options.port_alias["timeout"] = "max_wait_time (Maximum wait time in seconds)";
+  manifest.add("NodeWithDefault", options);
+
+  NodeModelMap result_map;
+  ASSERT_NO_THROW(result_map = TreeDocument::getNodeModel(xml_doc, manifest));
+
+  ASSERT_TRUE(result_map.find("NodeWithDefault") != result_map.end());
+  const NodeModel & result_model = result_map["NodeWithDefault"];
+
+  // The original port should be hidden
+  ASSERT_EQ(result_model.port_infos.size(), 0);
 }

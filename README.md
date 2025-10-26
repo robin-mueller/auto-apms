@@ -35,7 +35,7 @@ The intention of this project is to make it significantly more user-friendly and
 
 There are plenty of ROS 2 packages which provide an implementation for behavior trees. AutoAPMS adopts [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP), the most popular one when it comes to C++, and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots. Here are some of the most prominent features offered by this repository:
 
-- Efficient resource management using `ament_cmake` and `ament_index`
+- Convenient resource management using `ament_cmake` and `ament_index`
 
 - Inherently extensible due to plugin-based design
 
@@ -43,13 +43,15 @@ There are plenty of ROS 2 packages which provide an implementation for behavior 
 
 - Powerful C++ behavior tree builder API (a supplement to BehaviorTree.CPP)
 
-- Easy integration of custom behavior tree node implementations
+- High-level node manifests for registering node plugins without writing a single line of code
 
 - Support for custom behavior definitions and tree builder algorithms
 
-- `ros2cli` extensions for orchestrating the system from the command line
+- `ros2 behavior` command extending the ROS2 CLI for behavior management
 
 - Abstractions for PX4 Autopilot available with [auto-apms-px4](https://github.com/robin-mueller/auto-apms-px4)
+
+- Comprehensive [user guide](https://robin-mueller.github.io/auto-apms-guide/) and [API documentation](https://robin-mueller.github.io/auto-apms/)
 
 # 🚀 Getting Started
 

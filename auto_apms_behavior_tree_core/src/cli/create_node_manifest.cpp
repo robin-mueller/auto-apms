@@ -130,9 +130,9 @@ int main(int argc, char ** argv)
 
       // There is no shared library associated with the class name we're looking for
       throw std::runtime_error(
-        "Node '" + node_name + "' (Class '" + params.class_name +
+        "Class '" + params.class_name + "' (associated with node '" + node_name +
         "') cannot be found. It's not being built by this package (" + build_package_name +
-        ") and is also not provided by any other package. For a node to be discoverable, "
+        ") and is also not provided by any other package installed on your machine. For a node to be discoverable, "
         "one must register it using auto_apms_behavior_tree_register_nodes() in the "
         "CMakeLists.txt of a ROS 2 package.");
     }

@@ -84,8 +84,8 @@ int main(int argc, char ** argv)
 
       if (!loader) {
         throw std::runtime_error(
-          "Node '" + node_name + " (Class: " + params.class_name +
-          ")' cannot be registered, because the required registration class '" + required_class_name +
+          "Node '" + node_name + "' (Class: " + params.class_name +
+          ") cannot be registered, because the required registration class '" + required_class_name +
           "' couldn't be found. Check that the class name is spelled correctly and "
           "the node is registered by calling auto_apms_behavior_tree_register_nodes() in the CMakeLists.txt of the "
           "corresponding package. Also make sure that you called the "
@@ -119,16 +119,8 @@ int main(int argc, char ** argv)
       throw std::runtime_error("Error parsing the generated node model XML: " + std::string(model_doc.ErrorStr()));
     }
 
-    // Extract hidden_ports from the manifest
-    std::map<std::string, std::vector<std::string>> hidden_ports;
-    for (const auto & [node_name, params] : manifest.map()) {
-      if (!params.hidden_ports.empty()) {
-        hidden_ports[node_name] = params.hidden_ports;
-      }
-    }
-
     // Convert to NodeModelMap with hidden ports applied
-    auto model_map = core::TreeDocument::getNodeModel(model_doc, hidden_ports);
+    auto model_map = core::TreeDocument::getNodeModel(model_doc, manifest);
 
     // Create a TreeDocument and add the filtered node model
     core::TreeDocument doc;

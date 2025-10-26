@@ -232,6 +232,10 @@ inline RosServiceNode<ServiceT>::RosServiceNode(
   context_(context),
   logger_(context.getChildLogger(auto_apms_util::toSnakeCase(instance_name)))
 {
+  // Consider aliasing in ports and copy the values from aliased to original ports
+  this->modifyPortsRemapping(context_.copyAliasedPortValuesToOriginalPorts(this));
+
+  // Resolve topic field
   if (const BT::Expected<std::string> expected_name = context_.getTopicName(this)) {
     createClient(expected_name.value());
   } else {
