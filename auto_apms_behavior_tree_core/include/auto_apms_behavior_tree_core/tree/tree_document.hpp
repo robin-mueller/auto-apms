@@ -1282,11 +1282,11 @@ public:
   /**
    * @brief Convert a behavior tree node model document to the corresponding data structure.
    * @param doc XML document containing the node model.
-   * @param hidden_ports Mapping of node names to port names that should be hidden in the model.
+   * @param manifest Node manifest associated with the nodes specified by @p doc. This is only used to query optional
+   * information that affects the node model (e.g., hidden ports).
    * @return Mapping of node models for all nodes specified by @p doc.
    */
-  static NodeModelMap getNodeModel(
-    tinyxml2::XMLDocument & doc, std::map<std::string, std::vector<std::string>> hidden_ports = {});
+  static NodeModelMap getNodeModel(tinyxml2::XMLDocument & doc, const NodeManifest & manifest);
 
   /**
    * @brief Create a behavior tree node model for all nodes registered with this document.

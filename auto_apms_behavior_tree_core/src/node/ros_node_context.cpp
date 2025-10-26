@@ -139,4 +139,110 @@ BT::Expected<std::string> RosNodeContext::getTopicName(const BT::TreeNode * node
   return res;
 }
 
+/**
+ * @brief Parse alias port name and optional description from format "alias_name" or "alias_name (description)"
+ * @param str Input string to parse.
+ * @return Pair of alias name and description (empty if not provided).
+ */
+std::pair<std::string, std::string> parseAliasPortName(const std::string & str)
+{
+  static const std::regex alias_regex(R"(^\s*([^\s(]+)\s*(?:\(([^)]*)\))?\s*$)");
+  std::smatch match;
+  if (std::regex_match(str, match, alias_regex)) {
+    return {match[1].str(), match[2].str()};  // {alias_name, description}
+  }
+  return {str, ""};  // Fallback if regex doesn't match
+}
+
+void RosNodeContext::modifyProvidedPortsListForRegistration(BT::PortsList & ports_list) const
+{
+  // Add port aliases if specified in the node manifest (original port is kept for compatibility with the
+  // implementation, but hidden in the node model)
+  std::map<std::string, std::string> original_alias_name_map;
+  for (const auto & [original_port_name, aliased_port_name] : registration_options_.port_alias) {
+    if (ports_list.find(original_port_name) == ports_list.end()) {
+      throw exceptions::NodeRegistrationError(
+        "Cannot alias port '" + original_port_name + "' which is not provided by class '" +
+        registration_options_.class_name + "'. The keys under " + NodeRegistrationOptions::PARAM_NAME_PORT_ALIAS +
+        " must refer to a port implemented by the node.");
+    }
+    BT::PortInfo port_info = ports_list.at(original_port_name);
+    const auto [aliased_name_cleaned, aliased_description] = parseAliasPortName(aliased_port_name);
+    original_alias_name_map[original_port_name] = aliased_name_cleaned;
+
+    // Update description if provided within round brackets
+    if (!aliased_description.empty()) {
+      port_info.setDescription(aliased_description);
+    }
+
+    // Insert additional port
+    ports_list.insert({aliased_name_cleaned, port_info});
+  }
+
+  // Modify the default value of the ports if specified in the node manifest
+  for (const auto & [port_name, new_default] : registration_options_.port_default) {
+    if (ports_list.find(port_name) == ports_list.end()) {
+      throw exceptions::NodeRegistrationError(
+        "Cannot set default value for port '" + port_name + "' which is not provided by class '" +
+        registration_options_.class_name + "'. The keys under " + NodeRegistrationOptions::PARAM_NAME_PORT_DEFAULT +
+        " must refer to a port implemented by the node.");
+    }
+    // We're passing the new default value as string. Conversion is done when getting the port value during
+    // execution (also allows blackboard pointers)
+    ports_list.at(port_name).setDefaultValue(new_default);
+
+    // If it's an aliased port, we also need to update the default of the original port and vice versa
+    if (original_alias_name_map.find(port_name) != original_alias_name_map.end()) {
+      // User provided the original port name for setting the default value, we update the alias port
+      const std::string aliased_port_name = original_alias_name_map.at(port_name);
+      ports_list.at(aliased_port_name).setDefaultValue(new_default);
+    } else {
+      for (const auto & [original_port_name, aliased_port_name] : original_alias_name_map) {
+        if (aliased_port_name == port_name) {
+          // User provided the aliased port name for setting the default value, we update the original port
+          ports_list.at(original_port_name).setDefaultValue(new_default);
+          break;
+        }
+      }
+    }
+  }
+}
+
+BT::PortsRemapping RosNodeContext::copyAliasedPortValuesToOriginalPorts(const BT::TreeNode * node) const
+{
+  const BT::PortsRemapping & input_ports = node->config().input_ports;
+  const BT::PortsRemapping & output_ports = node->config().output_ports;
+
+  BT::PortsRemapping remapping;
+
+  // Lambda for handling aliasing
+  auto process_ports = [&](const BT::PortsRemapping & node_ports) {
+    for (const auto & [original_key, port_info] : node_ports) {
+      // Check if this original port has been aliased
+      const auto alias_it = registration_options_.port_alias.find(original_key);
+      if (alias_it != registration_options_.port_alias.end()) {
+        // Port has been aliased, copy value from aliased port to original port
+        const auto [aliased_port_name, _] = parseAliasPortName(alias_it->second);
+        auto aliased_port_it = node_ports.find(aliased_port_name);
+        if (aliased_port_it != node_ports.end()) {
+          // Aliased port exists, copy its value to the original port
+          remapping[original_key] = aliased_port_it->second;
+        } else {
+          throw exceptions::NodeRegistrationError(
+            "Error processing port aliasing: Cannot find aliased port '" + aliased_port_name + "' for original port '" +
+            original_key + "' in provided ports by node '" + getFullyQualifiedTreeNodeName(node, true) + "'.");
+        }
+      } else {
+        // No aliasing for this port, nothing to do
+      }
+    }
+  };
+
+  // Process input and output ports
+  process_ports(input_ports);
+  process_ports(output_ports);
+
+  return remapping;
+}
+
 }  // namespace auto_apms_behavior_tree::core

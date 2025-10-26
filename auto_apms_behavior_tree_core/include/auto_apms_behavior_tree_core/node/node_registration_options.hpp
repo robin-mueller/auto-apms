@@ -33,7 +33,8 @@ struct NodeRegistrationOptions
   static const std::string PARAM_NAME_CLASS;
   static const std::string PARAM_NAME_ROS2TOPIC;
   static const std::string PARAM_NAME_DESCRIPTION;
-  static const std::string PARAM_NAME_DEFAULTS;
+  static const std::string PARAM_NAME_PORT_ALIAS;
+  static const std::string PARAM_NAME_PORT_DEFAULT;
   static const std::string PARAM_NAME_WAIT_TIMEOUT;
   static const std::string PARAM_NAME_REQUEST_TIMEOUT;
   static const std::string PARAM_NAME_ALLOW_UNREACHABLE;
@@ -76,10 +77,34 @@ struct NodeRegistrationOptions
    */
   std::string topic = "(input:topic)";
   /**
+   * Provides the possibility to rename ports implemented by `class_name`. This is useful when a node implementation
+   * is used in a different context and the meaning of some of the ports has changed. In this case, it's possible to
+   * define a more descriptive port name. The description can also be updated by appending it within round brackets.
+   *
+   * **Example**: Given a node implementation with an input port `BT::InputPort<std::string>("my_port")`, one may alias
+   * this port with `BT::InputPort<std::string>("new_port")` by adding the following entry to the `port_alias` map:
+   *
+   * ```yaml
+   *   port_alias:
+   *     my_port: new_port (updated description for new port)
+   * ```
+   *
+   * \note
+   * Aliasing is achieved by duplicating the original port when the node is registered. The original port remains
+   * present in the implementation to maintain compatibility, but it is excluded from the node model.
+   */
+  std::map<std::string, std::string> port_alias = {};
+  /**
    * Provides the possibility to define custom default values for the ports implemented by `class_name`. This will
    * override the "hard-coded" value and allows for configuring a behavior tree node without touching its source file.
+   *
+   * \note
+   * Specifying default values for aliased ports works just fine. You may either use the original port name or the
+   * alias.
    */
-  std::map<std::string, std::string> port_defaults = {};
+  std::map<std::string, std::string> port_default = {};
+  /// List of port names to hide in the node model for visualization tools like Groot2.
+  std::vector<std::string> hidden_ports = {};
   /// Period [s] (measured from tree construction) after the server is considered unreachable.
   std::chrono::duration<double> wait_timeout = std::chrono::duration<double>(3);
   /// Period [s] (measured from sending a goal request) after the node aborts waiting for a server response.
@@ -89,8 +114,6 @@ struct NodeRegistrationOptions
   bool allow_unreachable = false;
   /// Minimum ROS 2 logging severity level for this particular node. Empty means to inherit the parent logging severity.
   std::string logger_level = "";
-  /// List of port names to hide in the node model for visualization tools like Groot2.
-  std::vector<std::string> hidden_ports = {};
   /// Flexible YAML node which allows providing additional and customized registration options to the behavior tree node
   /// implementation.
   YAML::Node extra;
@@ -121,12 +144,13 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
     node[Options::PARAM_NAME_CLASS] = rhs.class_name;
     node[Options::PARAM_NAME_DESCRIPTION] = rhs.description;
     node[Options::PARAM_NAME_ROS2TOPIC] = rhs.topic;
-    node[Options::PARAM_NAME_DEFAULTS] = rhs.port_defaults;
+    node[Options::PARAM_NAME_PORT_ALIAS] = rhs.port_alias;
+    node[Options::PARAM_NAME_PORT_DEFAULT] = rhs.port_default;
+    node[Options::PARAM_NAME_HIDDEN_PORTS] = rhs.hidden_ports;
     node[Options::PARAM_NAME_WAIT_TIMEOUT] = rhs.wait_timeout.count();
     node[Options::PARAM_NAME_REQUEST_TIMEOUT] = rhs.request_timeout.count();
     node[Options::PARAM_NAME_ALLOW_UNREACHABLE] = rhs.allow_unreachable;
     node[Options::PARAM_NAME_LOGGER_LEVEL] = rhs.logger_level;
-    node[Options::PARAM_NAME_HIDDEN_PORTS] = rhs.hidden_ports;
     node[Options::PARAM_NAME_EXTRA] = rhs.extra;
     return node;
   }
@@ -147,13 +171,23 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
         continue;
       }
 
-      if (key == Options::PARAM_NAME_DEFAULTS) {
+      if (key == Options::PARAM_NAME_PORT_ALIAS) {
         if (!val.IsMap()) {
           throw auto_apms_util::exceptions::YAMLFormatError(
             "Value for key '" + key + "' must be a map but is type " + std::to_string(val.Type()) +
             " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
         }
-        rhs.port_defaults = val.as<std::map<std::string, std::string>>();
+        rhs.port_alias = val.as<std::map<std::string, std::string>>();
+        continue;
+      }
+
+      if (key == Options::PARAM_NAME_PORT_DEFAULT) {
+        if (!val.IsMap()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be a map but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
+        rhs.port_default = val.as<std::map<std::string, std::string>>();
         continue;
       }
 
@@ -167,37 +201,66 @@ struct convert<auto_apms_behavior_tree::core::NodeRegistrationOptions>
         continue;
       }
 
-      // The following options may only be scalar
-      if (!val.IsScalar()) {
-        throw auto_apms_util::exceptions::YAMLFormatError(
-          "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
-          " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
-      }
       if (key == Options::PARAM_NAME_CLASS) {
+        if (!val.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
         rhs.class_name = val.as<std::string>();
         continue;
       }
       if (key == Options::PARAM_NAME_DESCRIPTION) {
+        if (!val.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
         rhs.description = val.as<std::string>();
         continue;
       }
       if (key == Options::PARAM_NAME_ROS2TOPIC) {
+        if (!val.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
         rhs.topic = val.as<std::string>();
         continue;
       }
       if (key == Options::PARAM_NAME_WAIT_TIMEOUT) {
+        if (!val.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
         rhs.wait_timeout = std::chrono::duration<double>(val.as<double>());
         continue;
       }
       if (key == Options::PARAM_NAME_REQUEST_TIMEOUT) {
+        if (!val.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
         rhs.request_timeout = std::chrono::duration<double>(val.as<double>());
         continue;
       }
       if (key == Options::PARAM_NAME_ALLOW_UNREACHABLE) {
+        if (!val.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
         rhs.allow_unreachable = val.as<bool>();
         continue;
       }
       if (key == Options::PARAM_NAME_LOGGER_LEVEL) {
+        if (!val.IsScalar()) {
+          throw auto_apms_util::exceptions::YAMLFormatError(
+            "Value for key '" + key + "' must be scalar but is type " + std::to_string(val.Type()) +
+            " (0: Undefined - 1: Null - 2: Scalar - 3: Sequence - 4: Map).");
+        }
         rhs.logger_level = val.as<std::string>();
         continue;
       }

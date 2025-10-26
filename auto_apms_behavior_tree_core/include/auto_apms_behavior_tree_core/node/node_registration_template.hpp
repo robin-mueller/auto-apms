@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <map>
+#include <regex>
 #include <stdexcept>
 #include <type_traits>
 
@@ -49,18 +51,11 @@ public:
   {
     BT::PortsList ports_list = BT::getProvidedPorts<T>();
     if (context_ptr) {
-      // Modify the default value of the ports if specified in the node manifest
-      for (const auto & [port_name, new_default] : context_ptr->registration_options_.port_defaults) {
-        if (ports_list.find(port_name) == ports_list.end()) {
-          throw exceptions::NodeRegistrationError(
-            "[registerWithBehaviorTreeFactory] Error registering node '" + registration_name +
-            "': Cannot set default value for port '" + port_name + "' which is not provided by class '" +
-            context_ptr->registration_options_.class_name + "'. The keys under " +
-            NodeRegistrationOptions::PARAM_NAME_DEFAULTS + " must refer to a port implemented by the node.");
-        }
-        // We're passing the new default value as string. Conversion is done when getting the port value during
-        // execution (also allows blackboard pointers)
-        ports_list.at(port_name).setDefaultValue(new_default);
+      try {
+        context_ptr->modifyProvidedPortsListForRegistration(ports_list);
+      } catch (const std::exception & e) {
+        throw exceptions::NodeRegistrationError(
+          "[registerWithBehaviorTreeFactory] Error registering node '" + registration_name + "': " + e.what());
       }
     }
 

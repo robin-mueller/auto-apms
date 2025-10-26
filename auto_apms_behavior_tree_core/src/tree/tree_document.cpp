@@ -1029,8 +1029,7 @@ TreeDocument & TreeDocument::addNodeModel(NodeModelMap model_map)
   return *this;
 }
 
-NodeModelMap TreeDocument::getNodeModel(
-  tinyxml2::XMLDocument & doc, std::map<std::string, std::vector<std::string>> hidden_ports)
+NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc, const NodeManifest & manifest)
 {
   const tinyxml2::XMLElement * root = doc.RootElement();
   if (!root) {
@@ -1100,23 +1099,34 @@ NodeModelMap TreeDocument::getNodeModel(
     // Port infos may be empty if there are no ports
   }
 
-  // Apply port filtering if hidden_ports is specified
-  if (!hidden_ports.empty()) {
-    for (auto & [node_name, model] : model_map) {
-      auto it = hidden_ports.find(node_name);
-      if (it != hidden_ports.end()) {
-        const std::vector<std::string> & ports_to_hide = it->second;
-
-        // Remove ports that should be hidden
-        model.port_infos.erase(
-          std::remove_if(
-            model.port_infos.begin(), model.port_infos.end(),
-            [&ports_to_hide](const NodePortInfo & port_info) {
-              return std::find(ports_to_hide.begin(), ports_to_hide.end(), port_info.port_name) != ports_to_hide.end();
-            }),
-          model.port_infos.end());
-      }
+  // Collect hidden ports from the node manifest
+  std::map<std::string, std::vector<std::string>> hidden_ports;
+  for (const auto & [node_name, registration_options] : manifest.map()) {
+    // Extract hidden_ports from registration options
+    for (const std::string & port_name : registration_options.hidden_ports) {
+      hidden_ports[node_name].push_back(port_name);
     }
+
+    // Implicitly hide ports that are specified in port_alias
+    for (const auto & [port_name, _] : registration_options.port_alias) {
+      hidden_ports[node_name].push_back(port_name);
+    }
+  }
+
+  // Apply port hiding
+  for (const auto & [node_name, ports_to_hide] : hidden_ports) {
+    auto it = model_map.find(node_name);
+    if (it == model_map.end()) {
+      continue;
+    }
+    NodeModel & model = it->second;
+    model.port_infos.erase(
+      std::remove_if(
+        model.port_infos.begin(), model.port_infos.end(),
+        [&ports_to_hide](const NodePortInfo & port_info) {
+          return std::find(ports_to_hide.begin(), ports_to_hide.end(), port_info.port_name) != ports_to_hide.end();
+        }),
+      model.port_infos.end());
   }
 
   return model_map;
@@ -1139,16 +1149,8 @@ NodeModelMap TreeDocument::getNodeModel(bool include_native) const
       "Error parsing the model of the currently registered nodes: " + std::string(model_doc.ErrorStr()));
   }
 
-  // Extract hidden_ports from registered_nodes_manifest_
-  std::map<std::string, std::vector<std::string>> hidden_ports;
-  for (const auto & [node_name, params] : registered_nodes_manifest_.map()) {
-    if (!params.hidden_ports.empty()) {
-      hidden_ports[node_name] = params.hidden_ports;
-    }
-  }
-
   // Get the node model with hidden ports applied
-  return getNodeModel(model_doc, hidden_ports);
+  return getNodeModel(model_doc, registered_nodes_manifest_);
 }
 
 BT::Result TreeDocument::verify() const

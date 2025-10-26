@@ -77,7 +77,7 @@ int main(int argc, char ** argv)
         tinyxml2::XMLError::XML_SUCCESS) {
         throw std::runtime_error(model_doc.ErrorStr());
       }
-      model_map = core::TreeDocument::getNodeModel(model_doc);
+      model_map = core::TreeDocument::getNodeModel(model_doc, core::NodeManifest());
       for (const auto & [name, _] : model_map) {
         core::NodeRegistrationOptions opt;
         opt.class_name = "empty";
@@ -91,7 +91,7 @@ int main(int argc, char ** argv)
     if (model_doc.LoadFile(model_file.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
       throw std::runtime_error(model_doc.ErrorStr());
     }
-    model_map.merge(core::TreeDocument::getNodeModel(model_doc));
+    model_map.merge(core::TreeDocument::getNodeModel(model_doc, manifest));
 
     // clang-format off
     std::ostringstream content;

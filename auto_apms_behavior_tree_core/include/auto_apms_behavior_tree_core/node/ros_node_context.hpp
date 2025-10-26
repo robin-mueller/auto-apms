@@ -100,7 +100,11 @@ public:
   YAML::Node getExtraOptions() const;
 
 private:
+  void modifyProvidedPortsListForRegistration(BT::PortsList & ports_list) const;
+
   BT::Expected<std::string> getTopicName(const BT::TreeNode * node) const;
+
+  BT::PortsRemapping copyAliasedPortValuesToOriginalPorts(const BT::TreeNode * node) const;
 
   const std::string ros_node_name_;
   const std::string fully_qualified_ros_node_name_;

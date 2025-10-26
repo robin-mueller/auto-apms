@@ -243,7 +243,7 @@ NodeManifestResource::NodeManifestResource(const Identity & search_identity)
           throw exceptions::TreeDocumentError(
             "Error parsing the node model associated with node manifest " + unique_identity_.str());
         }
-        node_model_ = TreeDocument::getNodeModel(model_doc);
+        node_model_ = TreeDocument::getNodeModel(model_doc, node_manifest_);
       }
     }
   }
