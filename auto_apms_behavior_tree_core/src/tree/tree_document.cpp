@@ -1115,7 +1115,11 @@ NodeModelMap TreeDocument::getNodeModel(tinyxml2::XMLDocument & doc, const NodeM
 
   // Apply port hiding
   for (const auto & [node_name, ports_to_hide] : hidden_ports) {
-    NodeModel & model = model_map[node_name];
+    auto it = model_map.find(node_name);
+    if (it == model_map.end()) {
+      continue;
+    }
+    NodeModel & model = it->second;
     model.port_infos.erase(
       std::remove_if(
         model.port_infos.begin(), model.port_infos.end(),
