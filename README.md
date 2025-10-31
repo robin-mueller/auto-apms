@@ -7,7 +7,8 @@
 <h3>Automated Action Planning and Management System</h3>
 
 <a href="https://robin-mueller.github.io/auto-apms-guide/introduction/about">![Docs](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=🎓Documentation)</a>
-<a href="https://doi.org/10.5281/zenodo.14790307">![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)</a>
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/robin-mueller/auto-apms)
+![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)
 <a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
 
 | ROS 2 | Build & Test |
