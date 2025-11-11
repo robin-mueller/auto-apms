@@ -68,6 +68,16 @@ public:
       }
       factory.registerNodeType<T>(registration_name, ports_list, *context_ptr);
     } else {
+      if (context_ptr) {
+        // Warn the user that some features of RosNodeContext are not supported
+        if (context_ptr->registration_options_.port_alias.size() > 0) {
+          throw exceptions::NodeRegistrationError(
+            "[registerWithBehaviorTreeFactory] Error registering node '" + registration_name +
+            "': Port aliasing is not supported by this node, but " + NodeRegistrationOptions::PARAM_NAME_PORT_ALIAS +
+            " was provided in the registration options, please remove the field "
+            "from the node manifest to avoid confusion.");
+        }
+      }
       factory.registerNodeType<T>(registration_name, ports_list);
     }
   }
