@@ -10,6 +10,8 @@ find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
@@ -73,6 +75,7 @@ set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_HAS_PARAMETER "HasParameter")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_BOOL "SetBool")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_EMPTY "SetEmpty")
 set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_TRIGGER "SetTrigger")
+set(_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_PUBLISH_POSE "PublishPose")
 
 #
 # ------------ Library --------------
@@ -167,6 +170,7 @@ add_library(behavior_tree_nodes SHARED
   "src/node/set_bool.cpp"
   "src/node/set_empty.cpp"
   "src/node/set_trigger.cpp"
+  "src/node/publish_pose.cpp"
 )
 # Make parameter util available for standard nodes too, but don't include anything that's not also been added to the sources
 target_include_directories(behavior_tree_nodes PRIVATE
@@ -178,6 +182,8 @@ target_link_libraries(behavior_tree_nodes PUBLIC
   rclcpp::rclcpp
   ${rcl_interfaces_TARGETS}
   ${std_srvs_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${tf2_geometry_msgs_TARGETS}
   ${auto_apms_interfaces_TARGETS}
   auto_apms_behavior_tree_core::auto_apms_behavior_tree_core
 )
@@ -215,6 +221,7 @@ auto_apms_behavior_tree_register_nodes(behavior_tree_nodes
   "${PROJECT_NAME}::SetBool"
   "${PROJECT_NAME}::SetEmpty"
   "${PROJECT_NAME}::SetTrigger"
+  "${PROJECT_NAME}::PublishPose"
   NODE_MANIFEST
   "config/standard_nodes.yaml.in"
   NODE_MODEL_HEADER_TARGET ${PROJECT_NAME}

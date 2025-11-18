@@ -15,6 +15,8 @@
   <depend>ament_index_python</depend>
   <depend>rcl_interfaces</depend>
   <depend>std_srvs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_geometry_msgs</depend>
   <depend>rclcpp_action</depend>
   <depend>rclcpp_components</depend>
   <depend>tinyxml2_vendor</depend>

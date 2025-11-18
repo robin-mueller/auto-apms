@@ -126,3 +126,7 @@ ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_EMPTY}:
 ${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_SET_TRIGGER}:
   class_name: ${PROJECT_NAME}::SetTrigger
   description: "Calls a std_srvs/Trigger service"
+
+${_AUTO_APMS_BEHAVIOR_TREE__BUILTIN_NODE_NAME_PUBLISH_POSE}:
+  class_name: ${PROJECT_NAME}::PublishPose
+  description: "Publishes a geometry_msgs/PoseStamped message with position and orientation"
