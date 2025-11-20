@@ -269,7 +269,9 @@ TreeExecutorBase::ExecutionState TreeExecutorBase::getExecutionState()
   if (isBusy()) {
     if (!tree_ptr_) throw std::logic_error("tree_ptr_ cannot be nullptr when execution is started.");
     if (tree_ptr_->rootNode()->status() == BT::NodeStatus::IDLE) {
-      // The root node being IDLE here means that the tree hasn't been ticked yet since its creation or was halted
+      // The root node being IDLE here means one of the following:
+      // - the tree hasn't been ticked yet since its creation
+      // - the tree was halted or just finished executing
       return execution_stopped_ ? ExecutionState::STARTING : ExecutionState::HALTED;
     }
     return execution_stopped_ ? ExecutionState::PAUSED : ExecutionState::RUNNING;

@@ -50,6 +50,11 @@ namespace auto_apms_behavior_tree::core
  *
  * Additionally, the following characteristics depend on NodeRegistrationOptions:
  *
+ * - wait_timeout: Period [s] (measured since tree construction) after the we abort waiting for a subscriber.
+ *
+ * - allow_unreachable: Flag whether to tolerate when no subscriber is connected. If set to `true`, a warning is logged.
+ * Otherwise, an exception is raised.
+ *
  * - logger_level: Minimum severity level enabled for logging using the ROS 2 Logger API.
  *
  * @tparam MessageT Type of the ROS 2 message.
@@ -186,6 +191,37 @@ inline bool RosPublisherNode<MessageT>::createPublisher(const std::string & topi
   RCLCPP_DEBUG(
     logger_, "%s - Created publisher for topic '%s'.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
     topic_name.c_str());
+
+  // Wait for at least one subscriber to be connected
+  RCLCPP_DEBUG(
+    logger_, "%s - Waiting for at least one subscriber to connect to topic '%s'...",
+    context_.getFullyQualifiedTreeNodeName(this).c_str(), topic_name_.c_str());
+
+  const auto start_time = context_.getCurrentTime();
+  while (rclcpp::ok() && publisher_->get_subscription_count() == 0) {
+    if ((context_.getCurrentTime() - start_time) > context_.registration_options_.wait_timeout) {
+      RCLCPP_DEBUG(
+        logger_, "%s - Timeout waiting for subscriber to connect to topic '%s' after %.2f seconds.",
+        context_.getFullyQualifiedTreeNodeName(this).c_str(), topic_name_.c_str(),
+        context_.registration_options_.wait_timeout.count());
+      break;
+    }
+    rclcpp::sleep_for(std::chrono::milliseconds(5));
+  }
+
+  if (publisher_->get_subscription_count() > 0) {
+    RCLCPP_DEBUG(
+      logger_, "%s - At least one subscriber found.", context_.getFullyQualifiedTreeNodeName(this).c_str(),
+      topic_name_.c_str());
+  } else if (context_.registration_options_.allow_unreachable) {
+    RCLCPP_WARN(
+      logger_, "%s - No subscriber connected to topic '%s', but continuing as allow_unreachable is true.",
+      context_.getFullyQualifiedTreeNodeName(this).c_str(), topic_name_.c_str());
+  } else {
+    throw exceptions::RosNodeError(
+      context_.getFullyQualifiedTreeNodeName(this) + " - No subscriber connected to topic '" + topic_name_ +
+      "' after waiting for " + std::to_string(context_.registration_options_.wait_timeout.count()) + " seconds.");
+  }
   return true;
 }
 

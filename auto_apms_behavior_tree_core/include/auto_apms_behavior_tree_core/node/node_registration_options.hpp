@@ -77,7 +77,9 @@ struct NodeRegistrationOptions
    */
   std::string topic = "(input:topic)";
   /**
-   * Provides the possibility to rename ports implemented by `class_name`. This is useful when a node implementation
+   * @brief Provides the possibility to rename ports implemented by `class_name`.
+   *
+   * This is useful when a node implementation
    * is used in a different context and the meaning of some of the ports has changed. In this case, it's possible to
    * define a more descriptive port name. The description can also be updated by appending it within round brackets.
    *
@@ -95,8 +97,10 @@ struct NodeRegistrationOptions
    */
   std::map<std::string, std::string> port_alias = {};
   /**
-   * Provides the possibility to define custom default values for the ports implemented by `class_name`. This will
-   * override the "hard-coded" value and allows for configuring a behavior tree node without touching its source file.
+   * @brief Provides the possibility to define custom default values for the ports implemented by `class_name`.
+   *
+   * This will override the "hard-coded" value and allows for configuring a behavior tree node without touching its
+   * source file.
    *
    * \note
    * Specifying default values for aliased ports works just fine. You may either use the original port name or the
@@ -105,7 +109,8 @@ struct NodeRegistrationOptions
   std::map<std::string, std::string> port_default = {};
   /// List of port names to hide in the node model for visualization tools like Groot2.
   std::vector<std::string> hidden_ports = {};
-  /// Period [s] (measured from tree construction) after the server is considered unreachable.
+  /// Period [s] (measured from tree construction) after the server is considered unreachable. For publishers, this
+  /// parameter defines how long to wait for at least one subscriber to connect.
   std::chrono::duration<double> wait_timeout = std::chrono::duration<double>(3);
   /// Period [s] (measured from sending a goal request) after the node aborts waiting for a server response.
   std::chrono::duration<double> request_timeout = std::chrono::duration<double>(2);
