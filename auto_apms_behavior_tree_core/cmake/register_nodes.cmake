@@ -46,18 +46,22 @@ macro(auto_apms_behavior_tree_register_nodes target)
   set(multiValueArgs NODE_MANIFEST)
   cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  auto_apms_util_register_plugins(
-    ${target}
-    "auto_apms_behavior_tree::core::NodeRegistrationInterface"
-    ${ARGS_UNPARSED_ARGUMENTS}
-    FACTORY_TEMPLATE_CLASS "auto_apms_behavior_tree::core::NodeRegistrationTemplate"
-  )
+  # Calling this macro without any node classes is valid, if one only wants to register configurations
+  # through the NODE_MANIFEST keyword. So we must check for that here.
+  if(NOT "${ARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
+    auto_apms_util_register_plugins(
+      ${target}
+      "auto_apms_behavior_tree::core::NodeRegistrationInterface"
+      ${ARGS_UNPARSED_ARGUMENTS}
+      FACTORY_TEMPLATE_CLASS "auto_apms_behavior_tree::core::NodeRegistrationTemplate"
+    )
 
-  # Append build information of the specified node plugins (<class_name>@<library_path>).
-  # Make sure to do before calling generating the node metadata (Otherwise build info would be unavailable).
-  foreach(_class_name ${ARGS_UNPARSED_ARGUMENTS})
-    list(APPEND _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_BUILD_INFO "${_class_name}@$<TARGET_FILE:${target}>")
-  endforeach()
+    # Append build information of the specified node plugins (<class_name>@<library_path>).
+    # Make sure to do before calling generating the node metadata (Otherwise build info would be unavailable).
+    foreach(_class_name ${ARGS_UNPARSED_ARGUMENTS})
+      list(APPEND _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_BUILD_INFO "${_class_name}@$<TARGET_FILE:${target}>")
+    endforeach()
+  endif()
 
   # Automatically create node metadata if any manifest files are provided
   if("${ARGS_NODE_MANIFEST}" STREQUAL "")
