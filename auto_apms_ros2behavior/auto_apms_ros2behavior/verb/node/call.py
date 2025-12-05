@@ -15,12 +15,12 @@
 
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
 from auto_apms_behavior_tree_core.resources import NodeManifestResource, get_node_manifest_resource_identities
+from auto_apms_behavior_tree.scripting import sync_run_tree_node_locally
 from ...verb import VerbExtension
 from ...api import (
     PrefixFilteredChoicesCompleter,
     NodeManifestFilteredRegistrationNameCompleter,
     NodePortValuesCompleter,
-    sync_run_tree_node_locally,
     parse_key_value_args,
 )
 
@@ -60,9 +60,11 @@ class CallVerb(VerbExtension):
         logging_arg.completer = PrefixFilteredChoicesCompleter(logging_level_names)
 
     def main(self, *, args):
+        registration_options = args.manifest.node_manifest.get_node_registration_options(args.node_name)
+        print(f"--- Running behavior tree node {args.node_name} ({registration_options["class_name"]})")
         return sync_run_tree_node_locally(
             node_name=args.node_name,
-            registration_options=args.manifest.node_manifest.get_node_registration_options(args.node_name),
+            registration_options=registration_options,
             port_values=parse_key_value_args(args.port_values),
             logging_level=args.logging,
         )

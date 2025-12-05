@@ -26,8 +26,11 @@ from ...api import PrefixFilteredChoicesCompleter, NodeManifestFilteredRegistrat
 class ManifestVerb(VerbExtension):
     """Inspect registered behavior tree node manifests."""
 
-    def add_arguments(self, parser, cli_name):
+    def __init__(self):
+        super().__init__()
         self.identities = get_node_manifest_resource_identities()
+
+    def add_arguments(self, parser, cli_name):
         identity_arg = parser.add_argument(
             "identity",
             type=NodeManifestResourceIdentity,
@@ -42,8 +45,20 @@ class ManifestVerb(VerbExtension):
             nargs="?",
         )
         node_name_arg.completer = NodeManifestFilteredRegistrationNameCompleter("identity")
+        parser.add_argument(
+            "-l",
+            "--list",
+            action="store_true",
+            help="List all available node manifests",
+        )
 
     def main(self, *, args):
+        if args.list:
+            # List all available manifests
+            for i in self.identities:
+                print(str(i))
+            return 0
+
         if args.identity:
             self.identities = [args.identity]
             if args.node_name:

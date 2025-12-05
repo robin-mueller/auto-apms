@@ -13,13 +13,11 @@
 # limitations under the License.
 
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
-from auto_apms_behavior_tree.resources import (
-    get_behavior_build_handler_plugins,
-)
+from auto_apms_behavior_tree.resources import get_behavior_build_handler_plugins
+from auto_apms_behavior_tree.scripting import sync_run_behavior_locally
 from ..verb import VerbExtension
 from ..api import (
     _add_behavior_resource_argument_to_parser,
-    sync_run_behavior_locally,
     parse_key_value_args,
     PrefixFilteredChoicesCompleter,
 )
@@ -88,6 +86,11 @@ class RunVerb(VerbExtension):
         # Parse blackboard key-value pairs from args.blackboard
         blackboard_params = parse_key_value_args(args.blackboard)
 
+        print(
+            f"--- Running behavior '{args.behavior.identity}'"
+            if args.behavior
+            else "--- Running behavior (no identity provided)"
+        )
         return sync_run_behavior_locally(
             behavior=args.behavior,
             static_params=static_params,

@@ -14,11 +14,10 @@
 
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
 from auto_apms_behavior_tree.resources import get_behavior_build_handler_plugins
+from auto_apms_behavior_tree.scripting import sync_run_behavior_with_executor, find_start_tree_executor_actions
 from ..verb import VerbExtension
 from ..api import (
     _add_behavior_resource_argument_to_parser,
-    find_start_tree_executor_actions,
-    sync_run_behavior_with_executor,
     parse_key_value_args,
     PrefixFilteredChoicesCompleter,
 )
