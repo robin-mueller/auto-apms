@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: autoapms/auto-apms-guide
-          token: ${{ secrets.DOCS_REPO_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: docs-repo
           ref: master
 
