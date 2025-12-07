@@ -139,6 +139,7 @@ if(BUILD_TESTING)
   ament_add_gtest(${PROJECT_NAME}_unit_tests
     "test/unit/ros_subscriber_node.cpp"
     "test/unit/tree_document_node_model.cpp"
+    "test/unit/tree_document_recursive_include.cpp"
   )
   target_link_libraries(${PROJECT_NAME}_unit_tests
     ${PROJECT_NAME}

@@ -17,6 +17,7 @@
 #include <tinyxml2.h>
 
 #include <functional>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -151,6 +152,9 @@ public:
   static inline const char TREE_NAME_ATTRIBUTE_NAME[] = "ID";
   static inline const char TREE_NODE_MODEL_ELEMENT_NAME[] = "TreeNodesModel";
   static inline const char NODE_INSTANCE_NAME_ATTRIBUTE_NAME[] = "name";
+  static inline const char INCLUDE_ELEMENT_NAME[] = "include";
+  static inline const char INCLUDE_PATH_ATTRIBUTE_NAME[] = "path";
+  static inline const char INCLUDE_ROS_PKG_ATTRIBUTE_NAME[] = "ros_pkg";
 
   class TreeElement;
 
@@ -1331,6 +1335,25 @@ private:
   const XMLElement * getXMLElementForTreeWithName(const std::string & tree_name) const;
 
   XMLElement * getXMLElementForTreeWithName(const std::string & tree_name);
+
+  /**
+   * @brief Internal implementation of mergeFile with circular include detection.
+   * @param path Path to an XML file specifying the tree document to be merged.
+   * @param adopt_root_tree Set to `true` if you additionally want to update this document's root tree name.
+   * @param include_stack Set of file paths currently being processed to detect circular includes.
+   * @return Modified tree document.
+   */
+  TreeDocument & mergeFileImpl(const std::string & path, bool adopt_root_tree, std::set<std::string> & include_stack);
+
+  /**
+   * @brief Internal implementation of mergeTreeDocument with circular include detection.
+   * @param other Low-level XML document containing the trees to be merged.
+   * @param adopt_root_tree Set to `true` if you additionally want to update this document's root tree name.
+   * @param include_stack Reference to include stack for circular detection.
+   * @return Modified tree document.
+   */
+  TreeDocument & mergeTreeDocumentImpl(
+    const XMLDocument & other, bool adopt_root_tree, std::set<std::string> & include_stack);
 
   const std::map<std::string, std::string> all_node_classes_package_map_;
   const std::set<std::string> native_node_names_;

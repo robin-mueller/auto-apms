@@ -15,7 +15,9 @@
 #include "auto_apms_behavior_tree_core/tree/tree_document.hpp"
 
 #include <algorithm>
+#include <filesystem>
 
+#include "ament_index_cpp/get_package_share_directory.hpp"
 #include "auto_apms_behavior_tree_core/builder.hpp"
 #include "auto_apms_behavior_tree_core/exceptions.hpp"
 #include "auto_apms_behavior_tree_core/node/node_model_type.hpp"
@@ -614,6 +616,13 @@ TreeDocument::TreeDocument(const std::string & format_version, NodeRegistrationL
 
 TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool adopt_root_tree)
 {
+  std::set<std::string> include_stack;
+  return mergeTreeDocumentImpl(other, adopt_root_tree, include_stack);
+}
+
+TreeDocument & TreeDocument::mergeTreeDocumentImpl(
+  const XMLDocument & other, bool adopt_root_tree, std::set<std::string> & include_stack)
+{
   const XMLElement * other_root = other.RootElement();
   if (!other_root) {
     throw exceptions::TreeDocumentError("Cannot merge tree documents: other_root is nullptr.");
@@ -637,15 +646,18 @@ TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool a
     }
   };
 
-  const std::vector<std::string> other_tree_names = getAllTreeNamesImpl(other);
+  // Helper lambda to check for duplicate tree names and throw with a descriptive message
+  auto check_duplicates = [this](const std::vector<std::string> & new_tree_names, const std::string & source) {
+    const auto common = auto_apms_util::getCommonElements(getAllTreeNames(), new_tree_names);
+    if (!common.empty()) {
+      throw exceptions::TreeDocumentError(
+        "Cannot merge tree document: The following trees from " + source + " are already defined: [ " +
+        auto_apms_util::join(common, ", ") + " ].");
+    }
+  };
 
-  // Verify that there are no duplicate tree names
-  const auto common_tree_names = auto_apms_util::getCommonElements(getAllTreeNames(), other_tree_names);
-  if (!common_tree_names.empty()) {
-    throw exceptions::TreeDocumentError(
-      "Cannot merge tree document: The following trees are already defined: [ " +
-      auto_apms_util::join(common_tree_names, ", ") + " ].");
-  }
+  // Get tree names from the other document (used for duplicate check and adopt_root_tree logic)
+  const std::vector<std::string> other_tree_names = getAllTreeNamesImpl(other);
 
   if (strcmp(other_root->Name(), ROOT_ELEMENT_NAME) == 0) {
     // Verify format
@@ -662,16 +674,78 @@ TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool a
         std::string(BTCPP_FORMAT_ATTRIBUTE_NAME) + "'.");
     }
 
-    // Iterate over all the children of other root
-    for (const XMLElement * child = other_root->FirstChildElement(); child != nullptr;
-         child = child->NextSiblingElement()) {
-      // Disregard tree node model elements
-      if (strcmp(child->Name(), TREE_NODE_MODEL_ELEMENT_NAME) == 0) continue;
+    // Iterate over all include elements and store the associated content to a temporary buffer document
+    TreeDocument include_doc(format_version_, tree_node_loader_ptr_);
+    for (const XMLElement * include_ele = other_root->FirstChildElement(INCLUDE_ELEMENT_NAME); include_ele != nullptr;
+         include_ele = include_ele->NextSiblingElement(INCLUDE_ELEMENT_NAME)) {
+      if (const char * path = include_ele->Attribute(INCLUDE_PATH_ATTRIBUTE_NAME)) {
+        if (std::string(path).empty()) {
+          throw exceptions::TreeDocumentError(
+            "Cannot merge tree document: Found an <" + std::string(INCLUDE_ELEMENT_NAME) +
+            "> element that specifies an empty path in attribute '" + INCLUDE_PATH_ATTRIBUTE_NAME + "'.");
+        }
+        std::string absolute_path = path;
+        if (const char * ros_pkg = include_ele->Attribute(INCLUDE_ROS_PKG_ATTRIBUTE_NAME)) {
+          if (std::string(ros_pkg).empty()) {
+            throw exceptions::TreeDocumentError(
+              "Cannot merge tree document: Found an <" + std::string(INCLUDE_ELEMENT_NAME) +
+              "> element that specifies an empty ROS package name in attribute '" + INCLUDE_ROS_PKG_ATTRIBUTE_NAME +
+              "'.");
+          }
+          if (std::filesystem::path(path).is_absolute()) {
+            throw exceptions::TreeDocumentError(
+              "Cannot merge tree document: Found an <" + std::string(INCLUDE_ELEMENT_NAME) +
+              "> element that specifies an absolute path '" + std::string(path) + "' in attribute '" +
+              INCLUDE_PATH_ATTRIBUTE_NAME + "' together with a ROS package name in attribute '" +
+              INCLUDE_ROS_PKG_ATTRIBUTE_NAME + "'. Please remove the attribute " + INCLUDE_ROS_PKG_ATTRIBUTE_NAME +
+              " or use a relative path if you want to refer to a location "
+              "relative to the package's share directory.");
+          }
+          try {
+            absolute_path =
+              (std::filesystem::path(ament_index_cpp::get_package_share_directory(ros_pkg)) / path).string();
+          } catch (const ament_index_cpp::PackageNotFoundError & e) {
+            throw exceptions::TreeDocumentError(
+              "Cannot merge tree document: Found an <" + std::string(INCLUDE_ELEMENT_NAME) +
+              "> element that specifies a non-existing ROS package '" + std::string(ros_pkg) + "' in attribute '" +
+              INCLUDE_ROS_PKG_ATTRIBUTE_NAME + "'.");
+          }
+        }
 
-      // Verify the structure of the behavior tree element
-      if (strcmp(child->Name(), TREE_ELEMENT_NAME) == 0) {
-        verify_tree_structure(child);
+        // Recursively merge the included file to the buffer document, passing the include stack for circular detection
+        try {
+          include_doc.mergeFileImpl(absolute_path, false, include_stack);
+        } catch (const std::exception & e) {
+          throw exceptions::TreeDocumentError(
+            "Cannot merge tree document: Failed to include file '" + absolute_path + "': " + e.what());
+        }
+      } else {
+        throw exceptions::TreeDocumentError(
+          "Cannot merge tree document: Found an <" + std::string(INCLUDE_ELEMENT_NAME) +
+          "> element that doesn't specify the required attribute '" + INCLUDE_PATH_ATTRIBUTE_NAME + "'.");
       }
+    }
+
+    // Check for duplicates from included files before inserting
+    check_duplicates(include_doc.getAllTreeNames(), "included files");
+
+    // Iterate over all the tree elements of the include buffer and include them in this document
+    for (const XMLElement * child = include_doc.RootElement()->FirstChildElement(TREE_ELEMENT_NAME); child != nullptr;
+         child = child->NextSiblingElement(TREE_ELEMENT_NAME)) {
+      // We do not need to verify the tree structure here, since it has already been verified during the recursive
+      // mergeFile() calls by the for loop below
+
+      // If tree element is valid, append to this document
+      RootElement()->InsertEndChild(child->DeepClone(this));
+    }
+
+    // Check for duplicates from other document's direct trees before inserting
+    check_duplicates(other_tree_names, "the merged document");
+
+    // Iterate over all the tree elements of other root and verify them
+    for (const XMLElement * child = other_root->FirstChildElement(TREE_ELEMENT_NAME); child != nullptr;
+         child = child->NextSiblingElement(TREE_ELEMENT_NAME)) {
+      verify_tree_structure(child);
 
       // If tree element is valid, append to this document
       RootElement()->InsertEndChild(child->DeepClone(this));
@@ -687,6 +761,9 @@ TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool a
     // We assume that the the format complies with the version configured at construction time
     verify_tree_structure(other_root);
 
+    // Check for duplicates before inserting
+    check_duplicates(other_tree_names, "the merged document");
+
     // If tree element is valid, append to this document
     RootElement()->InsertEndChild(other_root->DeepClone(this));
   } else {
@@ -700,13 +777,15 @@ TreeDocument & TreeDocument::mergeTreeDocument(const XMLDocument & other, bool a
     // have been inserted
     setRootTreeName(other_tree_names[0]);
   }
+
   return *this;
 }
 
 TreeDocument & TreeDocument::mergeTreeDocument(const TreeDocument & other, bool adopt_root_tree)
 {
   registerNodes(other.getRequiredNodeManifest(), false);
-  return mergeTreeDocument(static_cast<const XMLDocument &>(other), adopt_root_tree);
+  std::set<std::string> include_stack;
+  return mergeTreeDocumentImpl(static_cast<const XMLDocument &>(other), adopt_root_tree, include_stack);
 }
 
 TreeDocument & TreeDocument::mergeString(const std::string & tree_str, bool adopt_root_tree)
@@ -715,16 +794,48 @@ TreeDocument & TreeDocument::mergeString(const std::string & tree_str, bool adop
   if (other_doc.Parse(tree_str.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
     throw exceptions::TreeDocumentError("Cannot merge tree document from string: " + std::string(other_doc.ErrorStr()));
   }
-  return mergeTreeDocument(other_doc, adopt_root_tree);
+  std::set<std::string> include_stack;
+  return mergeTreeDocumentImpl(other_doc, adopt_root_tree, include_stack);
 }
 
 TreeDocument & TreeDocument::mergeFile(const std::string & path, bool adopt_root_tree)
 {
+  std::set<std::string> include_stack;
+  return mergeFileImpl(path, adopt_root_tree, include_stack);
+}
+
+TreeDocument & TreeDocument::mergeFileImpl(
+  const std::string & path, bool adopt_root_tree, std::set<std::string> & include_stack)
+{
+  // Get canonical path for consistent circular include detection
+  std::string canonical_path;
+  try {
+    canonical_path = std::filesystem::canonical(path).string();
+  } catch (const std::filesystem::filesystem_error &) {
+    // If canonical fails (e.g., file doesn't exist), use the original path
+    // The error will be caught later when loading the file
+    canonical_path = path;
+  }
+
+  // Check for circular includes
+  if (include_stack.count(canonical_path) > 0) {
+    throw exceptions::TreeDocumentError(
+      "Cannot merge tree document: Circular include detected for file '" + path + "'.");
+  }
+
+  // Add to include stack
+  include_stack.insert(canonical_path);
+
   XMLDocument other_doc;
   if (other_doc.LoadFile(path.c_str()) != tinyxml2::XMLError::XML_SUCCESS) {
     throw exceptions::TreeDocumentError("Cannot create tree document from file " + path + ": " + other_doc.ErrorStr());
   }
-  return mergeTreeDocument(other_doc, adopt_root_tree);
+
+  mergeTreeDocumentImpl(other_doc, adopt_root_tree, include_stack);
+
+  // Remove from include stack (for recursive calls that continue after this one)
+  include_stack.erase(canonical_path);
+  return *this;
 }
 
 TreeDocument & TreeDocument::mergeResource(const TreeResource & resource, bool adopt_root_tree)
@@ -744,11 +855,6 @@ TreeDocument & TreeDocument::mergeTree(const TreeElement & tree, bool make_root_
 
 TreeDocument::TreeElement TreeDocument::newTree(const std::string & tree_name)
 {
-  // This function is implemented to allow users access to the API for building XML
-  // documents, not instantiating trees (like TreeBuilder does). We pass a mock object of TreeBuilder as it's required
-  // for constructing TreeElement instances, however, the mock builder was initialized without valid pointers to the ROS
-  // objects, so as soon as a node plugin is instantiated, the program will fail. However, it is impossible to do so,
-  // because the user is not granted access to the builder object which implements the method for instantiating a tree.
   if (tree_name.empty()) {
     throw exceptions::TreeDocumentError("Cannot create a new tree with an empty name");
   }
