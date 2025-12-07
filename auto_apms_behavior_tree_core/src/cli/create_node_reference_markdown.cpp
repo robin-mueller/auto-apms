@@ -96,7 +96,7 @@ int main(int argc, char ** argv)
     };
 
     std::ostringstream content;
-    content << R"(<!-- markdownlint-disable MD024 MD041 -->
+    content << R"(<!-- markdownlint-disable MD024 MD041 MD060 -->
 | Registration Name | Class Name | Package |
 | :--- | :---: | :---: |)";
     for (const std::string & package_name : input_packages) {
