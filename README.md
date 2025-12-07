@@ -1,21 +1,21 @@
 <p align="center" width="100%">
-    <img width="70%" src="https://robin-mueller.github.io/auto-apms-guide/logo/logo.png">
+    <img width="70%" src="https://autoapms.github.io/auto-apms-guide/logo/logo.png">
 </p>
 
 <div align="center">
 
 <h3>Automated Action Planning and Management System</h3>
 
-<a href="https://robin-mueller.github.io/auto-apms-guide/introduction/about">![Docs](https://img.shields.io/website?url=https%3A%2F%2Frobin-mueller.github.io%2Fauto-apms-guide&label=🎓Documentation)</a>
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/robin-mueller/auto-apms)
+<a href="https://autoapms.github.io/auto-apms-guide/introduction/about">![Docs](https://img.shields.io/website?url=https%3A%2F%2Fautoapms.github.io%2Fauto-apms-guide&label=🎓Documentation)</a>
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/autoapms/auto-apms)
 ![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)
-<a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
+<a href="https://github.com/autoapms/auto-apms/releases">![Release](https://img.shields.io/github/v/release/autoapms/auto-apms?label=Release)</a>
 
 | ROS 2 | Build & Test |
 |:------------------:|:------:|
-| Jazzy Jalisco | [![Jazzy](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml/badge.svg?branch=master)](https://github.com/robin-mueller/auto-apms/actions/workflows/jazzy.yaml) |
-| Kilted Kaiju | [![Kilted](https://github.com/robin-mueller/auto-apms/actions/workflows/kilted.yaml/badge.svg?branch=master)](https://github.com/robin-mueller/auto-apms/actions/workflows/kilted.yaml) |
-| Rolling Ridley | [![Rolling](https://github.com/robin-mueller/auto-apms/actions/workflows/rolling.yaml/badge.svg?branch=master)](https://github.com/robin-mueller/auto-apms/actions/workflows/rolling.yaml) |
+| Jazzy Jalisco | [![Jazzy](https://github.com/autoapms/auto-apms/actions/workflows/jazzy.yaml/badge.svg?branch=master)](https://github.com/autoapms/auto-apms/actions/workflows/jazzy.yaml) |
+| Kilted Kaiju | [![Kilted](https://github.com/autoapms/auto-apms/actions/workflows/kilted.yaml/badge.svg?branch=master)](https://github.com/autoapms/auto-apms/actions/workflows/kilted.yaml) |
+| Rolling Ridley | [![Rolling](https://github.com/autoapms/auto-apms/actions/workflows/rolling.yaml/badge.svg?branch=master)](https://github.com/autoapms/auto-apms/actions/workflows/rolling.yaml) |
 
 </div>
 
@@ -50,9 +50,9 @@ There are plenty of ROS 2 packages which provide an implementation for behavior 
 
 - `ros2 behavior` command extending the ROS2 CLI for behavior management
 
-- Abstractions for PX4 Autopilot available with [auto-apms-px4](https://github.com/robin-mueller/auto-apms-px4)
+- Abstractions for PX4 Autopilot available with [auto-apms-px4](https://github.com/autoapms/auto-apms-px4)
 
-- Comprehensive [user guide](https://robin-mueller.github.io/auto-apms-guide/) and [API documentation](https://robin-mueller.github.io/auto-apms/)
+- Comprehensive [user guide](https://autoapms.github.io/auto-apms-guide/) and [API documentation](https://autoapms.github.io/auto-apms/)
 
 # 🚀 Getting Started
 
@@ -62,7 +62,7 @@ The following installation guide helps you getting started with AutoAPMS.
 
     ```bash
     mkdir ros2_ws && cd ros2_ws
-    (mkdir src && cd src && git clone https://github.com/robin-mueller/auto-apms.git)
+    (mkdir src && cd src && git clone https://github.com/autoapms/auto-apms.git)
     ```
 
 1. Install all required dependencies. We assume that you already installed ROS 2 on your system
@@ -120,9 +120,9 @@ Finally, you may as well run a cool **visual demonstration** of what's possible 
 
 # 🎓 Documentation
 
-Make sure to visit the [User Guide](https://robin-mueller.github.io/auto-apms-guide/introduction/about) for tutorials and best practices when writing software using AutoAPMS.
+Make sure to visit the [User Guide](https://autoapms.github.io/auto-apms-guide/introduction/about) for tutorials and best practices when writing software using AutoAPMS.
 
-We also offer an extensive [API Documentation](https://robin-mueller.github.io/auto-apms/) which is created using Doxygen >= 1.10. To generate the documentation run the following from the repository's root:
+We also offer an extensive [API Documentation](https://autoapms.github.io/auto-apms/) which is created using Doxygen >= 1.10. To generate the documentation run the following from the repository's root:
 
 ```bash
 doxygen doc/Doxyfile

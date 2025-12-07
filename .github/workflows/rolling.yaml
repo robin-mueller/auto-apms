@@ -59,7 +59,7 @@ jobs:
       - name: Checkout Documentation Repo
         uses: actions/checkout@v4
         with:
-          repository: robin-mueller/auto-apms-guide
+          repository: autoapms/auto-apms-guide
           token: ${{ secrets.DOCS_REPO_PAT }}
           path: docs-repo
           ref: master

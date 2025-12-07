@@ -19,7 +19,7 @@
  * server and a client are created using AutoAPMS.
  *
  * @sa <a
- * href="https://robin-mueller.github.io/auto-apms-guide/tutorial/creating-a-behavior-from-scratch">
+ * href="https://autoapms.github.io/auto-apms-guide/tutorial/creating-a-behavior-from-scratch">
  * Tutorial: Creating a Behavior From Scratch</a>
  */
 

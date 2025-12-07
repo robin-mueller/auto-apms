@@ -1,12 +1,12 @@
 \mainpage C++ API Documentation
 
-<img src="https://robin-mueller.github.io/auto-apms-guide/logo/logo.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:70%">
+<img src="https://autoapms.github.io/auto-apms-guide/logo/logo.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:70%">
 
 <div align="center">
 
 <h3>Automated Action Planning and Management System for Robotics</h3>
 
-<a href="https://github.com/robin-mueller/auto-apms/releases">![Release](https://img.shields.io/github/v/release/robin-mueller/auto-apms?label=Release)</a>
+<a href="https://github.com/autoapms/auto-apms/releases">![Release](https://img.shields.io/github/v/release/autoapms/auto-apms?label=Release)</a>
 
 </div>
 
@@ -14,5 +14,5 @@ This is the automatically generated documentation for the C++ API offered by the
 
 For further information see the links below:
 
-- [User Guide](https://robin-mueller.github.io/auto-apms-guide/introduction/about)
-- [GitHub](https://github.com/robin-mueller/auto-apms)
+- [User Guide](https://autoapms.github.io/auto-apms-guide/introduction/about)
+- [GitHub](https://github.com/autoapms/auto-apms)

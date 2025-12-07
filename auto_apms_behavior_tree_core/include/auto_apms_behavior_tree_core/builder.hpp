@@ -48,7 +48,7 @@ namespace auto_apms_behavior_tree::core
  * The most convenient way of building and executing behavior trees is by using the TreeBuildHandler plugins that come
  * with AutoAPMS and are fully integrated with the TreeExecutorNode concept.
  *
- * @sa <a href="https://robin-mueller.github.io/auto-apms-guide/tutorial/deploying-behaviors>Tutorial:
+ * @sa <a href="https://autoapms.github.io/auto-apms-guide/tutorial/deploying-behaviors>Tutorial:
  * Deploying Behaviors</a>
  */
 class TreeBuilder : public TreeDocument

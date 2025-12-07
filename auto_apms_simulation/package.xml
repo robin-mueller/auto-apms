@@ -6,7 +6,7 @@
   <description>Basic simulation environment and tools for AutoAPMS</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
   <license>Apache License 2.0</license>
-  <url>https://robin-mueller.github.io/auto-apms-guide/</url>
+  <url>https://autoapms.github.io/auto-apms-guide/</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>

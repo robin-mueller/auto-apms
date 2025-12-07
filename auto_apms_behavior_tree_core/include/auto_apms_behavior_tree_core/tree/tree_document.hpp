@@ -49,7 +49,7 @@ class NodeModelType;
  * A single tree document may contain multiple behavior trees (represented by TreeElement). Each behavior tree may
  * contain an arbitrary amount of tree nodes (represented by NodeElement). There are various different types of nodes.
  * For each one of the [standard
- * nodes](https://robin-mueller.github.io/auto-apms-guide/reference/behavior-tree-nodes),
+ * nodes](https://autoapms.github.io/auto-apms-guide/reference/behavior-tree-nodes),
  * there is a model available under the `auto_apms_behavior_tree::model` namespace. Refer to the
  * [BehaviorTree.CPP](https://www.behaviortree.dev/docs/learn-the-basics/BT_basics) website for more infos on the basic
  * concepts of behavior trees used in this implementation.
@@ -132,7 +132,7 @@ class NodeModelType;
  * automatically by that package.
  *
  * @sa <a
- * href="https://robin-mueller.github.io/auto-apms-guide/tutorial/building-behavior-trees#using-treedocument">
+ * href="https://autoapms.github.io/auto-apms-guide/tutorial/building-behavior-trees#using-treedocument">
  * Tutorial: Building Behavior Trees Programmatically</a>
  */
 class TreeDocument : private tinyxml2::XMLDocument

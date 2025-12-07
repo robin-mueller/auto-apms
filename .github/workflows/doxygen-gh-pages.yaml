@@ -30,7 +30,7 @@ jobs:
       - name: Checkout auto-apms-px4 repo
         uses: actions/checkout@v4
         with:
-          repository: robin-mueller/auto-apms-px4
+          repository: autoapms/auto-apms-px4
           path: auto-apms-px4
       - name: Install Doxygen
         uses: ssciwr/doxygen-install@v1

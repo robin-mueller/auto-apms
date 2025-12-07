@@ -126,7 +126,7 @@ std::set<NodeManifestResourceIdentity> getNodeManifestResourceIdentities(
  * ```
  *
  * The YAML format for a node manifest file is defined
- * [here](https://robin-mueller.github.io/auto-apms-guide/concept/common-resources#behavior-tree-node-manifests)
+ * [here](https://autoapms.github.io/auto-apms-guide/concept/common-resources#behavior-tree-node-manifests)
  *
  */
 class NodeManifest
