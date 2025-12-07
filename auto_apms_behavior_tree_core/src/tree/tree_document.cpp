@@ -731,7 +731,7 @@ TreeDocument & TreeDocument::mergeTreeDocumentImpl(
     // Iterate over all the tree elements of the include buffer and include them in this document
     for (const XMLElement * child = include_doc.RootElement()->FirstChildElement(TREE_ELEMENT_NAME); child != nullptr;
          child = child->NextSiblingElement(TREE_ELEMENT_NAME)) {
-      // We don not need to verify the tree structure here, since it has already been verified during the recursive
+      // We do not need to verify the tree structure here, since it has already been verified during the recursive
       // mergeFile() calls by the for loop below
 
       // If tree element is valid, append to this document
