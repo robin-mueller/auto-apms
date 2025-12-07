@@ -91,8 +91,7 @@ Tree TreeBuilder::instantiate(TreeBlackboardSharedPtr bb_ptr)
     "Cannot instantiate tree without a root tree name. You must either specify the attribute '" +
     std::string(TreeDocument::ROOT_TREE_ATTRIBUTE_NAME) +
     "' of the tree document's root element or call TreeDocument::setRootTreeName() to define the root tree. "
-    "Alternatively, you may "
-    "call a different signature of TreeBuilder::instantiate().");
+    "Alternatively, you may call a different signature of TreeBuilder::instantiate().");
 }
 
 }  // namespace auto_apms_behavior_tree::core
