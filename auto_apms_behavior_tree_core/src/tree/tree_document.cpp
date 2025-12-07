@@ -702,7 +702,8 @@ TreeDocument & TreeDocument::mergeTreeDocumentImpl(
               "relative to the package's share directory.");
           }
           try {
-            absolute_path = (std::filesystem::path(ament_index_cpp::get_package_share_directory(ros_pkg)) / path).string();
+            absolute_path =
+              (std::filesystem::path(ament_index_cpp::get_package_share_directory(ros_pkg)) / path).string();
           } catch (const ament_index_cpp::PackageNotFoundError & e) {
             throw exceptions::TreeDocumentError(
               "Cannot merge tree document: Found an <" + std::string(INCLUDE_ELEMENT_NAME) +
