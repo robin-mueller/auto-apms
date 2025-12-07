@@ -56,11 +56,20 @@ jobs:
           source ${{ steps.ros-build.outputs.ros-workspace-directory-name }}/install/setup.bash
           ros2 run auto_apms_behavior_tree_core create_node_reference_markdown create_node_reference_markdown_output.md include_native auto_apms_behavior_tree::behavior_tree_nodes auto_apms_simulation::behavior_tree_nodes
 
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.UPDATE_BT_NODE_REF_APP_ID }}
+          private-key: ${{ secrets.UPDATE_BT_NODE_REF_APP_PRIVATE_KEY }}
+          owner: AutoAPMS
+          repositories: "auto-apms-guide"
+
       - name: Checkout Documentation Repo
         uses: actions/checkout@v4
         with:
-          repository: autoapms/auto-apms-guide
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: AutoAPMS/auto-apms-guide
+          token: ${{ steps.generate-token.outputs.token }}  # Use GitHub App token
           path: docs-repo
           ref: master
 
@@ -71,8 +80,8 @@ jobs:
       - name: Commit and Push Documentation
         run: |
           cd docs-repo
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "update-bt-node-reference[bot]"
+          git config user.email "update-bt-node-reference[bot]@users.noreply.github.com"
           git add .
 
           if git diff --cached --quiet; then
