@@ -265,13 +265,16 @@ class DynamicManifestHelpAction(Action):
             try:
                 if isinstance(manifest, (str, NodeManifestResourceIdentity)):
                     node_manifest = NodeManifest.from_resource(manifest)
+                    node_manifest_identity = manifest
                 elif isinstance(manifest, NodeManifestResource):
                     node_manifest = manifest.node_manifest
+                    node_manifest_identity = manifest.identity
                 else:
                     node_manifest = None
+                    node_manifest_identity = None
 
                 if node_manifest:
-                    print(f"\nAvailable nodes in '{manifest}':")
+                    print(f"\nAvailable nodes in '{node_manifest_identity}':")
                     print_manifest_node_names(node_manifest)
             except Exception:
                 pass  # Silently ignore errors in dynamic help generation
