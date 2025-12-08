@@ -15,6 +15,8 @@
 """AutoAPMS behavior management command for ros2cli."""
 
 from ros2cli.command import CommandExtension, add_subparsers_on_demand
+from auto_apms_behavior_tree_core.resources import get_behavior_resource_identities
+from ..api import print_grouped_behavior_identities
 
 
 class BehaviorCommand(CommandExtension):
@@ -22,10 +24,20 @@ class BehaviorCommand(CommandExtension):
 
     def add_arguments(self, parser, cli_name):
         self._subparser = parser
+        parser.add_argument(
+            "-l",
+            "--list",
+            action="store_true",
+            help="List all available behavior resources",
+        )
         add_subparsers_on_demand(parser, cli_name, "_verb", "auto_apms_ros2behavior.verb", required=False)
 
     def main(self, *, parser, args):
         if not hasattr(args, "_verb"):
+            if args.list:
+                print_grouped_behavior_identities(get_behavior_resource_identities(), group_by="category")
+                return 0
+
             # in case no verb was passed
             self._subparser.print_help()
             return 0

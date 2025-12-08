@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict
 from auto_apms_behavior_tree_core.resources import (
     get_behavior_resource_identities,
     get_behavior_categories,
-    _AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP,
 )
 from ..verb import VerbExtension
-from ..api import PrefixFilteredChoicesCompleter
+from ..api import PrefixFilteredChoicesCompleter, print_grouped_behavior_identities
 
 
 class ListVerb(VerbExtension):
@@ -39,22 +37,15 @@ class ListVerb(VerbExtension):
             action="store_true",
             help="Flag whether to include behaviors marked as internal.",
         )
+        parser.add_argument(
+            "--group-by",
+            choices=["category", "package"],
+            default="category",
+            help="How to group the behavior resources. Default is 'category'.",
+        )
 
     def main(self, *, args):
         """Main function for the list verb."""
         identities = get_behavior_resource_identities(args.categories, args.include_internal)
-
-        # Group behaviors by category
-        categorized_behaviors = defaultdict(list)
-        for i in identities:
-            categorized_behaviors[i.category_name].append(
-                str(i).split(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP, maxsplit=1)[-1]
-            )
-
-        # Print grouped behaviors
-        for category, items in categorized_behaviors.items():
-            print(f"{category}{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP}")
-            for cat_i in items:
-                print(f"  - {cat_i}")
-
+        print_grouped_behavior_identities(identities, args.group_by)
         return 0

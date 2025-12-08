@@ -14,19 +14,24 @@
 
 
 from collections import defaultdict
-from auto_apms_behavior_tree_core.tree.node_model import NodePortDirection
 from auto_apms_behavior_tree_core.resources import (
     NodeManifestResource,
     get_node_manifest_resource_identities,
 )
 from ...verb import VerbExtension
-from ...api import PrefixFilteredChoicesCompleter, NodeManifestFilteredRegistrationNameCompleter
+from ...api import (
+    PrefixFilteredChoicesCompleter,
+    NodeManifestFilteredRegistrationNameCompleter,
+    add_dynamic_manifest_help_action,
+    print_node_details,
+)
 
 
 class ModelVerb(VerbExtension):
     """Inspect behavior tree node models."""
 
     def add_arguments(self, parser, cli_name):
+        add_dynamic_manifest_help_action(parser, "manifest", "node_name")
         manifest_arg = parser.add_argument(
             "manifest",
             type=NodeManifestResource,
@@ -45,13 +50,7 @@ class ModelVerb(VerbExtension):
         # If specific node name is provided, show details for that node only
         if args.node_name:
             if args.node_name in args.manifest.node_model:
-                self._print_node_details(
-                    args.manifest.node_model[args.node_name].type.name,
-                    args.node_name,
-                    args.manifest.node_manifest.get_node_registration_options(args.node_name)["class_name"],
-                    args.manifest.node_manifest.get_node_registration_options(args.node_name)["description"],
-                    args.manifest.node_model[args.node_name].port_infos,
-                )
+                print_node_details(args.manifest, args.node_name)
             else:
                 print(f"Node '{args.node_name}' not found in model associated with manifest '{args.manifest.identity}'")
                 return 1
@@ -70,40 +69,3 @@ class ModelVerb(VerbExtension):
                     )
 
         return 0
-
-    def _print_node_details(self, node_type, node_name, node_class, desc, ports):
-        """Print detailed information for a specific node."""
-        print(f"{node_type} {node_name} ({node_class})")
-        print(f"Description: {desc if desc.endswith('.') else f"{desc}."}\n")
-        if not ports:
-            print("No ports defined for this node.")
-            return
-
-        # Group ports by direction
-        input_ports = [p for p in ports if p.port_direction == NodePortDirection.INPUT]
-        output_ports = [p for p in ports if p.port_direction == NodePortDirection.OUTPUT]
-        inout_ports = [p for p in ports if p.port_direction == NodePortDirection.INOUT]
-
-        if input_ports:
-            print(f"{NodePortDirection.INPUT.name} ({len(input_ports)})")
-            for port in input_ports:
-                self._print_port_info(port)
-
-        if output_ports:
-            print(f"{NodePortDirection.OUTPUT.name} ({len(output_ports)})")
-            for port in output_ports:
-                self._print_port_info(port)
-
-        if inout_ports:
-            print(f"{NodePortDirection.INOUT.name} ({len(inout_ports)})")
-            for port in inout_ports:
-                self._print_port_info(port)
-
-    def _print_port_info(self, port):
-        """Print detailed information for a single port."""
-        print(f"  - \033[1m{port.port_name}\033[0m ({port.port_type})")
-        if port.port_description:
-            print(f"    {port.port_description}")
-        if port.port_has_default:
-            default_str = port.port_default if port.port_default else "(empty)"
-            print(f"    Default: {default_str}")

@@ -21,14 +21,16 @@ from ...api import (
     PrefixFilteredChoicesCompleter,
     NodeManifestFilteredRegistrationNameCompleter,
     NodePortValuesCompleter,
+    add_dynamic_node_help_action,
     parse_key_value_args,
 )
 
 
 class CallVerb(VerbExtension):
-    """List all available behavior resources."""
+    """Execute a single behavior tree node."""
 
     def add_arguments(self, parser, cli_name):
+        add_dynamic_node_help_action(parser, "manifest", "node_name")
         manifest_arg = parser.add_argument(
             "manifest",
             type=NodeManifestResource,
@@ -45,7 +47,7 @@ class CallVerb(VerbExtension):
             "port_values",
             nargs="*",
             metavar="port:=value",
-            help="Port values to pass to the node",
+            help="Port values to pass to the node (use -h after specifying manifest and node_name to see available ports)",
             default=[],
         )
         port_values_arg.completer = NodePortValuesCompleter("manifest", "node_name")

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from ..verb import VerbExtension
-from ..api import _add_behavior_resource_argument_to_parser
+from ..api import add_behavior_resource_argument_to_parser
 
 
 class ShowVerb(VerbExtension):
@@ -21,7 +21,7 @@ class ShowVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the show verb."""
-        _add_behavior_resource_argument_to_parser(parser)
+        add_behavior_resource_argument_to_parser(parser)
 
     def main(self, *, args):
         """Main function for the show verb."""
