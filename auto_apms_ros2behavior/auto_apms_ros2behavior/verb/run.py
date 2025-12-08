@@ -17,7 +17,7 @@ from auto_apms_behavior_tree.resources import get_behavior_build_handler_plugins
 from auto_apms_behavior_tree.scripting import sync_run_behavior_locally
 from ..verb import VerbExtension
 from ..api import (
-    _add_behavior_resource_argument_to_parser,
+    add_behavior_resource_argument_to_parser,
     parse_key_value_args,
     PrefixFilteredChoicesCompleter,
 )
@@ -28,7 +28,7 @@ class RunVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the run verb."""
-        behavior_arg = _add_behavior_resource_argument_to_parser(parser)
+        behavior_arg = add_behavior_resource_argument_to_parser(parser)
         behavior_arg.nargs = "?"  # Make the behavior argument optional
         build_handler_arg = parser.add_argument(
             "--build-handler",

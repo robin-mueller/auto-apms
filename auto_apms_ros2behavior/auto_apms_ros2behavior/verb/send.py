@@ -17,7 +17,7 @@ from auto_apms_behavior_tree.resources import get_behavior_build_handler_plugins
 from auto_apms_behavior_tree.scripting import sync_run_behavior_with_executor, find_start_tree_executor_actions
 from ..verb import VerbExtension
 from ..api import (
-    _add_behavior_resource_argument_to_parser,
+    add_behavior_resource_argument_to_parser,
     parse_key_value_args,
     PrefixFilteredChoicesCompleter,
 )
@@ -37,7 +37,7 @@ class SendVerb(VerbExtension):
             help="Name of the behavior tree executor to send the tree to",
         )
         executor_arg.completer = PrefixFilteredChoicesCompleter(executor_names)
-        _add_behavior_resource_argument_to_parser(parser)
+        add_behavior_resource_argument_to_parser(parser)
         build_handler_arg = parser.add_argument(
             "--build-handler",
             type=str,

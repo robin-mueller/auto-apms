@@ -20,7 +20,12 @@ from auto_apms_behavior_tree_core.resources import (
     get_node_manifest_resource_identities,
 )
 from ...verb import VerbExtension
-from ...api import PrefixFilteredChoicesCompleter, NodeManifestFilteredRegistrationNameCompleter
+from ...api import (
+    PrefixFilteredChoicesCompleter,
+    NodeManifestFilteredRegistrationNameCompleter,
+    add_dynamic_manifest_help_action,
+    print_manifest_node_names,
+)
 
 
 class ManifestVerb(VerbExtension):
@@ -28,9 +33,12 @@ class ManifestVerb(VerbExtension):
 
     def __init__(self):
         super().__init__()
+        self.print_help = None
         self.identities = get_node_manifest_resource_identities()
 
     def add_arguments(self, parser, cli_name):
+        self.print_help = parser.print_help
+        add_dynamic_manifest_help_action(parser, "identity", "node_name")
         identity_arg = parser.add_argument(
             "identity",
             type=NodeManifestResourceIdentity,
@@ -73,11 +81,10 @@ class ManifestVerb(VerbExtension):
                     end="",
                 )
                 return 0
+            else:
+                print_manifest_node_names(NodeManifest.from_resource(args.identity))
+                return 0
 
-        # If no arguments specified, list manifests
-        for i in self.identities:
-            print(str(i))
-            manifest = NodeManifest.from_resource(i)
-            for name in manifest.get_node_names():
-                print(f"  - {name} ({manifest.get_node_registration_options(name)["class_name"]})")
+        # If no arguments specified, print help
+        self.print_help()
         return 0

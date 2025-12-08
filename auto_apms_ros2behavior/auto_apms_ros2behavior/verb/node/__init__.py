@@ -13,6 +13,11 @@
 # limitations under the License.
 
 from ros2cli.command import add_subparsers_on_demand
+from auto_apms_behavior_tree_core.resources import (
+    NodeManifest,
+    get_node_manifest_resource_identities,
+)
+from ...api import print_manifest_node_names
 from ...verb import VerbExtension
 
 
@@ -21,10 +26,22 @@ class NodeVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
         self._subparser = parser
+        parser.add_argument(
+            "-l",
+            "--list",
+            action="store_true",
+            help="List all available behavior tree nodes grouped by node manifest",
+        )
         add_subparsers_on_demand(parser, cli_name, "_verb_node", "auto_apms_ros2behavior.verb.node", required=False)
 
     def main(self, *, args):
         if not hasattr(args, "_verb_node"):
+            if args.list:
+                for i in get_node_manifest_resource_identities():
+                    print(str(i))
+                    print_manifest_node_names(NodeManifest.from_resource(i))
+                return 0
+
             # in case no verb was passed
             self._subparser.print_help()
             return 0
