@@ -19,7 +19,7 @@
 
 </div>
 
-# ✨ Streamlining Behaviors in ROS 2
+# ⚙️ AutoAPMS - Streamlining Behaviors in ROS 2
 
 ![auto-apms-gif](https://github.com/user-attachments/assets/0039aa09-9448-4102-9eb3-38138a805728)
 
@@ -32,7 +32,7 @@ The intention of this project is to make it significantly more user-friendly and
 > [!NOTE]
 > Currently we support **Linux only**!.
 
-## Highlights
+## ✨ Highlights
 
 There are plenty of ROS 2 packages which provide an implementation for behavior trees. AutoAPMS adopts [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP), the most popular one when it comes to C++, and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots. Here are some of the most prominent features offered by this repository:
 
@@ -54,7 +54,7 @@ There are plenty of ROS 2 packages which provide an implementation for behavior 
 
 - Comprehensive [user guide](https://autoapms.github.io/auto-apms-guide/) and [API documentation](https://autoapms.github.io/auto-apms/)
 
-# 🚀 Getting Started
+## 🚀 Getting Started
 
 The following installation guide helps you getting started with AutoAPMS.
 
@@ -118,7 +118,7 @@ Finally, you may as well run a cool **visual demonstration** of what's possible 
 
     https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
 
-# 🎓 Documentation
+## 🎓 Documentation
 
 Make sure to visit the [User Guide](https://autoapms.github.io/auto-apms-guide/introduction/about) for tutorials and best practices when writing software using AutoAPMS.
 
@@ -128,7 +128,17 @@ We also offer an extensive [API Documentation](https://autoapms.github.io/auto-a
 doxygen doc/Doxyfile
 ```
 
-# 🙏 Acknowledgements
+## ⭐ Star History
+
+<a href="https://www.star-history.com/#AutoAPMS/auto-apms&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=AutoAPMS/auto-apms&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=AutoAPMS/auto-apms&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=AutoAPMS/auto-apms&type=date&legend=top-left" />
+ </picture>
+</a>
+
+## 🙏 Acknowledgements
 
 This repository builds on:
 
