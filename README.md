@@ -96,7 +96,7 @@ The following installation guide helps you getting started with AutoAPMS.
 
 ### Check out the demo using [pyrobosim](https://github.com/sea-bass/pyrobosim)
 
-We provide a guide for running a cool **visual demonstration** on complex behaviors created with AutoAPMS in the [auto_apms_simulation](https://github.com/AutoAPMS/auto_apms_simulation) repository. The simulation shows multiple "robots" moving in a magical hall adjusting their behavior according to dynamic environmental conditions. *Piertotum Locomotor!*
+We provide a guide for running a cool **visual demonstration** on complex behaviors created with AutoAPMS in the [auto_apms_simulation](https://github.com/AutoAPMS/auto_apms_simulation) repository. The simulation shows multiple "robots" moving in a magical hall adjusting their behavior dynamically according to the following policy: Approach the goal as long as the hallway is not occupied - if it is, retreat. *Piertotum Locomotor!*
 
 https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
 
