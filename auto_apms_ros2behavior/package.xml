@@ -3,7 +3,7 @@
 <package format="3">
   <name>auto_apms_ros2behavior</name>
   <version>1.2.0</version>
-  <description>Behavior related extensions for the ROS 2 CLI</description>
+  <description>AutoAPMS related extensions for the ROS 2 CLI introducing the ros2 behavior command</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
   <license>Apache-2.0</license>
   <url>https://autoapms.github.io/auto-apms-guide/</url>

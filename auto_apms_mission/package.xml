@@ -3,9 +3,9 @@
 <package format="3">
   <name>auto_apms_mission</name>
   <version>1.2.0</version>
-  <description>Implementation of AutoAPMS's mission management framework</description>
+  <description>Implementation of AutoAPMS's automated mission management system</description>
   <maintainer email="mue.robin@icloud.com">Robin Müller</maintainer>
-  <license>Apache License 2.0</license>
+  <license>Apache-2.0</license>
   <url>https://autoapms.github.io/auto-apms-guide/</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
