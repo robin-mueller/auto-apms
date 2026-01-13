@@ -34,7 +34,15 @@ The intention of this project is to make it significantly more user-friendly and
 
 ## ✨ Design & Highlights
 
-This project adopts the behavior tree implementation provided by [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots. Here are some of the most prominent features offered by this repository:
+<!-- <p align="center">
+    <img width="450" src="https://github.com/user-attachments/assets/a5a15484-06d1-449d-8ad9-8ddf400ed4ad">
+</p> -->
+
+<img align="right" width="400" src="https://github.com/user-attachments/assets/a5a15484-06d1-449d-8ad9-8ddf400ed4ad">
+
+This project adopts the behavior tree implementation provided by [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots.
+
+Here are some of the most prominent features offered by this repository:
 
 - Convenient resource management using `ament_cmake` and `ament_index`
 
