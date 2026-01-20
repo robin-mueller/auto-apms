@@ -21,10 +21,5 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install ament_copyright
-        run: |
-          python3 -m pip install --upgrade pip
-          pip install --break-system-packages git+https://github.com/ament/ament_lint.git#subdirectory=ament_copyright
-
       - name: Run Pre-Commit
         uses: pre-commit/action@v3.0.1
