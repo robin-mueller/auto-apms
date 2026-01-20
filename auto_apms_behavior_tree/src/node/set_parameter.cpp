@@ -153,7 +153,7 @@ public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterInt : public SetParameterTemplate<int64_t>
+class SetParameterInt : public SetParameterTemplate<int>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;
@@ -183,7 +183,7 @@ public:
   using SetParameterTemplate::SetParameterTemplate;
 };
 
-class SetParameterIntVec : public SetParameterTemplate<std::vector<int64_t>>
+class SetParameterIntVec : public SetParameterTemplate<std::vector<int>>
 {
 public:
   using SetParameterTemplate::SetParameterTemplate;

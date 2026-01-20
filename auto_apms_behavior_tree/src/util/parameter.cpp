@@ -23,7 +23,7 @@ BT::Expected<BT::Any> createAnyFromParameterValue(const rclcpp::ParameterValue &
     case rclcpp::PARAMETER_BOOL:
       return BT::GetAnyFromStringFunctor<bool>()(BT::toStr(val.get<bool>()));
     case rclcpp::PARAMETER_INTEGER:
-      return BT::GetAnyFromStringFunctor<int64_t>()(BT::toStr(val.get<int64_t>()));
+      return BT::GetAnyFromStringFunctor<int>()(BT::toStr(val.get<int>()));
     case rclcpp::PARAMETER_DOUBLE:
       return BT::GetAnyFromStringFunctor<double>()(BT::toStr(val.get<double>()));
     case rclcpp::PARAMETER_STRING:
@@ -33,7 +33,7 @@ BT::Expected<BT::Any> createAnyFromParameterValue(const rclcpp::ParameterValue &
     case rclcpp::PARAMETER_BOOL_ARRAY:
       return BT::GetAnyFromStringFunctor<std::vector<bool>>()(BT::toStr(val.get<std::vector<bool>>()));
     case rclcpp::PARAMETER_INTEGER_ARRAY:
-      return BT::GetAnyFromStringFunctor<std::vector<int64_t>>()(BT::toStr(val.get<std::vector<int64_t>>()));
+      return BT::GetAnyFromStringFunctor<std::vector<int>>()(BT::toStr(val.get<std::vector<int>>()));
     case rclcpp::PARAMETER_DOUBLE_ARRAY:
       return BT::GetAnyFromStringFunctor<std::vector<double>>()(BT::toStr(val.get<std::vector<double>>()));
     case rclcpp::PARAMETER_STRING_ARRAY:
@@ -55,12 +55,12 @@ BT::Expected<rclcpp::ParameterValue> createParameterValueFromAny(const BT::Any &
     case rclcpp::ParameterType::PARAMETER_NOT_SET:
       // If type is not set, try different casts and use the first one
       if (any.isType<bool>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_BOOL);
-      if (any.isType<int64_t>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_INTEGER);
+      if (any.isType<int>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_INTEGER);
       if (any.isType<double>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_DOUBLE);
       if (any.isType<std::string>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_STRING);
       if (any.isType<std::vector<uint8_t>>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_BYTE_ARRAY);
       if (any.isType<std::vector<bool>>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_BOOL_ARRAY);
-      if (any.isType<std::vector<int64_t>>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_INTEGER_ARRAY);
+      if (any.isType<std::vector<int>>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_INTEGER_ARRAY);
       if (any.isType<std::vector<double>>()) return createParameterValueFromAny(any, rclcpp::PARAMETER_DOUBLE_ARRAY);
       if (any.isType<std::vector<std::string>>())
         return createParameterValueFromAny(any, rclcpp::PARAMETER_STRING_ARRAY);
@@ -79,7 +79,7 @@ BT::Expected<rclcpp::ParameterValue> createParameterValueFromAny(const BT::Any &
       break;
     }
     case rclcpp::PARAMETER_INTEGER: {
-      const auto casted = any.tryCast<int64_t>();
+      const auto casted = any.tryCast<int>();
       if (casted) return rclcpp::ParameterValue(casted.value());
       error = casted.error();
       break;
@@ -109,7 +109,7 @@ BT::Expected<rclcpp::ParameterValue> createParameterValueFromAny(const BT::Any &
       break;
     }
     case rclcpp::PARAMETER_INTEGER_ARRAY: {
-      const auto casted = any.tryCast<std::vector<int64_t>>();
+      const auto casted = any.tryCast<std::vector<int>>();
       if (casted) return rclcpp::ParameterValue(casted.value());
       error = casted.error();
       break;

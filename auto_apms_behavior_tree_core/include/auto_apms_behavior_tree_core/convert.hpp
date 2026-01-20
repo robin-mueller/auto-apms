@@ -31,7 +31,7 @@ template <>
 [[nodiscard]] std::vector<bool> convertFromString<std::vector<bool>>(StringView str);
 
 template <>
-[[nodiscard]] std::vector<int64_t> convertFromString<std::vector<int64_t>>(StringView str);
+[[nodiscard]] std::vector<int> convertFromString<std::vector<int>>(StringView str);
 
 template <>
 [[nodiscard]] std::vector<float> convertFromString<std::vector<float>>(StringView str);
@@ -46,7 +46,7 @@ template <>
 [[nodiscard]] std::string toStr<std::vector<bool>>(const std::vector<bool> & value);
 
 template <>
-[[nodiscard]] std::string toStr<std::vector<int64_t>>(const std::vector<int64_t> & value);
+[[nodiscard]] std::string toStr<std::vector<int>>(const std::vector<int> & value);
 
 template <>
 [[nodiscard]] std::string toStr<std::vector<double>>(const std::vector<double> & value);

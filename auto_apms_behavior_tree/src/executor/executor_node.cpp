@@ -293,7 +293,7 @@ bool TreeExecutorNode::updateScriptingEnumsWithParameterValues(
           break;
         case rclcpp::ParameterType::PARAMETER_INTEGER:
           if (simulate) continue;
-          scripting_enums_[enum_key] = static_cast<int>(pval.get<int64_t>());
+          scripting_enums_[enum_key] = static_cast<int>(pval.get<int>());
           break;
         default:
           if (simulate) return false;

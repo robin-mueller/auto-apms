@@ -131,7 +131,7 @@ public:
   using GetParameterTemplate::GetParameterTemplate;
 };
 
-class GetParameterInt : public GetParameterTemplate<int64_t>
+class GetParameterInt : public GetParameterTemplate<int>
 {
 public:
   using GetParameterTemplate::GetParameterTemplate;
@@ -161,7 +161,7 @@ public:
   using GetParameterTemplate::GetParameterTemplate;
 };
 
-class GetParameterIntVec : public GetParameterTemplate<std::vector<int64_t>>
+class GetParameterIntVec : public GetParameterTemplate<std::vector<int>>
 {
 public:
   using GetParameterTemplate::GetParameterTemplate;

@@ -47,13 +47,13 @@ std::vector<bool> convertFromString<std::vector<bool>>(StringView str)
 }
 
 template <>
-std::vector<int64_t> convertFromString<std::vector<int64_t>>(StringView str)
+std::vector<int> convertFromString<std::vector<int>>(StringView str)
 {
   auto parts = BT::splitString(str, ';');
-  std::vector<int64_t, std::allocator<int64_t>> output;
+  std::vector<int, std::allocator<int>> output;
   output.reserve(parts.size());
   for (const StringView & part : parts) {
-    output.push_back(convertFromString<int64_t>(part));
+    output.push_back(convertFromString<int>(part));
   }
   return output;
 }
@@ -123,7 +123,7 @@ std::string toStr<std::vector<bool>>(const std::vector<bool> & value)
 }
 
 template <>
-std::string toStr<std::vector<int64_t>>(const std::vector<int64_t> & value)
+std::string toStr<std::vector<int>>(const std::vector<int> & value)
 {
   return auto_apms_util::join(value, ";");
 }
