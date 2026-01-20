@@ -330,6 +330,15 @@ ament_export_dependencies(
   auto_apms_behavior_tree_core
 )
 
+#
+# ------------ Testing --------------
+#
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_copyright REQUIRED)
+  ament_copyright()
+endif()
+
 # Plugins
 install(
   TARGETS

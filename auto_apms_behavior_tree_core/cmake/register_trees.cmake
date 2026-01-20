@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      https://www.apache.org/licenses/LICENSE-2.0
+#    http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,7 @@
 #
 # :param ARGN: Behavior tree XML files to be added to this package's resources.
 # :type ARGN: list of files
-# :param ALIAS_NAMESPACE: Optional namespace prefix for all registered behavior trees.
+# :param ALIAS_NAMESPACE: Option to customize the alias namespace used for all behavior trees to be registered.
 #   The default is to use the XML file stem as namspace.
 # :param NODE_MANIFEST: One or more relative paths or resource identities of existing node manifests.
 #   If specified, behavior tree nodes associated with this manifest can be

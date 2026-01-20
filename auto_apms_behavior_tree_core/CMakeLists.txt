@@ -133,8 +133,11 @@ target_link_libraries(create_node_reference_markdown ${PROJECT_NAME})
 #
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_copyright REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(example_interfaces REQUIRED)
+
+  ament_copyright()
 
   ament_add_gtest(${PROJECT_NAME}_unit_tests
     "test/unit/ros_subscriber_node.cpp"

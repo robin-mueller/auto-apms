@@ -72,8 +72,11 @@ ament_generate_version_header(${PROJECT_NAME} HEADER_PATH "${PROJECT_NAME}/versi
 #
 
 if(BUILD_TESTING)
-  find_package(auto_apms_interfaces REQUIRED)
+  find_package(ament_cmake_copyright REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(auto_apms_interfaces REQUIRED)
+
+  ament_copyright()
 
   ament_add_gtest(${PROJECT_NAME}_unit_tests
     "test/unit/main.cpp"

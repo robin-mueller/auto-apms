@@ -92,6 +92,15 @@ auto_apms_behavior_tree_register_trees(
 )
 
 #
+# ------------ Testing --------------
+#
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_copyright REQUIRED)
+  ament_copyright()
+endif()
+
+#
 # ------------ Packaging --------------
 #
 

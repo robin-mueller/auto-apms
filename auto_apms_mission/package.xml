@@ -14,6 +14,8 @@
   <depend>auto_apms_util</depend>
   <depend>auto_apms_behavior_tree</depend>
 
+  <test_depend>ament_cmake_copyright</test_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

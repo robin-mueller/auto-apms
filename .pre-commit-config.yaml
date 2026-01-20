@@ -54,12 +54,3 @@ repos:
     rev: v1.7.7
     hooks:
       - id: actionlint
-
-  # Other
-  - repo: local
-    hooks:
-      - id: ament_copyright
-        name: ament_copyright
-        entry: ament_copyright --add-missing "Robin Müller" apache2
-        language: system
-        types: [file]

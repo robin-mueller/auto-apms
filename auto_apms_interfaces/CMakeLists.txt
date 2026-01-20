@@ -31,4 +31,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 
 ament_export_dependencies(rosidl_default_runtime)
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_copyright REQUIRED)
+  ament_copyright()
+endif()
+
 ament_package()
