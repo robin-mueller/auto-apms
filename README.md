@@ -32,9 +32,17 @@ The intention of this project is to make it significantly more user-friendly and
 > [!NOTE]
 > Currently we support **Linux only**!.
 
-## ✨ Highlights
+## ✨ Design & Highlights
 
-There are plenty of ROS 2 packages which provide an implementation for behavior trees. AutoAPMS adopts [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP), the most popular one when it comes to C++, and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots. Here are some of the most prominent features offered by this repository:
+<!-- <p align="center">
+    <img width="450" src="https://github.com/user-attachments/assets/a5a15484-06d1-449d-8ad9-8ddf400ed4ad">
+</p> -->
+
+<img align="right" width="400" src="https://github.com/user-attachments/assets/a5a15484-06d1-449d-8ad9-8ddf400ed4ad">
+
+This project adopts the behavior tree implementation provided by [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots.
+
+Here are some of the most prominent features offered by this repository:
 
 - Convenient resource management using `ament_cmake` and `ament_index`
 
@@ -86,37 +94,11 @@ The following installation guide helps you getting started with AutoAPMS.
     ros2 behavior run auto_apms_examples::demo::HelloWorld --blackboard name:=Turtle
     ```
 
-Finally, you may as well run a cool **visual demonstration** of what's possible with this framework.
+### Check out the demo using [pyrobosim](https://github.com/sea-bass/pyrobosim)
 
-1. Install dependencies and build package `auto_apms_simulation`
+We provide a guide for running a cool **visual demonstration** on complex behaviors created with AutoAPMS in the [auto_apms_simulation](https://github.com/AutoAPMS/auto_apms_simulation) repository. The simulation shows multiple "robots" moving in a magical hall adjusting their behavior dynamically according to the following policy: Approach the goal as long as the hallway is not occupied - if it is, retreat. *Piertotum Locomotor!*
 
-    ```bash
-    # Python packages for simulation (not all are available with rosdep)
-    python3 -m pip install -r src/auto-apms/auto_apms_simulation/requirements.txt
-    colcon build --packages-up-to auto_apms_simulation --symlink-install
-    ```
-
-1. Run the less intelligent behavior first
-
-    ```bash
-    source install/setup.bash
-    ros2 launch auto_apms_simulation pyrobosim_hogwarts_launch.py
-    # Press Ctrl+C to quit
-    ```
-
-    The actions of each robot you've seen are executed using behavior trees. This functionality is provided by the `auto_apms_behavior_tree` package. However, each robot is acting independently and they are not aware of their environment. Yet.
-
-1. Now, we want to make the robots more intelligent and allow them to dynamically adjust their behavior when they encounter other robots inside one of the hallways. This is realized by implementing fallback mechanisms introduced by the `auto_apms_mission` package. To achieve that, add a launch argument
-
-    ```bash
-    source install/setup.bash
-    ros2 launch auto_apms_simulation pyrobosim_hogwarts_launch.py mission:=true
-    # Press Ctrl+C to quit
-    ```
-
-    The robots dynamically decide to retreat and wait until the hallway they are about to cross is not occupied anymore. They basically monitor if a certain event occurs and initialize a corresponding sequence of action if applicable. With this, we effectively introduced automatically orchestrated reactive behaviors.
-
-    https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
+https://github.com/user-attachments/assets/adbb7cab-1a9b-424b-af61-61c351986287
 
 ## 🎓 Documentation
 

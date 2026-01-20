@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           source ${{ steps.ros-build.outputs.ros-workspace-directory-name }}/install/setup.bash
-          ros2 run auto_apms_behavior_tree_core create_node_reference_markdown create_node_reference_markdown_output.md include_native auto_apms_behavior_tree::behavior_tree_nodes auto_apms_simulation::behavior_tree_nodes
+          ros2 run auto_apms_behavior_tree_core create_node_reference_markdown create_node_reference_markdown_output.md include_native auto_apms_behavior_tree::behavior_tree_nodes
 
       - name: Generate GitHub App Token
         id: generate-token
