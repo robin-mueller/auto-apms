@@ -21,6 +21,8 @@
 #
 # :param ARGN: Behavior tree XML files to be added to this package's resources.
 # :type ARGN: list of files
+# :param ALIAS_NAMESPACE: Optional namespace prefix for all registered behavior trees.
+#   The default is to use the XML file stem as namspace.
 # :param NODE_MANIFEST: One or more relative paths or resource identities of existing node manifests.
 #   If specified, behavior tree nodes associated with this manifest can be
 #   loaded automatically and are available for every tree under ARGN.
@@ -35,7 +37,7 @@ macro(auto_apms_behavior_tree_register_trees)
 
   # Parse arguments
   set(options MARK_AS_INTERNAL)
-  set(oneValueArgs "")
+  set(oneValueArgs ALIAS_NAMESPACE)
   set(multiValueArgs NODE_MANIFEST)
   cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -49,14 +51,16 @@ macro(auto_apms_behavior_tree_register_trees)
       )
     endif()
 
-    # Verify that the file hasn't been registered.
-    if("${_tree_abs_path__source}" IN_LIST _package_tree_file_abs_paths__source)
-      message(
-        FATAL_ERROR
-        "auto_apms_behavior_tree_register_trees(): Behavior tree file ${_arg} has already been registered."
-      )
+    if(NOT DEFINED ARGS_ALIAS_NAMESPACE)
+      # Verify that the file hasn't been registered.
+      if("${_tree_abs_path__source}" IN_LIST _package_tree_file_abs_paths__source)
+        message(
+          FATAL_ERROR
+          "auto_apms_behavior_tree_register_trees(): Behavior tree file ${_arg} has already been registered. This would create an ambigious resource identity. Use the ALIAS_NAMESPACE argument to assign a unique namespace."
+        )
+      endif()
+      list(APPEND _package_tree_file_abs_paths__source "${_tree_abs_path__source}")
     endif()
-    list(APPEND _package_tree_file_abs_paths__source "${_tree_abs_path__source}")
 
     # Collect all available behavior tree IDs
     execute_process(
@@ -94,21 +98,27 @@ macro(auto_apms_behavior_tree_register_trees)
       list(APPEND _seen_names "${_name}")
     endforeach()
 
+    # Assign tree resource namespace
+    if(DEFINED ARGS_ALIAS_NAMESPACE)
+      set(_tree_resource_alias_namespace "${ARGS_ALIAS_NAMESPACE}")
+    else()
+      get_filename_component(_tree_resource_alias_namespace "${_arg}" NAME_WE)
+    endif()
+
     # Prevent ambiguous tree identities
-    get_filename_component(_tree_file_stem "${_tree_abs_path__source}" NAME_WE)
     set(_index 0)
-    foreach(_stem ${_package_tree_file_stems})
-      # Check if a tree with the same stem has been registered before.
-      if("${_stem}" STREQUAL "${_tree_file_stem}")
+    foreach(_ns ${_package_tree_resource_alias_namespaces})
+      # Check if a tree resource with the same alias namespace has been registered before.
+      if("${_ns}" STREQUAL "${_tree_resource_alias_namespace}")
         # Check if this tree registers trees with the same name
-        list(GET _package_tree_names "${_index}" _names_associated_with_stem)
-        string(REPLACE "|" ";" _names_associated_with_stem "${_names_associated_with_stem}")
-        foreach(_name ${_names_associated_with_stem})
+        list(GET _package_tree_names "${_index}" _names_associated_with_ns)
+        string(REPLACE "|" ";" _names_associated_with_ns "${_names_associated_with_ns}")
+        foreach(_name ${_names_associated_with_ns})
           list(FIND _tree_file_tree_names "${_name}" _index2)
           if(_index2 GREATER -1)
             message(
               FATAL_ERROR
-              "auto_apms_behavior_tree_register_trees(): Found tree name '${_name}' in behavior tree file ${_arg} which has been registered by a file with the same name before. This would create an ambigious resource identity (${PROJECT_NAME}::${_stem}::${_name})."
+              "auto_apms_behavior_tree_register_trees(): Tree name '${_name}' found in behavior tree file ${_arg} has already been registered under ALIAS_NAMESPACE=${_ns}. This would create an ambigious resource identity (${PROJECT_NAME}::${_ns}::${_name})."
             )
           endif()
         endforeach()
@@ -120,7 +130,7 @@ macro(auto_apms_behavior_tree_register_trees)
     set(_temp_names "${_tree_file_tree_names}")
     string(REPLACE ";" "|" _temp_names "${_temp_names}")
     list(APPEND _package_tree_names "${_temp_names}")
-    list(APPEND _package_tree_file_stems "${_tree_file_stem}")
+    list(APPEND _package_tree_resource_alias_namespaces "${_tree_resource_alias_namespace}")
 
     # Register all trees inside the file as individual behaviors
     foreach(_tree_name ${_tree_file_tree_names})
@@ -128,7 +138,7 @@ macro(auto_apms_behavior_tree_register_trees)
           "${_tree_abs_path__source}"
           BUILD_HANDLER "auto_apms_behavior_tree::TreeFromStringBuildHandler"
           CATEGORY "${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE}"
-          ALIAS "${_tree_file_stem}::${_tree_name}"
+          ALIAS "${_tree_resource_alias_namespace}::${_tree_name}"
           ENTRYPOINT "${_tree_name}"
           NODE_MANIFEST ${ARGS_NODE_MANIFEST}
       )
