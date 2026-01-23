@@ -1251,8 +1251,10 @@ public:
    * This makes it possible to add any nodes specified in @p tree_node_manifest to the tree.
    *
    * @param tree_node_manifest Parameters for locating and configuring the behavior tree node plugins.
-   * @param override If @p tree_node_manifest specifies node registration names that have already been used before,
-   * unregister the existing plugin and use the new one instead.
+   * @param override If @p tree_node_manifest specifies node registration names that have been seen before in other
+   * manifests, setting this argument to `true` will override the previous registrations. If set to `false`, an error is
+   * raised in this case.
+   * @return Modified tree document.
    * @throw auto_apms_behavior_tree::exceptions::NodeRegistrationError if registration fails.
    */
   virtual TreeDocument & registerNodes(const NodeManifest & tree_node_manifest, bool override = false);
