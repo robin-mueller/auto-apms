@@ -982,24 +982,16 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
   for (const auto & [node_name, params] : tree_node_manifest.map()) {
     // If the node is already registered
     if (registered_nodes_manifest_.contains(node_name)) {
-      // Check whether the specified node class is different from the currently registered one by comparing the
-      // respective plugin class names.
-      if (registered_nodes_manifest_[node_name].class_name == params.class_name) {
-        // We assume that the manifest entry refers to the exact same node plugin, because all NodeRegistrationLoader
-        // instances verify that there are no ambiguous class names during initialization. Since the node is already
-        // registered, we may skip registering it as there's nothing new to do.
-        continue;
-      } else if (override) {
+      if (override) {
         // If it's actually a different class and override is true, register the new node plugin instead of the
         // current one.
         factory_.unregisterBuilder(node_name);
       } else {
-        // If it's actually a different class and override is false, we must throw.
+        // If overriding is not explicitly wanted, we must throw.
         throw exceptions::TreeDocumentError(
           "Tried to register node '" + node_name + "' (Class : " + params.class_name +
-          ") which is already known to the builder, but under a different class name (" +
-          registered_nodes_manifest_[node_name].class_name +
-          "). You must explicitly set override=true to allow for overriding previously registered nodes.");
+          ") which is already known. You must make sure the registration names are unique or explicitly allow "
+          "overriding previsouly registered nodes with the same name by setting override=true.");
       }
     }
 
