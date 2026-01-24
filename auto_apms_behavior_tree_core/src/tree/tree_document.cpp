@@ -159,12 +159,28 @@ model::SubTree TreeDocument::NodeElement::insertSubTreeNode(const TreeElement & 
 {
   const std::string tree_name = tree.getName();
   if (doc_ptr_->hasTreeName(tree_name)) {
-    // We don't allow inserting a subtree node for a tree with the same name of another existing tree
-    if (doc_ptr_->getTree(tree_name) != tree) {
-      throw exceptions::TreeDocumentError(
-        "Cannot insert subtree node using the provided tree element, because another tree with name '" + tree_name +
-        "' already exists.");
+    // A tree with this name already exists in the document.
+    // If the provided tree element is from THIS document, we can compare directly using pointer equality.
+    // If it's from an external document, we compare the XML content to detect conflicting trees.
+    const TreeElement existing_tree = doc_ptr_->getTree(tree_name);
+    if (tree.doc_ptr_ == doc_ptr_) {
+      // Tree element is from this document - they must be the same tree element
+      if (existing_tree != tree) {
+        throw exceptions::TreeDocumentError(
+          "Cannot insert subtree node using the provided tree element, because another tree with name '" + tree_name +
+          "' already exists.");
+      }
+    } else {
+      // Tree element is from an external document - compare XML content
+      const std::string existing_xml = existing_tree.writeToString();
+      const std::string incoming_xml = tree.writeToString();
+      if (existing_xml != incoming_xml) {
+        throw exceptions::TreeDocumentError(
+          "Cannot insert subtree node using the provided tree element, because another tree with name '" + tree_name +
+          "' already exists with different content.");
+      }
     }
+    // If we reach here, the trees are equivalent - proceed to insert the subtree node
   } else {
     // Add the tree provided as argument to the document
     doc_ptr_->mergeTree(tree, false);
@@ -964,6 +980,37 @@ TreeDocument & TreeDocument::removeTree(const std::string & tree_name)
 TreeDocument & TreeDocument::removeTree(const TreeElement & tree) { return removeTree(tree.getName()); }
 
 std::vector<std::string> TreeDocument::getAllTreeNames() const { return getAllTreeNamesImpl(*this); }
+
+TreeDocument & TreeDocument::applyNodeNamespace(const std::string & node_namespace, const std::string & sep)
+{
+  // Get the old node names before applying namespace
+  std::set<std::string> old_node_names;
+  for (const auto & [name, _] : registered_nodes_manifest_.map()) {
+    old_node_names.insert(name);
+  }
+
+  // Apply namespace to the registered nodes manifest
+  registered_nodes_manifest_.applyNodeNamespace(node_namespace, sep);
+
+  // Helper to recursively rename nodes in the XML
+  auto rename_recursive = [&old_node_names, &node_namespace, &sep](XMLElement * parent, auto & self) -> void {
+    for (XMLElement * child = parent->FirstChildElement(); child != nullptr; child = child->NextSiblingElement()) {
+      const char * name = child->Name();
+      if (name && old_node_names.count(name) > 0) {
+        child->SetName((node_namespace + sep + name).c_str());
+      }
+      self(child, self);
+    }
+  };
+
+  // Process all trees
+  for (XMLElement * tree_ele = RootElement()->FirstChildElement(TREE_ELEMENT_NAME); tree_ele != nullptr;
+       tree_ele = tree_ele->NextSiblingElement(TREE_ELEMENT_NAME)) {
+    rename_recursive(tree_ele, rename_recursive);
+  }
+
+  return *this;
+}
 
 TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manifest, bool override)
 {

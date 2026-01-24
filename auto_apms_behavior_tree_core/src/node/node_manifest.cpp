@@ -174,10 +174,36 @@ NodeManifest & NodeManifest::merge(const NodeManifest & other, bool replace)
       } else {
         throw exceptions::NodeManifestError(
           "Cannot merge node manifests, because node '" + node_name +
-          "' already exists in other and argument replace is false (Won't replace existing entries).");
+          "' already exists and argument replace is false (Won't replace existing entries).");
       }
     }
     add(node_name, params);
+  }
+  return *this;
+}
+
+NodeManifest & NodeManifest::mergeWithNamespace(
+  const NodeManifest & other, const std::string & with_namespace, const std::string & sep)
+{
+  for (const auto & [node_name, params] : other.map()) {
+    // Apply namespace prefix
+    const std::string final_name = with_namespace + sep + node_name;
+    if (contains(final_name)) {
+      throw exceptions::NodeManifestError(
+        "Cannot merge node manifests, because node '" + final_name + "' already exists.");
+    }
+    add(final_name, params);
+  }
+  return *this;
+}
+
+NodeManifest & NodeManifest::applyNodeNamespace(const std::string & ns, const std::string & sep)
+{
+  const NodeManifest::Map old_map = map_;
+  map_.clear();
+  for (const auto & [node_name, params] : old_map) {
+    const std::string final_name = ns + sep + node_name;
+    map_[final_name] = params;
   }
   return *this;
 }

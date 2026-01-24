@@ -1014,9 +1014,8 @@ public:
   /**
    * @brief Merge the behavior trees from one of the installed package's behavior tree resources.
    *
-   * This function parses the XML and the node manifest associated with @p resource. First, it registers all behavior
-   * tree nodes specified by the manifest with this document and then merges the tree document created from the
-   * resource's XML file.
+   * This function parses the XML and the node manifest associated with @p resource. First, it registers all associated
+   * behavior tree nodes with this document and then merges the tree document created from the resource's XML file.
    *
    * If @p adopt_root_tree is `true` and there is only a single behavior tree, this tree will be considered the new root
    * tree of this document. However, if there are multiple behavior trees, the root tree name of the other document will
@@ -1152,8 +1151,8 @@ public:
    *
    * @sa TreeResourceIdentity for more information about how to refer to a specific resource.
    * @param resource Behavior tree resource to use.
-   * @param tree_name Name of the tree to be copied. It must exist inside the given file.
-   * @return Tree element representing the new behavior tree.
+   * @param tree_name Name of the tree to be copied. It must exist inside the given file. By default the root tree is
+   * used.
    * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p tree_name is empty but the root tree cannot be
    * determined.
    * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p tree_name cannot be found in the resource's
@@ -1244,6 +1243,21 @@ public:
    * @return Vector of all behavior tree names inside this document.
    */
   std::vector<std::string> getAllTreeNames() const;
+
+  /**
+   * @brief Prepend a namespace to all nodes associated with this document.
+   *
+   * This is useful to avoid name clashes when merging multiple tree documents that may contain nodes with the same
+   * name.
+   *
+   * @param node_namespace Namespace that is prepended to each registered node name and its corresponding usages in the
+   * document.
+   * @param sep Separator that is placed between the namespace and the original node name.
+   * @return Modified tree document.
+   */
+  TreeDocument & applyNodeNamespace(
+    const std::string & node_namespace,
+    const std::string & sep = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_NAMESPACE_DEFAULT_SEP);
 
   /**
    * @brief Load behavior tree node plugins and register them with the internal behavior tree factory.
@@ -1361,9 +1375,9 @@ private:
   const std::set<std::string> native_node_names_;
   std::string format_version_;
   NodeRegistrationLoader::SharedPtr tree_node_loader_ptr_;
-  NodeManifest registered_nodes_manifest_;
 
 protected:
+  NodeManifest registered_nodes_manifest_;
   BT::BehaviorTreeFactory factory_;
   rclcpp::Logger logger_;
   rclcpp::Node::WeakPtr ros_node_wptr_;
