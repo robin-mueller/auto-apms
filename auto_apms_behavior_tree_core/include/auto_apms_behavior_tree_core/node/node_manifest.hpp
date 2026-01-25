@@ -208,13 +208,44 @@ public:
 
   /**
    * @brief Merges another NodeManifest with this one.
+   *
+   * Since the functional characteristics of a node with the same name but different registration options
+   * can be fundamentally different, this method will throw if it comes across a registration name in @p other that
+   * already exists in this node manifest unless @p replace is `true`.
    * @param other Other node manifest.
    * @param replace `true` for automatically replacing entries with the same key (same registration name). Throws an
-   * error if `false` and `other` contains any keys that already exist in this manifest.
+   * error if `false` and @p other contains any keys that already exist in this manifest.
    * @return Modified node manifest.
-   * @throw auto_apms_behavior_tree::exceptions::NodeManifestError if @p other shares entries and @p replace is `false`.
+   * @throw auto_apms_behavior_tree::exceptions::NodeManifestError if any node name from @p other already exists in this
+   * node manifest and @p replace is `false`.
    */
   NodeManifest & merge(const NodeManifest & other, bool replace = false);
+
+  /**
+   * @brief Merges another NodeManifest with this one using a namespace for the registration names.
+   *
+   * Since the functional characteristics of a node with the same name but different registration options
+   * can be fundamentally different, this method will add a namespace as a prefix to all registration names from
+   * @p other.
+   * @param other Other node manifest.
+   * @param with_namespace Prefix to add to all node names from @p other.
+   * @param sep Separator string to use between the namespace and the node name.
+   * @return Modified node manifest.
+   * @throw auto_apms_behavior_tree::exceptions::NodeManifestError if any node name from @p other already exists in
+   * this manifest (after applying the namespace prefix).
+   */
+  NodeManifest & mergeWithNamespace(
+    const NodeManifest & other, const std::string & with_namespace,
+    const std::string & sep = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_NAMESPACE_DEFAULT_SEP);
+
+  /**
+   * @brief Apply a namespace prefix to all node names in this manifest.
+   * @param ns Namespace prefix to apply.
+   * @param sep Separator string to use between the namespace and the node name.
+   * @return Modified node manifest.
+   */
+  NodeManifest & applyNodeNamespace(
+    const std::string & ns, const std::string & sep = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_NAMESPACE_DEFAULT_SEP);
 
   /**
    * @brief Get all names of the behavior tree nodes specified by the manifest.

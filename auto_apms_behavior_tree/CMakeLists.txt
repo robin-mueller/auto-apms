@@ -264,26 +264,6 @@ add_executable(new_tree "src/cli/new_tree.cpp")
 target_link_libraries(new_tree ${PROJECT_NAME})
 
 #
-# ------------ Testing --------------
-#
-
-if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
-
-  auto_apms_behavior_tree_register_trees(
-    "test/trees/infinite_w_bb_flags.xml"
-    NODE_MANIFEST
-    "${PROJECT_NAME}::behavior_tree_nodes"
-  )
-
-  auto_apms_behavior_tree_register_trees(
-    "test/trees/builtin_nodes_test.xml"
-    NODE_MANIFEST
-    "${PROJECT_NAME}::behavior_tree_nodes"
-  )
-endif()
-
-#
 # ------------ Packaging --------------
 #
 
@@ -309,7 +289,7 @@ install(
 )
 
 
-#Export libraries
+# Export libraries
 install(
   TARGETS
   executor_params
@@ -335,8 +315,14 @@ ament_export_dependencies(
 #
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_copyright REQUIRED)
   ament_copyright()
+
+  ament_add_gtest(${PROJECT_NAME}_unit_tests
+    "test/unit/node_registration.cpp"
+  )
+  target_link_libraries(${PROJECT_NAME}_unit_tests ${PROJECT_NAME})
 endif()
 
 # Plugins

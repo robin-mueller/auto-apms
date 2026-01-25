@@ -159,12 +159,28 @@ model::SubTree TreeDocument::NodeElement::insertSubTreeNode(const TreeElement & 
 {
   const std::string tree_name = tree.getName();
   if (doc_ptr_->hasTreeName(tree_name)) {
-    // We don't allow inserting a subtree node for a tree with the same name of another existing tree
-    if (doc_ptr_->getTree(tree_name) != tree) {
-      throw exceptions::TreeDocumentError(
-        "Cannot insert subtree node using the provided tree element, because another tree with name '" + tree_name +
-        "' already exists.");
+    // A tree with this name already exists in the document.
+    // If the provided tree element is from THIS document, we can compare directly using pointer equality.
+    // If it's from an external document, we compare the XML content to detect conflicting trees.
+    const TreeElement existing_tree = doc_ptr_->getTree(tree_name);
+    if (tree.doc_ptr_ == doc_ptr_) {
+      // Tree element is from this document - they must be the same tree element
+      if (existing_tree != tree) {
+        throw exceptions::TreeDocumentError(
+          "Cannot insert subtree node using the provided tree element, because another tree with name '" + tree_name +
+          "' already exists.");
+      }
+    } else {
+      // Tree element is from an external document - compare XML content
+      const std::string existing_xml = existing_tree.writeToString();
+      const std::string incoming_xml = tree.writeToString();
+      if (existing_xml != incoming_xml) {
+        throw exceptions::TreeDocumentError(
+          "Cannot insert subtree node using the provided tree element, because another tree with name '" + tree_name +
+          "' already exists with different content.");
+      }
     }
+    // If we reach here, the trees are equivalent - proceed to insert the subtree node
   } else {
     // Add the tree provided as argument to the document
     doc_ptr_->mergeTree(tree, false);
@@ -965,6 +981,66 @@ TreeDocument & TreeDocument::removeTree(const TreeElement & tree) { return remov
 
 std::vector<std::string> TreeDocument::getAllTreeNames() const { return getAllTreeNamesImpl(*this); }
 
+TreeDocument & TreeDocument::applyNodeNamespace(const std::string & node_namespace, const std::string & sep)
+{
+  // Get the old node names before applying namespace
+  std::set<std::string> old_node_names;
+  for (const auto & [name, _] : registered_nodes_manifest_.map()) {
+    old_node_names.insert(name);
+  }
+
+  // Apply namespace to the registered nodes manifest
+  registered_nodes_manifest_.applyNodeNamespace(node_namespace, sep);
+
+  // Helper to recursively rename nodes in the XML
+  auto rename_recursive = [&old_node_names, &node_namespace, &sep](XMLElement * parent, auto & self) -> void {
+    for (XMLElement * child = parent->FirstChildElement(); child != nullptr; child = child->NextSiblingElement()) {
+      const char * name = child->Name();
+      // Rename if the node name is in the old registered nodes - we don't want to rename native nodes.
+      if (name && old_node_names.count(name) > 0) {
+        child->SetName((node_namespace + sep + name).c_str());
+      }
+      self(child, self);
+    }
+  };
+
+  // Process all trees
+  for (XMLElement * tree_ele = RootElement()->FirstChildElement(TREE_ELEMENT_NAME); tree_ele != nullptr;
+       tree_ele = tree_ele->NextSiblingElement(TREE_ELEMENT_NAME)) {
+    rename_recursive(tree_ele, rename_recursive);
+  }
+
+  // Also update the BehaviorTreeFactory registrations so that the factory
+  // recognizes the new (namespaced) node IDs used in the XML.
+  // We must copy the manifest and builder data BEFORE unregistering, as unregisterBuilder
+  // invalidates any references to the internal maps.
+  std::vector<std::pair<std::string, std::pair<BT::TreeNodeManifest, BT::NodeBuilder>>> registrations_to_update;
+  const auto & factory_manifests = factory_.manifests();
+  const auto & factory_builders = factory_.builders();
+  for (const auto & old_name : old_node_names) {
+    const auto manifest_it = factory_manifests.find(old_name);
+    const auto builder_it = factory_builders.find(old_name);
+    if (manifest_it == factory_manifests.end() || builder_it == factory_builders.end()) {
+      // This should never happen since we derived old_node_names from registered_nodes_manifest_
+      throw exceptions::TreeDocumentError(
+        "Internal error while applying node namespace: Node '" + old_name +
+        "' not found in BehaviorTreeFactory registrations.");
+    }
+    // Copy the data before we modify the factory
+    registrations_to_update.emplace_back(old_name, std::make_pair(manifest_it->second, builder_it->second));
+  }
+
+  // Now perform the unregister/register operations using the copied data
+  for (const auto & [old_name, manifest_builder_pair] : registrations_to_update) {
+    factory_.unregisterBuilder(old_name);
+    BT::TreeNodeManifest new_manifest = manifest_builder_pair.first;
+    new_manifest.registration_ID = node_namespace + sep + old_name;
+    factory_.registerBuilder(new_manifest, manifest_builder_pair.second);
+  }
+
+  return *this;
+}
+
 TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manifest, bool override)
 {
   // Make sure that there are no node names that are reserved for native nodes
@@ -980,26 +1056,21 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
   }
 
   for (const auto & [node_name, params] : tree_node_manifest.map()) {
-    // If the node is already registered
+    // By design, we require the user to maintain unique registration names for nodes. Theoretically, we could tolerate
+    // multiple registrations of the same node name if both registration options are identical, but this would
+    // complicate the implementation (comparing every option one by one) and indicates bad structuring of node manifests
+    // anyways. So we discourage this practice by throwing an error.
     if (registered_nodes_manifest_.contains(node_name)) {
-      // Check whether the specified node class is different from the currently registered one by comparing the
-      // respective plugin class names.
-      if (registered_nodes_manifest_[node_name].class_name == params.class_name) {
-        // We assume that the manifest entry refers to the exact same node plugin, because all NodeRegistrationLoader
-        // instances verify that there are no ambiguous class names during initialization. Since the node is already
-        // registered, we may skip registering it as there's nothing new to do.
-        continue;
-      } else if (override) {
-        // If it's actually a different class and override is true, register the new node plugin instead of the
-        // current one.
+      if (override) {
+        // If override is true, register the new node plugin instead of the current one
         factory_.unregisterBuilder(node_name);
+        registered_nodes_manifest_.remove(node_name);
       } else {
-        // If it's actually a different class and override is false, we must throw.
+        // If overriding is not explicitly wanted, we must throw
         throw exceptions::TreeDocumentError(
-          "Tried to register node '" + node_name + "' (Class : " + params.class_name +
-          ") which is already known to the builder, but under a different class name (" +
-          registered_nodes_manifest_[node_name].class_name +
-          "). You must explicitly set override=true to allow for overriding previously registered nodes.");
+          "Tried to register node '" + node_name + "' (Class: " + params.class_name +
+          ") which is already known. You must make sure that the registration names are unique or explicitly allow "
+          "overriding previously registered nodes with the same name by setting override=true.");
       }
     }
 
