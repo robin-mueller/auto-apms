@@ -1041,7 +1041,7 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
         throw exceptions::TreeDocumentError(
           "Tried to register node '" + node_name + "' (Class: " + params.class_name +
           ") which is already known. You must make sure that the registration names are unique or explicitly allow "
-          "overriding previsouly registered nodes with the same name by setting override=true.");
+          "overriding previously registered nodes with the same name by setting override=true.");
       }
     }
 
