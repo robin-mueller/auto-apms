@@ -996,6 +996,7 @@ TreeDocument & TreeDocument::applyNodeNamespace(const std::string & node_namespa
   auto rename_recursive = [&old_node_names, &node_namespace, &sep](XMLElement * parent, auto & self) -> void {
     for (XMLElement * child = parent->FirstChildElement(); child != nullptr; child = child->NextSiblingElement()) {
       const char * name = child->Name();
+      // Rename if the node name is in the old registered nodes - we don't want to rename native nodes.
       if (name && old_node_names.count(name) > 0) {
         child->SetName((node_namespace + sep + name).c_str());
       }
@@ -1007,6 +1008,34 @@ TreeDocument & TreeDocument::applyNodeNamespace(const std::string & node_namespa
   for (XMLElement * tree_ele = RootElement()->FirstChildElement(TREE_ELEMENT_NAME); tree_ele != nullptr;
        tree_ele = tree_ele->NextSiblingElement(TREE_ELEMENT_NAME)) {
     rename_recursive(tree_ele, rename_recursive);
+  }
+
+  // Also update the BehaviorTreeFactory registrations so that the factory
+  // recognizes the new (namespaced) node IDs used in the XML.
+  // We must copy the manifest and builder data BEFORE unregistering, as unregisterBuilder
+  // invalidates any references to the internal maps.
+  std::vector<std::pair<std::string, std::pair<BT::TreeNodeManifest, BT::NodeBuilder>>> registrations_to_update;
+  const auto & factory_manifests = factory_.manifests();
+  const auto & factory_builders = factory_.builders();
+  for (const auto & old_name : old_node_names) {
+    const auto manifest_it = factory_manifests.find(old_name);
+    const auto builder_it = factory_builders.find(old_name);
+    if (manifest_it == factory_manifests.end() || builder_it == factory_builders.end()) {
+      // This should never happen since we derived old_node_names from registered_nodes_manifest_
+      throw exceptions::TreeDocumentError(
+        "Internal error while applying node namespace: Node '" + old_name +
+        "' not found in BehaviorTreeFactory registrations.");
+    }
+    // Copy the data before we modify the factory
+    registrations_to_update.emplace_back(old_name, std::make_pair(manifest_it->second, builder_it->second));
+  }
+
+  // Now perform the unregister/register operations using the copied data
+  for (const auto & [old_name, manifest_builder_pair] : registrations_to_update) {
+    factory_.unregisterBuilder(old_name);
+    BT::TreeNodeManifest new_manifest = manifest_builder_pair.first;
+    new_manifest.registration_ID = node_namespace + sep + old_name;
+    factory_.registerBuilder(new_manifest, manifest_builder_pair.second);
   }
 
   return *this;
