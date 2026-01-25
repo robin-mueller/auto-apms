@@ -235,7 +235,8 @@ public:
    * this manifest (after applying the namespace prefix).
    */
   NodeManifest & mergeWithNamespace(
-    const NodeManifest & other, const std::string & with_namespace, const std::string & sep = ".");
+    const NodeManifest & other, const std::string & with_namespace,
+    const std::string & sep = _AUTO_APMS_BEHAVIOR_TREE_CORE__NODE_NAMESPACE_DEFAULT_SEP);
 
   /**
    * @brief Apply a namespace prefix to all node names in this manifest.

@@ -1035,6 +1035,7 @@ TreeDocument & TreeDocument::registerNodes(const NodeManifest & tree_node_manife
       if (override) {
         // If override is true, register the new node plugin instead of the current one
         factory_.unregisterBuilder(node_name);
+        registered_nodes_manifest_.remove(node_name);
       } else {
         // If overriding is not explicitly wanted, we must throw
         throw exceptions::TreeDocumentError(
