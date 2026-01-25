@@ -1151,8 +1151,8 @@ public:
    *
    * @sa TreeResourceIdentity for more information about how to refer to a specific resource.
    * @param resource Behavior tree resource to use.
-   * @param tree_name Name of the tree to be copied. It must exist inside the given file. By default the root tree is
-   * used.
+   * @param tree_name Name of the tree to be copied. It must exist inside the resource's tree document. By default the
+   * root tree is used.
    * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p tree_name is empty but the root tree cannot be
    * determined.
    * @throw auto_apms_behavior_tree::exceptions::TreeDocumentError if @p tree_name cannot be found in the resource's
