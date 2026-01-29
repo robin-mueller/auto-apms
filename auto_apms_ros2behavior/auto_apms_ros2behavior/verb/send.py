@@ -66,7 +66,7 @@ class SendVerb(VerbExtension):
         )
         build_handler_arg.completer = PrefixFilteredChoicesCompleter(get_behavior_build_handler_plugins())
         parser.add_argument(
-            "--entry_point",
+            "--entry-point",
             type=str,
             help="Entry point to pass to the build handler. If a behavior resource identity is given as a positional argument, override the associated entry point",
         )
