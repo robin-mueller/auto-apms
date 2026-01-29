@@ -56,10 +56,19 @@ class RunVerb(VerbExtension):
             metavar="<namespace>::<class_name>",
         )
         build_handler_arg.completer = PrefixFilteredChoicesCompleter(get_behavior_build_handler_plugins())
+        # New canonical option name with hyphen, consistent with other CLI arguments
         parser.add_argument(
-            "--entry_point",
+            "--entry-point",
+            dest="entry_point",
             type=str,
             help="Entry point to pass to the build handler. If a behavior resource identity is given as a positional argument, override the associated entry point",
+        )
+        # Backwards-compatible alias using the old underscore style, hidden from help output
+        parser.add_argument(
+            "--entry_point",
+            dest="entry_point",
+            type=str,
+            help=argparse.SUPPRESS,
         )
         manifest_arg = parser.add_argument(
             "--node-manifest",
