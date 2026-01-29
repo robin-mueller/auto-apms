@@ -33,7 +33,7 @@ TreeBuildHandler::TreeBuildHandler(rclcpp::Node::SharedPtr ros_node_ptr, NodeLoa
 }
 
 bool TreeBuildHandler::setBuildRequest(
-  const std::string & /*build_request*/, const std::string & /*entrypoint*/, const NodeManifest & /*node_manifest*/)
+  const std::string & /*build_request*/, const std::string & /*entry_point*/, const NodeManifest & /*node_manifest*/)
 {
   return true;
 }

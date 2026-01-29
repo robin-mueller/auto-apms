@@ -38,9 +38,9 @@
 # :type CATEGORY: string
 # :param ALIAS: Optional name for the behavior resource. If omitted, the file stem respectively the simple string is used as a behavior's alias.
 # :type ALIAS: string
-# :param ENTRYPOINT: Single point of entry for behavior execution. For behavior trees, this usually is the name of the root tree,
+# :param ENTRY_POINT: Single point of entry for behavior execution. For behavior trees, this usually is the name of the root tree,
 #    but for other types of behaviors, this may be populated differently.
-# :type ENTRYPOINT: string
+# :type ENTRY_POINT: string
 # :param NODE_MANIFEST: One or more relative paths or resource identities of existing node manifests.
 #   If specified, behavior tree nodes associated with this manifest can be
 #   loaded automatically and are available for every behavior registered with this macro call.
@@ -54,7 +54,7 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
 
   # Parse arguments
   set(options MARK_AS_INTERNAL)
-  set(oneValueArgs BUILD_HANDLER CATEGORY ALIAS ENTRYPOINT)
+  set(oneValueArgs BUILD_HANDLER CATEGORY ALIAS ENTRY_POINT)
   set(multiValueArgs NODE_MANIFEST)
   cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -74,9 +74,9 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
     set(_category "${_category}${_AUTO_APMS_BEHAVIOR_TREE_CORE__INTERNAL_BEHAVIOR_CATEGORY_SUFFIX}")
   endif()
 
-  set(_entrypoint "")
-  if(DEFINED ARGS_ENTRYPOINT)
-    set(_entrypoint "${ARGS_ENTRYPOINT}")
+  set(_entry_point "")
+  if(DEFINED ARGS_ENTRY_POINT)
+    set(_entry_point "${ARGS_ENTRY_POINT}")
   endif()
 
   # Check if category is valid
@@ -88,12 +88,12 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
     )
   endif()
 
-  # Check if entrypoint is valid
-  string(REGEX MATCH "[^A-Za-z0-9_-]" _has_illegal "${_entrypoint}")
+  # Check if entry_point is valid
+  string(REGEX MATCH "[^A-Za-z0-9_-]" _has_illegal "${_entry_point}")
   if(_has_illegal)
     message(
       FATAL_ERROR
-      "auto_apms_behavior_tree_register_behavior(): Entrypoint '${_entrypoint}' contains illegal characters. Only alphanumeric, '_' and '-' are allowed."
+      "auto_apms_behavior_tree_register_behavior(): Entrypoint '${_entry_point}' contains illegal characters. Only alphanumeric, '_' and '-' are allowed."
     )
   endif()
 
@@ -270,6 +270,6 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
   endif()
 
   # Populate resource file variable
-  set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__BEHAVIOR "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__BEHAVIOR}${_category}|${_behavior_alias}|${ARGS_BUILD_HANDLER}|${_build_request_field}|${_entrypoint}|${_node_manifest_rel_paths__install}\n")
+  set(_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__BEHAVIOR "${_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_FILE__BEHAVIOR}${_category}|${_behavior_alias}|${ARGS_BUILD_HANDLER}|${_build_request_field}|${_entry_point}|${_node_manifest_rel_paths__install}\n")
 
 endmacro()

@@ -542,7 +542,7 @@ class BehaviorResource:
         self._build_request = ""
         self._build_request_file_path = ""
         self._default_build_handler = ""
-        self._entrypoint = ""
+        self._entry_point = ""
         self._node_manifest = NodeManifest()
 
         # Find the resource in the ament index - search across all packages if needed
@@ -601,8 +601,8 @@ class BehaviorResource:
                     self._build_request_file_path = ""
                     self._build_request = parts[3]
 
-                # Store entrypoint
-                self._entrypoint = parts[4]
+                # Store entry_point
+                self._entry_point = parts[4]
 
                 # Store node manifest
                 node_manifest_paths = []
@@ -668,11 +668,11 @@ class BehaviorResource:
         return self._default_build_handler
 
     @property
-    def entrypoint(self) -> str:
+    def entry_point(self) -> str:
         """
         Get the behavior entry point for this resource.
         """
-        return self._entrypoint
+        return self._entry_point
 
     @property
     def node_manifest(self) -> NodeManifest:

@@ -62,7 +62,7 @@ namespace auto_apms_behavior_tree
  *   using TreeBuildHandler::TreeBuildHandler;
  *
  *   bool setBuildRequest(const std::string & build_request,
- *                        const std::string & entrypoint,
+ *                        const std::string & entry_point,
  *                        const NodeManifest & node_manifest) override final
  *   {
  *     // Do something when a build request arrives. If this isn't overridden,
@@ -183,7 +183,7 @@ public:
   /**
    * @brief Specify the behavior tree build request encoded in a string.
    *
-   * Additionally, you may provide an associated node manifest and a specific entrypoint. When
+   * Additionally, you may provide an associated node manifest and a specific entry_point. When
    * using TreeExecutorNode, all arguments are populated using the respective parameters of the incoming
    * `StartTreeExecutor` action goal. It's up to the specific implementation, if and how they are interpreted.
    *
@@ -194,12 +194,12 @@ public:
    * By default, this callback always returns `true`.
    *
    * @param build_request Request that specifies how to build the behavior tree encoded in a string.
-   * @param entrypoint Single point of entry for behavior execution.
+   * @param entry_point Single point of entry for behavior execution.
    * @param node_manifest Behavior tree node manifest that specifies which nodes to use and how to load them.
    * @return `true` if the build handler accepts the request, `false` if it is rejected.
    */
   virtual bool setBuildRequest(
-    const std::string & build_request, const std::string & entrypoint, const NodeManifest & node_manifest);
+    const std::string & build_request, const std::string & entry_point, const NodeManifest & node_manifest);
 
   /**
    * @brief Build the behavior tree specified before.

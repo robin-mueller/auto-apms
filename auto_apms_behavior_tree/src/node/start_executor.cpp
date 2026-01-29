@@ -18,7 +18,7 @@
 #define INPUT_KEY_EXECUTOR_NAME "executor"
 #define INPUT_KEY_TREE_BUILD_REQUEST "build_request"
 #define INPUT_KEY_TREE_BUILD_HANDLER "build_handler"
-#define INPUT_KEY_ENTRYPOINT "entrypoint"
+#define INPUT_KEY_ENTRY_POINT "entry_point"
 #define INPUT_KEY_NODE_MANIFEST "node_manifest"
 #define INPUT_KEY_ATTACH "attach"
 #define INPUT_KEY_CLEAR_BB "clear_blackboard"
@@ -45,14 +45,15 @@ public:
         "YAML/JSON formatted string encoding the name and the registration options for the tree nodes supposed to be "
         "loaded before building the tree."),
       BT::InputPort<std::string>(
-        INPUT_KEY_ENTRYPOINT, "",
-        "Entrypoint for the behavior. If empty, let the build handler determine the entrypoint."),
+        INPUT_KEY_ENTRY_POINT, "",
+        "Entry point for the behavior. If empty, let the build handler determine it automatically."),
       BT::InputPort<std::string>(
         INPUT_KEY_TREE_BUILD_HANDLER, "",
         "Fully qualified class name of the build handler that is supposed to take care of the request. If empty, use "
         "the current one."),
       BT::InputPort<std::string>(
-        INPUT_KEY_TREE_BUILD_REQUEST, "String passed to the tree build handler defining which tree is to be built."),
+        INPUT_KEY_TREE_BUILD_REQUEST, "",
+        "String passed to the tree build handler defining which tree is to be built."),
       BT::InputPort<std::string>(
         INPUT_KEY_EXECUTOR_NAME,
         "Name of the executor responsible for building and running the specified behavior tree."),
@@ -61,25 +62,20 @@ public:
 
   bool setGoal(Goal & goal) override final
   {
-    const BT::Expected<std::string> expected_build_request = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST);
-    if (!expected_build_request || expected_build_request.value().empty()) {
-      RCLCPP_ERROR(
-        logger_, "%s - You must provide a non-empty build request.",
-        context_.getFullyQualifiedTreeNodeName(this).c_str());
-      RCLCPP_DEBUG_EXPRESSION(
-        logger_, !expected_build_request, "%s - Error message: %s",
-        context_.getFullyQualifiedTreeNodeName(this).c_str(), expected_build_request.error().c_str());
+    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_TREE_BUILD_REQUEST)) {
+      goal.build_request = expected.value();
+    } else {
+      RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
       return false;
     }
-    goal.build_request = expected_build_request.value();
     if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_TREE_BUILD_HANDLER)) {
       goal.build_handler = expected.value();
     } else {
       RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
       return false;
     }
-    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_ENTRYPOINT)) {
-      goal.entrypoint = expected.value();
+    if (const BT::Expected<std::string> expected = getInput<std::string>(INPUT_KEY_ENTRY_POINT)) {
+      goal.entry_point = expected.value();
     } else {
       RCLCPP_ERROR(logger_, "%s", expected.error().c_str());
       return false;

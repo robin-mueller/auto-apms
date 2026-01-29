@@ -57,7 +57,7 @@ class RunVerb(VerbExtension):
         )
         build_handler_arg.completer = PrefixFilteredChoicesCompleter(get_behavior_build_handler_plugins())
         parser.add_argument(
-            "--entrypoint",
+            "--entry_point",
             type=str,
             help="Entry point to pass to the build handler. If a behavior resource identity is given as a positional argument, override the associated entry point",
         )
@@ -111,9 +111,9 @@ class RunVerb(VerbExtension):
         build_handler = args.behavior.default_build_handler if args.behavior else None
         if args.build_handler:
             build_handler = args.build_handler
-        entry_point = args.behavior.entrypoint if args.behavior else None
-        if args.entrypoint:
-            entry_point = args.entrypoint
+        entry_point = args.behavior.entry_point if args.behavior else None
+        if args.entry_point:
+            entry_point = args.entry_point
         node_manifest = args.behavior.node_manifest if args.behavior else None
         if args.node_manifest:
             node_manifest = args.node_manifest

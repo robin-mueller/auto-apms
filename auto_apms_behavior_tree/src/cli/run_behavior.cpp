@@ -31,7 +31,7 @@ int main(int argc, char ** argv)
 
   bool print_help = false;
   std::string build_request = "";
-  std::string entrypoint = "";
+  std::string entry_point = "";
   core::NodeManifest node_manifest;
   if (args_vector.size() > 1) {
     const std::string & arg = args_vector[1];
@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
   if (args_vector.size() > 2) {
     const std::string & arg = args_vector[2];
     print_help = "-h" == arg || "--help" == arg;
-    if (!print_help) entrypoint = auto_apms_util::trimWhitespaces(arg);
+    if (!print_help) entry_point = auto_apms_util::trimWhitespaces(arg);
   }
   if (args_vector.size() > 3) {
     const std::string & arg = args_vector[3];
@@ -54,7 +54,7 @@ int main(int argc, char ** argv)
                  "empty, build handler must be able to handle that.\n\t2.) Optional string specifying the single point "
                  "of entry for behavior execution.\n\t3.) Optional encoded node manifest specifying the behavior tree "
                  "nodes required for behavior execution.\n";
-    std::cerr << "Usage: run_behavior [<build_request>] [<entrypoint>] [<node_manifest>]\n";
+    std::cerr << "Usage: run_behavior [<build_request>] [<entry_point>] [<node_manifest>]\n";
     return EXIT_FAILURE;
   }
 
@@ -71,7 +71,7 @@ int main(int argc, char ** argv)
 
   // Start tree execution
   std::shared_future<TreeExecutorBase::ExecutionResult> future =
-    executor.startExecution(build_request, entrypoint, node_manifest);
+    executor.startExecution(build_request, entry_point, node_manifest);
   RCLCPP_INFO(logger, "Executing tree '%s'.", executor.getTreeName().c_str());
 
   const std::chrono::duration<double> termination_timeout(3);

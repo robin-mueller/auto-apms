@@ -248,17 +248,17 @@ TreeExecutorNode::TreeExecutorNode(rclcpp::NodeOptions options)
 }
 
 void TreeExecutorNode::preconfigureBuilder(
-  core::TreeBuilder & /*builder*/, const std::string & /*build_request*/, const std::string & /*entrypoint*/,
+  core::TreeBuilder & /*builder*/, const std::string & /*build_request*/, const std::string & /*entry_point*/,
   const core::NodeManifest & /*node_manifest*/)
 {
 }
 
 std::shared_future<TreeExecutorNode::ExecutionResult> TreeExecutorNode::startExecution(
-  const std::string & build_request, const std::string & entrypoint, const core::NodeManifest & node_manifest)
+  const std::string & build_request, const std::string & entry_point, const core::NodeManifest & node_manifest)
 {
   const ExecutorParameters params = executor_param_listener_.get_params();
   return startExecution(
-    makeTreeConstructor(build_request, entrypoint, node_manifest), params.tick_rate, params.groot2_port);
+    makeTreeConstructor(build_request, entry_point, node_manifest), params.tick_rate, params.groot2_port);
 }
 
 std::map<std::string, rclcpp::ParameterValue> TreeExecutorNode::getParameterValuesWithPrefix(const std::string & prefix)
@@ -382,10 +382,10 @@ void TreeExecutorNode::loadBuildHandler(const std::string & name)
 }
 
 TreeConstructor TreeExecutorNode::makeTreeConstructor(
-  const std::string & build_request, const std::string & entrypoint, const core::NodeManifest & node_manifest)
+  const std::string & build_request, const std::string & entry_point, const core::NodeManifest & node_manifest)
 {
   // Request the tree identity
-  if (build_handler_ptr_ && !build_handler_ptr_->setBuildRequest(build_request, entrypoint, node_manifest)) {
+  if (build_handler_ptr_ && !build_handler_ptr_->setBuildRequest(build_request, entry_point, node_manifest)) {
     throw exceptions::TreeBuildError(
       "Build request '" + build_request + "' was denied by '" + executor_param_listener_.get_params().build_handler +
       "' (setBuildRequest() returned false).");
@@ -394,7 +394,7 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
   // By passing the the local variables to the callback's captures by value they live on and can be used for creating
   // the tree later. Otherwise a segmentation fault might occur since memory allocated for the arguments might be
   // released at the time the method returns.
-  return [this, build_request, entrypoint, node_manifest](TreeBlackboardSharedPtr bb_ptr) {
+  return [this, build_request, entry_point, node_manifest](TreeBlackboardSharedPtr bb_ptr) {
     // Currently, BehaviorTree.CPP requires the memory allocated by the factory to persist even after the tree has
     // been created, so we make the builder a unique pointer that is only reset when a new tree is to be created. See
     // https://github.com/BehaviorTree/BehaviorTree.CPP/issues/890
@@ -402,7 +402,7 @@ TreeConstructor TreeExecutorNode::makeTreeConstructor(
       node_ptr_, getTreeNodeWaitablesCallbackGroupPtr(), getTreeNodeWaitablesExecutorPtr(), tree_node_loader_ptr_));
 
     // Allow executor to configure the builder independently from the build handler prior to building the tree
-    preconfigureBuilder(*builder_ptr_, build_request, entrypoint, node_manifest);
+    preconfigureBuilder(*builder_ptr_, build_request, entry_point, node_manifest);
 
     // Make scripting enums available to tree instance
     for (const auto & [enum_key, val] : scripting_enums_) builder_ptr_->setScriptingEnum(enum_key, val);
@@ -599,7 +599,7 @@ rclcpp_action::GoalResponse TreeExecutorNode::handle_start_goal_(
   }
 
   try {
-    tree_constructor_ = makeTreeConstructor(goal_ptr->build_request, goal_ptr->entrypoint, node_manifest);
+    tree_constructor_ = makeTreeConstructor(goal_ptr->build_request, goal_ptr->entry_point, node_manifest);
   } catch (const std::exception & e) {
     RCLCPP_WARN(logger_, "Goal %s was REJECTED: %s", rclcpp_action::to_string(uuid).c_str(), e.what());
     return rclcpp_action::GoalResponse::REJECT;

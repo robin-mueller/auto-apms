@@ -131,7 +131,7 @@ def call_start_tree_action(
     action_name: str,
     build_request: str,
     build_handler: str = None,
-    entrypoint: str = None,
+    entry_point: str = None,
     node_manifest: NodeManifest = None,
     clear_blackboard: bool = False,
     timeout_sec=5.0,
@@ -164,8 +164,8 @@ def call_start_tree_action(
     goal_msg.build_request = build_request
     if build_handler:
         goal_msg.build_handler = build_handler
-    if entrypoint:
-        goal_msg.entrypoint = entrypoint
+    if entry_point:
+        goal_msg.entry_point = entry_point
     if node_manifest:
         goal_msg.node_manifest = node_manifest.dump()
     goal_msg.clear_blackboard = clear_blackboard
@@ -300,7 +300,7 @@ def sync_run_generic_behavior_with_executor(
             action_name,
             build_request=build_request,
             build_handler=build_handler,
-            entrypoint=entry_point,
+            entry_point=entry_point,
             node_manifest=node_manifest,
             clear_blackboard=False,
             timeout_sec=max(tick_rate * 2.5, 5.0),
@@ -331,7 +331,7 @@ def sync_run_behavior_resource_with_executor(
         executor_name=executor_name,
         build_request=behavior.build_request if behavior else None,
         build_handler=behavior.default_build_handler if behavior else None,
-        entry_point=behavior.entrypoint if behavior else None,
+        entry_point=behavior.entry_point if behavior else None,
         node_manifest=behavior.node_manifest if behavior else None,
         static_params=static_params,
         blackboard_params=blackboard_params,
@@ -365,7 +365,7 @@ def sync_run_generic_behavior_locally(
     """
     required_package = "auto_apms_behavior_tree"
     required_command = "run_behavior"
-
+    static_params = static_params or {}
     argv = []
     argv.append(build_request if build_request else "")
     argv.append(entry_point if entry_point else "")
@@ -383,11 +383,11 @@ def sync_run_generic_behavior_locally(
 
     # Add static parameter for setting the build handler
     if build_handler:
-        # We override that might be passed via this dict with the dedicated argument
+        # We override the build handler that might be passed via this dict with the value of the dedicated argument
         static_params["build_handler"] = build_handler
 
     if static_params or blackboard_params:
-        for tup in (static_params or {}).items():
+        for tup in static_params.items():
             add_ros_argument("param", tup)
         for k, v in (blackboard_params or {}).items():
             add_ros_argument("param", (f"bb.{k}", v))
@@ -419,7 +419,7 @@ def sync_run_behavior_resource_locally(
     return sync_run_generic_behavior_locally(
         build_request=behavior.build_request if behavior else None,
         build_handler=behavior.default_build_handler if behavior else None,
-        entry_point=behavior.entrypoint if behavior else None,
+        entry_point=behavior.entry_point if behavior else None,
         node_manifest=behavior.node_manifest if behavior else None,
         static_params=static_params,
         blackboard_params=blackboard_params,
