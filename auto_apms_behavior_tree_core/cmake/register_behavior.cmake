@@ -93,7 +93,7 @@ macro(auto_apms_behavior_tree_register_behavior build_request)
   if(_has_illegal)
     message(
       FATAL_ERROR
-      "auto_apms_behavior_tree_register_behavior(): Entrypoint '${_entry_point}' contains illegal characters. Only alphanumeric, '_' and '-' are allowed."
+      "auto_apms_behavior_tree_register_behavior(): ENTRY_POINT '${_entry_point}' contains illegal characters. Only alphanumeric, '_' and '-' are allowed."
     )
   endif()
 

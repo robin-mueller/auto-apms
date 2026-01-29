@@ -195,7 +195,7 @@ public:
    * @brief Get the entry point of this behavior resource.
    * @return Entry point as a string.
    */
-  const std::string & getEntrypoint() const;
+  const std::string & getEntryPoint() const;
 
   /**
    * @brief Get the node manifest associated with this resource.
@@ -421,7 +421,7 @@ inline const std::string & BehaviorResourceTemplate<T, U>::getDefaultBuildHandle
 }
 
 template <class T, typename U>
-inline const std::string & BehaviorResourceTemplate<T, U>::getEntrypoint() const
+inline const std::string & BehaviorResourceTemplate<T, U>::getEntryPoint() const
 {
   return entry_point_;
 }
