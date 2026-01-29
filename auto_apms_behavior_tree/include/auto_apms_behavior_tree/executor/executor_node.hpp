@@ -154,13 +154,13 @@ public:
    * behavior tree is executed asynchronously. The user is provided a shared future object that allows to check whether
    * the execution finished. Once this future completes, the execution result can be evaluated.
    * @param build_request Behavior build request for creating the behavior.
-   * @param entrypoint Single point of entry for behavior execution.
+   * @param entry_point Single point of entry for behavior execution.
    * @param node_manifest Behavior tree node manifest to be loaded for behavior execution.
    * @return Shared future that completes once executing the tree is finished or an error occurs. In that case, it is
    * assigned an execution result code.
    */
   std::shared_future<ExecutionResult> startExecution(
-    const std::string & build_request, const std::string & entrypoint = "",
+    const std::string & build_request, const std::string & entry_point = "",
     const core::NodeManifest & node_manifest = {});
 
 private:
@@ -180,11 +180,11 @@ private:
    * - The user wants to bypass the build handler concept and directly create the behavior tree using this method.
    * @param builder Tree builder to be configured. This is used for creating the behavior tree later.
    * @param build_request Behavior build request for creating the behavior.
-   * @param entrypoint Single point of entry for behavior execution.
+   * @param entry_point Single point of entry for behavior execution.
    * @param node_manifest Behavior tree node manifest to be loaded for behavior execution.
    */
   virtual void preconfigureBuilder(
-    TreeBuilder & builder, const std::string & build_request, const std::string & entrypoint,
+    TreeBuilder & builder, const std::string & build_request, const std::string & entry_point,
     const core::NodeManifest & node_manifest);
 
 protected:
@@ -262,13 +262,13 @@ protected:
    * configured build handler to build it. It returns a corresponding instance of `BT::Tree` that may be ticked to
    * execute the tree.
    * @param build_request Request that specifies how to build the behavior tree encoded in a string.
-   * @param entrypoint Single point of entry for behavior execution.
+   * @param entry_point Single point of entry for behavior execution.
    * @param node_manifest Behavior tree node manifest that specifies which nodes to use and how to load them.
    * @return Callback for creating the behavior tree according to the build request.
    * @throw auto_apms_behavior_tree::exceptions::TreeBuildError if the build handler rejects the request.
    */
   TreeConstructor makeTreeConstructor(
-    const std::string & build_request, const std::string & entrypoint = "",
+    const std::string & build_request, const std::string & entry_point = "",
     const core::NodeManifest & node_manifest = {});
 
   /**

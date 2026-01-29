@@ -34,7 +34,7 @@ public:
   }
 
   bool setBuildRequest(
-    const std::string & build_request, const std::string & entrypoint,
+    const std::string & build_request, const std::string & entry_point,
     const NodeManifest & node_manifest) override final
   {
     // Adopt the root tree if specified
@@ -47,17 +47,17 @@ public:
     }
 
     // Try to determine root tree name
-    if (entrypoint.empty()) {
+    if (entry_point.empty()) {
       if (!working_doc_.hasRootTreeName()) {
         RCLCPP_WARN(
           logger_,
           "Cannot determine root tree: You must either encode the root tree within the tree XML or provide a non-empty "
-          "name using the entrypoint argument.");
+          "name using the entry_point argument.");
         return false;
       }
     } else {
       try {
-        working_doc_.setRootTreeName(entrypoint);
+        working_doc_.setRootTreeName(entry_point);
       } catch (const exceptions::TreeDocumentError & e) {
         RCLCPP_WARN(logger_, "Cannot determine root tree: %s", e.what());
         return false;

@@ -45,7 +45,7 @@ class RunBehavior(Node):
         self,
         *,
         build_request: Optional[SomeSubstitutionsType | BehaviorResource] = None,
-        entrypoint: Optional[SomeSubstitutionsType] = None,
+        entry_point: Optional[SomeSubstitutionsType] = None,
         node_manifest: Optional[SomeSubstitutionsType | NodeManifest] = None,
         build_handler: Optional[SomeSubstitutionsType] = None,
         blackboard: Optional[Mapping[SomeParameterName, Any]] = None,
@@ -59,8 +59,8 @@ class RunBehavior(Node):
         """
         if isinstance(build_request, BehaviorResource):
             build_request_sub = build_request.build_request
-            if entrypoint is None:
-                entrypoint = build_request.entrypoint
+            if entry_point is None:
+                entry_point = build_request.entry_point
             if node_manifest is None:
                 node_manifest = build_request.node_manifest
             if build_handler is None:
@@ -84,7 +84,7 @@ class RunBehavior(Node):
         # Build arguments list, filtering out None values
         arguments = []
         arguments.append(build_request_sub if build_request_sub is not None else "")
-        arguments.append(entrypoint if entrypoint is not None else "")
+        arguments.append(entry_point if entry_point is not None else "")
         arguments.append(node_manifest_sub if node_manifest_sub is not None else "")
 
         super().__init__(

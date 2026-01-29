@@ -27,10 +27,11 @@ const std::string MissionBuildHandlerBase::EVENT_HANDLER_EXECUTOR_NAME =
   _AUTO_APMS_MISSION__EVENT_HANDLER_EXECUTOR_NAME;
 
 bool MissionBuildHandlerBase::setBuildRequest(
-  const std::string & build_request, const std::string & entrypoint, const NodeManifest & node_manifest)
+  const std::string & build_request, const std::string & entry_point, const NodeManifest & node_manifest)
 {
-  if (!entrypoint.empty()) {
-    RCLCPP_WARN(logger_, "Argument entrypoint is not empty. Custom entrypoints are not supported and will be ignored.");
+  if (!entry_point.empty()) {
+    RCLCPP_WARN(
+      logger_, "Argument entry_point is not empty. Custom entry_points are not supported and will be ignored.");
   }
   if (!node_manifest.empty()) {
     RCLCPP_WARN(

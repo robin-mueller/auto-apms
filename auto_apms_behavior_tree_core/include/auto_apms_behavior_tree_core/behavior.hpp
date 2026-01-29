@@ -192,10 +192,10 @@ public:
   const std::string & getDefaultBuildHandlerName() const;
 
   /**
-   * @brief Get the entrypoint of this behavior resource.
+   * @brief Get the entry point of this behavior resource.
    * @return Entry point as a string.
    */
-  const std::string & getEntrypoint() const;
+  const std::string & getEntryPoint() const;
 
   /**
    * @brief Get the node manifest associated with this resource.
@@ -208,7 +208,7 @@ protected:
   std::string build_request_file_path_;
   std::string build_request_;
   std::string default_build_handler_;
-  std::string entrypoint_;
+  std::string entry_point_;
   NodeManifest node_manifest_;
 };
 
@@ -358,8 +358,8 @@ inline BehaviorResourceTemplate<T, U>::BehaviorResourceTemplate(const Identity &
           build_request_ = parts[3];
         }
 
-        // Store entrypoint
-        entrypoint_ = parts[4];
+        // Store entry_point
+        entry_point_ = parts[4];
 
         // Store node manifest paths
         std::vector<std::string> node_manifest_paths;
@@ -421,9 +421,9 @@ inline const std::string & BehaviorResourceTemplate<T, U>::getDefaultBuildHandle
 }
 
 template <class T, typename U>
-inline const std::string & BehaviorResourceTemplate<T, U>::getEntrypoint() const
+inline const std::string & BehaviorResourceTemplate<T, U>::getEntryPoint() const
 {
-  return entrypoint_;
+  return entry_point_;
 }
 
 template <class T, typename U>

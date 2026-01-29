@@ -139,7 +139,7 @@ macro(auto_apms_behavior_tree_register_trees)
           BUILD_HANDLER "auto_apms_behavior_tree::TreeFromStringBuildHandler"
           CATEGORY "${_AUTO_APMS_BEHAVIOR_TREE_CORE__DEFAULT_BEHAVIOR_CATEGORY__TREE}"
           ALIAS "${_tree_resource_alias_namespace}::${_tree_name}"
-          ENTRYPOINT "${_tree_name}"
+          ENTRY_POINT "${_tree_name}"
           NODE_MANIFEST ${ARGS_NODE_MANIFEST}
       )
       if(ARGS_MARK_AS_INTERNAL)

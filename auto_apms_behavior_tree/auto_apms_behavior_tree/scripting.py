@@ -131,7 +131,7 @@ def call_start_tree_action(
     action_name: str,
     build_request: str,
     build_handler: str = None,
-    entrypoint: str = None,
+    entry_point: str = None,
     node_manifest: NodeManifest = None,
     clear_blackboard: bool = False,
     timeout_sec=5.0,
@@ -161,11 +161,11 @@ def call_start_tree_action(
         )
 
     goal_msg = StartTreeExecutor.Goal(check_fields=True)
-    goal_msg.build_request = build_request
+    goal_msg.build_request = build_request or ""
     if build_handler:
         goal_msg.build_handler = build_handler
-    if entrypoint:
-        goal_msg.entrypoint = entrypoint
+    if entry_point:
+        goal_msg.entry_point = entry_point
     if node_manifest:
         goal_msg.node_manifest = node_manifest.dump()
     goal_msg.clear_blackboard = clear_blackboard
@@ -236,9 +236,12 @@ def call_start_tree_action(
     return return_code
 
 
-def sync_run_behavior_with_executor(
+def sync_run_generic_behavior_with_executor(
     executor_name: str,
-    behavior: BehaviorResource,
+    build_request: str | None,
+    build_handler: str | None = None,
+    entry_point: str | None = None,
+    node_manifest: NodeManifest = None,
     static_params: dict = None,
     blackboard_params: dict = None,
     keep_blackboard: bool = False,
@@ -249,15 +252,17 @@ def sync_run_behavior_with_executor(
 
     Args:
         executor_name: Name of the behavior tree executor
-        behavior: A valid behavior resource
+        build_request: A behavior build request string or None for letting the build handler
+            decide how to build the tree without a specific build request
+        build_handler: Optional build handler to use for building the behavior
+        entry_point: Optional entry point to use for building the behavior
+        node_manifest: Optional node manifest that provides registration options for the behavior tree nodes required
+            by the behavior.
         static_params: Static parameters to set on the executor
         blackboard_params: Blackboard parameters to set on the executor
         keep_blackboard: Do not clear the blackboard before execution
         logging_level: Logger level to set on the executor
     """
-    if not isinstance(behavior, BehaviorResource):
-        raise TypeError(f"Expected BehaviorResource, got {type(behavior).__name__}")
-
     # Find the full action name for the given executor
     try:
         executor_actions = find_start_tree_executor_actions()
@@ -293,17 +298,51 @@ def sync_run_behavior_with_executor(
         return call_start_tree_action(
             node,
             action_name,
-            build_request=behavior.build_request,
-            build_handler=static_params.get("build_handler", behavior.default_build_handler),
-            entrypoint=behavior.entrypoint,
-            node_manifest=behavior.node_manifest,
+            build_request=build_request,
+            build_handler=build_handler,
+            entry_point=entry_point,
+            node_manifest=node_manifest,
             clear_blackboard=False,
             timeout_sec=max(tick_rate * 2.5, 5.0),
         )
 
 
+def sync_run_behavior_resource_with_executor(
+    executor_name: str,
+    behavior: BehaviorResource | None,
+    static_params: dict = None,
+    blackboard_params: dict = None,
+    keep_blackboard: bool = False,
+    logging_level: LoggingSeverity = None,
+):
+    """
+    Execute a behavior on a remote executor node.
+
+    Args:
+        executor_name: Name of the behavior tree executor
+        behavior: A valid behavior resource or None for letting the build handler
+            decide how to build the tree without a specific build request
+        static_params: Static parameters to set on the executor
+        blackboard_params: Blackboard parameters to set on the executor
+        keep_blackboard: Do not clear the blackboard before execution
+        logging_level: Logger level to set on the executor
+    """
+    return sync_run_generic_behavior_with_executor(
+        executor_name=executor_name,
+        build_request=behavior.build_request if behavior else None,
+        build_handler=behavior.default_build_handler if behavior else None,
+        entry_point=behavior.entry_point if behavior else None,
+        node_manifest=behavior.node_manifest if behavior else None,
+        static_params=static_params,
+        blackboard_params=blackboard_params,
+        keep_blackboard=keep_blackboard,
+        logging_level=logging_level,
+    )
+
+
 def sync_run_generic_behavior_locally(
     build_request: str | None,
+    build_handler: str | None = None,
     entry_point: str | None = None,
     node_manifest: NodeManifest = None,
     static_params: dict = None,
@@ -316,6 +355,7 @@ def sync_run_generic_behavior_locally(
     Args:
         build_request: A behavior build request string or None for letting the build handler
             decide how to build the tree without a specific build request
+        build_handler: Build handler to use for building the behavior
         entry_point: Optional entry point to use for building the behavior
         node_manifest: Optional node manifest that provides registration options for the behavior tree nodes required
             by the behavior.
@@ -325,7 +365,7 @@ def sync_run_generic_behavior_locally(
     """
     required_package = "auto_apms_behavior_tree"
     required_command = "run_behavior"
-
+    static_params = static_params or {}
     argv = []
     argv.append(build_request if build_request else "")
     argv.append(entry_point if entry_point else "")
@@ -341,8 +381,13 @@ def sync_run_generic_behavior_locally(
     if logging_level:
         add_ros_argument("log-level", (required_command, logging_level.name))
 
+    # Add static parameter for setting the build handler
+    if build_handler:
+        # We override the build handler that might be passed via this dict with the value of the dedicated argument
+        static_params["build_handler"] = build_handler
+
     if static_params or blackboard_params:
-        for tup in (static_params or {}).items():
+        for tup in static_params.items():
             add_ros_argument("param", tup)
         for k, v in (blackboard_params or {}).items():
             add_ros_argument("param", (f"bb.{k}", v))
@@ -356,7 +401,7 @@ def sync_run_generic_behavior_locally(
     )
 
 
-def sync_run_behavior_locally(
+def sync_run_behavior_resource_locally(
     behavior: BehaviorResource | None,
     static_params: dict = None,
     blackboard_params: dict = None,
@@ -366,18 +411,15 @@ def sync_run_behavior_locally(
     Execute a behavior locally using the run_behavior executable.
 
     Args:
-        behavior: A valid behavior resource or None for letting the build handler
-            decide how to build the tree without a specific build request
+        behavior: A valid behavior resource
         static_params: Static parameters to set on the executor
         blackboard_params: Blackboard parameters to set on the executor
         logging_level: Logger level to set on the executor
     """
-    static_params = static_params or {}
-    if behavior and not "build_handler" in static_params:
-        static_params["build_handler"] = behavior.default_build_handler
     return sync_run_generic_behavior_locally(
         build_request=behavior.build_request if behavior else None,
-        entry_point=behavior.entrypoint if behavior else None,
+        build_handler=behavior.default_build_handler if behavior else None,
+        entry_point=behavior.entry_point if behavior else None,
         node_manifest=behavior.node_manifest if behavior else None,
         static_params=static_params,
         blackboard_params=blackboard_params,
