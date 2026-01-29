@@ -161,7 +161,7 @@ def call_start_tree_action(
         )
 
     goal_msg = StartTreeExecutor.Goal(check_fields=True)
-    goal_msg.build_request = build_request
+    goal_msg.build_request = build_request or ""
     if build_handler:
         goal_msg.build_handler = build_handler
     if entry_point:
