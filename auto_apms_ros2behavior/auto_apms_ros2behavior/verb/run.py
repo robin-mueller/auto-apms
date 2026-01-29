@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
+import inspect
+
 from rclpy.logging import LoggingSeverity, get_logging_severity_from_string
 from auto_apms_behavior_tree.resources import get_behavior_build_handler_plugins
-from auto_apms_behavior_tree.scripting import sync_run_behavior_locally
+from auto_apms_behavior_tree_core.resources import NodeManifestResource, get_node_manifest_resource_identities
+from auto_apms_behavior_tree.scripting import sync_run_generic_behavior_locally
 from ..verb import VerbExtension
 from ..api import (
     add_behavior_resource_argument_to_parser,
@@ -24,20 +28,46 @@ from ..api import (
 
 
 class RunVerb(VerbExtension):
-    """Execute a behavior locally."""
+    """
+    Execute a behavior locally.
+
+    There are multiple ways to define the behavior to execute:
+
+    1. Use an existing behavior resource
+    2. Manually define the behavior using keyword arguments
+    3. Combine both approaches for overriding individual components of the given behavior resource.
+    """
 
     def add_arguments(self, parser, cli_name):
         """Add arguments for the run verb."""
+        parser.description = inspect.cleandoc(self.__doc__)
+
         behavior_arg = add_behavior_resource_argument_to_parser(parser)
         behavior_arg.nargs = "?"  # Make the behavior argument optional
+        parser.add_argument(
+            "--build-request",
+            type=str,
+            help="Build request to be passed to the build handler. If a behavior resource identity is given, override the associated build request",
+        )
         build_handler_arg = parser.add_argument(
             "--build-handler",
             type=str,
-            help="Override the default behavior build handler associated with the behavior resource",
+            help="Build handler to load. If a behavior resource identity is given as a positional argument, override the associated build handler",
             metavar="<namespace>::<class_name>",
         )
-        build_handler_plugins = get_behavior_build_handler_plugins()
-        build_handler_arg.completer = PrefixFilteredChoicesCompleter(build_handler_plugins)
+        build_handler_arg.completer = PrefixFilteredChoicesCompleter(get_behavior_build_handler_plugins())
+        parser.add_argument(
+            "--entrypoint",
+            type=str,
+            help="Entry point to pass to the build handler. If a behavior resource identity is given as a positional argument, override the associated entry point",
+        )
+        manifest_arg = parser.add_argument(
+            "--node-manifest",
+            type=NodeManifestResource,
+            help="Node manifest resource to pass to the build handler. If a behavior resource identity is given, override the associated node manifest",
+            metavar="IDENTITY",
+        )
+        manifest_arg.completer = PrefixFilteredChoicesCompleter(get_node_manifest_resource_identities())
         parser.add_argument(
             "--blackboard",
             nargs="*",
@@ -72,10 +102,23 @@ class RunVerb(VerbExtension):
 
     def main(self, *, args):
         """Main function for the run verb."""
-        # Collect static parameters if specified
+        if not (args.behavior or args.build_handler):
+            raise argparse.ArgumentError(None, "Either a behavior resource or a build handler must be specified.")
+
+        build_request = args.behavior.build_request if args.behavior else None
+        if args.build_request:
+            build_request = args.build_request
+        build_handler = args.behavior.default_build_handler if args.behavior else None
+        if args.build_handler:
+            build_handler = args.build_handler
+        entry_point = args.behavior.entrypoint if args.behavior else None
+        if args.entrypoint:
+            entry_point = args.entrypoint
+        node_manifest = args.behavior.node_manifest if args.behavior else None
+        if args.node_manifest:
+            node_manifest = args.node_manifest
+
         static_params = {}
-        if args.build_handler is not None:
-            static_params["build_handler"] = args.build_handler
         if args.tick_rate is not None:
             static_params["tick_rate"] = args.tick_rate
         if args.groot2_port is not None:
@@ -91,8 +134,11 @@ class RunVerb(VerbExtension):
             if args.behavior
             else "--- Running behavior (no identity provided)"
         )
-        return sync_run_behavior_locally(
-            behavior=args.behavior,
+        return sync_run_generic_behavior_locally(
+            build_request=build_request,
+            build_handler=build_handler,
+            entry_point=entry_point,
+            node_manifest=node_manifest,
             static_params=static_params,
             blackboard_params=blackboard_params,
             logging_level=args.logging,

@@ -367,7 +367,7 @@ def add_behavior_resource_argument_to_parser(parser: ArgumentParser):
         "behavior",
         type=BehaviorResource,
         help="Behavior resource identity string",
-        metavar=f"<category_name>{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP}"
+        metavar=f"IDENTITY <category_name>{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_CATEGORY_SEP}"
         f"<package_name>{_AUTO_APMS_BEHAVIOR_TREE_CORE__RESOURCE_IDENTITY_ALIAS_SEP}"
         f"<behavior_alias>",
     )
