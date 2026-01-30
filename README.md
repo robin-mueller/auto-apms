@@ -1,46 +1,33 @@
-<p align="center" width="100%">
+<p align="center">
     <img width="70%" src="https://autoapms.github.io/auto-apms-guide/logo/logo.png">
 </p>
 
-<div align="center">
-
-<h3>Automated Action Planning and Management System</h3>
+# ⚙️ AutoAPMS - Streamlining Behaviors in ROS 2
 
 <a href="https://autoapms.github.io/auto-apms-guide/introduction/about">![Docs](https://img.shields.io/website?url=https%3A%2F%2Fautoapms.github.io%2Fauto-apms-guide&label=🎓Documentation)</a>
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/AutoAPMS/auto-apms)
 ![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14790307.svg)
-<a href="https://github.com/AutoAPMS/auto-apms/releases">![Release](https://img.shields.io/github/v/release/autoapms/auto-apms?label=Release)</a>
 
-| ROS 2 | Build & Test |
-|:------------------:|:------:|
-| Jazzy Jalisco | [![Jazzy](https://github.com/autoapms/auto-apms/actions/workflows/jazzy.yaml/badge.svg?branch=master)](https://github.com/autoapms/auto-apms/actions/workflows/jazzy.yaml) |
-| Kilted Kaiju | [![Kilted](https://github.com/autoapms/auto-apms/actions/workflows/kilted.yaml/badge.svg?branch=master)](https://github.com/autoapms/auto-apms/actions/workflows/kilted.yaml) |
-| Rolling Ridley | [![Rolling](https://github.com/autoapms/auto-apms/actions/workflows/rolling.yaml/badge.svg?branch=master)](https://github.com/autoapms/auto-apms/actions/workflows/rolling.yaml) |
-
-</div>
-
-# ⚙️ AutoAPMS - Streamlining Behaviors in ROS 2
+![jazzy](https://img.shields.io/ros/v/jazzy/autoapms?&logo=ros&label=ROS%202)
+![kilted](https://img.shields.io/ros/v/kilted/autoapms?&logo=ros&label=ROS%202)
+![rolling](https://img.shields.io/ros/v/rolling/autoapms?&logo=ros&label=ROS%202)
 
 ![auto-apms-gif](https://github.com/user-attachments/assets/0039aa09-9448-4102-9eb3-38138a805728)
 
+<img align="right" width="350"  alt="autoapms-hierarchy" src="https://github.com/user-attachments/assets/d28e7c8f-70a2-4fd3-897d-d85b02b768de" />
+
 **Start leveraging the advantages of Behavior Trees 🌳 fully integrated with ROS 2 🤖**
 
-AutoAPMS is a **heavily extensible** development framework for **behavior-based ROS 2 applications**. It provides a **highly modular integration of behavior trees**, implements a **powerful execution engine** and offers convenient CLI tooling for deploying behaviors with ease.
+AutoAPMS (Automated Action Planning and Management System) is a **heavily extensible** development framework for **behavior-based ROS 2 applications**. It provides a **highly modular integration of behavior trees**, implements a **powerful execution engine** and offers convenient **CLI tooling** for deploying behaviors with ease.
+
+This project adopts the behavior tree implementation provided by [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots.
 
 The intention of this project is to make it significantly more user-friendly and less error prone to develop autonomous robotics with behavior trees. The core packages are written in C++ and a supplementary Python API exposes high-level features for scripting.
 
 > [!NOTE]
 > Currently we support **Linux only**!.
 
-## ✨ Design & Highlights
-
-<!-- <p align="center">
-    <img width="450" src="https://github.com/user-attachments/assets/a5a15484-06d1-449d-8ad9-8ddf400ed4ad">
-</p> -->
-
-<img align="right" width="400" src="https://github.com/user-attachments/assets/a5a15484-06d1-449d-8ad9-8ddf400ed4ad">
-
-This project adopts the behavior tree implementation provided by [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) and embeds it into the ROS 2 ecosystem so that developers have a much easier time writing custom behaviors and distributing them among robots.
+## ✨ Highlights
 
 Here are some of the most prominent features offered by this repository:
 
