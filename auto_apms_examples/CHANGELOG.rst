@@ -2,8 +2,8 @@
 Changelog for package auto_apms_examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.4.0 (2026-01-30)
+------------------
 * Fix version number to match last release
 * Add ament_cmake_copyright to all packages
 * Move auto_apms_simulation to seperate repo and update package manifests for ros index

@@ -2,8 +2,8 @@
 Changelog for package auto_apms_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.4.0 (2026-01-30)
+------------------
 * Change entrypoint field of StartTreeExecutor to entry_point (could be a breaking change)
 
 1.3.0 (2025-09-21)

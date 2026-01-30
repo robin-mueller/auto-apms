@@ -2,8 +2,8 @@
 Changelog for package auto_apms_ros2behavior
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.4.0 (2026-01-30)
+------------------
 * Feat: Enable to use the CLI to define behaviors dynamically (`#14 <https://github.com/AutoAPMS/auto-apms/issues/14>`_)
   * Add build_request, entrypoint and node_manifest keyword args to run and send cli
   * Rename entrypoint to entry_point
